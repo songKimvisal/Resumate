@@ -1,0 +1,228 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Koh+Santepheap:wght@400;700;900&display=swap");
+@import "tailwindcss";
+/* If shadcn init installed tw-animate-css, keep this line. If you get
+   "failed to resolve import", run: npm i tw-animate-css  (or delete the line) */
+@import "tw-animate-css";
+
+/* Class-based dark mode: toggling `dark` on <html> switches themes */
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   1. DESIGN TOKENS — from Figma variables (source of truth)
+   Light theme = :root, dark theme = .dark
+   ============================================================ */
+
+:root {
+  /* brand */
+  --brand-primary: #c1121f;
+  --brand-secondary: #e60023;
+  --brand-third: #8b0000;
+  --brand-accent: #e63946;
+  --brand-accent-2: #ffdede;
+  --brand-light: #fdf1f2; /* "Very Light Red" */
+  --brand-cream: #fff3e9; /* top-level "Color" */
+
+  /* background */
+  --bg-default: #ffffff;
+  --bg-surface: #fff5f5;
+  --bg-surface-2: #f4f4f5;
+
+  /* text (Figma: background/text) */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-placeholder: #9ca3af;
+
+  /* border */
+  --border-default: #e5e7eb;
+
+  /* status */
+  --status-success: #16a34a;
+  --status-success-bg: #f0fdf4;
+
+  /* ----------------------------------------------------------
+     shadcn/ui variables → mapped to the tokens above.
+     shadcn components read these names internally.
+     ---------------------------------------------------------- */
+  --radius: 0.625rem;
+
+  --background: var(--bg-default);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-default);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-surface-2);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-surface-2);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--brand-light);
+  --accent-foreground: var(--brand-third);
+  --destructive: var(--brand-secondary);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--brand-accent);
+
+  /* shadcn chart palette (used by chart components) */
+  --chart-1: var(--brand-primary);
+  --chart-2: var(--brand-accent);
+  --chart-3: var(--status-success);
+  --chart-4: var(--text-secondary);
+  --chart-5: var(--brand-third);
+
+  /* shadcn sidebar (used by the Sidebar component) */
+  --sidebar: var(--bg-surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-light);
+  --sidebar-accent-foreground: var(--brand-third);
+  --sidebar-border: var(--border-default);
+  --sidebar-ring: var(--brand-accent);
+}
+
+.dark {
+  /* brand — brighter reds read better on dark backgrounds */
+  --brand-primary: #e63946;
+  --brand-secondary: #ff4d5e;
+  --brand-third: #c1121f;
+  --brand-accent: #ff6b75;
+  --brand-accent-2: #4a1d21;
+  --brand-light: #2a1518;
+  --brand-cream: #2b2320;
+
+  /* background */
+  --bg-default: #121214;
+  --bg-surface: #1b1b1e;
+  --bg-surface-2: #232327;
+
+  /* text */
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-placeholder: #71717a;
+
+  /* border */
+  --border-default: #2e2e33;
+
+  /* status */
+  --status-success: #22c55e;
+  --status-success-bg: #10241a;
+
+  /* No shadcn overrides needed here — the shadcn variables above
+     reference the tokens, and the tokens just changed. Exceptions
+     that don't derive from a token: */
+  --primary-foreground: #ffffff;
+  --accent-foreground: #ffb3ba;
+  --sidebar-accent-foreground: #ffb3ba;
+}
+
+/* ============================================================
+   2. TAILWIND UTILITY MAPPINGS (v4 @theme)
+   Your naming:   bg-bg, bg-surface, text-text, border-line…
+   shadcn naming: bg-background, text-foreground, border-border…
+   Both work everywhere.
+   ============================================================ */
+
+@theme inline {
+  /* --- your token names --- */
+  --color-brand: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-dark: var(--brand-third);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-soft: var(--brand-accent-2);
+  --color-brand-light: var(--brand-light);
+  --color-brand-cream: var(--brand-cream);
+
+  --color-bg: var(--bg-default);
+  --color-surface: var(--bg-surface);
+  --color-surface-2: var(--bg-surface-2);
+
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-placeholder: var(--text-placeholder);
+
+  --color-line: var(--border-default);
+
+  --color-success: var(--status-success);
+  --color-success-bg: var(--status-success-bg);
+
+  /* --- shadcn names (components depend on these) --- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* radii (shadcn) */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* fonts */
+  --font-sans: "Inter", "Koh Santepheap", system-ui, sans-serif;
+  --font-khmer: "Koh Santepheap", "Inter", system-ui, sans-serif;
+}
+
+/* ============================================================
+   3. BASE STYLES
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    background-color: var(--bg-default);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  /* When the app language is Khmer, prefer Koh Santepheap */
+  :lang(km) body,
+  [lang="km"] {
+    font-family: var(--font-khmer);
+    /* Khmer script is taller — give it breathing room */
+    line-height: 1.8;
+  }
+
+  ::placeholder {
+    color: var(--text-placeholder);
+  }
+}
