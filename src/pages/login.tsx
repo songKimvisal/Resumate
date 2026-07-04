@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/UseAuth";
+import logo from "../assets/logo/resumate.png"; // ← adjust to your logo filename
 
 export default function Login() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -15,54 +16,113 @@ export default function Login() {
   }
 
   // Already signed in → skip the login page
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/~" replace />;
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-surface border border-line rounded-2xl p-8 space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-brand">ResuMate</h1>
-          <p className="text-text-secondary">{t("login.subtitle")}</p>
+    <div className="min-h-screen bg-bg flex items-center justify-center p-4 lg:p-10">
+      <div className="lg:h-[707px] w-full max-w-6xl grid lg:grid-cols-2 rounded-2xl overflow-hidden border border-line shadow-sm">
+        {/* ============ Left panel — brand ============ */}
+        <div className="relative hidden lg:flex flex-col justify-between bg-brand text-white p-12 overflow-hidden">
+          {/* decorative circles */}
+          <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10" />
+          <div className="absolute -bottom-32 -left-16 size-80 rounded-full bg-white/10" />
+
+          {/* logo */}
+          <img
+            src={logo}
+            alt="ResuMate"
+            className="relative h-14 w-auto self-start"
+          />
+
+          {/* headline */}
+          <div className="relative space-y-6">
+            <h2 className="text-5xl font-bold leading-tight">
+              {t("login.headline")}{" "}
+              <span className="italic">{t("login.headlineAccent")}</span>
+            </h2>
+            <p className="text-white/85 text-lg max-w-md">{t("login.pitch")}</p>
+          </div>
+
+          {/* stats */}
+          <div className="relative border-t border-white/30 pt-8 grid grid-cols-3 gap-6">
+            <div>
+              <p className="text-2xl font-bold">7</p>
+              <p className="text-white/85 text-sm">{t("login.statFeatures")}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">10</p>
+              <p className="text-white/85 text-sm">
+                {t("login.statTemplates")}
+              </p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">EN/KH</p>
+              <p className="text-white/85 text-sm">
+                {t("login.statBilingual")}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={signInWithGoogle}
-          className="w-full flex items-center justify-center gap-3 bg-brand text-white font-medium px-4 py-3 rounded-xl hover:opacity-90 transition-opacity"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.1h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.02.15 3.5 2.7.24.02c2.2-2 3.5-5 3.5-8.6z"
-              fill="currentColor"
-              opacity=".95"
-            />
-            <path
-              d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.2 0-5.8-2.1-6.8-4.9l-.14.01-3.6 2.8-.05.13C3.4 21.3 7.4 24 12 24z"
-              fill="currentColor"
-              opacity=".8"
-            />
-            <path
-              d="M5.2 14.5c-.25-.7-.4-1.5-.4-2.3s.15-1.6.4-2.3l-.01-.16-3.7-2.8-.12.06C.5 8.6 0 10.2 0 12s.5 3.4 1.4 4.9l3.8-2.4z"
-              fill="currentColor"
-              opacity=".65"
-            />
-            <path
-              d="M12 4.6c2.3 0 3.8 1 4.7 1.8l3.4-3.3C18 1.2 15.2 0 12 0 7.4 0 3.4 2.7 1.4 6.6l3.8 2.9C6.2 6.7 8.8 4.6 12 4.6z"
-              fill="currentColor"
-              opacity=".9"
-            />
-          </svg>
-          {t("login.google")}
-        </button>
+        {/* ============ Right panel — sign in ============ */}
+        <div className="bg-bg flex items-center justify-center p-8 lg:p-16">
+          <div className="w-full max-w-sm space-y-8">
+            {/* logo shown on mobile only, since left panel is hidden */}
+            <img src={logo} alt="ResuMate" className="h-12 w-auto lg:hidden" />
 
-        <p className="text-center text-sm text-text-placeholder">
-          {t("login.terms")}
-        </p>
+            <div className="space-y-3">
+              <h1 className="text-4xl font-bold text-text">
+                {t("login.welcome")}{" "}
+                <span className="text-brand italic">
+                  {t("login.welcomeAccent")}
+                </span>
+              </h1>
+              <p className="text-text-secondary">{t("login.subtitle")}</p>
+            </div>
+
+            <button
+              onClick={signInWithGoogle}
+              className="w-full flex items-center justify-center gap-3 bg-bg border border-line text-text font-medium px-4 py-3.5 rounded-xl hover:bg-surface-2 transition-colors"
+            >
+              {/* Google "G" in official colors */}
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+              >
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                />
+              </svg>
+              {t("login.google")}
+            </button>
+
+            <p className="text-sm text-text-placeholder">
+              {t("login.termsPrefix")}{" "}
+              <a href="/terms" className="text-brand hover:underline">
+                {t("login.termsLink")}
+              </a>{" "}
+              {t("login.termsAnd")}{" "}
+              <a href="/privacy" className="text-brand hover:underline">
+                {t("login.privacyLink")}
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

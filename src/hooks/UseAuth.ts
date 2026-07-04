@@ -16,11 +16,15 @@ export function useAuth() {
     // Keep session in sync (login, logout, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setLoading(false);
-    });
 
+      // Clean up the leftover "#" from the OAuth redirect
+      if (event === "SIGNED_IN" && window.location.hash === "#") {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    });
     return () => subscription.unsubscribe();
   }, []);
 
@@ -28,7 +32,7 @@ export function useAuth() {
     supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + "/dashboard",
+        redirectTo: window.location.origin,
       },
     });
 
