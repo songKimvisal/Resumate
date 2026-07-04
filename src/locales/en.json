@@ -1,4 +1,242 @@
 {
   "appName": "ResuMate",
-  "greeting": "Build your perfect resume"
+  "greeting": "Build your perfect resume",
+  "login": {
+    "welcome": "Welcome",
+    "welcomeAccent": "back.",
+    "subtitle": "Sign in with an account you already trust  no new password needed.",
+    "google": "Sign in with Google",
+    "headline": "Your career starts",
+    "headlineAccent": "here.",
+    "pitch": "One sign in. No password to remember. No fake accounts farming free templates.",
+    "statFeatures": "AI powered features",
+    "statTemplates": "Resume templates",
+    "statBilingual": "Bilingual interface",
+    "termsPrefix": "By continuing you agree to our",
+    "termsLink": "Terms",
+    "termsAnd": "and",
+    "privacyLink": "Privacy Policy"
+  },
+  "common": {
+    "loading": "Loading…"
+  },
+  "nav": {
+    "templates": "Templates",
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "login": "Log in",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "footer": {
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "aboutUs": "About us",
+    "contact": "Contact",
+    "careers": "Careers",
+    "privacy": "Privacy policy",
+    "terms": "Terms of service",
+    "refund": "Refund policy",
+    "tagline": "AI powered resume builder made for Cambodian job seekers.",
+    "follow": "Follow us for resume tips, job market updates, and new template drops."
+  },
+  "login": {
+    "welcome": "Welcome",
+    "welcomeAccent": "back.",
+    "subtitle": "Sign in with an account you already trust no new password needed.",
+    "google": "Sign in with Google",
+    "headline": "Your career starts",
+    "headlineAccent": "here.",
+    "pitch": "One sign in. No password to remember. No fake accounts farming free templates.",
+    "statFeatures": "AI powered features",
+    "statTemplates": "Resume templates",
+    "statBilingual": "Bilingual interface",
+    "termsPrefix": "By continuing you agree to our",
+    "termsLink": "Terms",
+    "termsAnd": "and",
+    "privacyLink": "Privacy Policy"
+  },
+  "home": {
+    "hero": {
+      "title": "Build your resume in",
+      "titleAccent": "minutes",
+      "titleEnd": ", not days.",
+      "subtitle": "ResuMate is Cambodia's AI powered career readiness platform. Build a professional resume, analyze any job ad, match your skills to the role, and prepare for your interview all in one place.",
+      "ctaPrimary": "Get started it's free",
+      "ctaSecondary": "Browse templates",
+      "ctaDashboard": "Go to Dashboard"
+    },
+    "industriesTitle": "Designed for Cambodian industries",
+    "industries": [
+      "Banking & Finance",
+      "NGO & Development",
+      "Tech & Startup",
+      "Hospitality",
+      "Fresh Graduate"
+    ],
+    "features": {
+      "title": "Everything you need to get",
+      "titleAccent": "hired.",
+      "subtitle": "11 AI powered features designed specifically for Cambodian fresh graduates and job seekers.",
+      "items": [
+        {
+          "title": "Step by step builder",
+          "desc": "No blank page. No confusion. Guided through every section one at a time."
+        },
+        {
+          "title": "AI design picker",
+          "desc": "Answer 3 questions or describe your vibe. AI picks the best layout, color, and font for your industry."
+        },
+        {
+          "title": "AI writing assistant",
+          "desc": "Type in simple words  AI rewrites it into professional English with action verbs."
+        },
+        {
+          "title": "Live split screen",
+          "desc": "See your resume updating in real time as you type. Always know what it looks like."
+        },
+        {
+          "title": "Resume score",
+          "desc": "Get a 0 to 100% score with a checklist showing exactly what to improve before you apply."
+        },
+        {
+          "title": "PDF export A4",
+          "desc": "One click clean A4 PDF. Cambodia standard. No watermarks on free plan."
+        },
+        {
+          "title": "Job ad analysis",
+          "desc": "Paste any Cambodian job posting. AI extracts every requirement, skill, and qualification."
+        },
+        {
+          "title": "Resume match engine",
+          "desc": "Compares your resume to the job ad and calculates a match score with gap analysis."
+        },
+        {
+          "title": "Improvement suggestions",
+          "desc": "Personalized, specific recommendations to improve your resume for the target role."
+        },
+        {
+          "title": "Interview prep",
+          "desc": "Questions based on your actual resume AND the job ad  not generic questions."
+        },
+        {
+          "title": "Job readiness report",
+          "desc": "The full picture your readiness score, strengths, gaps, and a clear action plan before you submit your application. Combines your resume analysis, job match results, and interview preparation into one comprehensive assessment."
+        }
+      ]
+    },
+    "steps": {
+      "title": "Job ready in",
+      "titleAccent": "seven steps.",
+      "subtitle": "From building your resume to knowing if you're ready to apply all in one place.",
+      "phase1": {
+        "badge": "Phase 1",
+        "label": "Build your resume",
+        "items": [
+          {
+            "title": "Pick your template",
+            "desc": "10 templates across 5 Cambodian industries. Or let AI pick based on your vibe."
+          },
+          {
+            "title": "Fill in your info",
+            "desc": "One section at a time. AI rewrites your words into professional English instantly."
+          },
+          {
+            "title": "Check your score",
+            "desc": "0–100% resume strength. Fix missing items. Download as A4 PDF."
+          }
+        ]
+      },
+      "phase2": {
+        "badge": "Phase 2",
+        "label": "Get job ready",
+        "items": [
+          {
+            "title": "Paste a job ad",
+            "desc": "Copy any posting from LinkedIn, CamHR, or BongThom. AI extracts all requirements."
+          },
+          {
+            "title": "See your match",
+            "desc": "Match score, missing skills, and qualification gaps between your resume and the job."
+          },
+          {
+            "title": "Improve & prepare",
+            "desc": "Personalized resume fixes + interview questions specific to the role you're targeting."
+          },
+          {
+            "title": "Get your readiness report",
+            "desc": "Your final score are you ready to apply? A clear action plan if you're not."
+          }
+        ]
+      }
+    },
+    "pricing": {
+      "title": "Simple,",
+      "titleAccent": "honest pricing.",
+      "subtitle": "Pay with ABA Pay or KHQR. No hidden fees. Cancel any time.",
+      "month": "month",
+      "mostPopular": "Most popular",
+      "plans": [
+        {
+          "name": "Free",
+          "price": "0",
+          "tagline": "Start your career journey with essential resume building tools.",
+          "includesLabel": "Includes",
+          "features": [
+            "3 resume templates",
+            "1 resume saved",
+            "PDF download (A4)",
+            "AI writing 5 uses / month",
+            "1 job analysis / month",
+            "1 resume match analysis / month",
+            "Basic job readiness report"
+          ],
+          "cta": "Get started free"
+        },
+        {
+          "name": "Starter",
+          "price": "2.99",
+          "tagline": "Build stronger applications and prepare confidently for your next opportunity.",
+          "includesLabel": "Everything in Free, plus",
+          "features": [
+            "All standard templates",
+            "Up to 5 resumes saved",
+            "50 AI writing credits / month",
+            "20 job analyses / month",
+            "20 interview question sets / month",
+            "Full job readiness reports",
+            "Resume improvement suggestions"
+          ],
+          "cta": "Upgrade to Starter",
+          "popular": true
+        },
+        {
+          "name": "Pro",
+          "price": "7.99",
+          "tagline": "Advance your career with deeper insights and personalized guidance.",
+          "includesLabel": "Everything in Starter, plus",
+          "features": [
+            "All standard + premium templates",
+            "Up to 20 resumes",
+            "300 AI writing credits / month",
+            "100 job & match analyses / month",
+            "Detailed skill gap analysis",
+            "100 interview question sets / month",
+            "Priority support & early access"
+          ],
+          "cta": "Upgrade to Pro"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Your next job",
+      "titleAccent": "starts here.",
+      "subtitle": "Join Cambodian graduates who stopped guessing and started preparing with ResuMate.",
+      "primary": "Build my resume now",
+      "secondary": "See how it works"
+    }
+  }
 }
