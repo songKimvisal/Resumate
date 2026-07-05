@@ -6,7 +6,7 @@ import Home from "./pages/Home";
 import Login from "./pages/login";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";
-
+import ScrollToTop from "./components/ScrollToTop";
 // Protected pages
 import Dashboard from "./pages/dashboard/Dashboard";
 import BuilderLayout from "./pages/builder/BuilderLayout";
@@ -16,6 +16,7 @@ import Settings from "./pages/settings/Settings";
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Public */}
         <Route path="/" element={<Home />} />
