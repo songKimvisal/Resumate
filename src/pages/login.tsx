@@ -36,7 +36,7 @@ export default function Login() {
 
           {/* headline */}
           <div className="relative space-y-6">
-            <h2 className="text-5xl font-bold leading-tight">
+            <h2 className="text-5xl font-bold leading-tight w-[284px]">
               {t("login.headline")}{" "}
               <span className="italic">{t("login.headlineAccent")}</span>
             </h2>

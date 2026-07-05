@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
 import Navbar from "../components/layout/Navbar";
@@ -10,7 +10,7 @@ import tpl2 from "../assets/templates/template-2.png";
 import tpl3 from "../assets/templates/template-3.png";
 import tpl4 from "../assets/templates/template-4.png";
 import tpl5 from "../assets/templates/template-5.png";
-
+import { useEffect } from "react";
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -19,6 +19,19 @@ const fadeUp = {
 };
 
 export default function Home() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const id = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (id) {
+      // wait one frame so the sections are rendered, then scroll
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        // clear the state so refresh/back doesn't re-scroll
+        window.history.replaceState({}, "");
+      }, 100);
+    }
+  }, [location.state]);
   const { t } = useTranslation();
   const { user } = useAuth();
   const industries = t("home.industries", { returnObjects: true }) as string[];
