@@ -54,7 +54,15 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur border-b border-line">
       <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
-        <Link to="/">
+        <Link
+          to="/"
+          onClick={(e) => {
+            if (location.pathname === "/") {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+        >
           <img src={logo} alt="ResuMate" className="h-9 w-auto" />
         </Link>
 
@@ -194,7 +202,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link to="/login">
-              <Button variant="outline" size="sm">
+              <Button variant={"outline"} size="compact">
                 {t("nav.login")}
               </Button>
             </Link>

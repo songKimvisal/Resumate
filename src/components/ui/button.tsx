@@ -4,29 +4,37 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  // base styles shared by every variant
-  'inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[26px] text-sm font-medium whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/85",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         outline:
           "border border-border bg-background text-foreground hover:bg-muted",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/70",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "text-foreground hover:bg-muted",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         link: "text-primary underline-offset-4 hover:underline",
       },
+
       size: {
-        default: "h-9 px-4",
-        sm: "h-8 px-3 text-[0.8rem]",
-        lg: "h-10 px-5",
-        icon: "size-9",
-        "icon-sm": "size-8",
+        // Primary button (Figma)
+        default: "px-8 py-[15px]",
+
+        // Small / Secondary button (Figma)
+        compact: "px-[14px] py-2 text-sm",
+
+        // Large button
+        lg: "px-10 py-4 text-base",
+
+        // Icon buttons
+        icon: "size-10 p-0",
+        "icon-sm": "size-8 p-0",
       },
     },
+
     defaultVariants: {
       variant: "default",
       size: "default",
@@ -52,6 +60,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
   },
 );
+
 Button.displayName = "Button";
 
 export { Button, buttonVariants };
