@@ -7,6 +7,9 @@
 /* Class-based dark mode: toggling `dark` on <html> switches themes */
 @custom-variant dark (&:is(.dark *));
 
+/* Khmer-only variant: use like `km:text-5xl` or `km:leading-snug` */
+@custom-variant km (&:where(:lang(km), :lang(km) *));
+
 /* ============================================================
    1. DESIGN TOKENS — from Figma variables (source of truth)
    Light theme = :root, dark theme = .dark
@@ -218,11 +221,36 @@
   :lang(km) body,
   [lang="km"] {
     font-family: var(--font-khmer);
-    /* Khmer script is taller — give it breathing room */
-    line-height: 1.8;
   }
 
   ::placeholder {
     color: var(--text-placeholder);
+  }
+
+  /* ============================================================
+     Khmer typography
+     Khmer stacks vowels above and subscripts below the baseline,
+     so it needs taller line-height than Latin.
+     Sets it for ALL Khmer text via Tailwind's --tw-leading hook:
+     text-* utilities pick it up automatically, and leading-*
+     classes still override when needed (zero specificity via
+     :where).
+     ============================================================ */
+
+  /* everything: covers spans, divs, unclassed text, any text-* size */
+  :where(:lang(km), :lang(km) *) {
+    --tw-leading: 1.8;
+    line-height: 1.8;
+  }
+
+  /* headings a bit tighter than body */
+  :where(:lang(km) :is(h1, h2, h3, h4, h5, h6)) {
+    --tw-leading: 1.55;
+    line-height: 1.55;
+  }
+
+  /* tracking-* breaks Khmer cluster shaping; Khmer has no uppercase */
+  :lang(km) * {
+    letter-spacing: normal !important;
   }
 }
