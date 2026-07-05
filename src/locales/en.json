@@ -1,22 +1,4 @@
 {
-  "appName": "ResuMate",
-  "greeting": "Build your perfect resume",
-  "login": {
-    "welcome": "Welcome",
-    "welcomeAccent": "back.",
-    "subtitle": "Sign in with an account you already trust  no new password needed.",
-    "google": "Sign in with Google",
-    "headline": "Your career starts",
-    "headlineAccent": "here.",
-    "pitch": "One sign in. No password to remember. No fake accounts farming free templates.",
-    "statFeatures": "AI powered features",
-    "statTemplates": "Resume templates",
-    "statBilingual": "Bilingual interface",
-    "termsPrefix": "By continuing you agree to our",
-    "termsLink": "Terms",
-    "termsAnd": "and",
-    "privacyLink": "Privacy Policy"
-  },
   "common": {
     "loading": "Loading…"
   },
@@ -26,9 +8,7 @@
     "pricing": "Pricing",
     "about": "About",
     "login": "Log in",
-    "dashboard": "Dashboard",
-    "settings": "Settings",
-    "logout": "Log out"
+    "dashboard": "Dashboard"
   },
   "footer": {
     "product": "Product",
@@ -92,7 +72,7 @@
         },
         {
           "title": "AI writing assistant",
-          "desc": "Type in simple words  AI rewrites it into professional English with action verbs."
+          "desc": "Type in simple words AI rewrites it into professional English with action verbs."
         },
         {
           "title": "Live split screen",
@@ -120,7 +100,7 @@
         },
         {
           "title": "Interview prep",
-          "desc": "Questions based on your actual resume AND the job ad  not generic questions."
+          "desc": "Questions based on your actual resume AND the job ad not generic questions."
         },
         {
           "title": "Job readiness report",
@@ -237,6 +217,86 @@
       "subtitle": "Join Cambodian graduates who stopped guessing and started preparing with ResuMate.",
       "primary": "Build my resume now",
       "secondary": "See how it works"
+    }
+  },
+  "about": {
+    "hero": {
+      "title": "Built in Cambodia,",
+      "titleAccent": "for Cambodia.",
+      "subtitle": "ResuMate started with a simple frustration: too many talented students were paying strangers on Facebook just to get a resume that they couldn't even edit afterward."
+    },
+    "story": {
+      "label": "Why we started",
+      "title": "The $2.99 problem nobody",
+      "titleAccent": "talked about",
+      "p1": "Every year, thousands of students graduate from universities across Cambodia ready to start their careers. But there is a quiet barrier between them and their first job application: the resume.",
+      "p2": "Without an affordable, locally built tool, most job seekers turn to informal resume writers on Facebook and Telegram paying two to six dollars each time, waiting days for a draft, and ending up with a file they cannot edit themselves when something needs to change.",
+      "quote": "\"We didn't want to build another resume tool. We wanted to build the tool we wished existed when we were applying for our first jobs.\"",
+      "p3": "That's why ResuMate exists free to start, bilingual, AI assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
+    },
+    "stats": {
+      "free": "To get started always free",
+      "features": "AI powered features",
+      "templates": "Templates across 5 industries",
+      "bilingual": "Bilingual from day one"
+    },
+    "mission": {
+      "label": "Our mission",
+      "title": "Make a great resume accessible to every",
+      "titleAccent": "Cambodian job seeker.",
+      "subtitle": "We believe where you went to university or how confident your English is shouldn't decide whether you get a fair shot at a job interview.",
+      "cards": [
+        {
+          "title": "Affordable for everyone",
+          "desc": "A generous free plan and Pro pricing built around what a Cambodian student can actually afford not US software pricing."
+        },
+        {
+          "title": "Built for two languages",
+          "desc": "Read every instruction in Khmer or English, while your resume content stays in English exactly what employers expect."
+        },
+        {
+          "title": "Beyond the resume",
+          "desc": "Most platforms stop once the resume is done. ResuMate continues analyzing job ads, matching your skills, and preparing you for the interview."
+        }
+      ]
+    },
+    "principles": {
+      "label": "Our principles",
+      "title": "The principles behind",
+      "titleAccent": "every decision.",
+      "items": [
+        {
+          "title": "Free should mean free",
+          "desc": "No surprise paywall before downloading. Our free plan gives a real, usable resume not a teaser that locks the PDF until you pay."
+        },
+        {
+          "title": "Built for Cambodia first",
+          "desc": "Every template, price, and payment method (KHQR, ABA Pay) is designed around how Cambodians actually work and pay not adapted from a US product."
+        },
+        {
+          "title": "Guidance over judgment",
+          "desc": "If you have no work experience, we don't leave you stuck with a blank form. We show you exactly what counts and help you write it in professional English."
+        },
+        {
+          "title": "Your data stays yours",
+          "desc": "Your resume is always editable, exportable, and under your control never locked into our platform. Download it once and it is yours forever."
+        }
+      ]
+    },
+    "founder": {
+      "label": "Who's behind it",
+      "title": "A solo project,",
+      "titleAccent": "built with care.",
+      "name": "Song Kimvisal",
+      "role": "Founder & Developer",
+      "bio": "A Bachelor of Software Engineering student in Multimedia at Limkokwing University Cambodia, building ResuMate as a final year project rooted in a real problem seen across Cambodian university campuses and a belief that good design, AI assistance, and career readiness tools should not be reserved for expensive Western platforms."
+    },
+    "cta": {
+      "title": "Ready to build your",
+      "titleAccent": "own resume?",
+      "subtitle": "Join Cambodian graduates who stopped paying for resumes and started building their own free, fast, and actually editable.",
+      "primary": "Get started free",
+      "secondary": "Browse templates"
     }
   }
 }
