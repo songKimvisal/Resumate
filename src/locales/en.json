@@ -298,5 +298,77 @@
       "primary": "Get started free",
       "secondary": "Browse templates"
     }
+  },
+  "builder": {
+    "steps": [
+      "Personal info",
+      "Experience",
+      "Education",
+      "Skills & more",
+      "Review"
+    ],
+    "comingSoon": "Coming soon",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "stepOf": "Step {{current}} of {{total}}",
+    "saved": "All changes saved",
+    "unsaved": "Unsaved changes",
+    "livePreview": "Live preview",
+    "closePreview": "Close preview",
+    "customize": "Customize",
+    "accentColor": "Accent color",
+    "fontSize": "Font size",
+    "tipsTitle": "Quick tip",
+    "tips": [
+      "Use an email and phone number you actually check recruiters reach out here first.",
+      "Start each bullet with an action verb and add a number where you can, e.g. \"increased sales by 20%\".",
+      "List your most recent degree first, and only include your GPA if it's strong.",
+      "Pick skills that match the job description quality beats a long list.",
+      "Read your resume out loud once before saving. It's the fastest way to catch typos."
+    ],
+    "fontSizes": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large"
+    },
+    "personal": {
+      "title": "Personal information",
+      "subtitle": "Start with the basics this appears at the top of your resume.",
+      "fullName": "Full name (English)",
+      "jobTitle": "Job title",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "image": "Image",
+      "uploadPhoto": "Upload photo",
+      "removePhoto": "Remove photo",
+      "photoFit": {
+        "fill": "Fill",
+        "fit": "Fit",
+        "crop": "Crop"
+      },
+      "dragToReposition": "Drag to reposition",
+      "summary": "Summary",
+      "summaryHint": "2–3 sentences about who you are and what you bring.",
+      "summaryPlaceholder": "Motivated accounting graduate with internship experience at a microfinance institution...",
+      "aiRewrite": "AI rewrite",
+      "addDetails": "Add details",
+      "removeField": "Remove field",
+      "addAnotherLink": "Add another link",
+      "invalidLink": "Enter a valid link (e.g. github.com/sokdara)",
+      "linkUrl": "Link URL",
+      "details": {
+        "nationality": "Nationality",
+        "portfolio": "Portfolio",
+        "linkedin": "LinkedIn",
+        "website": "Website",
+        "passportId": "Passport or ID",
+        "github": "GitHub",
+        "stackoverflow": "Stack Overflow",
+        "gitlab": "GitLab",
+        "telegram": "Telegram"
+      }
+    }
   }
 }
