@@ -1,0 +1,216 @@
+import { create } from "zustand";
+import type {
+  Resume,
+  PersonalInfo,
+  ExperienceItem,
+  EducationItem,
+  SkillItem,
+  LanguageItem,
+  Customization,
+} from "../types/resume";
+import { emptyResume } from "../types/resume";
+
+/** Generates ids for list items (experience entries, skills, ...) */
+export const uid = () => crypto.randomUUID();
+
+interface ResumeState {
+  resume: Resume;
+  /** true when there are changes not yet saved to Supabase */
+  dirty: boolean;
+
+  setResume: (resume: Resume) => void;
+  resetResume: () => void;
+  setTitle: (title: string) => void;
+  markSaved: (id?: string) => void;
+
+  updatePersonal: (patch: Partial<PersonalInfo>) => void;
+  updateCustomization: (patch: Partial<Customization>) => void;
+
+  addExperience: () => void;
+  updateExperience: (id: string, patch: Partial<ExperienceItem>) => void;
+  removeExperience: (id: string) => void;
+
+  addEducation: () => void;
+  updateEducation: (id: string, patch: Partial<EducationItem>) => void;
+  removeEducation: (id: string) => void;
+
+  addSkill: (name?: string) => void;
+  updateSkill: (id: string, patch: Partial<SkillItem>) => void;
+  removeSkill: (id: string) => void;
+
+  addLanguage: (name?: string) => void;
+  updateLanguage: (id: string, patch: Partial<LanguageItem>) => void;
+  removeLanguage: (id: string) => void;
+}
+
+export const useResumeStore = create<ResumeState>((set) => ({
+  resume: emptyResume,
+  dirty: false,
+
+  setResume: (resume) => set({ resume, dirty: false }),
+  resetResume: () => set({ resume: emptyResume, dirty: false }),
+  setTitle: (title) =>
+    set((s) => ({ resume: { ...s.resume, title }, dirty: true })),
+  markSaved: (id) =>
+    set((s) => ({
+      resume: id ? { ...s.resume, id } : s.resume,
+      dirty: false,
+    })),
+
+  updatePersonal: (patch) =>
+    set((s) => ({
+      resume: { ...s.resume, personal: { ...s.resume.personal, ...patch } },
+      dirty: true,
+    })),
+
+  updateCustomization: (patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        customization: { ...s.resume.customization, ...patch },
+      },
+      dirty: true,
+    })),
+
+  /* ---------- experience ---------- */
+  addExperience: () =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        experience: [
+          ...s.resume.experience,
+          {
+            id: uid(),
+            jobTitle: "",
+            company: "",
+            location: "",
+            startDate: "",
+            endDate: "",
+            current: false,
+            description: "",
+          },
+        ],
+      },
+      dirty: true,
+    })),
+  updateExperience: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        experience: s.resume.experience.map((e) =>
+          e.id === id ? { ...e, ...patch } : e,
+        ),
+      },
+      dirty: true,
+    })),
+  removeExperience: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        experience: s.resume.experience.filter((e) => e.id !== id),
+      },
+      dirty: true,
+    })),
+
+  /* ---------- education ---------- */
+  addEducation: () =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        education: [
+          ...s.resume.education,
+          {
+            id: uid(),
+            school: "",
+            degree: "",
+            field: "",
+            startDate: "",
+            endDate: "",
+            current: false,
+            description: "",
+          },
+        ],
+      },
+      dirty: true,
+    })),
+  updateEducation: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        education: s.resume.education.map((e) =>
+          e.id === id ? { ...e, ...patch } : e,
+        ),
+      },
+      dirty: true,
+    })),
+  removeEducation: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        education: s.resume.education.filter((e) => e.id !== id),
+      },
+      dirty: true,
+    })),
+
+  /* ---------- skills ---------- */
+  addSkill: (name = "") =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        skills: [
+          ...s.resume.skills,
+          { id: uid(), name, level: "intermediate" },
+        ],
+      },
+      dirty: true,
+    })),
+  updateSkill: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        skills: s.resume.skills.map((sk) =>
+          sk.id === id ? { ...sk, ...patch } : sk,
+        ),
+      },
+      dirty: true,
+    })),
+  removeSkill: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        skills: s.resume.skills.filter((sk) => sk.id !== id),
+      },
+      dirty: true,
+    })),
+
+  /* ---------- languages ---------- */
+  addLanguage: (name = "") =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        languages: [
+          ...s.resume.languages,
+          { id: uid(), name, level: "conversational" },
+        ],
+      },
+      dirty: true,
+    })),
+  updateLanguage: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        languages: s.resume.languages.map((l) =>
+          l.id === id ? { ...l, ...patch } : l,
+        ),
+      },
+      dirty: true,
+    })),
+  removeLanguage: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        languages: s.resume.languages.filter((l) => l.id !== id),
+      },
+      dirty: true,
+    })),
+}));
