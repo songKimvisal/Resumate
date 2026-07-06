@@ -8,6 +8,7 @@ import {
   useTransform,
   animate,
 } from "motion/react";
+import { DollarSign, Globe, Sparkles } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
@@ -75,46 +76,9 @@ function CountUp({
 /* ---------- icons for the mission cards ---------- */
 
 const missionIcons = [
-  /* dollar */
-  <svg
-    key="d"
-    width="26"
-    height="26"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-  >
-    <circle cx="12" cy="12" r="9.5" />
-    <path d="M15 8.8c-.6-1-1.7-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.4-1.3 2.3-3 2.3-1.4 0-2.6-.6-3.2-1.7M12 5.8v12.4" />
-  </svg>,
-  /* globe */
-  <svg
-    key="g"
-    width="26"
-    height="26"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <circle cx="12" cy="12" r="9.5" />
-    <path d="M2.5 12h19M12 2.5c2.7 2.6 4 5.9 4 9.5s-1.3 6.9-4 9.5c-2.7-2.6-4-5.9-4-9.5s1.3-6.9 4-9.5Z" />
-  </svg>,
-  /* sparkle */
-  <svg
-    key="s"
-    width="26"
-    height="26"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinejoin="round"
-  >
-    <path d="M12 3c.8 4.9 4.1 8.2 9 9-4.9.8-8.2 4.1-9 9-.8-4.9-4.1-8.2-9-9 4.9-.8 8.2-4.1 9-9Z" />
-  </svg>,
+  <DollarSign key="d" size={26} strokeWidth={1.8} />,
+  <Globe key="g" size={26} strokeWidth={1.8} />,
+  <Sparkles key="s" size={26} strokeWidth={1.8} />,
 ];
 
 export default function About() {

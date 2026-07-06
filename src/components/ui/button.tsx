@@ -26,6 +26,12 @@ const buttonVariants = cva(
         // Small / Secondary button (Figma)
         compact: "px-[14px] py-2 text-sm",
 
+        // Extra small button
+        sm: "px-3 py-1.5 text-xs",
+
+        // Tiny button
+        xs: "px-2.5 py-1 text-xs",
+
         // Large button
         lg: "px-10 py-4 text-base",
 

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
+import { CircleCheck } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
@@ -315,20 +316,11 @@ export default function Home() {
                 <ul className="space-y-2.5">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2.5 text-sm">
-                      <svg
+                      <CircleCheck
                         className="text-brand shrink-0 mt-0.5"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
-                        <path d="m8.5 12 2.5 2.5 4.5-5" />
-                      </svg>
+                        size={16}
+                        strokeWidth={2.5}
+                      />
                       {f}
                     </li>
                   ))}
