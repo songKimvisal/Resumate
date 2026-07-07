@@ -74,19 +74,32 @@ export default function BuilderLayout() {
   // native sticky behavior wasn't holding inside this grid layout
   const previewWrapperRef = useRef<HTMLDivElement>(null);
   const previewPanelRef = useRef<HTMLDivElement>(null);
+  const previewHeaderRef = useRef<HTMLDivElement>(null);
+  // measures the resume content itself (never clamped by the pinned panel's
+  // scroll area's max-height), so the wrapper always reserves the true,
+  // un-clipped height — otherwise once pinned, the clamped height feeds
+  // back in and the reserved space collapses to ~one page even when the
+  // resume has more.
+  const previewContentRef = useRef<HTMLButtonElement>(null);
   const [previewPanelHeight, setPreviewPanelHeight] = useState(0);
+  const [previewHeaderHeight, setPreviewHeaderHeight] = useState(0);
   const [previewFixedRect, setPreviewFixedRect] = useState<{
     left: number;
     width: number;
   } | null>(null);
 
   useEffect(() => {
-    const panel = previewPanelRef.current;
-    if (!panel) return;
-    const observer = new ResizeObserver(([entry]) =>
-      setPreviewPanelHeight(entry.contentRect.height),
-    );
-    observer.observe(panel);
+    const header = previewHeaderRef.current;
+    const content = previewContentRef.current;
+    if (!header || !content) return;
+    const update = () => {
+      setPreviewHeaderHeight(header.offsetHeight);
+      setPreviewPanelHeight(header.offsetHeight + content.offsetHeight);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(header);
+    observer.observe(content);
     return () => observer.disconnect();
   }, []);
 
@@ -225,9 +238,6 @@ export default function BuilderLayout() {
         >
           <div
             ref={previewPanelRef}
-            className={cn(
-              previewFixedRect && "scrollbar-thin overflow-y-auto",
-            )}
             style={
               previewFixedRect
                 ? {
@@ -235,14 +245,11 @@ export default function BuilderLayout() {
                     top: stepBarHeight,
                     left: previewFixedRect.left,
                     width: previewFixedRect.width,
-                    // leave room for the floating bottom bar so the pinned
-                    // preview never hides its own controls behind it
-                    maxHeight: `calc(100vh - ${stepBarHeight}px - 4.5rem)`,
                   }
                 : undefined
             }
           >
-            <div className="flex items-center justify-between mb-5">
+            <div ref={previewHeaderRef} className="flex items-center justify-between mb-5">
               {/* customize popover */}
               <div className="relative">
                 <Button
@@ -309,13 +316,29 @@ export default function BuilderLayout() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setPreviewOpen(true)}
-              className="block w-full text-left cursor-zoom-in"
+            <div
+              className={cn(
+                previewFixedRect && "scrollbar-thin overflow-y-auto",
+              )}
+              style={
+                previewFixedRect
+                  ? {
+                      // leave room for the floating bottom bar so the pinned
+                      // preview never hides its own controls behind it
+                      maxHeight: `calc(100vh - ${stepBarHeight}px - 4.5rem - ${previewHeaderHeight}px)`,
+                    }
+                  : undefined
+              }
             >
-              <ResumePreview />
-            </button>
+              <button
+                ref={previewContentRef}
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="block w-full text-left cursor-zoom-in"
+              >
+                <ResumePreview />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -323,32 +346,41 @@ export default function BuilderLayout() {
       {/* ================= preview overlay ================= */}
       <AnimatePresence>
         {previewOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setPreviewOpen(false)}
-          >
+          <>
             <motion.div
-              className="relative w-full max-w-md sm:max-w-lg"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPreviewOpen(false)}
             >
-              <button
-                type="button"
-                onClick={() => setPreviewOpen(false)}
-                aria-label={t("builder.closePreview")}
-                className="absolute -top-11 right-0 size-8 rounded-full bg-white/10 text-white hover:bg-white/20 inline-flex items-center justify-center transition-colors"
+              <motion.div
+                className="relative w-[max(16rem,min(30rem,calc((100vh_-_9rem)*0.7071)))]"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <X size={18} strokeWidth={2} />
-              </button>
-              <ResumePreview />
+                <ResumePreview pageLabelClassName="text-white/80" />
+              </motion.div>
             </motion.div>
-          </motion.div>
+
+            {/* fixed to the viewport (not the scrollable content) so it
+                stays reachable no matter how far you've scrolled through a
+                multi-page resume, with strong contrast against any page */}
+            <motion.button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              aria-label={t("builder.closePreview")}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed top-4 right-4 z-[60] size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
+            >
+              <X size={18} strokeWidth={2} />
+            </motion.button>
+          </>
         )}
       </AnimatePresence>
 

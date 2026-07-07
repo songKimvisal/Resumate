@@ -317,6 +317,8 @@
     "livePreview": "Live preview",
     "closePreview": "Close preview",
     "customize": "Customize",
+    "downloadPdf": "Download PDF",
+    "downloadingPdf": "Preparing…",
     "accentColor": "Accent color",
     "fontSize": "Font size",
     "tipsTitle": "Quick tip",

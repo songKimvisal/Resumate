@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Briefcase,
-  ChevronDown,
-  ChevronUp,
   Eye,
   EyeOff,
   GraduationCap,
@@ -47,6 +45,8 @@ export default function Step2Experience() {
   const [expandedId, setExpandedId] = useState<string | null>(
     experience.length > 0 ? experience[experience.length - 1].id : null,
   );
+  // briefly highlights + scrolls to the entry that was just added
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   // modal shows until the user has made a choice (or already has entries)
   const [modalDismissed, setModalDismissed] = useState(false);
@@ -63,7 +63,9 @@ export default function Step2Experience() {
     addExperience();
     // the new entry is appended — expand it once state settles
     const list = useResumeStore.getState().resume.experience;
-    setExpandedId(list[list.length - 1].id);
+    const newId = list[list.length - 1].id;
+    setExpandedId(newId);
+    setJustAddedId(newId);
   };
 
   return (
@@ -114,15 +116,12 @@ export default function Step2Experience() {
                 if (dragId) reorderExperience(dragId, exp.id);
                 setDragId(null);
               }}
-              onMoveUp={
-                i > 0
-                  ? () => reorderExperience(exp.id, experience[i - 1].id)
-                  : undefined
-              }
-              onMoveDown={
-                i < experience.length - 1
-                  ? () => reorderExperience(exp.id, experience[i + 1].id)
-                  : undefined
+              isNew={justAddedId === exp.id}
+              onEntranceComplete={() =>
+                setTimeout(
+                  () => setJustAddedId((cur) => (cur === exp.id ? null : cur)),
+                  900,
+                )
               }
               t={t}
             />
@@ -132,7 +131,11 @@ export default function Step2Experience() {
 
       {/* ---------- add button ---------- */}
       {(choice === "has" || experience.length > 0) && (
-        <Button className="w-full" size="compact" onClick={addExperienceExpanded}>
+        <Button
+          className="w-full"
+          size="compact"
+          onClick={addExperienceExpanded}
+        >
           {t("builder.experience.addAnother")}
         </Button>
       )}
@@ -245,8 +248,8 @@ function ExperienceCard({
   draggable,
   onDragStart,
   onDropOn,
-  onMoveUp,
-  onMoveDown,
+  isNew,
+  onEntranceComplete,
   t,
 }: {
   index: number;
@@ -258,8 +261,8 @@ function ExperienceCard({
   draggable: boolean;
   onDragStart: () => void;
   onDropOn: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  isNew?: boolean;
+  onEntranceComplete?: () => void;
   t: (key: string) => string;
 }) {
   const dates =
@@ -267,14 +270,32 @@ function ExperienceCard({
       ? `${fmtDate(exp.startDate)} – ${exp.current ? t("builder.experience.present") : fmtDate(exp.endDate)}`
       : "";
 
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // scroll the freshly-added entry into view, since it can land below the fold.
+  // Deferred a frame so it doesn't compete with the mount/entrance work below.
+  useEffect(() => {
+    if (!isNew) return;
+    const raf = requestAnimationFrame(() => {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <motion.div
-      layout
+      ref={cardRef}
+      layout="position"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-      className="rounded-xl border border-line overflow-hidden"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+      transition={{ type: "tween", duration: 0.28, ease: "easeOut" }}
+      onAnimationComplete={() => isNew && onEntranceComplete?.()}
+      className={cn(
+        "rounded-xl border overflow-hidden transition-colors duration-500",
+        isNew ? "border-brand ring-2 ring-brand/30" : "border-line",
+      )}
     >
       {/* ---------- card header ---------- */}
       <div
@@ -324,101 +345,99 @@ function ExperienceCard({
         </button>
       </div>
 
-      {/* ---------- card body ---------- */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-          >
-            <div className="p-4 md:p-5 space-y-4 bg-bg">
-              <Input
-                label={t("builder.experience.jobTitle")}
-                placeholder="Junior Accountant"
-                value={exp.jobTitle}
-                onChange={(e) => onChange({ jobTitle: e.target.value })}
-              />
+      {/* ---------- card body ----------
+          Stays mounted at all times (just height-animated) instead of being
+          unmounted on collapse — re-mounting on every expand meant the rich
+          text editor below had to reinitialize each time, which is what made
+          the expand feel laggy. */}
+      <motion.div
+        initial={false}
+        animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="overflow-hidden"
+      >
+        <div className="p-4 md:p-5 space-y-4 bg-bg" inert={!expanded}>
+          <Input
+            label={t("builder.experience.jobTitle")}
+            placeholder="Junior Accountant"
+            value={exp.jobTitle}
+            onChange={(e) => onChange({ jobTitle: e.target.value })}
+          />
 
-              <Input
-                label={t("builder.experience.company")}
-                placeholder="ABA Bank"
-                value={exp.company}
-                onChange={(e) => onChange({ company: e.target.value })}
-              />
+          <Input
+            label={t("builder.experience.company")}
+            placeholder="ABA Bank"
+            value={exp.company}
+            onChange={(e) => onChange({ company: e.target.value })}
+          />
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Input
-                  label={t("builder.experience.location")}
-                  placeholder="Phnom Penh, Cambodia"
-                  value={exp.location}
-                  onChange={(e) => onChange({ location: e.target.value })}
-                />
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-text">
-                    {t("builder.experience.duration")}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0">
-                      <Input
-                        type="month"
-                        value={exp.startDate}
-                        max={exp.endDate || undefined}
-                        onChange={(e) =>
-                          onChange({ startDate: e.target.value })
-                        }
-                      />
-                    </div>
-                    <span className="text-text-placeholder shrink-0">–</span>
-                    <div className="flex-1 min-w-0">
-                      <Input
-                        type="month"
-                        className={exp.current ? "opacity-50" : undefined}
-                        value={exp.endDate}
-                        min={exp.startDate || undefined}
-                        disabled={exp.current}
-                        onChange={(e) => onChange({ endDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exp.current}
-                      onChange={(e) =>
-                        onChange({ current: e.target.checked, endDate: "" })
-                      }
-                      className="accent-brand"
-                    />
-                    {t("builder.experience.current")}
-                  </label>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input
+              label={t("builder.experience.location")}
+              placeholder="Phnom Penh, Cambodia"
+              value={exp.location}
+              onChange={(e) => onChange({ location: e.target.value })}
+            />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text">
+                {t("builder.experience.duration")}
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <Input
+                    type="month"
+                    value={exp.startDate}
+                    max={exp.endDate || undefined}
+                    onChange={(e) => onChange({ startDate: e.target.value })}
+                  />
+                </div>
+                <span className="text-text-placeholder shrink-0">–</span>
+                <div className="flex-1 min-w-0">
+                  <Input
+                    type="month"
+                    className={exp.current ? "opacity-50" : undefined}
+                    value={exp.endDate}
+                    min={exp.startDate || undefined}
+                    disabled={exp.current}
+                    onChange={(e) => onChange({ endDate: e.target.value })}
+                  />
                 </div>
               </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-text">
-                    {t("builder.experience.achievements")}
-                  </label>
-                  <Button size="sm" title={t("builder.comingSoon")}>
-                    <Sparkles size={14} />
-                    {t("builder.personal.aiRewrite")}
-                  </Button>
-                </div>
-                <RichTextEditor
-                  value={exp.description}
-                  onChange={(description) => onChange({ description })}
-                  placeholder={t("builder.experience.achievementsPlaceholder")}
+              <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={exp.current}
+                  onChange={(e) =>
+                    onChange({ current: e.target.checked, endDate: "" })
+                  }
+                  className="accent-brand"
                 />
-                <p className="text-xs text-text-placeholder">
-                  {t("builder.experience.achievementsHint")}
-                </p>
-              </div>
+                {t("builder.experience.current")}
+              </label>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-text">
+                {t("builder.experience.achievements")}
+              </label>
+              <Button size="sm" title={t("builder.comingSoon")}>
+                <Sparkles size={14} />
+                {t("builder.personal.aiRewrite")}
+              </Button>
+            </div>
+            <RichTextEditor
+              value={exp.description}
+              onChange={(description) => onChange({ description })}
+              placeholder={t("builder.experience.achievementsPlaceholder")}
+            />
+            <p className="text-xs text-text-placeholder">
+              {t("builder.experience.achievementsHint")}
+            </p>
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
