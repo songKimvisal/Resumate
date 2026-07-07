@@ -122,10 +122,10 @@ export default function ResumePreview() {
                   <div className="flex justify-between gap-3 items-baseline">
                     <p className="font-semibold text-[0.95em]">
                       {exp.jobTitle || "Job title"}
-                      {exp.company && (
+                      {(exp.company || exp.location) && (
                         <span className="font-normal text-neutral-600">
                           {" "}
-                          — {exp.company}
+                          — {[exp.company, exp.location].filter(Boolean).join(", ")}
                         </span>
                       )}
                     </p>
@@ -135,23 +135,11 @@ export default function ResumePreview() {
                       {exp.current ? "Present" : fmtDate(exp.endDate)}
                     </p>
                   </div>
-                  {exp.description && (
-                    <ul className="mt-1 space-y-0.5">
-                      {exp.description
-                        .split("\n")
-                        .filter(Boolean)
-                        .map((line, i) => (
-                          <li
-                            key={i}
-                            className="text-[0.85em] leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-1"
-                            style={
-                              { "--tw-content": "•" } as React.CSSProperties
-                            }
-                          >
-                            {line.replace(/^[-•]\s*/, "")}
-                          </li>
-                        ))}
-                    </ul>
+                  {hasText(exp.description) && (
+                    <div
+                      className="rte-content mt-1 text-[0.85em] leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: exp.description }}
+                    />
                   )}
                 </div>
               ))}

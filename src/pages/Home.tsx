@@ -210,7 +210,7 @@ export default function Home() {
             {t("home.steps.subtitle")}
           </motion.p>
 
-          <div className="mt-14 grid md:grid-cols-2 gap-16">
+          <div className="mt-14 grid md:grid-cols-2 gap-16 ">
             {[
               {
                 badge: t("home.steps.phase1.badge"),
