@@ -29,6 +29,9 @@ interface ResumeState {
   addExperience: () => void;
   updateExperience: (id: string, patch: Partial<ExperienceItem>) => void;
   removeExperience: (id: string) => void;
+  /** Move the entry with dragId to the position of overId */
+  reorderExperience: (dragId: string, overId: string) => void;
+  setExperienceChoice: (choice: Resume["experienceChoice"]) => void;
 
   addEducation: () => void;
   updateEducation: (id: string, patch: Partial<EducationItem>) => void;
@@ -109,6 +112,22 @@ export const useResumeStore = create<ResumeState>((set) => ({
         ...s.resume,
         experience: s.resume.experience.filter((e) => e.id !== id),
       },
+      dirty: true,
+    })),
+  reorderExperience: (dragId, overId) =>
+    set((s) => {
+      if (dragId === overId) return s;
+      const list = [...s.resume.experience];
+      const from = list.findIndex((e) => e.id === dragId);
+      const to = list.findIndex((e) => e.id === overId);
+      if (from === -1 || to === -1) return s;
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      return { resume: { ...s.resume, experience: list }, dirty: true };
+    }),
+  setExperienceChoice: (choice) =>
+    set((s) => ({
+      resume: { ...s.resume, experienceChoice: choice },
       dirty: true,
     })),
 
