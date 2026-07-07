@@ -48,7 +48,7 @@ export interface ExperienceItem {
   startDate: string; // "2023-06" (month input format)
   endDate: string; // "" while current
   current: boolean;
-  description: string; // bullet points, one per line
+  description: string; // rich-text HTML, same format as PersonalInfo.summary
 }
 
 export interface EducationItem {
@@ -83,6 +83,8 @@ export interface Customization {
 export interface Resume {
   id: string | null; // Supabase row id (null until first save)
   title: string; // internal name, e.g. "Bank teller resume"
+  /** Step 2 entry choice: has experience, none (fresh graduate), or not asked yet */
+  experienceChoice: "has" | "none" | null;
   personal: PersonalInfo;
   experience: ExperienceItem[];
   education: EducationItem[];
@@ -94,6 +96,7 @@ export interface Resume {
 export const emptyResume: Resume = {
   id: null,
   title: "Untitled resume",
+  experienceChoice: null,
   personal: {
     fullName: "",
     jobTitle: "",

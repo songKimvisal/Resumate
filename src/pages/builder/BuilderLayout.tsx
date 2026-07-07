@@ -8,6 +8,7 @@ import { useResumeStore } from "../../store/resumeStore";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
 import Step1Personal from "./Step1Personal";
+import Step2Experience from "./Step2experience";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
 import { cn } from "../../lib/utils";
@@ -205,7 +206,8 @@ export default function BuilderLayout() {
               transition={{ duration: 0.25 }}
             >
               {step === 1 && <Step1Personal />}
-              {step > 1 && (
+              {step === 2 && <Step2Experience />}
+              {step > 2 && (
                 <div className="py-16 text-center text-text-secondary">
                   <p className="font-medium">{stepLabels[step - 1]}</p>
                   <p className="text-sm mt-2">{t("builder.comingSoon")}</p>
@@ -224,7 +226,6 @@ export default function BuilderLayout() {
           <div
             ref={previewPanelRef}
             className={cn(
-              "lg:pl-10",
               previewFixedRect && "scrollbar-thin overflow-y-auto",
             )}
             style={
