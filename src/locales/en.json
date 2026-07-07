@@ -369,6 +369,35 @@
         "gitlab": "GitLab",
         "telegram": "Telegram"
       }
+    },
+    "experience": {
+      "title": "Work experience",
+      "subtitle": "Start with your most recent role.",
+      "modalTitle": "Work experience",
+      "modalSubtitle": "No formal experience? No problem we have options for everyone.",
+      "hasTitle": "Yes, I have work experience",
+      "hasDesc": "Full-time employment at a company",
+      "noneTitle": "No experience fresh graduate",
+      "noneDesc": "Student or first-time job seeker",
+      "freshTitle": "No formal experience? You still have plenty to show.",
+      "freshBody": "Internships, volunteering, university projects, and part-time work all count as experience. You can add them here, or continue to Education.",
+      "addAnyway": "Add one anyway",
+      "addAnother": "Add another experience",
+      "jobTitle": "Job title",
+      "company": "Company",
+      "location": "Location",
+      "duration": "Duration",
+      "current": "I currently work here",
+      "present": "Present",
+      "achievements": "Achievements (optional)",
+      "achievementsPlaceholder": "Managed daily cash transactions with 100% accuracy\nTrained 3 new team members",
+      "achievementsHint": "One achievement per line each becomes a bullet point on your resume.",
+      "untitled": "Untitled role",
+      "deleteEntry": "Delete entry",
+      "collapse": "Hide details",
+      "expand": "Show details",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
     }
   }
 }
