@@ -8,6 +8,7 @@ import About from "./pages/About";
 import Pricing from "./pages/Pricing";
 import Refund from "./pages/Refund";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import ScrollToTop from "./components/ScrollToTop";
 // Protected pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>

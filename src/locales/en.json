@@ -33,6 +33,46 @@
       }
     ]
   },
+  "privacy": {
+    "label": "Legal",
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: July 1, 2026",
+    "sections": [
+      {
+        "title": "1. Information we collect",
+        "body": "We collect the information you give us directly: your name, email, phone number, and the content of any resume you build with ResuMate (work history, education, skills, and similar details).",
+        "list": [
+          "Account info you provide when you sign in with Google",
+          "Resume content you type or paste, including job advertisements you analyze",
+          "Usage data such as pages visited and features used, to improve the product"
+        ]
+      },
+      {
+        "title": "2. How we use your information",
+        "body": "We use your information to build and store your resumes, run AI features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve ResuMate. We do not sell your personal data to third parties."
+      },
+      {
+        "title": "3. AI processing",
+        "body": "Resume content and pasted job advertisements may be sent to our AI providers to generate suggestions, scores, and questions. This content is used only to serve your request and is not used to train shared models without your consent."
+      },
+      {
+        "title": "4. Data sharing",
+        "body": "We share data only with service providers who help us run ResuMate, such as payment processors (Stripe, Bakong/KHQR) and cloud hosting, under confidentiality obligations. We may disclose information if required by law."
+      },
+      {
+        "title": "5. Data retention & control",
+        "body": "You can edit or delete your resumes and account at any time from Settings. Deleting your account removes your personal data and stored resumes within 30 days, except where retention is required by law."
+      },
+      {
+        "title": "6. Your rights",
+        "body": "You may request a copy of your data, ask us to correct it, or ask us to delete it by contacting us; see the Contact page."
+      },
+      {
+        "title": "7. Contact us",
+        "body": "Questions about this policy? Reach us at privacy@resumate.app or visit our Contact page."
+      }
+    ]
+  },
   "terms": {
     "label": "Legal",
     "title": "Terms of Service",
@@ -45,7 +85,7 @@
       {
         "title": "2. Your account",
         "list": [
-          "You sign in with Google you are responsible for keeping that account secure",
+          "You sign in with Google; you are responsible for keeping that account secure",
           "You must be at least 16 years old to use ResuMate",
           "One account per person; accounts created to abuse free templates or trials may be suspended"
         ]
@@ -57,7 +97,7 @@
       {
         "title": "4. Your content & acceptable use",
         "list": [
-          "You own the resumes, cover letters, and other content you create we only use it to provide and improve the service",
+          "You own the resumes, cover letters, and other content you create; we only use it to provide and improve the service",
           "AI-generated suggestions are provided as a starting point; you are responsible for reviewing accuracy before use",
           "Do not upload unlawful, infringing, or abusive content, or attempt to disrupt, reverse-engineer, or scrape the platform"
         ]

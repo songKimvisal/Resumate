@@ -9,9 +9,9 @@ export default function Footer() {
     {
       title: t("footer.product"),
       links: [
-        { label: t("nav.templates"), href: "/#templates" },
-        { label: t("nav.features"), href: "/#features" },
-        { label: t("nav.pricing"), href: "/#pricing" },
+        { label: t("nav.templates"), href: "/", scrollTo: "templates" },
+        { label: t("nav.features"), href: "/", scrollTo: "features" },
+        { label: t("nav.pricing"), href: "/", scrollTo: "pricing" },
       ],
     },
     {
@@ -54,6 +54,9 @@ export default function Footer() {
                 <li key={l.label}>
                   <Link
                     to={l.href}
+                    state={
+                      "scrollTo" in l ? { scrollTo: l.scrollTo } : undefined
+                    }
                     className="text-sm text-text-secondary hover:text-text transition-colors"
                   >
                     {l.label}
