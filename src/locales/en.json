@@ -2,6 +2,37 @@
   "common": {
     "loading": "Loading…"
   },
+  "refund": {
+    "label": "Legal",
+    "title": "Refund Policy",
+    "lastUpdated": "Last updated: July 1, 2026",
+    "sections": [
+      {
+        "title": "1. Free plan",
+        "body": "The Free plan costs nothing and never requires payment — there is nothing to refund."
+      },
+      {
+        "title": "2. Monthly plans",
+        "body": "Starter ($2.99/month) and Pro ($7.99/month) renew automatically each month. You can cancel anytime in Settings → Billing & History, you keep access until the end of the current billing period, and you will not be charged again."
+      },
+      {
+        "title": "3. Refund eligibility",
+        "list": [
+          "Within 7 days of your first payment on a new plan, you can request a full refund if you have not used more than 20% of that month's AI allowance",
+          "Accidental duplicate charges are refunded in full",
+          "Refunds are not provided for partial months after the 7-day window, or for normal use of AI features"
+        ]
+      },
+      {
+        "title": "4. Annual plans",
+        "body": "Annual plans can be refunded on a prorated basis for unused full months remaining, minus any AI usage beyond the free-plan allowance."
+      },
+      {
+        "title": "5. How to request a refund",
+        "body": "Contact us with your account email and the date of the charge see the Contact page. We aim to respond within 2 business days and process approved refunds to your original payment method (KHQR or Stripe) within 5–10 business days."
+      }
+    ]
+  },
   "nav": {
     "templates": "Templates",
     "features": "Features",
