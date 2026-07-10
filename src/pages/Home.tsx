@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Leaf, Crown, Zap } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
@@ -286,17 +286,24 @@ export default function Home() {
               {...fadeUp}
               className={`rounded-2xl p-8 space-y-6 ${
                 plan.popular
-                  ? "border-2 border-brand relative shadow-lg"
+                  ? "border-2 border-brand shadow-lg"
                   : "border border-line bg-surface"
               }`}
             >
-              {plan.popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-brand text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
-                  {t("home.pricing.mostPopular")} ⚡
-                </span>
-              )}
-
               <div className="space-y-2">
+                <div className="h-7 flex items-center">
+                  {plan.popular ? (
+                    <span className="inline-flex items-center gap-1.5 bg-brand text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
+                      {t("home.pricing.mostPopular")}
+                      <Zap size={14} fill="white" />
+                    </span>
+                  ) : (
+                    <>
+                      {plan.name === "Free" && <Leaf size={22} />}
+                      {plan.name === "Pro" && <Crown size={22} />}
+                    </>
+                  )}
+                </div>
                 <p className="text-sm font-bold tracking-wide uppercase">
                   {plan.name}
                 </p>
