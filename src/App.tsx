@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Login from "./pages/login";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";
+import Refund from "./pages/Refund";
 import ScrollToTop from "./components/ScrollToTop";
 // Protected pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/refund" element={<Refund />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
