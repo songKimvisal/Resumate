@@ -19,7 +19,6 @@ export default function Footer() {
       links: [
         { label: t("footer.aboutUs"), href: "/about" },
         { label: t("footer.contact"), href: "/contact" },
-        { label: t("footer.careers"), href: "/careers" },
       ],
     },
     {
