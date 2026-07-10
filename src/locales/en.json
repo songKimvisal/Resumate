@@ -9,7 +9,7 @@
     "sections": [
       {
         "title": "1. Free plan",
-        "body": "The Free plan costs nothing and never requires payment — there is nothing to refund."
+        "body": "The Free plan costs nothing and never requires payment there is nothing to refund."
       },
       {
         "title": "2. Monthly plans",
@@ -30,6 +30,45 @@
       {
         "title": "5. How to request a refund",
         "body": "Contact us with your account email and the date of the charge see the Contact page. We aim to respond within 2 business days and process approved refunds to your original payment method (KHQR or Stripe) within 5–10 business days."
+      }
+    ]
+  },
+  "terms": {
+    "label": "Legal",
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: July 1, 2026",
+    "sections": [
+      {
+        "title": "1. Acceptance of terms",
+        "body": "By creating an account or using ResuMate, you agree to these Terms of Service and our Privacy Policy. If you do not agree, please do not use the platform."
+      },
+      {
+        "title": "2. Your account",
+        "list": [
+          "You sign in with Google you are responsible for keeping that account secure",
+          "You must be at least 16 years old to use ResuMate",
+          "One account per person; accounts created to abuse free templates or trials may be suspended"
+        ]
+      },
+      {
+        "title": "3. Subscriptions & billing",
+        "body": "Starter and Pro plans are billed monthly or annually and renew automatically until cancelled in Settings → Billing & History. Payments are processed via KHQR or Stripe. See our Refund Policy for cancellation and refund terms."
+      },
+      {
+        "title": "4. Your content & acceptable use",
+        "list": [
+          "You own the resumes, cover letters, and other content you create we only use it to provide and improve the service",
+          "AI-generated suggestions are provided as a starting point; you are responsible for reviewing accuracy before use",
+          "Do not upload unlawful, infringing, or abusive content, or attempt to disrupt, reverse-engineer, or scrape the platform"
+        ]
+      },
+      {
+        "title": "5. Service availability & disclaimer",
+        "body": "ResuMate is provided \"as is.\" We work to keep the platform reliable but do not guarantee uninterrupted access, and we are not liable for job outcomes, interview results, or decisions made by employers."
+      },
+      {
+        "title": "6. Changes & contact",
+        "body": "We may update these terms from time to time; continued use after a change means you accept the update. Questions? Reach out on the Contact page."
       }
     ]
   },
