@@ -253,6 +253,13 @@
   :lang(km) * {
     letter-spacing: normal !important;
   }
+
+  /* Buttons are single-line UI, not paragraph text — the taller Khmer
+     line-height above would otherwise inflate button height vs English */
+  :where(:lang(km) [data-slot="button"], :lang(km) [data-slot="button"] *) {
+    --tw-leading: 1.2;
+    line-height: 1.2;
+  }
 }
 
 /* ============================================================
