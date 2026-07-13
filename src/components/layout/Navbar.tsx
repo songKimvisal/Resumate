@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Menu, X } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useAuth } from "../../hooks/UseAuth";
 import { Button } from "../ui/button";
@@ -16,6 +16,7 @@ export default function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Close the dropdown when clicking outside of it
   useEffect(() => {
@@ -28,12 +29,18 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  // Close the mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const toggleLanguage = () =>
     i18n.changeLanguage(i18n.language === "en" ? "km" : "en");
 
   /** Scroll to a homepage section. Works from any page:
    *  on "/" it scrolls directly; elsewhere it navigates home first. */
   const scrollToSection = (id: string) => {
+    setMobileMenuOpen(false);
     if (location.pathname === "/") {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     } else {
@@ -86,6 +93,16 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* mobile nav toggle */}
+          <button
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className="md:hidden size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
+
           {/* language toggle */}
           <button
             onClick={toggleLanguage}
@@ -132,7 +149,7 @@ export default function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-60 rounded-xl border border-line bg-bg shadow-lg overflow-hidden">
+                <div className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-bg shadow-lg overflow-hidden">
                   {/* header */}
                   <div className="px-4 py-3 border-b border-line">
                     <p className="text-sm font-medium text-text truncate">
@@ -186,6 +203,28 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* mobile nav links */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-line px-4 py-3 flex flex-col gap-1">
+          {sectionLinks.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => scrollToSection(l.id)}
+              className="text-left py-2 text-sm text-text-secondary hover:text-text transition-colors"
+            >
+              {l.label}
+            </button>
+          ))}
+          <Link
+            to="/about"
+            onClick={() => setMobileMenuOpen(false)}
+            className="py-2 text-sm text-text-secondary hover:text-text transition-colors"
+          >
+            {t("nav.about")}
+          </Link>
+        </div>
+      )}
     </header>
   );
 }
