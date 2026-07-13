@@ -37,23 +37,37 @@ function hasText(html: string) {
   return html.replace(/<[^>]*>/g, "").trim().length > 0;
 }
 
-/** Splits rich-text HTML into its top-level nodes (each <p>, <ul>, ...) so a
- *  long summary can page-break between paragraphs instead of being treated
- *  as one unsplittable block (which left the previous page mostly empty). */
-function splitRichText(html: string): string[] {
+interface RichTextFragment {
+  html: string;
+  /** the fragment's own top-level tag (P, UL, OL, ...) */
+  tag: string;
+}
+
+/** Splits rich-text HTML into per-paragraph and per-bullet fragments, so a
+ *  page break can land between them instead of only between whole blocks. */
+function splitRichText(html: string): RichTextFragment[] {
   const container = document.createElement("div");
   container.innerHTML = html;
-  const fragments = Array.from(container.children).map((el) => el.outerHTML);
-  return fragments.length > 0 ? fragments : [html];
+  const fragments: RichTextFragment[] = [];
+  Array.from(container.children).forEach((el) => {
+    if ((el.tagName === "UL" || el.tagName === "OL") && el.children.length > 1) {
+      Array.from(el.children).forEach((li) => {
+        const wrapper = document.createElement(el.tagName);
+        wrapper.appendChild(li.cloneNode(true));
+        fragments.push({ html: wrapper.outerHTML, tag: el.tagName });
+      });
+    } else {
+      fragments.push({ html: el.outerHTML, tag: el.tagName });
+    }
+  });
+  return fragments.length > 0 ? fragments : [{ html, tag: "" }];
 }
 
 // A4 page proportions + the padding baked into each page's white area.
 const PAGE_ASPECT = 297 / 210;
 const PAGE_PADDING_PCT = 0.07;
-// px gaps this template used between sections vs. between items within a
-// section (matching the old flex `gap-5` / `space-y-3` / `space-y-2.5`).
-// These are rem-based, so — like the rest of Tailwind's spacing scale —
-// they're fixed regardless of the page's own font-size setting.
+// gaps between sections vs. between items within a section (rem-based, so
+// fixed regardless of the page's font-size setting)
 const GAP_SECTION = 20;
 const GAP_EXP_ITEM = 12;
 const GAP_EDU_ITEM = 10;
@@ -65,19 +79,15 @@ interface Block {
   node: React.ReactNode;
 }
 
-/** A4-proportioned live preview ("classic" template). Splits content across
- *  as many pages as it needs — measures each section/entry's rendered
- *  height off-screen, then greedily packs them onto pages so a page break
- *  never lands in the middle of an entry.
- *  Resume content is always English — this component is intentionally
- *  not translated. */
+/** A4-proportioned live preview ("classic" template). Measures each
+ *  section/entry off-screen and packs them onto pages, breaking between
+ *  entries rather than mid-entry. Resume content is always English, so
+ *  this component isn't translated. */
 export default function ResumePreview({
   pageLabelClassName = "text-text-secondary",
 }: {
-  /** Classes for the "Page X of Y" label — the label sits on whatever
-   *  background surrounds the page (the app's own themed background in the
-   *  sidebar, a dark overlay in the fullscreen modal), so callers on a dark
-   *  background should override this to something light. */
+  /** Classes for the "Page X of Y" label. Override on dark backgrounds
+   *  (e.g. the fullscreen modal) since it defaults to the app's theme. */
   pageLabelClassName?: string;
 }) {
   const resume = useResumeStore((s) => s.resume);
@@ -95,16 +105,18 @@ export default function ResumePreview({
       // matches .rte-content's `p + p { margin-top: 0.5em }`, scaled to
       // this text's actual em size (0.9em of the page's own font-size)
       const paraGap = parseFloat(fontSize) * 0.9 * 0.5;
-      splitRichText(personal.summary).forEach((html, i) => {
+      const fragments = splitRichText(personal.summary);
+      fragments.forEach(({ html, tag }, i) => {
         const node = (
           <div
             className="rte-content text-[0.9em] leading-relaxed"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         );
+        const adjacentParagraphs = i > 0 && tag === "P" && fragments[i - 1].tag === "P";
         list.push({
           key: `summary-${i}`,
-          gapBefore: i === 0 ? GAP_SECTION : paraGap,
+          gapBefore: i === 0 ? GAP_SECTION : adjacentParagraphs ? paraGap : 0,
           node:
             i === 0 ? (
               <Section title="Summary" accent={accent}>
@@ -118,19 +130,37 @@ export default function ResumePreview({
     }
 
     experience.forEach((exp, i) => {
-      const entry = <ExperienceEntry exp={exp} />;
+      const header = <ExperienceHeader exp={exp} />;
       list.push({
-        key: `exp-${exp.id}`,
+        key: `exp-${exp.id}-header`,
         gapBefore: i === 0 ? GAP_SECTION : GAP_EXP_ITEM,
         node:
           i === 0 ? (
             <Section title="Experience" accent={accent}>
-              {entry}
+              {header}
             </Section>
           ) : (
-            entry
+            header
           ),
       });
+
+      if (hasText(exp.description)) {
+        const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
+        const fragments = splitRichText(exp.description);
+        fragments.forEach(({ html, tag }, j) => {
+          const adjacentParagraphs = j > 0 && tag === "P" && fragments[j - 1].tag === "P";
+          list.push({
+            key: `exp-${exp.id}-desc-${j}`,
+            gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
+            node: (
+              <div
+                className="rte-content text-[0.85em] leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            ),
+          });
+        });
+      }
     });
 
     education.forEach((edu, i) => {
@@ -185,9 +215,7 @@ export default function ResumePreview({
   const measureContainerRef = useRef<HTMLDivElement>(null);
   const [pageWidth, setPageWidth] = useState(0);
   const [heights, setHeights] = useState<Record<string, number>>({});
-  // the pageWidth `heights` was actually measured at — until this matches
-  // pageWidth, heights are stale (e.g. measured before layout settled) and
-  // must not be used to compute a page split.
+  // width `heights` was measured at; ignore heights until this matches pageWidth
   const [measuredWidth, setMeasuredWidth] = useState(-1);
 
   useLayoutEffect(() => {
@@ -344,31 +372,23 @@ function HeaderBlock({
   );
 }
 
-function ExperienceEntry({ exp }: { exp: ExperienceItem }) {
+function ExperienceHeader({ exp }: { exp: ExperienceItem }) {
   return (
-    <div>
-      <div className="flex justify-between gap-3 items-baseline">
-        <p className="font-semibold text-[0.95em]">
-          {exp.jobTitle || "Job title"}
-          {(exp.company || exp.location) && (
-            <span className="font-normal text-neutral-600">
-              {" "}
-              — {[exp.company, exp.location].filter(Boolean).join(", ")}
-            </span>
-          )}
-        </p>
-        <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
-          {fmtDate(exp.startDate)}
-          {(exp.startDate || exp.endDate || exp.current) && " – "}
-          {exp.current ? "Present" : fmtDate(exp.endDate)}
-        </p>
-      </div>
-      {hasText(exp.description) && (
-        <div
-          className="rte-content mt-1 text-[0.85em] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: exp.description }}
-        />
-      )}
+    <div className="flex justify-between gap-3 items-baseline">
+      <p className="font-semibold text-[0.95em]">
+        {exp.jobTitle || "Job title"}
+        {(exp.company || exp.location) && (
+          <span className="font-normal text-neutral-600">
+            {" "}
+            — {[exp.company, exp.location].filter(Boolean).join(", ")}
+          </span>
+        )}
+      </p>
+      <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
+        {fmtDate(exp.startDate)}
+        {(exp.startDate || exp.endDate || exp.current) && " – "}
+        {exp.current ? "Present" : fmtDate(exp.endDate)}
+      </p>
     </div>
   );
 }
