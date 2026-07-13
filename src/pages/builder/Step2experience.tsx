@@ -69,7 +69,7 @@ export default function Step2Experience() {
   };
 
   return (
-    <div className="space-y-6 px-6 pr-10">
+    <div className="space-y-6 lg:px-6 lg:pr-10">
       <div>
         <h2 className="text-2xl font-bold">{t("builder.experience.title")}</h2>
         <p className="text-sm text-text-secondary mt-1">
@@ -273,19 +273,22 @@ function ExperienceCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   // scroll the freshly-added entry into view, since it can land below the fold.
-  // Deferred a frame so it doesn't compete with the mount/entrance work below.
+  // Waits out the collapse/expand height animations (250ms) below first —
+  // scrolling any earlier lands on a target that's still shifting as a
+  // previously-expanded card collapses and this one expands.
   useEffect(() => {
     if (!isNew) return;
-    const raf = requestAnimationFrame(() => {
-      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-    return () => cancelAnimationFrame(raf);
+    const timeout = setTimeout(() => {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+    return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <motion.div
       ref={cardRef}
+      style={{ scrollMarginTop: "100px" }}
       layout="position"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -382,8 +385,13 @@ function ExperienceCard({
               <label className="text-sm font-medium text-text">
                 {t("builder.experience.duration")}
               </label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
+              {/* native month inputs refuse to shrink below their own content
+                  width, so a side-by-side row only fits at the "sm" tablet
+                  range — below it (mobile) and at "lg"+ (once the form sits
+                  in the narrow 45% split-panel column) they'd overflow, so
+                  those two ranges stack instead */}
+              <div className="flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-stretch gap-2">
+                <div className="w-full sm:flex-1 sm:min-w-0">
                   <Input
                     type="month"
                     value={exp.startDate}
@@ -391,8 +399,10 @@ function ExperienceCard({
                     onChange={(e) => onChange({ startDate: e.target.value })}
                   />
                 </div>
-                <span className="text-text-placeholder shrink-0">–</span>
-                <div className="flex-1 min-w-0">
+                <span className="hidden sm:inline lg:hidden text-text-placeholder shrink-0">
+                  –
+                </span>
+                <div className="w-full sm:flex-1 sm:min-w-0">
                   <Input
                     type="month"
                     className={exp.current ? "opacity-50" : undefined}
