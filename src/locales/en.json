@@ -500,6 +500,8 @@
       "company": "Company",
       "location": "Location",
       "duration": "Duration",
+      "startDate": "Start month",
+      "endDate": "End month",
       "current": "I currently work here",
       "present": "Present",
       "achievements": "Achievements (optional)",

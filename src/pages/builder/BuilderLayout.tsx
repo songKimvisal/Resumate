@@ -214,7 +214,12 @@ export default function BuilderLayout() {
       <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
         {/* ---------- left: current step ---------- */}
         <div>
-          <AnimatePresence mode="wait">
+          {/* "popLayout" (not "wait") — with "wait" the outgoing step had to
+              fully fade out (250ms) before the next one even started, so
+              clicking Next/Back froze the screen for a beat; popLayout lets
+              the incoming step animate in immediately while the outgoing one
+              is pulled out of flow to fade out on top */}
+          <AnimatePresence mode="popLayout">
             <motion.div
               key={step}
               initial={{ opacity: 0, x: 24 }}

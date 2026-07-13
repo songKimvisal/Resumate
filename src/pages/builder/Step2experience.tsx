@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -16,6 +17,7 @@ import { useResumeStore } from "../../store/resumeStore";
 import type { ExperienceItem } from "../../types/resume";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
+import { MonthPicker } from "../../components/ui/MonthPicker";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/tip_mascot.png";
@@ -140,69 +142,79 @@ export default function Step2Experience() {
         </Button>
       )}
 
-      {/* ---------- choice modal ---------- */}
-      <AnimatePresence>
-        {modalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
-            onClick={() => setModalDismissed(true)}
-          >
+      {/* ---------- choice modal ----------
+          Portaled to <body>: this step's content sits inside BuilderLayout's
+          per-step motion.div, which carries an active CSS transform for the
+          ~250ms it takes to slide in. A `position: fixed` descendant is
+          contained by the nearest transformed ancestor instead of the
+          viewport, so without the portal this modal would render clipped
+          inside that narrow column for the entrance animation's duration
+          before snapping into its correct centered position. */}
+      {createPortal(
+        <AnimatePresence>
+          {modalOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-2xl bg-bg rounded-3xl p-8 md:p-12 shadow-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+              onClick={() => setModalDismissed(true)}
             >
-              <button
-                onClick={() => setModalDismissed(true)}
-                className="absolute top-6 right-6 size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text inline-flex items-center justify-center"
-                aria-label={t("builder.close")}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 shadow-2xl"
               >
-                <X size={18} />
-              </button>
+                <button
+                  onClick={() => setModalDismissed(true)}
+                  className="absolute top-3 right-3 sm:top-6 sm:right-6 size-8 sm:size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text inline-flex items-center justify-center"
+                  aria-label={t("builder.close")}
+                >
+                  <X size={18} />
+                </button>
 
-              <div className="grid md:grid-cols-[1fr_auto] gap-8 items-center">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-2xl font-bold">
-                      {t("builder.experience.modalTitle")}
-                    </h3>
-                    <p className="text-sm text-text-secondary mt-2">
-                      {t("builder.experience.modalSubtitle")}
-                    </p>
+                <div className="grid md:grid-cols-[1fr_auto] gap-4 sm:gap-8 items-center">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div>
+                      <h3 className="text-lg sm:text-2xl font-bold pr-8 sm:pr-0">
+                        {t("builder.experience.modalTitle")}
+                      </h3>
+                      <p className="text-sm text-text-secondary mt-1 sm:mt-2">
+                        {t("builder.experience.modalSubtitle")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 sm:space-y-3">
+                      <ChoiceCard
+                        icon={<Briefcase size={20} />}
+                        title={t("builder.experience.hasTitle")}
+                        desc={t("builder.experience.hasDesc")}
+                        onClick={chooseHas}
+                      />
+                      <ChoiceCard
+                        icon={<GraduationCap size={20} />}
+                        title={t("builder.experience.noneTitle")}
+                        desc={t("builder.experience.noneDesc")}
+                        onClick={chooseNone}
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <ChoiceCard
-                      icon={<Briefcase size={20} />}
-                      title={t("builder.experience.hasTitle")}
-                      desc={t("builder.experience.hasDesc")}
-                      onClick={chooseHas}
-                    />
-                    <ChoiceCard
-                      icon={<GraduationCap size={20} />}
-                      title={t("builder.experience.noneTitle")}
-                      desc={t("builder.experience.noneDesc")}
-                      onClick={chooseNone}
-                    />
-                  </div>
+                  <img
+                    src={mascot}
+                    alt=""
+                    className="hidden md:block w-40 justify-self-center"
+                  />
                 </div>
-
-                <img
-                  src={mascot}
-                  alt=""
-                  className="hidden md:block w-40 justify-self-center"
-                />
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
@@ -221,14 +233,14 @@ function ChoiceCard({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 rounded-xl border border-line p-4 text-left hover:border-brand hover:bg-surface transition-colors group"
+      className="w-full flex items-center gap-3 sm:gap-4 rounded-xl border border-line p-3 sm:p-4 text-left hover:border-brand hover:bg-surface transition-colors group"
     >
       <span className="text-text-secondary group-hover:text-brand transition-colors">
         {icon}
       </span>
       <span className="flex-1">
-        <span className="block font-medium">{title}</span>
-        <span className="block text-sm text-text-secondary">{desc}</span>
+        <span className="block text-sm sm:text-base font-medium">{title}</span>
+        <span className="block text-xs sm:text-sm text-text-secondary">{desc}</span>
       </span>
       <ChevronRight
         size={18}
@@ -381,35 +393,35 @@ function ExperienceCard({
               value={exp.location}
               onChange={(e) => onChange({ location: e.target.value })}
             />
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <label className="text-sm font-medium text-text">
                 {t("builder.experience.duration")}
               </label>
-              {/* native month inputs refuse to shrink below their own content
-                  width, so a side-by-side row only fits at the "sm" tablet
-                  range — below it (mobile) and at "lg"+ (once the form sits
-                  in the narrow 45% split-panel column) they'd overflow, so
-                  those two ranges stack instead */}
-              <div className="flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-stretch gap-2">
-                <div className="w-full sm:flex-1 sm:min-w-0">
-                  <Input
-                    type="month"
+              {/* a custom trigger (unlike the native month input it
+                  replaces) truncates its label instead of enforcing a
+                  minimum content width, so it stays a plain side-by-side
+                  row at every container width — mobile, tablet, and the
+                  narrow desktop split-panel column alike. min-w-0 has to
+                  apply at every level of this chain (this grid item included)
+                  since the trigger's nowrap label otherwise still contributes
+                  its full, untruncated width to the grid's track sizing. */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <MonthPicker
                     value={exp.startDate}
                     max={exp.endDate || undefined}
-                    onChange={(e) => onChange({ startDate: e.target.value })}
+                    onChange={(startDate) => onChange({ startDate })}
+                    placeholder={t("builder.experience.startDate")}
                   />
                 </div>
-                <span className="hidden sm:inline lg:hidden text-text-placeholder shrink-0">
-                  –
-                </span>
-                <div className="w-full sm:flex-1 sm:min-w-0">
-                  <Input
-                    type="month"
-                    className={exp.current ? "opacity-50" : undefined}
+                <span className="text-text-placeholder shrink-0">–</span>
+                <div className="flex-1 min-w-0">
+                  <MonthPicker
                     value={exp.endDate}
                     min={exp.startDate || undefined}
                     disabled={exp.current}
-                    onChange={(e) => onChange({ endDate: e.target.value })}
+                    onChange={(endDate) => onChange({ endDate })}
+                    placeholder={t("builder.experience.endDate")}
                   />
                 </div>
               </div>
