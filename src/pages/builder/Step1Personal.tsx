@@ -266,7 +266,7 @@ export default function Step1Personal() {
   };
 
   return (
-    <div className="space-y-6 px-6 pr-10">
+    <div className="space-y-6 lg:px-6 lg:pr-10">
       <div>
         <h2 className="text-2xl font-bold">{t("builder.personal.title")}</h2>
         <p className="text-sm text-text-secondary mt-1">
@@ -274,9 +274,11 @@ export default function Step1Personal() {
         </p>
       </div>
 
-      {/* fields left / photo right */}
-      <div className="grid grid-cols-[1fr_auto] gap-6">
-        <div className="space-y-4">
+      {/* fields left / photo right on desktop; on mobile the columns
+          collapse into one and `order` moves the photo above Full name
+          instead of leaving it in source order (after Phone) */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6">
+        <div className="order-2 sm:order-1 space-y-4">
           <Input
             label={t("builder.personal.fullName")}
             placeholder="Sok Dara"
@@ -298,7 +300,7 @@ export default function Step1Personal() {
         </div>
 
         {/* photo upload */}
-        <div className="space-y-2 text-center">
+        <div className="order-1 sm:order-2 space-y-2 text-center">
           <p className="text-sm font-medium text-text">
             {t("builder.personal.image")}
           </p>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { Sun, Moon, LayoutGrid, X } from "lucide-react";
+import { Sun, Moon, LayoutGrid, Eye, X } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useResumeStore } from "../../store/resumeStore";
 import ResumePreview from "../../components/resume/ResumePreview";
@@ -15,6 +15,8 @@ import { cn } from "../../lib/utils";
 
 const TOTAL_STEPS = 5;
 const ACCENT_COLORS = ["#C1121F", "#1D4ED8", "#0F766E", "#7C3AED", "#374151"];
+// 210mm in real CSS px (1in = 96px)
+const A4_WIDTH_PX = 210 * (96 / 25.4);
 
 export default function BuilderLayout() {
   const { t, i18n } = useTranslation();
@@ -69,17 +71,13 @@ export default function BuilderLayout() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [previewOpen]);
 
-  // manually pin the preview panel below the step bar on scroll — computed
-  // from live scroll position rather than CSS `position: sticky`, since the
-  // native sticky behavior wasn't holding inside this grid layout
+  // CSS `position: sticky` wasn't holding inside this grid layout, so pin
+  // the preview panel below the step bar manually based on scroll position
   const previewWrapperRef = useRef<HTMLDivElement>(null);
   const previewPanelRef = useRef<HTMLDivElement>(null);
   const previewHeaderRef = useRef<HTMLDivElement>(null);
-  // measures the resume content itself (never clamped by the pinned panel's
-  // scroll area's max-height), so the wrapper always reserves the true,
-  // un-clipped height — otherwise once pinned, the clamped height feeds
-  // back in and the reserved space collapses to ~one page even when the
-  // resume has more.
+  // measures the unclamped content height, so the wrapper always reserves
+  // enough space even once the panel is pinned and scrolls internally
   const previewContentRef = useRef<HTMLButtonElement>(null);
   const [previewPanelHeight, setPreviewPanelHeight] = useState(0);
   const [previewHeaderHeight, setPreviewHeaderHeight] = useState(0);
@@ -154,12 +152,15 @@ export default function BuilderLayout() {
             )}
           </button>
 
-          {/* save status pill */}
-          <span className="flex items-center gap-2 text-sm border border-line rounded-full px-4 py-1.5">
+          {/* save status pill — text hidden on phones so it can't wrap
+              inside the pill; the colored dot alone still reads as status */}
+          <span className="flex items-center gap-2 text-sm border border-line rounded-full px-3 sm:px-4 py-1.5 whitespace-nowrap">
             <span
-              className={`size-2 rounded-full ${dirty ? "bg-amber-500" : "bg-success"}`}
+              className={`size-2 rounded-full shrink-0 ${dirty ? "bg-amber-500" : "bg-success"}`}
             />
-            {dirty ? t("builder.unsaved") : t("builder.saved")}
+            <span className="hidden sm:inline">
+              {dirty ? t("builder.unsaved") : t("builder.saved")}
+            </span>
           </span>
         </div>
       </header>
@@ -194,7 +195,7 @@ export default function BuilderLayout() {
                   {done ? "✓" : n}
                 </span>
                 <span
-                  className={`text-sm ${
+                  className={`hidden sm:block text-sm ${
                     active ? "text-brand font-medium" : "text-text-secondary"
                   }`}
                 >
@@ -207,7 +208,10 @@ export default function BuilderLayout() {
       </div>
 
       {/* ================= form + preview ================= */}
-      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 pb-28 grid lg:grid-cols-2 lg:divide-x divide-line gap-10 items-start">
+      {/* fr units (not %) for the split — percentage tracks are resolved
+          before the gap is subtracted, so "45%_55%" summed to 100% and the
+          10-unit gap overflowed the container on every lg+ screen */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
         {/* ---------- left: current step ---------- */}
         <div>
           <AnimatePresence mode="wait">
@@ -320,15 +324,14 @@ export default function BuilderLayout() {
               className={cn(
                 previewFixedRect && "scrollbar-thin overflow-y-auto",
               )}
-              style={
-                previewFixedRect
-                  ? {
-                      // leave room for the floating bottom bar so the pinned
-                      // preview never hides its own controls behind it
-                      maxHeight: `calc(100vh - ${stepBarHeight}px - 4.5rem - ${previewHeaderHeight}px)`,
-                    }
-                  : undefined
-              }
+              style={{
+                maxWidth: A4_WIDTH_PX,
+                ...(previewFixedRect && {
+                  // leave room for the floating bottom bar so the pinned
+                  // preview never hides its own controls behind it
+                  maxHeight: `calc(100vh - ${stepBarHeight}px - 4.5rem - ${previewHeaderHeight}px)`,
+                }),
+              }}
             >
               <button
                 ref={previewContentRef}
@@ -355,7 +358,8 @@ export default function BuilderLayout() {
               onClick={() => setPreviewOpen(false)}
             >
               <motion.div
-                className="relative w-[max(16rem,min(30rem,calc((100vh_-_9rem)*0.7071)))]"
+                className="relative w-full"
+                style={{ maxWidth: A4_WIDTH_PX }}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -384,8 +388,10 @@ export default function BuilderLayout() {
         )}
       </AnimatePresence>
 
-      {/* ================= floating mascot tip ================= */}
-      <div ref={tipRef} className="fixed bottom-20 right-6 z-40">
+      {/* ================= floating mascot tip =================
+          desktop-only: below lg there's no preview panel for it to float
+          beside, so it just drifts over the full-width form instead */}
+      <div ref={tipRef} className="hidden lg:block fixed bottom-20 right-6 z-40">
         <AnimatePresence>
           {tipOpen && (
             <motion.div
@@ -418,6 +424,22 @@ export default function BuilderLayout() {
         </motion.button>
       </div>
 
+      {/* ================= floating preview button =================
+          mobile-only: the live preview column above is desktop-only (lg+),
+          so smaller screens need their own way into the overlay. Fixed in
+          place (not just in the header) so it stays reachable no matter
+          how far the user has scrolled down the form. */}
+      <motion.button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        aria-label={t("builder.previewButton")}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="lg:hidden fixed bottom-20 right-4 z-40 size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
+      >
+        <Eye size={20} strokeWidth={2} />
+      </motion.button>
+
       {/* ================= floating bottom bar ================= */}
       <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -433,9 +455,12 @@ export default function BuilderLayout() {
             </Link>
           )}
 
-          <p className="text-sm text-text-secondary">
-            {t("builder.stepOf", { current: step, total: TOTAL_STEPS })} –{" "}
-            {stepLabels[step - 1]}
+          {/* the step label is dropped below sm — "Step 1 of 5" alone
+              already fills most of the space next to Back/Next on phones,
+              so appending "– Personal information" just got truncated */}
+          <p className="text-sm text-text-secondary truncate min-w-0 flex-1 text-center px-3">
+            {t("builder.stepOf", { current: step, total: TOTAL_STEPS })}
+            <span className="hidden sm:inline"> – {stepLabels[step - 1]}</span>
           </p>
 
           <Button size="sm" onClick={next} disabled={step === TOTAL_STEPS}>

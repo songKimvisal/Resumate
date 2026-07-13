@@ -93,7 +93,7 @@ function Toolbar({
   onSetLink: () => void;
 }) {
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-line">
+    <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-line">
       <ToolbarButton
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}

@@ -23,12 +23,8 @@ function dateRange(
   return `${fmtDate(item.startDate)} – ${end}`;
 }
 
-/** True A4 (595.28 × 841.89pt), rendered with @react-pdf/renderer so the
- *  downloaded file is a real, correctly-sized PDF page — not a browser
- *  print approximation of the HTML preview. Long content flows onto
- *  additional A4 pages automatically (react-pdf's own layout engine
- *  handles this natively; entries use `wrap={false}` so a page break never
- *  lands mid-entry). */
+/** Real A4 page (595.28 × 841.89pt) via @react-pdf/renderer. Entries use
+ *  `wrap={false}` so a page break never lands mid-entry. */
 export function ResumeDocument({ resume }: { resume: Resume }) {
   const { personal, experience, education, skills, languages, customization } =
     resume;

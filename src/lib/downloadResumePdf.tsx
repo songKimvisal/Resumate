@@ -2,8 +2,7 @@ import { pdf } from "@react-pdf/renderer";
 import { ResumeDocument } from "../components/resume/pdf/ResumeDocument";
 import type { Resume } from "../types/resume";
 
-/** Renders the resume to a real A4 PDF (via @react-pdf/renderer) and
- *  triggers a browser download — not a print-to-PDF of the HTML preview. */
+/** Renders the resume to an A4 PDF and triggers a browser download. */
 export async function downloadResumePdf(resume: Resume) {
   const blob = await pdf(<ResumeDocument resume={resume} />).toBlob();
   const url = URL.createObjectURL(blob);

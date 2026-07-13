@@ -61,7 +61,7 @@ export default function Home() {
   const templates = [tpl1, tpl2, tpl3, tpl4, tpl5];
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text overflow-x-clip">
       <Navbar />
 
       {/* ================= HERO ================= */}
@@ -111,7 +111,7 @@ export default function Home() {
           id="templates"
           {...fadeUp}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-14 flex justify-center items-end -space-x-16 md:-space-x-20"
+          className="mt-14 flex justify-center items-end -space-x-10 sm:-space-x-16 lg:-space-x-20"
         >
           {templates.map((src, i) => {
             const middle = Math.floor(templates.length / 2);
@@ -126,7 +126,7 @@ export default function Home() {
                   transform: `rotate(${offset * 2}deg) translateY(${Math.abs(offset) * 14}px)`,
                   zIndex: 10 - Math.abs(offset),
                 }}
-                className={`w-40 md:w-64 rounded-lg border border-line shadow-xl bg-white ${
+                className={`w-24 sm:w-40 lg:w-64 rounded-lg border border-line shadow-xl bg-white ${
                   offset === 0 ? "relative" : ""
                 }`}
               />
