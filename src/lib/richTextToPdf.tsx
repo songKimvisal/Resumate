@@ -5,10 +5,8 @@ export function hasVisibleText(html: string) {
   return html.replace(/<[^>]*>/g, "").trim().length > 0;
 }
 
-/** Recursively converts one inline node (text, <strong>, <em>, <u>, <a>, <br>)
- *  into nested react-pdf <Text>/<Link> elements. Block-level children (e.g. a
- *  stray <p>) are flattened to their own text content — callers only pass
- *  inline content here. */
+/** Converts one inline node (text, <strong>, <em>, <u>, <a>, <br>) into
+ *  nested react-pdf <Text>/<Link> elements. Callers only pass inline content. */
 function renderInline(node: ChildNode, key: React.Key): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
@@ -66,10 +64,9 @@ type RichTextOptions = {
   align?: "left" | "center" | "right" | "justify";
 };
 
-/** Converts Tiptap HTML (paragraphs, bullet/numbered lists, bold/italic/
- *  underline/links) into react-pdf block elements — one <Text> per paragraph,
- *  one row per list item. Unrecognized block tags fall back to a plain
- *  paragraph so nothing silently disappears. */
+/** Converts Tiptap HTML (paragraphs, lists, bold/italic/underline/links)
+ *  into react-pdf block elements: one <Text> per paragraph, one row per
+ *  list item. Unknown block tags render as a plain paragraph. */
 export function richTextToPdf(
   html: string,
   { fontSize, color, align = "left" }: RichTextOptions,

@@ -1,12 +1,8 @@
 import type { PersonalInfo } from "../types/resume";
 
-/** Inline style for the photo <img> given its fit mode — shared by the
- *  builder's editable thumbnail and the read-only resume preview so both
- *  always render identically.
- *  "fill" / "fit" behave like Figma's Fill/Fit: object-fit cover/contain,
- *  centered. "crop" keeps the cover baseline but layers a user-adjustable
- *  scale + pan on top (photoZoom / photoPosition, in percent so they scale
- *  to any frame size). */
+/** Inline style for the photo <img>, shared by the builder thumbnail and
+ *  the resume preview so both render identically. "fill"/"fit" map to
+ *  object-fit cover/contain; "crop" adds a user pan/zoom on top of cover. */
 export function photoImgStyle(
   personal: Pick<PersonalInfo, "photoFit" | "photoZoom" | "photoPosition">,
 ): React.CSSProperties {
