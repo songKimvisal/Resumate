@@ -42,6 +42,7 @@ interface ResumeState {
   addEducation: () => void;
   updateEducation: (id: string, patch: Partial<EducationItem>) => void;
   removeEducation: (id: string) => void;
+  reorderEducation: (dragId: string, overId: string) => void;
 
   addSkill: (name?: string) => void;
   updateSkill: (id: string, patch: Partial<SkillItem>) => void;
@@ -204,6 +205,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
             startDate: "",
             endDate: "",
             current: false,
+            gpa: "",
             description: "",
           },
         ],
@@ -228,6 +230,17 @@ export const useResumeStore = create<ResumeState>((set) => ({
       },
       dirty: true,
     })),
+  reorderEducation: (dragId, overId) =>
+    set((s) => {
+      if (dragId === overId) return s;
+      const list = [...s.resume.education];
+      const from = list.findIndex((e) => e.id === dragId);
+      const to = list.findIndex((e) => e.id === overId);
+      if (from === -1 || to === -1) return s;
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      return { resume: { ...s.resume, education: list }, dirty: true };
+    }),
 
   /* ---------- skills ---------- */
   addSkill: (name = "") =>
