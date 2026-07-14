@@ -1,20 +1,9 @@
-/** The complete resume data model.
- *  Stored in Zustand while editing and saved to Supabase as one jsonb column. */
-
-/** A single entry in a repeatable link field: a display title (shown on the
- *  resume) plus the URL it links to (not shown, only used as the href). */
 export interface LinkItem {
   id: string;
   title: string;
   url: string;
 }
-
-/** How the uploaded photo fills its circular frame — same idea as Figma's
- *  image fill modes. "crop" additionally lets the user pan/zoom, stored in
- *  photoZoom / photoPosition (percent offset from center, so they scale to
- *  any frame size). */
 export type PhotoFit = "fill" | "fit" | "crop";
-
 export interface PersonalInfo {
   fullName: string;
   jobTitle: string;
@@ -24,12 +13,9 @@ export interface PersonalInfo {
   photoUrl: string;
   photoFit: PhotoFit;
   photoZoom: number;
-  /** pan offset in percent from center, only used when photoFit is "crop" */
   photoPosition: { x: number; y: number };
   summary: string;
-  /* optional "Add details" fields */
   nationality: string;
-  /** repeatable link fields — a user may list more than one of each */
   portfolio: LinkItem[];
   linkedin: LinkItem[];
   website: LinkItem[];
@@ -45,10 +31,35 @@ export interface ExperienceItem {
   jobTitle: string;
   company: string;
   location: string;
-  startDate: string; // "2023-06" (month input format)
-  endDate: string; // "" while current
+  startDate: string; 
+  endDate: string;
   current: boolean;
-  description: string; // rich-text HTML, same format as PersonalInfo.summary
+  description: string; 
+}
+export type NoExperienceType =
+  | "university"
+  | "volunteer"
+  | "competition"
+  | "internship"
+  | "partTime";
+export const NO_EXPERIENCE_TYPE_LABELS: Record<NoExperienceType, string> = {
+  university: "University Project",
+  volunteer: "Volunteer Work",
+  competition: "Competition",
+  internship: "Internship",
+  partTime: "Part-time Job",
+};
+
+export interface NoExperienceItem {
+  id: string;
+  type: NoExperienceType;
+  title: string;
+  subtitle: string;
+  url: string;
+  startDate: string; 
+  endDate: string; 
+  current: boolean;
+  description: string;
 }
 
 export interface EducationItem {
@@ -75,18 +86,19 @@ export interface LanguageItem {
 }
 
 export interface Customization {
-  template: string; // template id, e.g. "classic"
-  accentColor: string; // hex
+  template: string; 
+  accentColor: string; 
   fontSize: "small" | "medium" | "large";
 }
 
 export interface Resume {
-  id: string | null; // Supabase row id (null until first save)
-  title: string; // internal name, e.g. "Bank teller resume"
+  id: string | null; 
+  title: string; 
   /** Step 2 entry choice: has experience, none (fresh graduate), or not asked yet */
   experienceChoice: "has" | "none" | null;
   personal: PersonalInfo;
   experience: ExperienceItem[];
+  noExperience: NoExperienceItem[];
   education: EducationItem[];
   skills: SkillItem[];
   languages: LanguageItem[];
@@ -119,6 +131,7 @@ export const emptyResume: Resume = {
     telegram: [],
   },
   experience: [],
+  noExperience: [],
   education: [],
   skills: [],
   languages: [],

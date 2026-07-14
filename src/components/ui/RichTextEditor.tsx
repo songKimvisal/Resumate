@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
@@ -29,6 +29,13 @@ export function RichTextEditor({
   placeholder,
   className,
 }: RichTextEditorProps) {
+  // Placeholder.configure only reads this once, at editor creation — a
+  // function option (re-evaluated on every decoration pass) plus a ref lets
+  // it track a changing prop (e.g. switching the "no experience" type)
+  // without recreating the whole editor.
+  const placeholderRef = useRef(placeholder);
+  placeholderRef.current = placeholder;
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -38,7 +45,7 @@ export function RichTextEditor({
         types: ["paragraph", "heading"],
         defaultAlignment: "left",
       }),
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: () => placeholderRef.current ?? "" }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -56,6 +63,12 @@ export function RichTextEditor({
     editor.commands.setContent(value, { emitUpdate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
+
+  // force the placeholder decoration to recompute against the new ref value
+  useEffect(() => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr);
+  }, [placeholder, editor]);
 
   if (!editor) return null;
 

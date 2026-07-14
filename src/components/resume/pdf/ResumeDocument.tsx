@@ -1,5 +1,10 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
-import type { EducationItem, ExperienceItem, Resume } from "../../../types/resume";
+import {
+  NO_EXPERIENCE_TYPE_LABELS,
+  type EducationItem,
+  type ExperienceItem,
+  type Resume,
+} from "../../../types/resume";
 import { richTextToPdf, hasVisibleText } from "../../../lib/richTextToPdf";
 
 const BASE_SIZE = { small: 9, medium: 10, large: 11 } as const;
@@ -26,8 +31,15 @@ function dateRange(
 /** Real A4 page (595.28 × 841.89pt) via @react-pdf/renderer. Entries use
  *  `wrap={false}` so a page break never lands mid-entry. */
 export function ResumeDocument({ resume }: { resume: Resume }) {
-  const { personal, experience, education, skills, languages, customization } =
-    resume;
+  const {
+    personal,
+    experience,
+    noExperience,
+    education,
+    skills,
+    languages,
+    customization,
+  } = resume;
   const accent = customization.accentColor;
   const base = BASE_SIZE[customization.fontSize];
 
@@ -131,6 +143,35 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     {(exp.company || exp.location) && (
                       <Text style={styles.entryMeta}>
                         {" "}— {[exp.company, exp.location].filter(Boolean).join(", ")}
+                      </Text>
+                    )}
+                  </Text>
+                  <Text style={styles.entryDates}>{dateRange(exp)}</Text>
+                </View>
+                {hasVisibleText(exp.description) &&
+                  richTextToPdf(exp.description, {
+                    fontSize: base * 0.85,
+                    color: "#404040",
+                  })}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {experience.length === 0 && noExperience.length > 0 && (
+          <View style={styles.section} minPresenceAhead={40}>
+            <Text style={[styles.sectionTitle, { color: accent, borderColor: accent }]}>
+              Experience
+            </Text>
+            {noExperience.map((exp) => (
+              <View key={exp.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={styles.entryTitle}>
+                    {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
+                    {(exp.title || exp.subtitle) && (
+                      <Text style={styles.entryMeta}>
+                        {" "}
+                        — {[exp.title, exp.subtitle].filter(Boolean).join(", ")}
                       </Text>
                     )}
                   </Text>

@@ -152,8 +152,7 @@ export default function BuilderLayout() {
             )}
           </button>
 
-          {/* save status pill — text hidden on phones so it can't wrap
-              inside the pill; the colored dot alone still reads as status */}
+          
           <span className="flex items-center gap-2 text-sm border border-line rounded-full px-3 sm:px-4 py-1.5 whitespace-nowrap">
             <span
               className={`size-2 rounded-full shrink-0 ${dirty ? "bg-amber-500" : "bg-success"}`}
@@ -208,17 +207,10 @@ export default function BuilderLayout() {
       </div>
 
       {/* ================= form + preview ================= */}
-      {/* fr units (not %) for the split — percentage tracks are resolved
-          before the gap is subtracted, so "45%_55%" summed to 100% and the
-          10-unit gap overflowed the container on every lg+ screen */}
+      
       <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
         {/* ---------- left: current step ---------- */}
         <div>
-          {/* "popLayout" (not "wait") — with "wait" the outgoing step had to
-              fully fade out (250ms) before the next one even started, so
-              clicking Next/Back froze the screen for a beat; popLayout lets
-              the incoming step animate in immediately while the outgoing one
-              is pulled out of flow to fade out on top */}
           <AnimatePresence mode="popLayout">
             <motion.div
               key={step}
@@ -460,9 +452,6 @@ export default function BuilderLayout() {
             </Link>
           )}
 
-          {/* the step label is dropped below sm — "Step 1 of 5" alone
-              already fills most of the space next to Back/Next on phones,
-              so appending "– Personal information" just got truncated */}
           <p className="text-sm text-text-secondary truncate min-w-0 flex-1 text-center px-3">
             {t("builder.stepOf", { current: step, total: TOTAL_STEPS })}
             <span className="hidden sm:inline"> – {stepLabels[step - 1]}</span>
