@@ -3,6 +3,7 @@ import type {
   Resume,
   PersonalInfo,
   ExperienceItem,
+  NoExperienceItem,
   EducationItem,
   SkillItem,
   LanguageItem,
@@ -32,6 +33,11 @@ interface ResumeState {
   /** Move the entry with dragId to the position of overId */
   reorderExperience: (dragId: string, overId: string) => void;
   setExperienceChoice: (choice: Resume["experienceChoice"]) => void;
+
+  addNoExperience: () => void;
+  updateNoExperience: (id: string, patch: Partial<NoExperienceItem>) => void;
+  removeNoExperience: (id: string) => void;
+  reorderNoExperience: (dragId: string, overId: string) => void;
 
   addEducation: () => void;
   updateEducation: (id: string, patch: Partial<EducationItem>) => void;
@@ -130,6 +136,58 @@ export const useResumeStore = create<ResumeState>((set) => ({
       resume: { ...s.resume, experienceChoice: choice },
       dirty: true,
     })),
+
+  /* ---------- no experience (fresh graduate) ---------- */
+  addNoExperience: () =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        noExperience: [
+          ...s.resume.noExperience,
+          {
+            id: uid(),
+            type: "university",
+            title: "",
+            subtitle: "",
+            url: "",
+            startDate: "",
+            endDate: "",
+            current: false,
+            description: "",
+          },
+        ],
+      },
+      dirty: true,
+    })),
+  updateNoExperience: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        noExperience: s.resume.noExperience.map((e) =>
+          e.id === id ? { ...e, ...patch } : e,
+        ),
+      },
+      dirty: true,
+    })),
+  removeNoExperience: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        noExperience: s.resume.noExperience.filter((e) => e.id !== id),
+      },
+      dirty: true,
+    })),
+  reorderNoExperience: (dragId, overId) =>
+    set((s) => {
+      if (dragId === overId) return s;
+      const list = [...s.resume.noExperience];
+      const from = list.findIndex((e) => e.id === dragId);
+      const to = list.findIndex((e) => e.id === overId);
+      if (from === -1 || to === -1) return s;
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      return { resume: { ...s.resume, noExperience: list }, dirty: true };
+    }),
 
   /* ---------- education ---------- */
   addEducation: () =>
