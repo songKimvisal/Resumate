@@ -9,6 +9,7 @@ import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
 import Step1Personal from "./Step1Personal";
 import Step2Experience from "./Step2experience";
+import Step3Education from "./Step3Education";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
 import { cn } from "../../lib/utils";
@@ -125,7 +126,10 @@ export default function BuilderLayout() {
   const back = () => setStep((s) => Math.max(1, s - 1));
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col">
+    <div
+      className="min-h-screen bg-bg text-text flex flex-col"
+      style={{ "--step-bar-height": `${stepBarHeight}px` } as React.CSSProperties}
+    >
       {/* ================= header ================= */}
       <header className="flex items-center justify-between px-6 h-16">
         <Link to="/dashboard">
@@ -221,7 +225,8 @@ export default function BuilderLayout() {
             >
               {step === 1 && <Step1Personal />}
               {step === 2 && <Step2Experience />}
-              {step > 2 && (
+              {step === 3 && <Step3Education />}
+              {step > 3 && (
                 <div className="py-16 text-center text-text-secondary">
                   <p className="font-medium">{stepLabels[step - 1]}</p>
                   <p className="text-sm mt-2">{t("builder.comingSoon")}</p>

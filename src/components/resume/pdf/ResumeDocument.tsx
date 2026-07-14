@@ -8,8 +8,6 @@ import {
 import { richTextToPdf, hasVisibleText } from "../../../lib/richTextToPdf";
 
 const BASE_SIZE = { small: 9, medium: 10, large: 11 } as const;
-
-/** Formats "2023-06" → "Jun 2023" */
 function fmtDate(value: string) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
@@ -200,10 +198,19 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                       {[edu.degree, edu.field].filter(Boolean).join(" in ") ||
                         "Degree"}
                     </Text>
-                    <Text style={styles.entrySubtitle}>{edu.school}</Text>
+                    <Text style={styles.entrySubtitle}>
+                      {[edu.school, edu.gpa && `GPA: ${edu.gpa}`]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
                   </View>
                   <Text style={styles.entryDates}>{dateRange(edu)}</Text>
                 </View>
+                {hasVisibleText(edu.description) &&
+                  richTextToPdf(edu.description, {
+                    fontSize: base * 0.85,
+                    color: "#404040",
+                  })}
               </View>
             ))}
           </View>

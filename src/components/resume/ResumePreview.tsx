@@ -26,7 +26,6 @@ import {
 import { photoImgStyle } from "../../lib/photoFit";
 import { cn } from "../../lib/utils";
 
-/** Formats "2023-06" → "Jun 2023" */
 function fmtDate(value: string) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
@@ -46,12 +45,10 @@ function hasText(html: string) {
 
 interface RichTextFragment {
   html: string;
-  /** the fragment's own top-level tag (P, UL, OL, ...) */
   tag: string;
 }
 
-/** Splits rich-text HTML into per-paragraph and per-bullet fragments, so a
- *  page break can land between them instead of only between whole blocks. */
+
 function splitRichText(html: string): RichTextFragment[] {
   const container = document.createElement("div");
   container.innerHTML = html;
@@ -70,31 +67,22 @@ function splitRichText(html: string): RichTextFragment[] {
   return fragments.length > 0 ? fragments : [{ html, tag: "" }];
 }
 
-// A4 page proportions + the padding baked into each page's white area.
+
 const PAGE_ASPECT = 297 / 210;
 const PAGE_PADDING_PCT = 0.07;
-// gaps between sections vs. between items within a section (rem-based, so
-// fixed regardless of the page's font-size setting)
 const GAP_SECTION = 20;
 const GAP_EXP_ITEM = 12;
 const GAP_EDU_ITEM = 10;
 
 interface Block {
   key: string;
-  /** gap to render above this block, ignored when it's first on a page */
   gapBefore: number;
   node: React.ReactNode;
 }
 
-/** A4-proportioned live preview ("classic" template). Measures each
- *  section/entry off-screen and packs them onto pages, breaking between
- *  entries rather than mid-entry. Resume content is always English, so
- *  this component isn't translated. */
 export default function ResumePreview({
   pageLabelClassName = "text-text-secondary",
 }: {
-  /** Classes for the "Page X of Y" label. Override on dark backgrounds
-   *  (e.g. the fullscreen modal) since it defaults to the app's theme. */
   pageLabelClassName?: string;
 }) {
   const resume = useResumeStore((s) => s.resume);
@@ -116,8 +104,6 @@ export default function ResumePreview({
     ];
 
     if (hasText(personal.summary)) {
-      // matches .rte-content's `p + p { margin-top: 0.5em }`, scaled to
-      // this text's actual em size (0.9em of the page's own font-size)
       const paraGap = parseFloat(fontSize) * 0.9 * 0.5;
       const fragments = splitRichText(personal.summary);
       fragments.forEach(({ html, tag }, i) => {
@@ -215,19 +201,37 @@ export default function ResumePreview({
     }
 
     education.forEach((edu, i) => {
-      const entry = <EducationEntry edu={edu} />;
+      const header = <EducationEntry edu={edu} />;
       list.push({
-        key: `edu-${edu.id}`,
+        key: `edu-${edu.id}-header`,
         gapBefore: i === 0 ? GAP_SECTION : GAP_EDU_ITEM,
         node:
           i === 0 ? (
             <Section title="Education" accent={accent}>
-              {entry}
+              {header}
             </Section>
           ) : (
-            entry
+            header
           ),
       });
+
+      if (hasText(edu.description)) {
+        const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
+        const fragments = splitRichText(edu.description);
+        fragments.forEach(({ html, tag }, j) => {
+          const adjacentParagraphs = j > 0 && tag === "P" && fragments[j - 1].tag === "P";
+          list.push({
+            key: `edu-${edu.id}-desc-${j}`,
+            gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
+            node: (
+              <div
+                className="rte-content text-[0.85em] leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            ),
+          });
+        });
+      }
     });
 
     if (skills.length > 0 || languages.length > 0) {
@@ -481,7 +485,9 @@ function EducationEntry({ edu }: { edu: EducationItem }) {
         <p className="font-semibold text-[0.95em]">
           {[edu.degree, edu.field].filter(Boolean).join(" in ") || "Degree"}
         </p>
-        <p className="text-[0.85em] text-neutral-600">{edu.school}</p>
+        <p className="text-[0.85em] text-neutral-600">
+          {[edu.school, edu.gpa && `GPA: ${edu.gpa}`].filter(Boolean).join(" · ")}
+        </p>
       </div>
       <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
         {fmtDate(edu.startDate)}
