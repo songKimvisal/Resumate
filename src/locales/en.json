@@ -508,11 +508,66 @@
       "achievementsPlaceholder": "Managed daily cash transactions with 100% accuracy\nTrained 3 new team members",
       "achievementsHint": "One achievement per line each becomes a bullet point on your resume.",
       "untitled": "Untitled role",
+      "untitledNoExperience": "Untitled entry",
       "deleteEntry": "Delete entry",
       "collapse": "Hide details",
       "expand": "Show details",
       "moveUp": "Move up",
-      "moveDown": "Move down"
+      "moveDown": "Move down",
+      "noExperienceTitle": "What have you been part of ?",
+      "noExperienceSubtitle": "Pick anything from the dropdown that applies these all count as real experience on a resume.",
+      "noExperienceTypeLabel": "Type of the no experience",
+      "noExperienceTypes": {
+        "university": "University project",
+        "volunteer": "Volunteer work",
+        "competition": "Competition",
+        "internship": "Internship",
+        "partTime": "Part-time job"
+      },
+      "noExperienceFields": {
+        "university": {
+          "title": "Project Title",
+          "titlePlaceholder": "Resumate",
+          "subtitle": "University Name",
+          "subtitlePlaceholder": "Limkokwing",
+          "url": "Project URL (optional)",
+          "urlPlaceholder": "project link",
+          "description": "Project Description (optional)",
+          "descriptionPlaceholder": "What the project was about and what you built or contributed."
+        },
+        "volunteer": {
+          "title": "Volunteer Role",
+          "titlePlaceholder": "Event Coordinator",
+          "subtitle": "Organization Name",
+          "subtitlePlaceholder": "Cambodian Red Cross",
+          "description": "Contributions (optional)",
+          "descriptionPlaceholder": "What you helped organize or contribute to."
+        },
+        "competition": {
+          "title": "Competition Name",
+          "titlePlaceholder": "National Hackathon",
+          "subtitle": "Organizer / Host",
+          "subtitlePlaceholder": "Ministry of Education",
+          "description": "Project Summary (optional)",
+          "descriptionPlaceholder": "What you built or the result you achieved."
+        },
+        "internship": {
+          "title": "Job Title",
+          "titlePlaceholder": "Marketing Intern",
+          "subtitle": "Company Name",
+          "subtitlePlaceholder": "ABA Bank",
+          "description": "Responsibilities (optional)",
+          "descriptionPlaceholder": "What you were responsible for day to day."
+        },
+        "partTime": {
+          "title": "Job Title",
+          "titlePlaceholder": "Cashier",
+          "subtitle": "Company / Platform",
+          "subtitlePlaceholder": "Lucky Supermarket",
+          "description": "Key Tasks (optional)",
+          "descriptionPlaceholder": "What your main tasks were."
+        }
+      }
     }
   }
 }

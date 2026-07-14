@@ -508,11 +508,66 @@
       "achievementsPlaceholder": "គ្រប់គ្រងប្រតិបត្តិការសាច់ប្រាក់ប្រចាំថ្ងៃដោយភាពត្រឹមត្រូវ 100%\nបណ្តុះបណ្តាលសមាជិកក្រុមថ្មី 3 នាក់",
       "achievementsHint": "សមិទ្ធផលមួយក្នុងមួយបន្ទាត់នីមួយៗក្លាយជាចំណុចលើប្រវត្តិរូបរបស់អ្នក។",
       "untitled": "តួនាទីគ្មានចំណងជើង",
+      "untitledNoExperience": "ព័ត៌មានគ្មានចំណងជើង",
       "deleteEntry": "លុប",
       "collapse": "លាក់ព័ត៌មាន",
       "expand": "បង្ហាញព័ត៌មាន",
       "moveUp": "ផ្លាស់ទីឡើងលើ",
-      "moveDown": "ផ្លាស់ទីចុះក្រោម"
+      "moveDown": "ផ្លាស់ទីចុះក្រោម",
+      "noExperienceTitle": "តើអ្នកធ្លាប់បានចូលរួមក្នុងសកម្មភាពអ្វីខ្លះ?",
+      "noExperienceSubtitle": "សូមជ្រើសរើសសកម្មភាពណាមួយពីបញ្ជីខាងក្រោមដែលត្រូវនឹងអ្នកទាំងនេះសុទ្ធតែរាប់ជាបទពិសោធន៍ពិតប្រាកដនៅលើប្រវត្តិរូបសង្ខេប។",
+      "noExperienceTypeLabel": "ប្រភេទនៃបទពិសោធន៍ផ្សេងៗ",
+      "noExperienceTypes": {
+        "university": "គម្រោងសិក្សានៅសាកលវិទ្យាល័យ",
+        "volunteer": "ការងារស្ម័គ្រចិត្ត",
+        "competition": "ការប្រកួតប្រជែង",
+        "internship": "ការចុះកម្មសិក្សា (Internship)",
+        "partTime": "ការងារក្រៅម៉ោង (Part-time)"
+      },
+      "noExperienceFields": {
+        "university": {
+          "title": "ឈ្មោះគម្រោង",
+          "titlePlaceholder": "Resumate",
+          "subtitle": "ឈ្មោះសាកលវិទ្យាល័យ",
+          "subtitlePlaceholder": "លីមកុកវីង (Limkokwing)",
+          "url": "តំណភ្ជាប់គម្រោង (មិនបង្ខំ)",
+          "urlPlaceholder": "តំណភ្ជាប់ទៅកាន់គម្រោង",
+          "description": "ព័ត៌មានលម្អិតពីគម្រោង (មិនបង្ខំ)",
+          "descriptionPlaceholder": "រៀបរាប់អំពីគោលបំណងនៃគម្រោង និងអ្វីដែលអ្នកបានបង្កើត ឬចូលរួមចំណែកធ្វើ។"
+        },
+        "volunteer": {
+          "title": "តួនាទីស្ម័គ្រចិត្ត",
+          "titlePlaceholder": "អ្នកសម្របសម្រួលកម្មវិធី",
+          "subtitle": "ឈ្មោះស្ថាប័ន/សមាគម",
+          "subtitlePlaceholder": "កាកបាទក្រហមកម្ពុជា",
+          "description": "ការចូលរួមចំណែក (មិនបង្ខំ)",
+          "descriptionPlaceholder": "រៀបរាប់ពីអ្វីដែលអ្នកបានជួយរៀបចំ ឬការចូលរួមចំណែករបស់អ្នក។"
+        },
+        "competition": {
+          "title": "ឈ្មោះកម្មវិធីប្រកួតប្រជែង",
+          "titlePlaceholder": "ការប្រកួត National Hackathon",
+          "subtitle": "អ្នករៀបចំកម្មវិធី / ម្ចាស់ផ្ទះ",
+          "subtitlePlaceholder": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+          "description": "សេចក្តីសង្ខេបពីគម្រោងប្រកួត (មិនបង្ខំ)",
+          "descriptionPlaceholder": "រៀបរាប់ពីអ្វីដែលអ្នកបានបង្កើតឡើង ឬលទ្ធផល/រង្វាន់ដែលអ្នកទទួលបាន។"
+        },
+        "internship": {
+          "title": "តួនាទី/មុខតំណែង",
+          "titlePlaceholder": "បុគ្គលិកកម្មសិក្សាផ្នែកទីផ្សារ",
+          "subtitle": "ឈ្មោះក្រុមហ៊ុន/ស្ថាប័ន",
+          "subtitlePlaceholder": "ធនាគារ ABA",
+          "description": "ភារកិច្ច និងការទទួលខុសត្រូវ (មិនបង្ខំ)",
+          "descriptionPlaceholder": "រៀបរាប់ពីការងារប្រចាំថ្ងៃដែលអ្នកបានទទួលខុសត្រូវ។"
+        },
+        "partTime": {
+          "title": "តួនាទី/មុខតំណែង",
+          "titlePlaceholder": "បុគ្គលិកគិតលុយ (Cashier)",
+          "subtitle": "ឈ្មោះក្រុមហ៊ុន / ទីកន្លែងការងារ",
+          "subtitlePlaceholder": "ផ្សារទំនើប ឡាក់គី",
+          "description": "ភារកិច្ចចម្បងៗ (មិនបង្ខំ)",
+          "descriptionPlaceholder": "រៀបរាប់ពីភារកិច្ចចម្បងៗដែលអ្នកបានធ្វើ។"
+        }
+      }
     }
   }
 }
