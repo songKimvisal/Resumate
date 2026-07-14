@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Briefcase,
-  ChevronDown,
   Eye,
   EyeOff,
   GraduationCap,
@@ -24,6 +23,13 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { MonthPicker } from "../../components/ui/MonthPicker";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/tip_mascot.png";
 
@@ -659,25 +665,23 @@ function NoExperienceCard({
             <label className="text-sm font-medium text-text">
               {t("builder.experience.noExperienceTypeLabel")}
             </label>
-            <div className="relative">
-              <select
-                value={exp.type}
-                onChange={(e) =>
-                  onChange({ type: e.target.value as NoExperienceType })
-                }
-                className="w-full h-10 pl-3 pr-9 rounded-lg border border-line bg-bg text-sm text-text appearance-none focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
-              >
+            <Select
+              value={exp.type}
+              onValueChange={(value) =>
+                onChange({ type: value as NoExperienceType })
+              }
+            >
+              <SelectTrigger className="w-full h-10! rounded-lg border-line bg-bg text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {NO_EXPERIENCE_TYPES.map((type) => (
-                  <option key={type} value={type}>
+                  <SelectItem key={type} value={type}>
                     {t(`builder.experience.noExperienceTypes.${type}`)}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-placeholder"
-              />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <Input
