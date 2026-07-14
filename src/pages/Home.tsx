@@ -89,16 +89,16 @@ export default function Home() {
           {user ? (
             // ---------- logged IN: one button ----------
             <Link to="/dashboard">
-              <Button size="lg">{t("home.hero.ctaDashboard")}</Button>
+              <Button size="default">{t("home.hero.ctaDashboard")}</Button>
             </Link>
           ) : (
             // ---------- logged OUT: the original two ----------
             <>
               <Link to="/login">
-                <Button size="lg">{t("home.hero.ctaPrimary")}</Button>
+                <Button size="default">{t("home.hero.ctaPrimary")}</Button>
               </Link>
               <a href="#templates">
-                <Button size="lg" variant="outline">
+                <Button size="default" variant="outline">
                   {t("home.hero.ctaSecondary")}
                 </Button>
               </a>
@@ -279,12 +279,12 @@ export default function Home() {
           {t("home.pricing.subtitle")}
         </motion.p>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-6 items-start">
+        <div className="mt-14 grid md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan) => (
             <motion.div
               key={plan.name}
               {...fadeUp}
-              className={`rounded-2xl p-8 space-y-6 ${
+              className={`flex flex-col rounded-2xl p-8 space-y-6 ${
                 plan.popular
                   ? "border-2 border-brand shadow-lg"
                   : "border border-line bg-surface"
@@ -316,7 +316,7 @@ export default function Home() {
                 <p className="text-sm text-text-secondary">{plan.tagline}</p>
               </div>
 
-              <div className="space-y-3">
+              <div className="flex-1 space-y-3">
                 <p className="text-xs font-semibold tracking-widest uppercase text-text-secondary">
                   {plan.includesLabel}
                 </p>
@@ -334,8 +334,9 @@ export default function Home() {
                 </ul>
               </div>
 
-              <Link to="/login" className="block">
+              <Link to="/login" className="block mt-auto">
                 <Button
+                  size="default"
                   className="w-full"
                   variant={plan.popular ? "default" : "outline"}
                 >
@@ -365,10 +366,10 @@ export default function Home() {
           className="mt-8 flex flex-wrap justify-center gap-3"
         >
           <Link to="/login">
-            <Button size="lg">{t("home.cta.primary")}</Button>
+            <Button size="default">{t("home.cta.primary")}</Button>
           </Link>
           <a href="#features">
-            <Button size="lg" variant="outline">
+            <Button size="default" variant="outline">
               {t("home.cta.secondary")}
             </Button>
           </a>

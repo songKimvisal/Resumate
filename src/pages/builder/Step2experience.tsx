@@ -623,7 +623,7 @@ function NoExperienceCard({
             {t(`builder.experience.noExperienceTypes.${exp.type}`)}
           </p>
           <p className="text-xs text-text-secondary truncate">
-            {[exp.title, exp.subtitle, dates].filter(Boolean).join("  •  ")}
+            {[exp.title, exp.subtitle, dates].filter(Boolean).join("  -  ")}
           </p>
         </button>
 
