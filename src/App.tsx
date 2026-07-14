@@ -5,7 +5,6 @@ import ProtectedRoute from "./components/Protectedroute";
 import Home from "./pages/Home";
 import Login from "./pages/login";
 import About from "./pages/About";
-import Pricing from "./pages/Pricing";
 import Refund from "./pages/Refund";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -25,7 +24,6 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
-        <Route path="/pricing" element={<Pricing />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
