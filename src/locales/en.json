@@ -18,14 +18,14 @@
       {
         "title": "3. Refund eligibility",
         "list": [
-          "Within 7 days of your first payment on a new plan, you can request a full refund if you have not used more than 20% of that month's AI allowance",
+          "Within 7 days of your first payment on a new plan, you can request a full refund if you have not used more than 20% of that month's smart allowance",
           "Accidental duplicate charges are refunded in full",
-          "Refunds are not provided for partial months after the 7-day window, or for normal use of AI features"
+          "Refunds are not provided for partial months after the 7-day window, or for normal use of smart features"
         ]
       },
       {
         "title": "4. Annual plans",
-        "body": "Annual plans can be refunded on a prorated basis for unused full months remaining, minus any AI usage beyond the free-plan allowance."
+        "body": "Annual plans can be refunded on a prorated basis for unused full months remaining, minus any smart usage beyond the free-plan allowance."
       },
       {
         "title": "5. How to request a refund",
@@ -49,11 +49,11 @@
       },
       {
         "title": "2. How we use your information",
-        "body": "We use your information to build and store your resumes, run AI features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve ResuMate. We do not sell your personal data to third parties."
+        "body": "We use your information to build and store your resumes, run smart features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve ResuMate. We do not sell your personal data to third parties."
       },
       {
-        "title": "3. AI processing",
-        "body": "Resume content and pasted job advertisements may be sent to our AI providers to generate suggestions, scores, and questions. This content is used only to serve your request and is not used to train shared models without your consent."
+        "title": "3. Smart processing",
+        "body": "Resume content and pasted job advertisements may be sent to our smart providers to generate suggestions, scores, and questions. This content is used only to serve your request and is not used to train shared models without your consent."
       },
       {
         "title": "4. Data sharing",
@@ -97,8 +97,8 @@
       {
         "title": "4. Your content & acceptable use",
         "list": [
-          "You own the resumes, cover letters, and other content you create; we only use it to provide and improve the service",
-          "AI-generated suggestions are provided as a starting point; you are responsible for reviewing accuracy before use",
+          "You own the resumes and other content you create; we only use it to provide and improve the service",
+          "Smart suggestions are provided as a starting point; you are responsible for reviewing accuracy before use",
           "Do not upload unlawful, infringing, or abusive content, or attempt to disrupt, reverse-engineer, or scrape the platform"
         ]
       },
@@ -130,7 +130,7 @@
     "privacy": "Privacy policy",
     "terms": "Terms of service",
     "refund": "Refund policy",
-    "tagline": "AI powered resume builder made for Cambodian job seekers.",
+    "tagline": "Smart resume builder made for Cambodian job seekers.",
     "follow": "Follow us for resume tips, job market updates, and new template drops."
   },
   "login": {
@@ -141,7 +141,7 @@
     "headline": "Your career starts",
     "headlineAccent": "here.",
     "pitch": "One sign in. No password to remember. No fake accounts farming free templates.",
-    "statFeatures": "AI powered features",
+    "statFeatures": "Smart features",
     "statTemplates": "Resume templates",
     "statBilingual": "Bilingual interface",
     "termsPrefix": "By continuing you agree to our",
@@ -154,7 +154,7 @@
       "title": "Build your resume in",
       "titleAccent": "minutes",
       "titleEnd": ", not days.",
-      "subtitle": "ResuMate is Cambodia's AI powered career readiness platform. Build a professional resume, analyze any job ad, match your skills to the role, and prepare for your interview all in one place.",
+      "subtitle": "ResuMate is Cambodia's smart career readiness platform. Build a professional resume, analyze any job ad, match your skills to the role, and prepare for your interview all in one place.",
       "ctaPrimary": "Get started it's free",
       "ctaSecondary": "Browse templates",
       "ctaDashboard": "Go to Dashboard"
@@ -170,19 +170,19 @@
     "features": {
       "title": "Everything you need to get",
       "titleAccent": "hired.",
-      "subtitle": "11 AI powered features designed specifically for Cambodian fresh graduates and job seekers.",
+      "subtitle": "11 smart features designed specifically for Cambodian fresh graduates and job seekers.",
       "items": [
         {
           "title": "Step by step builder",
           "desc": "No blank page. No confusion. Guided through every section one at a time."
         },
         {
-          "title": "AI design picker",
-          "desc": "Answer 3 questions or describe your vibe. AI picks the best layout, color, and font for your industry."
+          "title": "Smart design picker",
+          "desc": "Answer 3 questions or describe your vibe. The smart assistant picks the best layout, color, and font for your industry."
         },
         {
-          "title": "AI writing assistant",
-          "desc": "Type in simple words AI rewrites it into professional English with action verbs."
+          "title": "Smart writing assistant",
+          "desc": "Type in simple words and the smart assistant rewrites it into professional English with action verbs."
         },
         {
           "title": "Live split screen",
@@ -198,7 +198,7 @@
         },
         {
           "title": "Job ad analysis",
-          "desc": "Paste any Cambodian job posting. AI extracts every requirement, skill, and qualification."
+          "desc": "Paste any Cambodian job posting. The smart assistant extracts every requirement, skill, and qualification."
         },
         {
           "title": "Resume match engine",
@@ -228,11 +228,11 @@
         "items": [
           {
             "title": "Pick your template",
-            "desc": "10 templates across 5 Cambodian industries. Or let AI pick based on your vibe."
+            "desc": "10 templates across 5 Cambodian industries. Or let the smart assistant pick based on your vibe."
           },
           {
             "title": "Fill in your info",
-            "desc": "One section at a time. AI rewrites your words into professional English instantly."
+            "desc": "One section at a time. The smart assistant rewrites your words into professional English instantly."
           },
           {
             "title": "Check your score",
@@ -246,7 +246,7 @@
         "items": [
           {
             "title": "Paste a job ad",
-            "desc": "Copy any posting from LinkedIn, CamHR, or BongThom. AI extracts all requirements."
+            "desc": "Copy any posting from LinkedIn, CamHR, or BongThom. The smart assistant extracts all requirements."
           },
           {
             "title": "See your match",
@@ -279,7 +279,7 @@
             "3 resume templates",
             "1 resume saved",
             "PDF download (A4)",
-            "AI writing 5 uses / month",
+            "Smart writing 5 uses / month",
             "1 job analysis / month",
             "1 resume match analysis / month",
             "Basic job readiness report"
@@ -294,7 +294,7 @@
           "features": [
             "All standard templates",
             "Up to 5 resumes saved",
-            "50 AI writing credits / month",
+            "50 smart writing credits / month",
             "20 job analyses / month",
             "20 interview question sets / month",
             "Full job readiness reports",
@@ -311,7 +311,7 @@
           "features": [
             "All standard + premium templates",
             "Up to 20 resumes",
-            "300 AI writing credits / month",
+            "300 smart writing credits / month",
             "100 job & match analyses / month",
             "Detailed skill gap analysis",
             "100 interview question sets / month",
@@ -342,11 +342,11 @@
       "p1": "Every year, thousands of students graduate from universities across Cambodia ready to start their careers. But there is a quiet barrier between them and their first job application: the resume.",
       "p2": "Without an affordable, locally built tool, most job seekers turn to informal resume writers on Facebook and Telegram paying two to six dollars each time, waiting days for a draft, and ending up with a file they cannot edit themselves when something needs to change.",
       "quote": "\"We didn't want to build another resume tool. We wanted to build the tool we wished existed when we were applying for our first jobs.\"",
-      "p3": "That's why ResuMate exists free to start, bilingual, AI assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
+      "p3": "That's why ResuMate exists free to start, bilingual, smart-assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
     },
     "stats": {
       "free": "To get started always free",
-      "features": "AI powered features",
+      "features": "Smart features",
       "templates": "Templates across 5 industries",
       "bilingual": "Bilingual from day one"
     },
@@ -399,7 +399,7 @@
       "titleAccent": "built with care.",
       "name": "Song Kimvisal",
       "role": "Founder & Developer",
-      "bio": "A Bachelor of Software Engineering student in Multimedia at Limkokwing University Cambodia, building ResuMate as a final year project rooted in a real problem seen across Cambodian university campuses and a belief that good design, AI assistance, and career readiness tools should not be reserved for expensive Western platforms."
+      "bio": "A Bachelor of Software Engineering student in Multimedia at Limkokwing University Cambodia, building ResuMate as a final year project rooted in a real problem seen across Cambodian university campuses and a belief that good design, smart assistance, and career readiness tools should not be reserved for expensive Western platforms."
     },
     "cta": {
       "title": "Ready to build your",
@@ -465,7 +465,7 @@
       "summary": "Summary",
       "summaryHint": "2–3 sentences about who you are and what you bring.",
       "summaryPlaceholder": "Motivated accounting graduate with internship experience at a microfinance institution...",
-      "aiRewrite": "AI rewrite",
+      "aiRewrite": "Smart rewrite",
       "addDetails": "Add details",
       "removeField": "Remove field",
       "addAnotherLink": "Add another link",
@@ -568,6 +568,29 @@
           "descriptionPlaceholder": "What your main tasks were."
         }
       }
+    },
+    "education": {
+      "title": "Education",
+      "subtitle": "Add your education history, most recent first. You can add multiple degrees, diplomas, or certificates.",
+      "addAnother": "Add another education",
+      "degree": "Degree / qualification",
+      "degreePlaceholder": "Bachelor of Software Engineering",
+      "school": "University / institution",
+      "schoolPlaceholder": "Limkokwing University Cambodia",
+      "duration": "Graduation year",
+      "startDate": "Start month",
+      "endDate": "Graduation month",
+      "current": "I'm currently studying here",
+      "present": "Present",
+      "gpa": "GPA (optional)",
+      "gpaPlaceholder": "3.93",
+      "achievements": "Achievements (optional)",
+      "achievementsPlaceholder": "Dean's list for 3 consecutive semesters\nGraduated with honors",
+      "achievementsHint": "One achievement per line each becomes a bullet point on your resume.",
+      "untitled": "Untitled degree",
+      "deleteEntry": "Delete entry",
+      "collapse": "Hide details",
+      "expand": "Show details"
     }
   }
 }
