@@ -15,7 +15,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
-import type { ExperienceItem, EducationItem, LinkItem, PersonalInfo } from "../../types/resume";
+import {
+  NO_EXPERIENCE_TYPE_LABELS,
+  type ExperienceItem,
+  type NoExperienceItem,
+  type EducationItem,
+  type LinkItem,
+  type PersonalInfo,
+} from "../../types/resume";
 import { photoImgStyle } from "../../lib/photoFit";
 import { cn } from "../../lib/utils";
 
@@ -91,8 +98,15 @@ export default function ResumePreview({
   pageLabelClassName?: string;
 }) {
   const resume = useResumeStore((s) => s.resume);
-  const { personal, experience, education, skills, languages, customization } =
-    resume;
+  const {
+    personal,
+    experience,
+    noExperience,
+    education,
+    skills,
+    languages,
+    customization,
+  } = resume;
   const accent = customization.accentColor;
   const fontSize = fontSizes[customization.fontSize];
 
@@ -163,6 +177,43 @@ export default function ResumePreview({
       }
     });
 
+    if (experience.length === 0) {
+      noExperience.forEach((exp, i) => {
+        const header = <NoExperienceHeader exp={exp} />;
+        list.push({
+          key: `noexp-${exp.id}-header`,
+          gapBefore: i === 0 ? GAP_SECTION : GAP_EXP_ITEM,
+          node:
+            i === 0 ? (
+              <Section title="Experience" accent={accent}>
+                {header}
+              </Section>
+            ) : (
+              header
+            ),
+        });
+
+        if (hasText(exp.description)) {
+          const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
+          const fragments = splitRichText(exp.description);
+          fragments.forEach(({ html, tag }, j) => {
+            const adjacentParagraphs =
+              j > 0 && tag === "P" && fragments[j - 1].tag === "P";
+            list.push({
+              key: `noexp-${exp.id}-desc-${j}`,
+              gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
+              node: (
+                <div
+                  className="rte-content text-[0.85em] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              ),
+            });
+          });
+        }
+      });
+    }
+
     education.forEach((edu, i) => {
       const entry = <EducationEntry edu={edu} />;
       list.push({
@@ -208,7 +259,16 @@ export default function ResumePreview({
     }
 
     return list;
-  }, [personal, experience, education, skills, languages, accent, fontSize]);
+  }, [
+    personal,
+    experience,
+    noExperience,
+    education,
+    skills,
+    languages,
+    accent,
+    fontSize,
+  ]);
 
   // ---------- measure each block's rendered height, then paginate ----------
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -313,7 +373,7 @@ export default function ResumePreview({
   );
 }
 
-/** Centered name/title/contact-icons header — always the first block. */
+
 function HeaderBlock({
   personal,
   accent,
@@ -380,7 +440,28 @@ function ExperienceHeader({ exp }: { exp: ExperienceItem }) {
         {(exp.company || exp.location) && (
           <span className="font-normal text-neutral-600">
             {" "}
-            — {[exp.company, exp.location].filter(Boolean).join(", ")}
+            - {[exp.company, exp.location].filter(Boolean).join(", ")}
+          </span>
+        )}
+      </p>
+      <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
+        {fmtDate(exp.startDate)}
+        {(exp.startDate || exp.endDate || exp.current) && " – "}
+        {exp.current ? "Present" : fmtDate(exp.endDate)}
+      </p>
+    </div>
+  );
+}
+
+function NoExperienceHeader({ exp }: { exp: NoExperienceItem }) {
+  return (
+    <div className="flex justify-between gap-3 items-baseline">
+      <p className="font-semibold text-[0.95em]">
+        {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
+        {(exp.title || exp.subtitle) && (
+          <span className="font-normal text-neutral-600">
+            {" "}
+            - {[exp.title, exp.subtitle].filter(Boolean).join(", ")}
           </span>
         )}
       </p>
@@ -448,8 +529,6 @@ const icons: Record<string, LucideIcon> = {
   id: IdCard,
 };
 
-/** Renders a repeatable link entry — only the title is shown, the URL is
- *  used as the href (or omitted entirely if the entry has no title). */
 function LinkText({
   icon,
   entry,
