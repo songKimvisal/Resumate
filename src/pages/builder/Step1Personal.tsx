@@ -274,9 +274,6 @@ export default function Step1Personal() {
         </p>
       </div>
 
-      {/* fields left / photo right on desktop; on mobile the columns
-          collapse into one and `order` moves the photo above Full name
-          instead of leaving it in source order (after Phone) */}
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6">
         <div className="order-2 sm:order-1 space-y-4">
           <Input
@@ -449,9 +446,7 @@ export default function Step1Personal() {
                   type="text"
                   placeholder={f.placeholder}
                   value={personal[f.key] as string}
-                  onChange={(e) =>
-                    updatePersonal({ [f.key]: e.target.value })
-                  }
+                  onChange={(e) => updatePersonal({ [f.key]: e.target.value })}
                   className="flex-1 h-10 px-3 rounded-lg border border-line bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
                 />
                 <button
@@ -486,125 +481,133 @@ export default function Step1Personal() {
                 </div>
                 <div className="space-y-2">
                   <AnimatePresence initial={false}>
-                  {entries.map((entry) => {
-                    const popoverOpen =
-                      urlPopover?.key === f.key && urlPopover.id === entry.id;
-                    const invalid =
-                      entry.url.trim() !== "" && !isValidLink(entry.url);
-                    return (
-                      <motion.div
-                        key={entry.id}
-                        layout
-                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                        draggable={entries.length > 1}
-                        onDragStart={() => setDragId(entry.id)}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => {
-                          if (dragId)
-                            reorderLinkEntry(f.key, dragId, entry.id);
-                          setDragId(null);
-                        }}
-                        onDragEnd={() => setDragId(null)}
-                        className="flex items-center gap-2"
-                      >
-                        {entries.length > 1 && (
-                          <span className="h-10 shrink-0 inline-flex items-center text-text-placeholder cursor-grab active:cursor-grabbing">
-                            <GripVertical size={16} />
-                          </span>
-                        )}
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            placeholder={t(
-                              `builder.personal.details.${f.labelKey}`,
-                            )}
-                            value={entry.title}
-                            onChange={(e) =>
-                              updateLinkEntry(f.key, entry.id, {
-                                title: e.target.value,
-                              })
-                            }
-                            className="w-full h-10 pl-3 pr-9 rounded-lg border border-line bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setUrlPopover((prev) =>
-                                prev?.key === f.key && prev.id === entry.id
-                                  ? null
-                                  : { key: f.key, id: entry.id },
-                              )
-                            }
-                            className={cn(
-                              "absolute right-2 top-1/2 -translate-y-1/2 size-6 rounded-md inline-flex items-center justify-center hover:bg-surface-2",
-                              entry.url
-                                ? "text-brand"
-                                : "text-text-placeholder",
-                            )}
-                            aria-label={t("builder.personal.linkUrl")}
-                          >
-                            <LinkIcon size={15} />
-                          </button>
-
-                          {popoverOpen && (
-                            <div className="absolute z-10 left-0 bottom-[calc(100%+0.5rem)] w-full min-w-[16rem] bg-bg border border-line rounded-xl shadow-lg p-3 space-y-1.5">
-                              <p className="text-xs font-medium text-text-secondary">
-                                {t("builder.personal.linkUrl")}
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="url"
-                                  autoFocus
-                                  value={entry.url}
-                                  placeholder="https://..."
-                                  onChange={(e) =>
-                                    updateLinkEntry(f.key, entry.id, {
-                                      url: e.target.value,
-                                    })
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      setUrlPopover(null);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "flex-1 h-9 px-3 rounded-lg border bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors",
-                                    invalid
-                                      ? "border-destructive"
-                                      : "border-line focus:border-ring",
-                                  )}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setUrlPopover(null)}
-                                  className="size-9 shrink-0 rounded-lg bg-emerald-600 text-white inline-flex items-center justify-center hover:bg-emerald-700 transition-colors"
-                                  aria-label={t("builder.confirm")}
-                                >
-                                  <Check size={16} />
-                                </button>
-                              </div>
-                              {invalid && (
-                                <p className="text-xs text-destructive">
-                                  {t("builder.personal.invalidLink")}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeLinkEntry(f.key, entry.id)}
-                          className="size-10 shrink-0 rounded-md text-destructive hover:bg-surface-2 inline-flex items-center justify-center"
-                          aria-label={t("builder.personal.removeField")}
+                    {entries.map((entry) => {
+                      const popoverOpen =
+                        urlPopover?.key === f.key && urlPopover.id === entry.id;
+                      const invalid =
+                        entry.url.trim() !== "" && !isValidLink(entry.url);
+                      return (
+                        <motion.div
+                          key={entry.id}
+                          layout
+                          initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{
+                            opacity: 0,
+                            scale: 0.98,
+                            transition: { duration: 0.15 },
+                          }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 35,
+                          }}
+                          draggable={entries.length > 1}
+                          onDragStart={() => setDragId(entry.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => {
+                            if (dragId)
+                              reorderLinkEntry(f.key, dragId, entry.id);
+                            setDragId(null);
+                          }}
+                          onDragEnd={() => setDragId(null)}
+                          className="flex items-center gap-2"
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </motion.div>
-                    );
-                  })}
+                          {entries.length > 1 && (
+                            <span className="h-10 shrink-0 inline-flex items-center text-text-placeholder cursor-grab active:cursor-grabbing">
+                              <GripVertical size={16} />
+                            </span>
+                          )}
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              placeholder={t(
+                                `builder.personal.details.${f.labelKey}`,
+                              )}
+                              value={entry.title}
+                              onChange={(e) =>
+                                updateLinkEntry(f.key, entry.id, {
+                                  title: e.target.value,
+                                })
+                              }
+                              className="w-full h-10 pl-3 pr-9 rounded-lg border border-line bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setUrlPopover((prev) =>
+                                  prev?.key === f.key && prev.id === entry.id
+                                    ? null
+                                    : { key: f.key, id: entry.id },
+                                )
+                              }
+                              className={cn(
+                                "absolute right-2 top-1/2 -translate-y-1/2 size-6 rounded-md inline-flex items-center justify-center hover:bg-surface-2",
+                                entry.url
+                                  ? "text-brand"
+                                  : "text-text-placeholder",
+                              )}
+                              aria-label={t("builder.personal.linkUrl")}
+                            >
+                              <LinkIcon size={15} />
+                            </button>
+
+                            {popoverOpen && (
+                              <div className="absolute z-10 left-0 bottom-[calc(100%+0.5rem)] w-full min-w-[16rem] bg-bg border border-line rounded-xl shadow-lg p-3 space-y-1.5">
+                                <p className="text-xs font-medium text-text-secondary">
+                                  {t("builder.personal.linkUrl")}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="url"
+                                    autoFocus
+                                    value={entry.url}
+                                    placeholder="https://..."
+                                    onChange={(e) =>
+                                      updateLinkEntry(f.key, entry.id, {
+                                        url: e.target.value,
+                                      })
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        setUrlPopover(null);
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex-1 h-9 px-3 rounded-lg border bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors",
+                                      invalid
+                                        ? "border-destructive"
+                                        : "border-line focus:border-ring",
+                                    )}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setUrlPopover(null)}
+                                    className="size-9 shrink-0 rounded-lg bg-emerald-600 text-white inline-flex items-center justify-center hover:bg-emerald-700 transition-colors"
+                                    aria-label={t("builder.confirm")}
+                                  >
+                                    <Check size={16} />
+                                  </button>
+                                </div>
+                                {invalid && (
+                                  <p className="text-xs text-destructive">
+                                    {t("builder.personal.invalidLink")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => removeLinkEntry(f.key, entry.id)}
+                            className="size-10 shrink-0 rounded-md text-destructive hover:bg-surface-2 inline-flex items-center justify-center"
+                            aria-label={t("builder.personal.removeField")}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </motion.div>
+                      );
+                    })}
                   </AnimatePresence>
                 </div>
                 <button

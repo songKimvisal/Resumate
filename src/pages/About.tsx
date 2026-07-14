@@ -13,7 +13,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
-import mascot from "../assets/logo/mascot.png"; // ← adjust to your mascot image
+import mascot from "../assets/logo/mascot.png"; 
 
 /* ---------- shared animation presets ---------- */
 
