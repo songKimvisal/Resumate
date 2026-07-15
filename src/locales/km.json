@@ -472,6 +472,7 @@
       "removeField": "លុបប្រឡោះនេះ",
       "addAnotherLink": "បន្ថែមតំណភ្ជាប់ផ្សេងទៀត",
       "invalidLink": "សូមបញ្ចូលតំណភ្ជាប់ត្រឹមត្រូវ (ឧទាហរណ៍៖ github.com/sokdara)",
+      "invalidEmail": "សូមបញ្ចូលអាសយដ្ឋានអ៊ីមែលត្រឹមត្រូវ",
       "linkUrl": "អាសយដ្ឋានតំណភ្ជាប់ (URL)",
       "details": {
         "nationality": "សញ្ជាតិ",
@@ -593,6 +594,51 @@
       "deleteEntry": "លុប",
       "collapse": "លាក់ព័ត៌មាន",
       "expand": "បង្ហាញព័ត៌មាន"
+    },
+    "skillsMore": {
+      "title": "ជំនាញ និងផ្សេងៗ",
+      "subtitle": "បន្ថែមជំនាញ ភាសា និងបុគ្គលយោង (References) របស់អ្នកទាំងអស់នៅក្នុងកន្លែងតែមួយ។",
+      "tabs": {
+        "skills": "ជំនាញ",
+        "languages": "ភាសា",
+        "references": "បុគ្គលយោង"
+      },
+      "skills": {
+        "technicalSkills": "ជំនាញបច្ចេកទេស",
+        "technicalSkillsPlaceholder": "ឧ. SQL, React, Figma",
+        "skillLevel": "កម្រិតជំនាញ",
+        "addNewSkill": "បន្ថែមជំនាញថ្មី",
+        "untitled": "ជំនាញដែលគ្មានចំណងជើង",
+        "deleteEntry": "លុបជំនាញ",
+        "collapse": "លាក់ព័ត៌មានលម្អិត",
+        "expand": "បង្ហាញព័ត៌មានលម្អិត"
+      },
+      "languages": {
+        "language": "ភាសា",
+        "languagePlaceholder": "ឧ. ខ្មែរ, អង់គ្លេស",
+        "languageLevel": "កម្រិតភាសា",
+        "addLanguage": "បន្ថែមភាសា",
+        "deleteEntry": "លុបភាសា"
+      },
+      "references": {
+        "includeToggle": "ដាក់បញ្ជូនបុគ្គលយោងនៅលើប្រវត្តិរូបសង្ខេបរបស់ខ្ញុំ",
+        "includeHint": "បិទមុខងារនេះ ប្រសិនបើអ្នកចង់ប្រើប្រាស់ឃ្លា \"References available upon request\" (ផ្តល់ជូនបុគ្គលយោងនៅពេលមានការស្នើសុំ)",
+        "untitled": "បុគ្គលយោង",
+        "fullName": "ឈ្មោះពេញ",
+        "fullNamePlaceholder": "លោក ហ៊ន ដារ៉ា",
+        "position": "មុខតំណែង",
+        "positionPlaceholder": "ប្រធានផ្នែកព័ត៌មានវិទ្យា (IT Manager)",
+        "company": "ក្រុមហ៊ុន / ស្ថាប័ន",
+        "companyPlaceholder": "លីមកុកវីង កម្ពុជា",
+        "email": "អ៊ីមែល",
+        "emailPlaceholder": "darahorn@gmail.com",
+        "phone": "ទូរសព្ទ",
+        "phonePlaceholder": "012345678",
+        "addReference": "បន្ថែមបុគ្គលយោង",
+        "deleteEntry": "លុบบុគ្គលយោង",
+        "collapse": "លាក់ព័ត៌មានលម្អិត",
+        "expand": "បង្ហាញព័ត៌មានលម្អិត"
+      }
     }
   }
 }

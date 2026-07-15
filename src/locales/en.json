@@ -472,6 +472,7 @@
       "removeField": "Remove field",
       "addAnotherLink": "Add another link",
       "invalidLink": "Enter a valid link (e.g. github.com/sokdara)",
+      "invalidEmail": "Enter a valid email address",
       "linkUrl": "Link URL",
       "details": {
         "nationality": "Nationality",
@@ -593,6 +594,51 @@
       "deleteEntry": "Delete entry",
       "collapse": "Hide details",
       "expand": "Show details"
+    },
+    "skillsMore": {
+      "title": "Skills & more",
+      "subtitle": "Add your skills, languages, and optional references all in one place.",
+      "tabs": {
+        "skills": "Skills",
+        "languages": "Languages",
+        "references": "References"
+      },
+      "skills": {
+        "technicalSkills": "Technical Skills",
+        "technicalSkillsPlaceholder": "e.g. SQL, React, Figma",
+        "skillLevel": "Skill level",
+        "addNewSkill": "Add new skill",
+        "untitled": "Untitled skill",
+        "deleteEntry": "Delete skill",
+        "collapse": "Hide details",
+        "expand": "Show details"
+      },
+      "languages": {
+        "language": "language",
+        "languagePlaceholder": "e.g. Khmer, English",
+        "languageLevel": "language level",
+        "addLanguage": "Add language",
+        "deleteEntry": "Delete language"
+      },
+      "references": {
+        "includeToggle": "Include references on my resume",
+        "includeHint": "Turn off if you prefer \"References available upon request\"",
+        "untitled": "Reference",
+        "fullName": "Full name",
+        "fullNamePlaceholder": "Mr. John Doe",
+        "position": "Position",
+        "positionPlaceholder": "IT Manager",
+        "company": "Company",
+        "companyPlaceholder": "Limkokwing Cambodia",
+        "email": "Email",
+        "emailPlaceholder": "johndoe@gmail.com",
+        "phone": "Phone",
+        "phonePlaceholder": "123456789",
+        "addReference": "Add reference",
+        "deleteEntry": "Delete reference",
+        "collapse": "Hide details",
+        "expand": "Show details"
+      }
     }
   }
 }
