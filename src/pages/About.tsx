@@ -13,7 +13,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
-import mascot from "../assets/logo/mascot.png"; 
+import mascot from "../assets/logo/mascot.png";
 
 /* ---------- shared animation presets ---------- */
 
@@ -364,15 +364,15 @@ export default function About() {
         >
           {user ? (
             <Link to="/dashboard">
-              <Button size="lg">{t("home.hero.ctaDashboard")}</Button>
+              <Button size="default">{t("home.hero.ctaDashboard")}</Button>
             </Link>
           ) : (
             <>
               <Link to="/login">
-                <Button size="lg">{t("about.cta.primary")}</Button>
+                <Button size="default">{t("about.cta.primary")}</Button>
               </Link>
               <Link to="/" state={{ scrollTo: "templates" }}>
-                <Button size="lg" variant="outline">
+                <Button size="default" variant="outline">
                   {t("about.cta.secondary")}
                 </Button>
               </Link>

@@ -266,7 +266,7 @@
     "pricing": {
       "title": "Simple,",
       "titleAccent": "honest pricing.",
-      "subtitle": "Pay with ABA Pay or KHQR. No hidden fees. Cancel any time.",
+      "subtitle": "Pay with Stripe Payment or KHQR. No hidden fees. Cancel any time.",
       "month": "month",
       "mostPopular": "Most popular",
       "plans": [
@@ -381,7 +381,7 @@
         },
         {
           "title": "Built for Cambodia first",
-          "desc": "Every template, price, and payment method (KHQR, ABA Pay) is designed around how Cambodians actually work and pay not adapted from a US product."
+          "desc": "Every template, price, and payment method (KHQR, Stripe Payment) is designed around how Cambodians actually work and pay not adapted from a US product."
         },
         {
           "title": "Guidance over judgment",
