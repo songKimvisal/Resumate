@@ -17,6 +17,8 @@ import {
 import { useResumeStore } from "../../store/resumeStore";
 import {
   NO_EXPERIENCE_TYPE_LABELS,
+  LANGUAGE_LEVEL_LABELS,
+  SKILL_LEVEL_LABELS,
   type ExperienceItem,
   type NoExperienceItem,
   type EducationItem,
@@ -93,6 +95,8 @@ export default function ResumePreview({
     education,
     skills,
     languages,
+    references,
+    includeReferences,
     customization,
   } = resume;
   const accent = customization.accentColor;
@@ -243,7 +247,14 @@ export default function ResumePreview({
             {skills.length > 0 && (
               <Section title="Skills" accent={accent}>
                 <p className="text-[0.85em] leading-relaxed">
-                  {skills.map((s) => s.name).filter(Boolean).join(" · ")}
+                  {skills
+                    .map((s) =>
+                      s.name
+                        ? `${s.name} (${SKILL_LEVEL_LABELS[s.level - 1]})`
+                        : "",
+                    )
+                    .filter(Boolean)
+                    .join(" - ")}
                 </p>
               </Section>
             )}
@@ -251,13 +262,41 @@ export default function ResumePreview({
               <Section title="Languages" accent={accent}>
                 <p className="text-[0.85em] leading-relaxed">
                   {languages
-                    .map((l) => (l.name ? `${l.name} (${l.level})` : ""))
+                    .map((l) =>
+                      l.name
+                        ? `${l.name} (${LANGUAGE_LEVEL_LABELS[l.level - 1]})`
+                        : "",
+                    )
                     .filter(Boolean)
-                    .join(" · ")}
+                    .join(" - ")}
                 </p>
               </Section>
             )}
           </div>
+        ),
+      });
+    }
+
+    if (includeReferences && references.length > 0) {
+      list.push({
+        key: "references",
+        gapBefore: GAP_SECTION,
+        node: (
+          <Section title="References" accent={accent}>
+            <div className="grid grid-cols-2 gap-4">
+              {references.map((r) => (
+                <div key={r.id} className="text-[0.85em] leading-relaxed">
+                  <p className="font-semibold">{r.name || "Reference name"}</p>
+                  <p className="text-neutral-600">
+                    {[r.jobTitle, r.company].filter(Boolean).join(", ")}
+                  </p>
+                  <p className="text-neutral-500 text-[0.9em]">
+                    {[r.email, r.phone].filter(Boolean).join(" - ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Section>
         ),
       });
     }
@@ -270,6 +309,8 @@ export default function ResumePreview({
     education,
     skills,
     languages,
+    references,
+    includeReferences,
     accent,
     fontSize,
   ]);
@@ -458,6 +499,7 @@ function ExperienceHeader({ exp }: { exp: ExperienceItem }) {
 }
 
 function NoExperienceHeader({ exp }: { exp: NoExperienceItem }) {
+  const hasUrl = exp.url.trim() !== "";
   return (
     <div className="flex justify-between gap-3 items-baseline">
       <p className="font-semibold text-[0.95em]">
@@ -465,7 +507,22 @@ function NoExperienceHeader({ exp }: { exp: NoExperienceItem }) {
         {(exp.title || exp.subtitle) && (
           <span className="font-normal text-neutral-600">
             {" "}
-            - {[exp.title, exp.subtitle].filter(Boolean).join(", ")}
+            -{" "}
+            {exp.title &&
+              (hasUrl ? (
+                <a
+                  href={exp.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline"
+                >
+                  {exp.title}
+                </a>
+              ) : (
+                exp.title
+              ))}
+            {exp.title && exp.subtitle && ", "}
+            {exp.subtitle}
           </span>
         )}
       </p>

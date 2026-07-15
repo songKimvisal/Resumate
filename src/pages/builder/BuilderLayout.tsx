@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/button";
 import Step1Personal from "./Step1Personal";
 import Step2Experience from "./Step2experience";
 import Step3Education from "./Step3Education";
+import Step4Skills from "./Step4Skills";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
 import { cn } from "../../lib/utils";
@@ -227,7 +228,8 @@ export default function BuilderLayout() {
               {step === 1 && <Step1Personal />}
               {step === 2 && <Step2Experience />}
               {step === 3 && <Step3Education />}
-              {step > 3 && (
+              {step === 4 && <Step4Skills />}
+              {step > 4 && (
                 <div className="py-16 text-center text-text-secondary">
                   <p className="font-medium">{stepLabels[step - 1]}</p>
                   <p className="text-sm mt-2">{t("builder.comingSoon")}</p>

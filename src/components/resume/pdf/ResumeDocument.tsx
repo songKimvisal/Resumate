@@ -1,6 +1,8 @@
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, Link, StyleSheet } from "@react-pdf/renderer";
 import {
   NO_EXPERIENCE_TYPE_LABELS,
+  LANGUAGE_LEVEL_LABELS,
+  SKILL_LEVEL_LABELS,
   type EducationItem,
   type ExperienceItem,
   type Resume,
@@ -36,6 +38,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     education,
     skills,
     languages,
+    references,
+    includeReferences,
     customization,
   } = resume;
   const accent = customization.accentColor;
@@ -169,7 +173,15 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     {(exp.title || exp.subtitle) && (
                       <Text style={styles.entryMeta}>
                         {" "}
-                        — {[exp.title, exp.subtitle].filter(Boolean).join(", ")}
+                        —{" "}
+                        {exp.title &&
+                          (exp.url.trim() ? (
+                            <Link src={exp.url}>{exp.title}</Link>
+                          ) : (
+                            exp.title
+                          ))}
+                        {exp.title && exp.subtitle && ", "}
+                        {exp.subtitle}
                       </Text>
                     )}
                   </Text>
@@ -224,7 +236,14 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                   Skills
                 </Text>
                 <Text style={{ fontSize: base * 0.85 }}>
-                  {skills.map((s) => s.name).filter(Boolean).join("  ·  ")}
+                  {skills
+                    .map((s) =>
+                      s.name
+                        ? `${s.name} (${SKILL_LEVEL_LABELS[s.level - 1]})`
+                        : "",
+                    )
+                    .filter(Boolean)
+                    .join("  ·  ")}
                 </Text>
               </View>
             )}
@@ -235,12 +254,39 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 </Text>
                 <Text style={{ fontSize: base * 0.85 }}>
                   {languages
-                    .map((l) => (l.name ? `${l.name} (${l.level})` : ""))
+                    .map((l) =>
+                      l.name
+                        ? `${l.name} (${LANGUAGE_LEVEL_LABELS[l.level - 1]})`
+                        : "",
+                    )
                     .filter(Boolean)
                     .join("  ·  ")}
                 </Text>
               </View>
             )}
+          </View>
+        )}
+
+        {includeReferences && references.length > 0 && (
+          <View style={styles.section} minPresenceAhead={40}>
+            <Text style={[styles.sectionTitle, { color: accent, borderColor: accent }]}>
+              References
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 8 }}>
+              {references.map((r) => (
+                <View key={r.id} style={{ width: "50%", paddingRight: 8 }} wrap={false}>
+                  <Text style={{ fontSize: base * 0.95, fontFamily: "Helvetica-Bold" }}>
+                    {r.name || "Reference name"}
+                  </Text>
+                  <Text style={{ fontSize: base * 0.85, color: "#525252" }}>
+                    {[r.jobTitle, r.company].filter(Boolean).join(", ")}
+                  </Text>
+                  <Text style={{ fontSize: base * 0.8, color: "#737373" }}>
+                    {[r.email, r.phone].filter(Boolean).join("  ·  ")}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
       </Page>
