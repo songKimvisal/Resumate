@@ -33,7 +33,6 @@ import {
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/tip_mascot.png";
 
-/** Formats "2023-06" → "Jun 2023" (for the collapsed card subtitle) */
 function fmtDate(value: string) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
@@ -59,7 +58,6 @@ export default function Step2Experience() {
   const removeNoExperience = useResumeStore((s) => s.removeNoExperience);
   const reorderNoExperience = useResumeStore((s) => s.reorderNoExperience);
 
-  // which entry is expanded (only one at a time, like the design)
   const [expandedId, setExpandedId] = useState<string | null>(
     experience.length > 0
       ? experience[experience.length - 1].id
@@ -67,10 +65,8 @@ export default function Step2Experience() {
         ? noExperience[noExperience.length - 1].id
         : null,
   );
-  // briefly highlights + scrolls to the entry that was just added
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
-  // modal shows until the user has made a choice (or already has entries)
   const [modalDismissed, setModalDismissed] = useState(false);
   const modalOpen =
     !modalDismissed &&
@@ -216,15 +212,6 @@ export default function Step2Experience() {
           {t("builder.experience.addAnother")}
         </Button>
       )}
-
-      {/* ---------- choice modal ----------
-          Portaled to <body>: this step's content sits inside BuilderLayout's
-          per-step motion.div, which carries an active CSS transform for the
-          ~250ms it takes to slide in. A `position: fixed` descendant is
-          contained by the nearest transformed ancestor instead of the
-          viewport, so without the portal this modal would render clipped
-          inside that narrow column for the entrance animation's duration
-          before snapping into its correct centered position. */}
       {createPortal(
         <AnimatePresence>
           {modalOpen && (
@@ -356,22 +343,16 @@ function ExperienceCard({
 }) {
   const dates =
     exp.startDate || exp.endDate || exp.current
-      ? `${fmtDate(exp.startDate)} – ${exp.current ? t("builder.experience.present") : fmtDate(exp.endDate)}`
+      ? `${fmtDate(exp.startDate)} - ${exp.current ? t("builder.experience.present") : fmtDate(exp.endDate)}`
       : "";
 
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // scroll the freshly-added entry into view, since it can land below the fold.
-  // Waits out the collapse/expand height animations (250ms) below first —
-  // scrolling any earlier lands on a target that's still shifting as a
-  // previously-expanded card collapses and this one expands.
   useEffect(() => {
     if (!isNew) return;
     const timeout = setTimeout(() => {
       cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 300);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -537,8 +518,6 @@ const NO_EXPERIENCE_TYPES: NoExperienceType[] = [
   "internship",
   "partTime",
 ];
-
-/** Only the "university" type shows the extra (optional) project-url field. */
 const NO_EXPERIENCE_HAS_URL: Record<NoExperienceType, boolean> = {
   university: true,
   volunteer: false,
@@ -587,7 +566,6 @@ function NoExperienceCard({
       cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 300);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -771,7 +749,7 @@ function NoExperienceDuration({
             placeholder={t("builder.experience.startDate")}
           />
         </div>
-        <span className="text-text-placeholder shrink-0">–</span>
+        <span className="text-text-placeholder shrink-0">-</span>
         <div className="flex-1 min-w-0">
           <MonthPicker
             value={exp.endDate}

@@ -135,15 +135,10 @@ function EducationCard({
 }) {
   const dates =
     edu.startDate || edu.endDate || edu.current
-      ? `${fmtDate(edu.startDate)} – ${edu.current ? t("builder.education.present") : fmtDate(edu.endDate)}`
+      ? `${fmtDate(edu.startDate)} - ${edu.current ? t("builder.education.present") : fmtDate(edu.endDate)}`
       : "";
 
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // scroll the freshly-added entry into view, since it can land below the fold.
-  // Waits out the collapse/expand height animations (250ms) below first —
-  // scrolling any earlier lands on a target that's still shifting as a
-  // previously-expanded card collapses and this one expands.
   useEffect(() => {
     if (!isNew) return;
     const timeout = setTimeout(() => {
@@ -240,6 +235,12 @@ function EducationCard({
           />
 
           <div className="grid sm:grid-cols-2 gap-4">
+            <Input
+              label={t("builder.education.gpa")}
+              placeholder={t("builder.education.gpaPlaceholder")}
+              value={edu.gpa}
+              onChange={(e) => onChange({ gpa: e.target.value })}
+            />
             <div className="min-w-0 space-y-1.5">
               <label className="text-sm font-medium text-text">
                 {t("builder.education.duration")}
@@ -254,7 +255,7 @@ function EducationCard({
                     placeholder={t("builder.education.startDate")}
                   />
                 </div>
-                <span className="text-text-placeholder shrink-0">–</span>
+                <span className="text-text-placeholder shrink-0">-</span>
                 <div className="flex-1 min-w-0">
                   <MonthPicker
                     value={edu.endDate}
@@ -277,13 +278,6 @@ function EducationCard({
                 {t("builder.education.current")}
               </label>
             </div>
-
-            <Input
-              label={t("builder.education.gpa")}
-              placeholder={t("builder.education.gpaPlaceholder")}
-              value={edu.gpa}
-              onChange={(e) => onChange({ gpa: e.target.value })}
-            />
           </div>
 
           <div className="space-y-1.5">
