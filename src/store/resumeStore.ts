@@ -7,6 +7,7 @@ import type {
   EducationItem,
   SkillItem,
   LanguageItem,
+  ReferenceItem,
   Customization,
 } from "../types/resume";
 import { emptyResume } from "../types/resume";
@@ -51,6 +52,11 @@ interface ResumeState {
   addLanguage: (name?: string) => void;
   updateLanguage: (id: string, patch: Partial<LanguageItem>) => void;
   removeLanguage: (id: string) => void;
+
+  addReference: () => void;
+  updateReference: (id: string, patch: Partial<ReferenceItem>) => void;
+  removeReference: (id: string) => void;
+  setIncludeReferences: (value: boolean) => void;
 }
 
 export const useResumeStore = create<ResumeState>((set) => ({
@@ -247,10 +253,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
     set((s) => ({
       resume: {
         ...s.resume,
-        skills: [
-          ...s.resume.skills,
-          { id: uid(), name, level: "intermediate" },
-        ],
+        skills: [...s.resume.skills, { id: uid(), name, level: 3 }],
       },
       dirty: true,
     })),
@@ -278,10 +281,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
     set((s) => ({
       resume: {
         ...s.resume,
-        languages: [
-          ...s.resume.languages,
-          { id: uid(), name, level: "conversational" },
-        ],
+        languages: [...s.resume.languages, { id: uid(), name, level: 3 }],
       },
       dirty: true,
     })),
@@ -301,6 +301,49 @@ export const useResumeStore = create<ResumeState>((set) => ({
         ...s.resume,
         languages: s.resume.languages.filter((l) => l.id !== id),
       },
+      dirty: true,
+    })),
+
+  /* ---------- references ---------- */
+  addReference: () =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        references: [
+          ...s.resume.references,
+          {
+            id: uid(),
+            name: "",
+            jobTitle: "",
+            company: "",
+            email: "",
+            phone: "",
+          },
+        ],
+      },
+      dirty: true,
+    })),
+  updateReference: (id, patch) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        references: s.resume.references.map((r) =>
+          r.id === id ? { ...r, ...patch } : r,
+        ),
+      },
+      dirty: true,
+    })),
+  removeReference: (id) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        references: s.resume.references.filter((r) => r.id !== id),
+      },
+      dirty: true,
+    })),
+  setIncludeReferences: (value) =>
+    set((s) => ({
+      resume: { ...s.resume, includeReferences: value },
       dirty: true,
     })),
 }));
