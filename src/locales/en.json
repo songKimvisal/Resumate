@@ -118,7 +118,9 @@
     "pricing": "Pricing",
     "about": "About",
     "login": "Log in",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "settings":"Setting",
+    "logout":"Logout"
   },
   "footer": {
     "product": "Product",

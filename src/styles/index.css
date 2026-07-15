@@ -1,19 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Koh+Santepheap:wght@400;700;900&display=swap");
 @import "tailwindcss";
-/* If shadcn init installed tw-animate-css, keep this line. If you get
-   "failed to resolve import", run: npm i tw-animate-css  (or delete the line) */
 @import "tw-animate-css";
-
-/* Class-based dark mode: toggling `dark` on <html> switches themes */
 @custom-variant dark (&:is(.dark *));
-
-/* Khmer-only variant: use like `km:text-5xl` or `km:leading-snug` */
 @custom-variant km (&:where(:lang(km), :lang(km) *));
-
-/* ============================================================
-   1. DESIGN TOKENS — from Figma variables (source of truth)
-   Light theme = :root, dark theme = .dark
-   ============================================================ */
 
 :root {
   /* brand */
@@ -22,15 +11,15 @@
   --brand-third: #8b0000;
   --brand-accent: #e63946;
   --brand-accent-2: #ffdede;
-  --brand-light: #fdf1f2; /* "Very Light Red" */
-  --brand-cream: #fff3e9; /* top-level "Color" */
+  --brand-light: #fdf1f2;
+  --brand-cream: #fff3e9;
 
   /* background */
   --bg-default: #ffffff;
   --bg-surface: #fff5f5;
   --bg-surface-2: #f4f4f5;
 
-  /* text (Figma: background/text) */
+  /* text  */
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
   --text-placeholder: #9ca3af;
@@ -41,11 +30,6 @@
   /* status */
   --status-success: #16a34a;
   --status-success-bg: #f0fdf4;
-
-  /* ----------------------------------------------------------
-     shadcn/ui variables → mapped to the tokens above.
-     shadcn components read these names internally.
-     ---------------------------------------------------------- */
   --radius: 0.625rem;
 
   --background: var(--bg-default);
@@ -67,15 +51,11 @@
   --border: var(--border-default);
   --input: var(--border-default);
   --ring: var(--brand-accent);
-
-  /* shadcn chart palette (used by chart components) */
   --chart-1: var(--brand-primary);
   --chart-2: var(--brand-accent);
   --chart-3: var(--status-success);
   --chart-4: var(--text-secondary);
   --chart-5: var(--brand-third);
-
-  /* shadcn sidebar (used by the Sidebar component) */
   --sidebar: var(--bg-surface);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--brand-primary);
@@ -87,46 +67,34 @@
 }
 
 .dark {
-  /* brand — brighter reds read better on dark backgrounds */
   --brand-primary: #e63946;
   --brand-secondary: #ff4d5e;
   --brand-third: #c1121f;
   --brand-accent: #ff6b75;
-  --brand-accent-2: #4a1d21;
-  --brand-light: #2a1518;
-  --brand-cream: #2b2320;
+  --brand-accent-2: #52272c;
+  --brand-light: #362024;
+  --brand-cream: #383029;
 
   /* background */
-  --bg-default: #121214;
-  --bg-surface: #1b1b1e;
-  --bg-surface-2: #232327;
+  --bg-default: #1e1e22;
+  --bg-surface: #26262b;
+  --bg-surface-2: #2f2f35;
 
-  /* text */
+  /* text  */
   --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --text-placeholder: #71717a;
+  --text-secondary: #b0b0b8;
+  --text-placeholder: #7c7c85;
 
   /* border */
-  --border-default: #2e2e33;
+  --border-default: #3a3a41;
 
   /* status */
   --status-success: #22c55e;
-  --status-success-bg: #10241a;
-
-  /* No shadcn overrides needed here — the shadcn variables above
-     reference the tokens, and the tokens just changed. Exceptions
-     that don't derive from a token: */
+  --status-success-bg: #16301f;
   --primary-foreground: #ffffff;
   --accent-foreground: #ffb3ba;
   --sidebar-accent-foreground: #ffb3ba;
 }
-
-/* ============================================================
-   2. TAILWIND UTILITY MAPPINGS (v4 @theme)
-   Your naming:   bg-bg, bg-surface, text-text, border-line…
-   shadcn naming: bg-background, text-foreground, border-border…
-   Both work everywhere.
-   ============================================================ */
 
 @theme inline {
   /* --- your token names --- */
@@ -198,9 +166,7 @@
   --font-khmer: "Koh Santepheap", "Inter", system-ui, sans-serif;
 }
 
-/* ============================================================
-   3. BASE STYLES
-   ============================================================ */
+/* 3. BASE STYLES*/
 
 @layer base {
   * {
@@ -216,8 +182,6 @@
   body {
     font-family: var(--font-sans);
   }
-
-  /* When the app language is Khmer, prefer Koh Santepheap */
   :lang(km) body,
   [lang="km"] {
     font-family: var(--font-khmer);
@@ -227,46 +191,25 @@
     color: var(--text-placeholder);
   }
 
-  /* ============================================================
-     Khmer typography
-     Khmer stacks vowels above and subscripts below the baseline,
-     so it needs taller line-height than Latin.
-     Sets it for ALL Khmer text via Tailwind's --tw-leading hook:
-     text-* utilities pick it up automatically, and leading-*
-     classes still override when needed (zero specificity via
-     :where).
-     ============================================================ */
-
-  /* everything: covers spans, divs, unclassed text, any text-* size */
   :where(:lang(km), :lang(km) *) {
     --tw-leading: 1.8;
     line-height: 1.8;
   }
 
-  /* headings a bit tighter than body */
   :where(:lang(km) :is(h1, h2, h3, h4, h5, h6)) {
     --tw-leading: 1.55;
     line-height: 1.55;
   }
 
-  /* tracking-* breaks Khmer cluster shaping; Khmer has no uppercase */
   :lang(km) * {
     letter-spacing: normal !important;
   }
 
-  /* Buttons are single-line UI, not paragraph text — the taller Khmer
-     line-height above would otherwise inflate button height vs English */
   :where(:lang(km) [data-slot="button"], :lang(km) [data-slot="button"] *) {
     --tw-leading: 1.2;
     line-height: 1.2;
   }
 }
-
-/* ============================================================
-   4. CUSTOM SCROLLBARS
-   Thin, theme-aware scrollbar for internally-scrollable panels
-   (e.g. the pinned resume preview).
-   ============================================================ */
 
 @layer utilities {
   .scrollbar-thin {
@@ -294,14 +237,6 @@
     background-color: var(--text-placeholder);
   }
 }
-
-/* ============================================================
-   5. RICH TEXT EDITOR CONTENT
-   Minimal styling for Tiptap output (used by the summary field).
-   Tailwind's preflight strips list-style/margin, so lists need
-   to be restyled explicitly.
-   ============================================================ */
-
 .rte-content p {
   margin: 0;
 }

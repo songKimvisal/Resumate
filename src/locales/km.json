@@ -118,7 +118,9 @@
     "pricing": "តម្លៃ",
     "about": "អំពីយើង",
     "login": "ចូលគណនី",
-    "dashboard": "ផ្ទាំងគ្រប់គ្រង"
+    "dashboard": "ផ្ទាំងគ្រប់គ្រង",
+    "settings": "ការកំណត់",
+    "logout": "ចាកចេញ"
   },
   "footer": {
     "product": "ផលិតផល",
