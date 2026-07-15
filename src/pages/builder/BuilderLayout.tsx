@@ -128,7 +128,9 @@ export default function BuilderLayout() {
   return (
     <div
       className="min-h-screen bg-bg text-text flex flex-col"
-      style={{ "--step-bar-height": `${stepBarHeight}px` } as React.CSSProperties}
+      style={
+        { "--step-bar-height": `${stepBarHeight}px` } as React.CSSProperties
+      }
     >
       {/* ================= header ================= */}
       <header className="flex items-center justify-between px-6 h-16">
@@ -156,7 +158,6 @@ export default function BuilderLayout() {
             )}
           </button>
 
-          
           <span className="flex items-center gap-2 text-sm border border-line rounded-full px-3 sm:px-4 py-1.5 whitespace-nowrap">
             <span
               className={`size-2 rounded-full shrink-0 ${dirty ? "bg-amber-500" : "bg-success"}`}
@@ -173,7 +174,7 @@ export default function BuilderLayout() {
         ref={stepBarRef}
         className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm"
       >
-        <div className="grid grid-cols-5 max-w-5xl w-full mx-auto px-4 pt-2">
+        <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-1.5 pt-2">
           {stepLabels.map((label, i) => {
             const n = i + 1;
             const active = n === step;
@@ -211,8 +212,8 @@ export default function BuilderLayout() {
       </div>
 
       {/* ================= form + preview ================= */}
-      
-      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
+
+      <div className="flex-1 max-w-7xl mx-auto w-full py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
         {/* ---------- left: current step ---------- */}
         <div>
           <AnimatePresence mode="popLayout">
@@ -255,7 +256,10 @@ export default function BuilderLayout() {
                 : undefined
             }
           >
-            <div ref={previewHeaderRef} className="flex items-center justify-between mb-5">
+            <div
+              ref={previewHeaderRef}
+              className="flex items-center justify-between mb-5"
+            >
               {/* customize popover */}
               <div className="relative">
                 <Button
@@ -393,7 +397,10 @@ export default function BuilderLayout() {
       {/* ================= floating mascot tip =================
           desktop-only: below lg there's no preview panel for it to float
           beside, so it just drifts over the full-width form instead */}
-      <div ref={tipRef} className="hidden lg:block fixed bottom-20 right-6 z-40">
+      <div
+        ref={tipRef}
+        className="hidden lg:block fixed bottom-20 right-6 z-40"
+      >
         <AnimatePresence>
           {tipOpen && (
             <motion.div
@@ -444,7 +451,7 @@ export default function BuilderLayout() {
 
       {/* ================= floating bottom bar ================= */}
       <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-1.5 h-14 flex items-center justify-between">
           {step > 1 ? (
             <Button size="sm" variant="outline" onClick={back}>
               ← {t("builder.back")}
