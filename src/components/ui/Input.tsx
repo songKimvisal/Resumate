@@ -4,12 +4,13 @@ import { cn } from "../../lib/utils";
 interface FieldProps {
   label?: string;
   hint?: string;
+  error?: string;
 }
 
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement> & FieldProps
->(({ label, hint, className, id, ...props }, ref) => {
+>(({ label, hint, error, className, id, ...props }, ref) => {
   const inputId = id ?? React.useId();
   return (
     <div className="space-y-1.5">
@@ -21,16 +22,24 @@ export const Input = React.forwardRef<
       <input
         ref={ref}
         id={inputId}
+        aria-invalid={!!error}
         className={cn(
-          "w-full h-10 px-3 rounded-lg border border-line bg-bg text-sm text-text",
+          "w-full h-10 px-3 rounded-lg border bg-bg text-sm text-text",
           "placeholder:text-text-placeholder",
-          "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring",
+          "focus:outline-none focus:ring-2 focus:ring-ring/50",
           "transition-colors",
+          error
+            ? "border-destructive focus:border-destructive"
+            : "border-line focus:border-ring",
           className,
         )}
         {...props}
       />
-      {hint && <p className="text-xs text-text-placeholder">{hint}</p>}
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : (
+        hint && <p className="text-xs text-text-placeholder">{hint}</p>
+      )}
     </div>
   );
 });

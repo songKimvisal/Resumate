@@ -74,16 +74,41 @@ export interface EducationItem {
   description: string;
 }
 
+/** 1 (lowest) - 5 (highest) proficiency, shown as a 5-dot rating */
 export interface SkillItem {
   id: string;
   name: string;
-  level: "beginner" | "intermediate" | "advanced" | "expert";
+  level: number;
 }
+export const SKILL_LEVEL_LABELS = [
+  "Beginner",
+  "Novice",
+  "Intermediate",
+  "Advanced",
+  "Expert",
+];
 
+/** 1 (lowest) - 5 (highest) proficiency, shown as a 5-dot rating */
 export interface LanguageItem {
   id: string;
   name: string;
-  level: "basic" | "conversational" | "fluent" | "native";
+  level: number;
+}
+export const LANGUAGE_LEVEL_LABELS = [
+  "Basic",
+  "Elementary",
+  "Conversational",
+  "Fluent",
+  "Native",
+];
+
+export interface ReferenceItem {
+  id: string;
+  name: string;
+  jobTitle: string;
+  company: string;
+  email: string;
+  phone: string;
 }
 
 export interface Customization {
@@ -103,6 +128,8 @@ export interface Resume {
   education: EducationItem[];
   skills: SkillItem[];
   languages: LanguageItem[];
+  references: ReferenceItem[];
+  includeReferences: boolean;
   customization: Customization;
 }
 
@@ -136,6 +163,8 @@ export const emptyResume: Resume = {
   education: [],
   skills: [],
   languages: [],
+  references: [],
+  includeReferences: true,
   customization: {
     template: "classic",
     accentColor: "#C1121F",

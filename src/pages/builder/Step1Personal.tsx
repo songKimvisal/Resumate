@@ -45,6 +45,9 @@ const LINK_FIELD_KEYS = new Set<keyof PersonalInfo>([
 const isValidLink = (value: string) =>
   /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}([/?#].*)?$/i.test(value.trim());
 
+const isValidEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 /** Optional fields revealed via "Add details" chips */
 const DETAIL_FIELDS: {
   key: keyof PersonalInfo;
@@ -396,9 +399,15 @@ export default function Step1Personal() {
         <Input
           label={t("builder.personal.email")}
           type="email"
+          required
           placeholder="sokdara@gmail.com"
           value={personal.email}
           onChange={(e) => updatePersonal({ email: e.target.value })}
+          error={
+            personal.email.trim() !== "" && !isValidEmail(personal.email)
+              ? t("builder.personal.invalidEmail")
+              : undefined
+          }
         />
         <Input
           label={t("builder.personal.location")}
