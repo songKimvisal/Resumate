@@ -4,11 +4,13 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Briefcase,
+  Check,
   Eye,
   EyeOff,
   GraduationCap,
   ChevronRight,
   GripVertical,
+  Link as LinkIcon,
   Sparkles,
   Trash2,
   X,
@@ -32,6 +34,9 @@ import {
 } from "../../components/ui/select";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/tip_mascot.png";
+
+const isValidLink = (value: string) =>
+  /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}([/?#].*)?$/i.test(value.trim());
 
 function fmtDate(value: string) {
   if (!value) return "";
@@ -555,6 +560,8 @@ function NoExperienceCard({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const hasUrl = NO_EXPERIENCE_HAS_URL[exp.type];
+  const [urlPopoverOpen, setUrlPopoverOpen] = useState(false);
+  const invalidUrl = exp.url.trim() !== "" && !isValidLink(exp.url);
   const dates =
     exp.startDate || exp.endDate || exp.current
       ? `${fmtDate(exp.startDate)} – ${exp.current ? t("builder.experience.present") : fmtDate(exp.endDate)}`
@@ -662,14 +669,88 @@ function NoExperienceCard({
             </Select>
           </div>
 
-          <Input
-            label={t(`builder.experience.noExperienceFields.${exp.type}.title`)}
-            placeholder={t(
-              `builder.experience.noExperienceFields.${exp.type}.titlePlaceholder`,
-            )}
-            value={exp.title}
-            onChange={(e) => onChange({ title: e.target.value })}
-          />
+          {hasUrl ? (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text">
+                {t(`builder.experience.noExperienceFields.${exp.type}.title`)}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={t(
+                    `builder.experience.noExperienceFields.${exp.type}.titlePlaceholder`,
+                  )}
+                  value={exp.title}
+                  onChange={(e) => onChange({ title: e.target.value })}
+                  className="w-full h-10 pl-3 pr-9 rounded-lg border border-line bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setUrlPopoverOpen((v) => !v)}
+                  className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 size-6 rounded-md inline-flex items-center justify-center hover:bg-surface-2",
+                    exp.url ? "text-brand" : "text-text-placeholder",
+                  )}
+                  aria-label={t("builder.personal.linkUrl")}
+                >
+                  <LinkIcon size={15} />
+                </button>
+
+                {urlPopoverOpen && (
+                  <div className="absolute z-10 left-0 top-[calc(100%+0.5rem)] w-full min-w-[16rem] bg-bg border border-line rounded-xl shadow-lg p-3 space-y-1.5">
+                    <p className="text-xs font-medium text-text-secondary">
+                      {t("builder.personal.linkUrl")}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        autoFocus
+                        value={exp.url}
+                        placeholder="https://..."
+                        onChange={(e) => onChange({ url: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            setUrlPopoverOpen(false);
+                          }
+                        }}
+                        className={cn(
+                          "flex-1 h-9 px-3 rounded-lg border bg-bg text-sm text-text placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-ring/50 transition-colors",
+                          invalidUrl
+                            ? "border-destructive"
+                            : "border-line focus:border-ring",
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setUrlPopoverOpen(false)}
+                        className="size-9 shrink-0 rounded-lg bg-emerald-600 text-white inline-flex items-center justify-center hover:bg-emerald-700 transition-colors"
+                        aria-label={t("builder.confirm")}
+                      >
+                        <Check size={16} />
+                      </button>
+                    </div>
+                    {invalidUrl && (
+                      <p className="text-xs text-destructive">
+                        {t("builder.personal.invalidLink")}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Input
+              label={t(
+                `builder.experience.noExperienceFields.${exp.type}.title`,
+              )}
+              placeholder={t(
+                `builder.experience.noExperienceFields.${exp.type}.titlePlaceholder`,
+              )}
+              value={exp.title}
+              onChange={(e) => onChange({ title: e.target.value })}
+            />
+          )}
 
           <Input
             label={t(
@@ -682,23 +763,7 @@ function NoExperienceCard({
             onChange={(e) => onChange({ subtitle: e.target.value })}
           />
 
-          {hasUrl ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Input
-                label={t(
-                  "builder.experience.noExperienceFields.university.url",
-                )}
-                placeholder={t(
-                  "builder.experience.noExperienceFields.university.urlPlaceholder",
-                )}
-                value={exp.url}
-                onChange={(e) => onChange({ url: e.target.value })}
-              />
-              <NoExperienceDuration exp={exp} onChange={onChange} t={t} />
-            </div>
-          ) : (
-            <NoExperienceDuration exp={exp} onChange={onChange} t={t} />
-          )}
+          <NoExperienceDuration exp={exp} onChange={onChange} t={t} />
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
