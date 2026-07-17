@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/UseAuth";
-import logo from "../assets/logo/resumate.png"; // ← adjust to your logo filename
+import logo from "../assets/logo/resumate.png";
 
 export default function Login() {
   const { user, loading, signInWithGoogle } = useAuth();
