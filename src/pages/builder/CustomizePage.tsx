@@ -178,8 +178,31 @@ export default function CustomizePage() {
         </p>
       </div>
 
-      <div className="flex gap-6 items-start mt-6">
-        {/* ---------- section nav ---------- */}
+      {/* ---------- section nav: horizontal pills below md, since the
+          vertical rail alongside the sections has no room to sit next to
+          the single-column content on small screens ---------- */}
+      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg/95 backdrop-blur-sm">
+        <div className="flex gap-2 px-4 py-2 w-max">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => scrollTo(item.key)}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                activeSection === item.key
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-line text-text-secondary hover:text-text",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-6 items-start mt-4 md:mt-6">
+        {/* ---------- section nav (desktop) ---------- */}
         <div className="hidden md:block w-32 shrink-0 sticky top-24 self-start">
           <div className="flex flex-col border-l border-line">
             {navItems.map((item) => (

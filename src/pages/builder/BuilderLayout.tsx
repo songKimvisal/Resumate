@@ -174,14 +174,14 @@ export default function BuilderLayout() {
         className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm"
       >
         {customizeOpen ? (
-          <div className="max-w-7xl w-full mx-auto px-1.5 py-3">
+          <div className="max-w-7xl w-full mx-auto px-4 lg:px-1.5 py-3">
             <Button size="sm" onClick={() => setCustomizeOpen(false)}>
               <ArrowLeft size={15} strokeWidth={2} />
               {t("builder.back")}
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-1.5 pt-2">
+          <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-4 lg:px-1.5 pt-2">
             {stepLabels.map((label, i) => {
               const n = i + 1;
               const active = n === step;
@@ -221,7 +221,7 @@ export default function BuilderLayout() {
 
       {/* ================= form + preview ================= */}
 
-      <div className="flex-1 max-w-7xl mx-auto w-full py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-0 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
         {/* ---------- left: current step / customize ---------- */}
         <div>
           <AnimatePresence mode="popLayout">
@@ -412,26 +412,40 @@ export default function BuilderLayout() {
         </motion.button>
       </div>
 
-      {/* ================= floating preview button =================
-          mobile-only: the live preview column above is desktop-only (lg+),
-          so smaller screens need their own way into the overlay. Fixed in
-          place (not just in the header) so it stays reachable no matter
-          how far the user has scrolled down the form. */}
-      <motion.button
-        type="button"
-        onClick={() => setPreviewOpen(true)}
-        aria-label={t("builder.previewButton")}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="lg:hidden fixed bottom-20 right-4 z-40 size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
-      >
-        <Eye size={20} strokeWidth={2} />
-      </motion.button>
+      {/* ================= floating preview / customize buttons =================
+          mobile-only: the live preview column (and its Customize toggle)
+          above is desktop-only (lg+), so smaller screens need their own way
+          to reach both. Fixed in place (not just in the header) so they stay
+          reachable no matter how far the user has scrolled down the form. */}
+      <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3">
+        {!customizeOpen && (
+          <motion.button
+            type="button"
+            onClick={() => setCustomizeOpen(true)}
+            aria-label={t("builder.customize")}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
+          >
+            <LayoutGrid size={20} strokeWidth={2} />
+          </motion.button>
+        )}
+        <motion.button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          aria-label={t("builder.previewButton")}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
+        >
+          <Eye size={20} strokeWidth={2} />
+        </motion.button>
+      </div>
 
       {/* ================= floating bottom bar ================= */}
       {!customizeOpen && (
         <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
-          <div className="max-w-7xl mx-auto px-1.5 h-14 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 lg:px-1.5 h-14 flex items-center justify-between">
             {step > 1 ? (
               <Button size="sm" variant="outline" onClick={back}>
                 ← {t("builder.back")}
