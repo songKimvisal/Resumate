@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/UseAuth";
 import logo from "../assets/logo/resumate.png";
+import logoMobile from "../assets/logo/logo.png";
 
 export default function Login() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -68,7 +69,11 @@ export default function Login() {
         <div className="bg-bg flex items-center justify-center p-8 lg:p-16">
           <div className="w-full max-w-sm space-y-8">
             {/* logo shown on mobile only, since left panel is hidden */}
-            <img src={logo} alt="ResuMate" className="h-12 w-auto lg:hidden" />
+            <img
+              src={logoMobile}
+              alt="ResuMate"
+              className="h-12 w-auto lg:hidden"
+            />
 
             <div className="space-y-3">
               <h1 className="text-4xl font-bold text-text">
