@@ -447,6 +447,104 @@
       "medium": "មធ្យម",
       "large": "ធំ"
     },
+    "customizePage": {
+      "title": "កែច្នៃតាមចិត្ត",
+      "subtitle": "ចាប់ផ្តើមជាមួយចំណុចមូលដ្ឋាន — ចំណុចនេះនឹងបង្ហាញនៅផ្នែកខាងលើនៃប្រវត្តិរូបសង្ខេបរបស់អ្នក។",
+      "contentButton": "ខ្លឹមសារ",
+      "nav": {
+        "layout": "ប្លង់",
+        "font": "ពុម្ពអក្សរ",
+        "fontSize": "ទំហំអក្សរ",
+        "sectionHeadings": "ចំណងជើងផ្នែក",
+        "colors": "ពណ៌",
+        "spacing": "គម្លាត"
+      },
+      "templates": {
+        "title": "ប្តូរគំរូប្រវត្តិរូប",
+        "subtitle": "ធ្វើបច្ចុប្បន្នភាពរចនាប័ទ្មប្រវត្តិរូបសង្ខេបទាំងមូលរបស់អ្នកដោយចុចតែម្តង",
+        "button": "ប្តូរគំរូប្រវត្តិរូប"
+      },
+      "layout": {
+        "columns": "ជួរឈរ",
+        "columnsOne": "មួយជួរ",
+        "columnsTwo": "ពីរជួរ",
+        "headerPosition": "ទីតាំងក្បាលទំព័រ",
+        "headerLeft": "ខាងឆ្វេង",
+        "headerTop": "ខាងលើ",
+        "headerRight": "ខាងស្តាំ",
+        "sectionLayout": "ប្តូរប្លង់ផ្នែក",
+        "alwaysFirst": "បង្ហាញមុនគេជានិច្ច",
+        "skills": "ជំនាញ",
+        "experience": "បទពិសោធន៍",
+        "personalDetails": "ព័ត៌មានលម្អិតផ្ទាល់ខ្លួន",
+        "references": "បុគ្គលយោង",
+        "language": "ភាសា",
+        "showPhoto": "បង្ហាញរូបថតប្រវត្តិរូប",
+        "photoShape": "ទម្រង់រូបថត",
+        "shapeCircle": "រង្វង់",
+        "shapeRounded": "ជ្រុងមូល",
+        "shapeSquare": "ការ៉េ",
+        "photoSize": "ទំហំរូបថត",
+        "pageFormat": "ទម្រង់ទំព័រ",
+        "formatA4": "A4",
+        "formatLetter": "US Letter",
+        "pageMargins": "រឹមទំព័រ",
+        "marginsNarrow": "ចង្អៀត",
+        "marginsNormal": "ធម្មតា",
+        "marginsWide": "ធំទូលាយ"
+      },
+      "font": {
+        "fontFamily": "ក្រុមពុម្ពអក្សរ"
+      },
+      "fontSize": {
+        "fontSize": "ទំហំអក្សរ",
+        "fullName": "ឈ្មោះពេញ",
+        "professionalTitle": "មុខតំណែងអាជីព",
+        "sectionHeadings": "ចំណងជើងផ្នែក"
+      },
+      "sectionHeadings": {
+        "capitalization": "ទម្រង់អក្សរធំ-តូច",
+        "capitalize": "អក្សរធំដើមពាក្យ",
+        "uppercase": "អក្សរធំទាំងអស់",
+        "borderNone": "គ្មាន",
+        "borderOutline": "មានស៊ុមព័ទ្ធជុំវិញ",
+        "borderFilled": "មានពណ៌ផ្ទៃខាងក្រោយ",
+        "linkStyle": "រចនាប័ទ្មតំណភ្ជាប់",
+        "linkUnderline": "គូសបន្ទាត់ពីក្រោម",
+        "linkColor": "ពណ៌លេចធ្លោ (Accent)",
+        "linkIcon": "រូបតំណាងភ្ជាប់ (Link icon)"
+      },
+      "colors": {
+        "layoutMode": "រចនាប័ទ្មក្បាលទំព័រ",
+        "layoutFullPage": "ពេញទំព័រ",
+        "layoutColumn": "តាមជួរឈរ",
+        "layoutBorder": "តាមបន្ទាត់ព្រំដែន",
+        "paletteMode": "របៀបពណ៌",
+        "paletteSingle": "ពណ៌ទោល",
+        "paletteMulti": "ម៉ូដច្រើនពណ៌",
+        "headingSection": "ផ្នែកចំណងជើង",
+        "bodySection": "ផ្នែកខ្លឹមសារ",
+        "text": "អក្សរ",
+        "background": "ផ្ទៃខាងក្រោយ",
+        "accent": "ពណ៌លេចធ្លោ",
+        "custom": "ពណ៌ផ្ទាល់ខ្លួន",
+        "toggles": {
+          "jobTitle": "មុខតំណែងការងារ",
+          "headings": "ចំណងជើង",
+          "headingsLine": "បន្ទាត់ចំណងជើង",
+          "dots": "ចំណុច/របារ/ពពុះ",
+          "dates": "កាលបរិច្ឆេទ",
+          "linkIcons": "រូបតំណាងភ្ជាប់",
+          "headerIcons": "រូបតំណាងក្បាលទំព័រ"
+        }
+      },
+      "spacing": {
+        "lineHeight": "កម្ពស់បន្ទាត់",
+        "elementSpacing": "គម្លាតរវាងធាតុ",
+        "topBottomMargin": "រឹមខាងលើ និងខាងក្រោម",
+        "leftRightMargin": "រឹមខាងឆ្វេង និងខាងស្តាំ"
+      }
+    },
     "personal": {
       "title": "ព័ត៌មានផ្ទាល់ខ្លួន",
       "subtitle": "ចាប់ផ្តើមជាមួយព័ត៌មានមូលដ្ឋាន ផ្នែកនេះនឹងបង្ហាញនៅផ្នែកខាងលើបង្អស់នៃប្រវត្តិរូបសង្ខេបរបស់អ្នក។",
@@ -476,7 +574,7 @@
       "linkUrl": "អាសយដ្ឋានតំណភ្ជាប់ (URL)",
       "details": {
         "nationality": "សញ្ជាតិ",
-        "portfolio": "ផលបត្រការងារ (Portfolio)",
+        "portfolio": "Portfolio",
         "linkedin": "LinkedIn",
         "website": "គេហទំព័រ",
         "passportId": "លិខិតឆ្លងដែន ឬអត្តសញ្ញាណប័ណ្ណ",

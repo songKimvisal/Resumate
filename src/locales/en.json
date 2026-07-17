@@ -447,6 +447,104 @@
       "medium": "Medium",
       "large": "Large"
     },
+    "customizePage": {
+      "title": "Customize",
+      "subtitle": "Start with the basics this appears at the top of your resume.",
+      "contentButton": "Content",
+      "nav": {
+        "layout": "Layout",
+        "font": "Font",
+        "fontSize": "Font Size",
+        "sectionHeadings": "Section Headings",
+        "colors": "Colors",
+        "spacing": "Spacing"
+      },
+      "templates": {
+        "title": "Change Templates",
+        "subtitle": "Update your entire resume design with one click",
+        "button": "Change Templates"
+      },
+      "layout": {
+        "columns": "Columns",
+        "columnsOne": "One",
+        "columnsTwo": "Two",
+        "headerPosition": "Header Position",
+        "headerLeft": "Left",
+        "headerTop": "Top",
+        "headerRight": "Right",
+        "sectionLayout": "Change Section Layout",
+        "alwaysFirst": "Always appears first",
+        "skills": "Skills",
+        "experience": "Experience",
+        "personalDetails": "Personal Details",
+        "references": "References",
+        "language": "Language",
+        "showPhoto": "Show profile photo",
+        "photoShape": "Photo shape",
+        "shapeCircle": "Circle",
+        "shapeRounded": "Rounded",
+        "shapeSquare": "Square",
+        "photoSize": "Photo size",
+        "pageFormat": "Page format",
+        "formatA4": "A4",
+        "formatLetter": "US Letter",
+        "pageMargins": "Page margins",
+        "marginsNarrow": "Narrow",
+        "marginsNormal": "Normal",
+        "marginsWide": "Wide"
+      },
+      "font": {
+        "fontFamily": "Font family"
+      },
+      "fontSize": {
+        "fontSize": "Font size",
+        "fullName": "Full Name",
+        "professionalTitle": "Professional Title",
+        "sectionHeadings": "Section Headings"
+      },
+      "sectionHeadings": {
+        "capitalization": "Capitalization",
+        "capitalize": "Capitalize",
+        "uppercase": "Uppercase",
+        "borderNone": "None",
+        "borderOutline": "Outline",
+        "borderFilled": "Filled",
+        "linkStyle": "Link Style",
+        "linkUnderline": "Underline",
+        "linkColor": "Accent Color",
+        "linkIcon": "Link icon"
+      },
+      "colors": {
+        "layoutMode": "Header style",
+        "layoutFullPage": "Full Page",
+        "layoutColumn": "Column",
+        "layoutBorder": "Border",
+        "paletteMode": "Color mode",
+        "paletteSingle": "Single",
+        "paletteMulti": "Multi",
+        "headingSection": "Heading section",
+        "bodySection": "Body section",
+        "text": "Text",
+        "background": "Background",
+        "accent": "Accent",
+        "custom": "Custom color",
+        "toggles": {
+          "jobTitle": "Job title",
+          "headings": "Headings",
+          "headingsLine": "Headings line",
+          "dots": "Dots/bars/bubbles",
+          "dates": "Dates",
+          "linkIcons": "Link icons",
+          "headerIcons": "Header icons"
+        }
+      },
+      "spacing": {
+        "lineHeight": "Line Height",
+        "elementSpacing": "Space Between Elements",
+        "topBottomMargin": "Top & Bottom Margin",
+        "leftRightMargin": "Left & Right Margin"
+      }
+    },
     "personal": {
       "title": "Personal information",
       "subtitle": "Start with the basics this appears at the top of your resume.",

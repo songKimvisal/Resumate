@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Koh+Santepheap:wght@400;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
@@ -162,8 +162,8 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   /* fonts */
-  --font-sans: "Inter", "Koh Santepheap", system-ui, sans-serif;
-  --font-khmer: "Koh Santepheap", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", "Kantumruy Pro", system-ui, sans-serif;
+  --font-khmer: "Kantumruy Pro", "Inter", system-ui, sans-serif;
 }
 
 /* 3. BASE STYLES*/

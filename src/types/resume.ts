@@ -74,7 +74,6 @@ export interface EducationItem {
   description: string;
 }
 
-/** 1 (lowest) - 5 (highest) proficiency, shown as a 5-dot rating */
 export interface SkillItem {
   id: string;
   name: string;
@@ -88,7 +87,7 @@ export const SKILL_LEVEL_LABELS = [
   "Expert",
 ];
 
-/** 1 (lowest) - 5 (highest) proficiency, shown as a 5-dot rating */
+
 export interface LanguageItem {
   id: string;
   name: string;
@@ -111,10 +110,47 @@ export interface ReferenceItem {
   phone: string;
 }
 
+export interface CustomizationToggles {
+  jobTitle: boolean;
+  headings: boolean;
+  headingsLine: boolean;
+  dots: boolean;
+  dates: boolean;
+  linkIcons: boolean;
+  headerIcons: boolean;
+}
+export type SectionOrderKey = "skills" | "experience" | "references" | "language";
+
 export interface Customization {
-  template: string; 
-  accentColor: string; 
+  template: string;
+  accentColor: string;
+  columns: "one" | "two";
+  headerPosition: "left" | "top" | "right";
   fontSize: "small" | "medium" | "large";
+  fontFamily: string;
+  fullNameSize: number;
+  titleSize: number;
+  headingsSize: number;
+  headingBorder: "none" | "outline" | "filled";
+  capitalization: "capitalize" | "uppercase";
+  linkStyle: "underline" | "color" | "icon";
+  headingTextColor: string;
+  headingBgColor: string;
+  bodyTextColor: string;
+  bodyBgColor: string;
+  bodyAccentColor: string;
+  colorLayout: "column" | "full" | "border";
+  paletteMode: "single" | "multi";
+  showPhoto: boolean;
+  photoShape: "circle" | "rounded" | "square";
+  photoSize: number;
+  pageFormat: "a4" | "letter";
+  lineHeight: number;
+  elementSpacing: number;
+  topBottomMargin: number;
+  leftRightMargin: number;
+  sectionOrder: SectionOrderKey[];
+  toggles: CustomizationToggles;
 }
 
 export interface Resume {
@@ -168,6 +204,40 @@ export const emptyResume: Resume = {
   customization: {
     template: "classic",
     accentColor: "#C1121F",
+    columns: "one",
+    headerPosition: "left",
     fontSize: "medium",
+    fontFamily: "Inter",
+    fullNameSize: 28,
+    titleSize: 17,
+    headingsSize: 12,
+    headingBorder: "none",
+    capitalization: "uppercase",
+    linkStyle: "underline",
+    headingTextColor: "#262626",
+    headingBgColor: "#ffffff",
+    bodyTextColor: "#262626",
+    bodyBgColor: "#ffffff",
+    bodyAccentColor: "#737373",
+    colorLayout: "column",
+    paletteMode: "multi",
+    showPhoto: true,
+    photoShape: "circle",
+    photoSize: 80,
+    pageFormat: "a4",
+    lineHeight: 1.5,
+    elementSpacing: 12,
+    topBottomMargin: 6,
+    leftRightMargin: 6,
+    sectionOrder: ["skills", "experience", "references", "language"],
+    toggles: {
+      jobTitle: true,
+      headings: true,
+      headingsLine: true,
+      dots: true,
+      dates: true,
+      linkIcons: true,
+      headerIcons: true,
+    },
   },
 };
