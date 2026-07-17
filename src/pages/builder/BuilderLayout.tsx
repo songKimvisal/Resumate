@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { Sun, Moon, LayoutGrid, Eye, X } from "lucide-react";
+import { Sun, Moon, LayoutGrid, FileText, ArrowLeft, Eye, X } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useResumeStore } from "../../store/resumeStore";
 import ResumePreview from "../../components/resume/ResumePreview";
@@ -11,12 +11,12 @@ import Step1Personal from "./Step1Personal";
 import Step2Experience from "./Step2experience";
 import Step3Education from "./Step3Education";
 import Step4Skills from "./Step4Skills";
+import CustomizePage from "./CustomizePage";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
 import { cn } from "../../lib/utils";
 
 const TOTAL_STEPS = 5;
-const ACCENT_COLORS = ["#C1121F", "#1D4ED8", "#0F766E", "#7C3AED", "#374151"];
 // 210mm in real CSS px (1in = 96px)
 const A4_WIDTH_PX = 210 * (96 / 25.4);
 
@@ -32,8 +32,6 @@ export default function BuilderLayout() {
   const tipRef = useRef<HTMLDivElement>(null);
 
   const dirty = useResumeStore((s) => s.dirty);
-  const customization = useResumeStore((s) => s.resume.customization);
-  const updateCustomization = useResumeStore((s) => s.updateCustomization);
 
   const stepLabels = t("builder.steps", { returnObjects: true }) as string[];
   const tips = t("builder.tips", { returnObjects: true }) as string[];
@@ -175,67 +173,88 @@ export default function BuilderLayout() {
         ref={stepBarRef}
         className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm"
       >
-        <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-1.5 pt-2">
-          {stepLabels.map((label, i) => {
-            const n = i + 1;
-            const active = n === step;
-            const done = n < step;
-            return (
-              <button
-                key={i}
-                onClick={() => setStep(n)}
-                className={`flex flex-col items-center gap-2 pb-3 border-b-2 transition-colors ${
-                  active ? "border-brand" : "border-line"
-                }`}
-              >
-                <span
-                  className={`size-7 rounded-full inline-flex items-center justify-center text-xs font-semibold border ${
-                    active
-                      ? "border-brand text-brand"
-                      : done
-                        ? "bg-brand border-brand text-white"
-                        : "border-line text-text-secondary"
+        {customizeOpen ? (
+          <div className="max-w-7xl w-full mx-auto px-1.5 py-3">
+            <Button size="sm" onClick={() => setCustomizeOpen(false)}>
+              <ArrowLeft size={15} strokeWidth={2} />
+              {t("builder.back")}
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-1.5 pt-2">
+            {stepLabels.map((label, i) => {
+              const n = i + 1;
+              const active = n === step;
+              const done = n < step;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setStep(n)}
+                  className={`flex flex-col items-center gap-2 pb-3 border-b-2 transition-colors ${
+                    active ? "border-brand" : "border-line"
                   }`}
                 >
-                  {done ? "✓" : n}
-                </span>
-                <span
-                  className={`hidden sm:block text-sm ${
-                    active ? "text-brand font-medium" : "text-text-secondary"
-                  }`}
-                >
-                  {label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <span
+                    className={`size-7 rounded-full inline-flex items-center justify-center text-xs font-semibold border ${
+                      active
+                        ? "border-brand text-brand"
+                        : done
+                          ? "bg-brand border-brand text-white"
+                          : "border-line text-text-secondary"
+                    }`}
+                  >
+                    {done ? "✓" : n}
+                  </span>
+                  <span
+                    className={`hidden sm:block text-sm ${
+                      active ? "text-brand font-medium" : "text-text-secondary"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ================= form + preview ================= */}
 
       <div className="flex-1 max-w-7xl mx-auto w-full py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
-        {/* ---------- left: current step ---------- */}
+        {/* ---------- left: current step / customize ---------- */}
         <div>
           <AnimatePresence mode="popLayout">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.25 }}
-            >
-              {step === 1 && <Step1Personal />}
-              {step === 2 && <Step2Experience />}
-              {step === 3 && <Step3Education />}
-              {step === 4 && <Step4Skills />}
-              {step > 4 && (
-                <div className="py-16 text-center text-text-secondary">
-                  <p className="font-medium">{stepLabels[step - 1]}</p>
-                  <p className="text-sm mt-2">{t("builder.comingSoon")}</p>
-                </div>
-              )}
-            </motion.div>
+            {customizeOpen ? (
+              <motion.div
+                key="customize"
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }}
+                transition={{ duration: 0.25 }}
+              >
+                <CustomizePage />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }}
+                transition={{ duration: 0.25 }}
+              >
+                {step === 1 && <Step1Personal />}
+                {step === 2 && <Step2Experience />}
+                {step === 3 && <Step3Education />}
+                {step === 4 && <Step4Skills />}
+                {step > 4 && (
+                  <div className="py-16 text-center text-text-secondary">
+                    <p className="font-medium">{stepLabels[step - 1]}</p>
+                    <p className="text-sm mt-2">{t("builder.comingSoon")}</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
@@ -262,65 +281,23 @@ export default function BuilderLayout() {
               ref={previewHeaderRef}
               className="flex items-center justify-between mb-5"
             >
-              {/* customize popover */}
-              <div className="relative">
-                <Button
-                  size="compact"
-                  onClick={() => setCustomizeOpen((o) => !o)}
-                >
-                  <LayoutGrid size={15} strokeWidth={2} />
-                  {t("builder.customize")}
-                </Button>
-
-                {customizeOpen && (
-                  <div className="absolute left-0 top-full mt-2 z-20 w-64 rounded-xl border border-line bg-bg shadow-lg p-4 space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold tracking-widest uppercase text-text-secondary">
-                        {t("builder.accentColor")}
-                      </p>
-                      <div className="flex gap-2">
-                        {ACCENT_COLORS.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() =>
-                              updateCustomization({ accentColor: c })
-                            }
-                            className={`size-7 rounded-full border-2 transition-transform hover:scale-110 ${
-                              customization.accentColor === c
-                                ? "border-text"
-                                : "border-transparent"
-                            }`}
-                            style={{ backgroundColor: c }}
-                            aria-label={c}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold tracking-widest uppercase text-text-secondary">
-                        {t("builder.fontSize")}
-                      </p>
-                      <div className="flex gap-2">
-                        {(["small", "medium", "large"] as const).map((size) => (
-                          <button
-                            key={size}
-                            onClick={() =>
-                              updateCustomization({ fontSize: size })
-                            }
-                            className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                              customization.fontSize === size
-                                ? "border-brand text-brand font-medium"
-                                : "border-line text-text-secondary hover:bg-surface-2"
-                            }`}
-                          >
-                            {t(`builder.fontSizes.${size}`)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              {/* customize / content toggle */}
+              <Button
+                size="compact"
+                onClick={() => setCustomizeOpen((o) => !o)}
+              >
+                {customizeOpen ? (
+                  <>
+                    <FileText size={15} strokeWidth={2} />
+                    {t("builder.customizePage.contentButton")}
+                  </>
+                ) : (
+                  <>
+                    <LayoutGrid size={15} strokeWidth={2} />
+                    {t("builder.customize")}
+                  </>
                 )}
-              </div>
+              </Button>
 
               <span className="flex items-center gap-2 text-sm text-brand font-medium">
                 <span className="size-2 rounded-full bg-brand animate-pulse" />
@@ -452,30 +429,35 @@ export default function BuilderLayout() {
       </motion.button>
 
       {/* ================= floating bottom bar ================= */}
-      <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
-        <div className="max-w-7xl mx-auto px-1.5 h-14 flex items-center justify-between">
-          {step > 1 ? (
-            <Button size="sm" variant="outline" onClick={back}>
-              ← {t("builder.back")}
-            </Button>
-          ) : (
-            <Link to="/dashboard">
-              <Button size="sm" variant="outline">
+      {!customizeOpen && (
+        <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
+          <div className="max-w-7xl mx-auto px-1.5 h-14 flex items-center justify-between">
+            {step > 1 ? (
+              <Button size="sm" variant="outline" onClick={back}>
                 ← {t("builder.back")}
               </Button>
-            </Link>
-          )}
+            ) : (
+              <Link to="/dashboard">
+                <Button size="sm" variant="outline">
+                  ← {t("builder.back")}
+                </Button>
+              </Link>
+            )}
 
-          <p className="text-sm text-text-secondary truncate min-w-0 flex-1 text-center px-3">
-            {t("builder.stepOf", { current: step, total: TOTAL_STEPS })}
-            <span className="hidden sm:inline"> – {stepLabels[step - 1]}</span>
-          </p>
+            <p className="text-sm text-text-secondary truncate min-w-0 flex-1 text-center px-3">
+              {t("builder.stepOf", { current: step, total: TOTAL_STEPS })}
+              <span className="hidden sm:inline">
+                {" "}
+                – {stepLabels[step - 1]}
+              </span>
+            </p>
 
-          <Button size="sm" onClick={next} disabled={step === TOTAL_STEPS}>
-            {t("builder.next")} →
-          </Button>
+            <Button size="sm" onClick={next} disabled={step === TOTAL_STEPS}>
+              {t("builder.next")} →
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

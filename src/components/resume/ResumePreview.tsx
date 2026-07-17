@@ -19,13 +19,21 @@ import {
   NO_EXPERIENCE_TYPE_LABELS,
   LANGUAGE_LEVEL_LABELS,
   SKILL_LEVEL_LABELS,
+  type Customization,
   type ExperienceItem,
   type NoExperienceItem,
   type EducationItem,
   type LinkItem,
   type PersonalInfo,
+  type SkillItem,
+  type LanguageItem,
+  type ReferenceItem,
 } from "../../types/resume";
 import { photoImgStyle } from "../../lib/photoFit";
+import { cssFontStack } from "../../lib/fonts";
+import { marginPercentCss } from "../../lib/pageSize";
+import { idealTextColor } from "../../lib/color";
+import { orderedMainGroups, orderedSidebarKeys } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
 function fmtDate(value: string) {
@@ -50,13 +58,15 @@ interface RichTextFragment {
   tag: string;
 }
 
-
 function splitRichText(html: string): RichTextFragment[] {
   const container = document.createElement("div");
   container.innerHTML = html;
   const fragments: RichTextFragment[] = [];
   Array.from(container.children).forEach((el) => {
-    if ((el.tagName === "UL" || el.tagName === "OL") && el.children.length > 1) {
+    if (
+      (el.tagName === "UL" || el.tagName === "OL") &&
+      el.children.length > 1
+    ) {
       Array.from(el.children).forEach((li) => {
         const wrapper = document.createElement(el.tagName);
         wrapper.appendChild(li.cloneNode(true));
@@ -69,17 +79,86 @@ function splitRichText(html: string): RichTextFragment[] {
   return fragments.length > 0 ? fragments : [{ html, tag: "" }];
 }
 
-
-const PAGE_ASPECT = 297 / 210;
-const PAGE_PADDING_PCT = 0.07;
-const GAP_SECTION = 20;
-const GAP_EXP_ITEM = 12;
-const GAP_EDU_ITEM = 10;
-
 interface Block {
   key: string;
   gapBefore: number;
   node: React.ReactNode;
+}
+
+/** fraction of the page width the sidebar column occupies, when present */
+const SIDEBAR_WIDTH_FRACTION = 0.34;
+
+/** Theme values derived from `customization`, threaded through every block
+ *  so live preview and the measuring pass stay in sync. */
+interface Theme {
+  accent: string;
+  fontSize: string;
+  fontFamily: string;
+  lineHeight: number;
+  gapSection: number;
+  gapExpItem: number;
+  gapEduItem: number;
+  textTransform: "uppercase" | "capitalize";
+  headingBorder: "none" | "outline" | "filled";
+  showHeadingLine: boolean;
+  showHeadingTitle: boolean;
+  headingSizePx: number;
+  headingTextColor: string;
+  headingBgColor: string;
+  bodyTextColor: string;
+  bodyAccentColor: string;
+  linkStyle: "underline" | "color" | "icon";
+  showDates: boolean;
+  showLinkIcons: boolean;
+  showHeaderIcons: boolean;
+  showDots: boolean;
+}
+
+function useTheme(customization: Customization): Theme {
+  return useMemo(() => {
+    // "single" palette mode derives heading/body accent surfaces from the
+    // one accent pick without ever touching the independent multi-mode
+    // fields in the store — switching modes never discards an edit, it just
+    // changes which values are in effect
+    const isSinglePalette = customization.paletteMode === "single";
+    const headingBgColor = isSinglePalette
+      ? customization.accentColor
+      : customization.headingBgColor;
+    const headingTextColor = isSinglePalette
+      ? idealTextColor(customization.accentColor)
+      : customization.headingTextColor;
+    const bodyAccentColor = isSinglePalette
+      ? customization.accentColor
+      : customization.bodyAccentColor;
+
+    return {
+      accent: customization.accentColor,
+      fontSize: fontSizes[customization.fontSize],
+      fontFamily: cssFontStack(customization.fontFamily),
+      lineHeight: customization.lineHeight,
+      gapSection: customization.elementSpacing * (20 / 12),
+      gapExpItem: customization.elementSpacing,
+      gapEduItem: customization.elementSpacing * (10 / 12),
+      textTransform: customization.capitalization,
+      headingBorder: customization.headingBorder,
+      showHeadingLine: customization.toggles.headingsLine,
+      showHeadingTitle: customization.toggles.headings,
+      headingSizePx: customization.headingsSize,
+      headingTextColor,
+      headingBgColor,
+      bodyTextColor: customization.bodyTextColor,
+      bodyAccentColor,
+      linkStyle: customization.linkStyle,
+      showDates: customization.toggles.dates,
+      // "Link icon" style forces icons on for link entries even when the
+      // "Link icons" toggle is off, so it's a real distinct choice from
+      // Underline/Blue Color instead of a no-op
+      showLinkIcons:
+        customization.toggles.linkIcons || customization.linkStyle === "icon",
+      showHeaderIcons: customization.toggles.headerIcons,
+      showDots: customization.toggles.dots,
+    };
+  }, [customization]);
 }
 
 export default function ResumePreview({
@@ -99,13 +178,63 @@ export default function ResumePreview({
     includeReferences,
     customization,
   } = resume;
-  const accent = customization.accentColor;
-  const fontSize = fontSizes[customization.fontSize];
+  const theme = useTheme(customization);
+  const { accent, fontSize, gapSection, gapExpItem, gapEduItem } = theme;
+
+  const pageAspect =
+    customization.pageFormat === "letter" ? 11 / 8.5 : 297 / 210;
+  // browsers resolve padding percentages (including top/bottom) against the
+  // containing block's width, so both axes convert through the same basis
+  const paddingTopBottomPct = marginPercentCss(
+    customization.topBottomMargin,
+    customization.pageFormat,
+  );
+  const paddingLeftRightPct = marginPercentCss(
+    customization.leftRightMargin,
+    customization.pageFormat,
+  );
+
+  // ---------- sidebar layout derived from `columns` + `headerPosition` ----------
+  // the sidebar only exists in two-column mode, so toggling `columns` always
+  // has a visible effect; `headerPosition` then picks where within it (or
+  // whether at all, for "top") the header sits.
+  const showSidebar = customization.columns === "two";
+  const headerInSidebar = showSidebar && customization.headerPosition !== "top";
+  const listsInSidebar = showSidebar;
+  const sidebarSide = headerInSidebar ? customization.headerPosition : "left";
+
+  // ---------- how the heading color paints the page ----------
+  // "column"/"full" both keep the header text on a colored surface (the
+  // sidebar/banner itself, or the whole page respectively), so theme's
+  // heading text color stays legible either way. "border" drops the fill
+  // entirely, so the header text falls back to bodyTextColor to stay
+  // legible against the plain page.
+  const headerTextColor =
+    customization.colorLayout === "border"
+      ? customization.bodyTextColor
+      : theme.headingTextColor;
+  const pageBackgroundColor =
+    customization.colorLayout === "full"
+      ? theme.headingBgColor
+      : customization.bodyBgColor;
 
   const blocks = useMemo<Block[]>(() => {
-    const list: Block[] = [
-      { key: "header", gapBefore: 0, node: <HeaderBlock personal={personal} accent={accent} /> },
-    ];
+    const list: Block[] = [];
+
+    if (!headerInSidebar) {
+      list.push({
+        key: "header",
+        gapBefore: 0,
+        node: (
+          <HeaderBlock
+            personal={personal}
+            customization={customization}
+            theme={theme}
+            textColor={headerTextColor}
+          />
+        ),
+      });
+    }
 
     if (hasText(personal.summary)) {
       const paraGap = parseFloat(fontSize) * 0.9 * 0.5;
@@ -114,16 +243,18 @@ export default function ResumePreview({
         const node = (
           <div
             className="rte-content text-[0.9em] leading-relaxed"
+            style={{ color: theme.bodyTextColor }}
             dangerouslySetInnerHTML={{ __html: html }}
           />
         );
-        const adjacentParagraphs = i > 0 && tag === "P" && fragments[i - 1].tag === "P";
+        const adjacentParagraphs =
+          i > 0 && tag === "P" && fragments[i - 1].tag === "P";
         list.push({
           key: `summary-${i}`,
-          gapBefore: i === 0 ? GAP_SECTION : adjacentParagraphs ? paraGap : 0,
+          gapBefore: i === 0 ? gapSection : adjacentParagraphs ? paraGap : 0,
           node:
             i === 0 ? (
-              <Section title="Summary" accent={accent}>
+              <Section title="Summary" theme={theme}>
                 {node}
               </Section>
             ) : (
@@ -133,14 +264,20 @@ export default function ResumePreview({
       });
     }
 
+    // experience/education and skills+languages/references are built as
+    // independent groups, then concatenated in `sectionOrder` — each
+    // group's own first block already carries gapSection, so it stays
+    // correctly spaced no matter which group ends up next to it
+    const expEduBlocks: Block[] = [];
+
     experience.forEach((exp, i) => {
-      const header = <ExperienceHeader exp={exp} />;
-      list.push({
+      const header = <ExperienceHeader exp={exp} theme={theme} />;
+      expEduBlocks.push({
         key: `exp-${exp.id}-header`,
-        gapBefore: i === 0 ? GAP_SECTION : GAP_EXP_ITEM,
+        gapBefore: i === 0 ? gapSection : gapExpItem,
         node:
           i === 0 ? (
-            <Section title="Experience" accent={accent}>
+            <Section title="Experience" theme={theme}>
               {header}
             </Section>
           ) : (
@@ -152,13 +289,15 @@ export default function ResumePreview({
         const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
         const fragments = splitRichText(exp.description);
         fragments.forEach(({ html, tag }, j) => {
-          const adjacentParagraphs = j > 0 && tag === "P" && fragments[j - 1].tag === "P";
-          list.push({
+          const adjacentParagraphs =
+            j > 0 && tag === "P" && fragments[j - 1].tag === "P";
+          expEduBlocks.push({
             key: `exp-${exp.id}-desc-${j}`,
             gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
             node: (
               <div
                 className="rte-content text-[0.85em] leading-relaxed"
+                style={{ color: theme.bodyTextColor }}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             ),
@@ -169,13 +308,13 @@ export default function ResumePreview({
 
     if (experience.length === 0) {
       noExperience.forEach((exp, i) => {
-        const header = <NoExperienceHeader exp={exp} />;
-        list.push({
+        const header = <NoExperienceHeader exp={exp} theme={theme} />;
+        expEduBlocks.push({
           key: `noexp-${exp.id}-header`,
-          gapBefore: i === 0 ? GAP_SECTION : GAP_EXP_ITEM,
+          gapBefore: i === 0 ? gapSection : gapExpItem,
           node:
             i === 0 ? (
-              <Section title="Experience" accent={accent}>
+              <Section title="Experience" theme={theme}>
                 {header}
               </Section>
             ) : (
@@ -189,12 +328,13 @@ export default function ResumePreview({
           fragments.forEach(({ html, tag }, j) => {
             const adjacentParagraphs =
               j > 0 && tag === "P" && fragments[j - 1].tag === "P";
-            list.push({
+            expEduBlocks.push({
               key: `noexp-${exp.id}-desc-${j}`,
               gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
               node: (
                 <div
                   className="rte-content text-[0.85em] leading-relaxed"
+                  style={{ color: theme.bodyTextColor }}
                   dangerouslySetInnerHTML={{ __html: html }}
                 />
               ),
@@ -205,13 +345,13 @@ export default function ResumePreview({
     }
 
     education.forEach((edu, i) => {
-      const header = <EducationEntry edu={edu} />;
-      list.push({
+      const header = <EducationEntry edu={edu} theme={theme} />;
+      expEduBlocks.push({
         key: `edu-${edu.id}-header`,
-        gapBefore: i === 0 ? GAP_SECTION : GAP_EDU_ITEM,
+        gapBefore: i === 0 ? gapSection : gapEduItem,
         node:
           i === 0 ? (
-            <Section title="Education" accent={accent}>
+            <Section title="Education" theme={theme}>
               {header}
             </Section>
           ) : (
@@ -223,13 +363,15 @@ export default function ResumePreview({
         const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
         const fragments = splitRichText(edu.description);
         fragments.forEach(({ html, tag }, j) => {
-          const adjacentParagraphs = j > 0 && tag === "P" && fragments[j - 1].tag === "P";
-          list.push({
+          const adjacentParagraphs =
+            j > 0 && tag === "P" && fragments[j - 1].tag === "P";
+          expEduBlocks.push({
             key: `edu-${edu.id}-desc-${j}`,
             gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
             node: (
               <div
                 className="rte-content text-[0.85em] leading-relaxed"
+                style={{ color: theme.bodyTextColor }}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             ),
@@ -238,38 +380,25 @@ export default function ResumePreview({
       }
     });
 
-    if (skills.length > 0 || languages.length > 0) {
-      list.push({
+    const skillsLanguageBlocks: Block[] = [];
+    if (!listsInSidebar && (skills.length > 0 || languages.length > 0)) {
+      skillsLanguageBlocks.push({
         key: "skills-languages",
-        gapBefore: GAP_SECTION,
+        gapBefore: gapSection,
         node: (
           <div className="grid grid-cols-2 gap-6">
             {skills.length > 0 && (
-              <Section title="Skills" accent={accent}>
-                <p className="text-[0.85em] leading-relaxed">
-                  {skills
-                    .map((s) =>
-                      s.name
-                        ? `${s.name} (${SKILL_LEVEL_LABELS[s.level - 1]})`
-                        : "",
-                    )
-                    .filter(Boolean)
-                    .join(" - ")}
-                </p>
+              <Section title="Skills" theme={theme}>
+                <SkillsBody skills={skills} theme={theme} accent={accent} />
               </Section>
             )}
             {languages.length > 0 && (
-              <Section title="Languages" accent={accent}>
-                <p className="text-[0.85em] leading-relaxed">
-                  {languages
-                    .map((l) =>
-                      l.name
-                        ? `${l.name} (${LANGUAGE_LEVEL_LABELS[l.level - 1]})`
-                        : "",
-                    )
-                    .filter(Boolean)
-                    .join(" - ")}
-                </p>
+              <Section title="Languages" theme={theme}>
+                <LanguagesBody
+                  languages={languages}
+                  theme={theme}
+                  accent={accent}
+                />
               </Section>
             )}
           </div>
@@ -277,29 +406,31 @@ export default function ResumePreview({
       });
     }
 
-    if (includeReferences && references.length > 0) {
-      list.push({
+    const referencesBlocks: Block[] = [];
+    if (!listsInSidebar && includeReferences && references.length > 0) {
+      referencesBlocks.push({
         key: "references",
-        gapBefore: GAP_SECTION,
+        gapBefore: gapSection,
         node: (
-          <Section title="References" accent={accent}>
+          <Section title="References" theme={theme}>
             <div className="grid grid-cols-2 gap-4">
               {references.map((r) => (
-                <div key={r.id} className="text-[0.85em] leading-relaxed">
-                  <p className="font-semibold">{r.name || "Reference name"}</p>
-                  <p className="text-neutral-600">
-                    {[r.jobTitle, r.company].filter(Boolean).join(", ")}
-                  </p>
-                  <p className="text-neutral-500 text-[0.9em]">
-                    {[r.email, r.phone].filter(Boolean).join(" - ")}
-                  </p>
-                </div>
+                <ReferenceEntry key={r.id} r={r} theme={theme} />
               ))}
             </div>
           </Section>
         ),
       });
     }
+
+    const groups: Record<"experience" | "skillsLanguage" | "references", Block[]> = {
+      experience: expEduBlocks,
+      skillsLanguage: skillsLanguageBlocks,
+      references: referencesBlocks,
+    };
+    orderedMainGroups(customization.sectionOrder).forEach((g) =>
+      list.push(...groups[g]),
+    );
 
     return list;
   }, [
@@ -311,8 +442,16 @@ export default function ResumePreview({
     languages,
     references,
     includeReferences,
+    headerInSidebar,
+    listsInSidebar,
+    customization,
+    theme,
     accent,
     fontSize,
+    gapSection,
+    gapExpItem,
+    gapEduItem,
+    headerTextColor,
   ]);
 
   // ---------- measure each block's rendered height, then paginate ----------
@@ -347,8 +486,8 @@ export default function ResumePreview({
 
   const pages = useMemo(() => {
     if (pageWidth === 0 || measuredWidth !== pageWidth) return [blocks];
-    const paddingPx = pageWidth * PAGE_PADDING_PCT;
-    const contentHeightPx = pageWidth * PAGE_ASPECT - paddingPx * 2;
+    const verticalPaddingPx = pageWidth * (paddingTopBottomPct / 100);
+    const contentHeightPx = pageWidth * pageAspect - verticalPaddingPx * 2;
 
     const result: Block[][] = [[]];
     let used = 0;
@@ -366,7 +505,22 @@ export default function ResumePreview({
       }
     }
     return result;
-  }, [blocks, heights, pageWidth, measuredWidth]);
+  }, [
+    blocks,
+    heights,
+    pageWidth,
+    measuredWidth,
+    pageAspect,
+    paddingTopBottomPct,
+  ]);
+
+  // pixel padding, only needed when a sidebar is present (percentage padding
+  // resolves against the narrower column's own width, not the page width)
+  const paddingTopBottomPx = pageWidth * (paddingTopBottomPct / 100);
+  const paddingLeftRightPx = pageWidth * (paddingLeftRightPct / 100);
+  const mainColumnWidthPx = showSidebar
+    ? pageWidth * (1 - SIDEBAR_WIDTH_FRACTION)
+    : pageWidth;
 
   return (
     <div ref={wrapperRef} className="space-y-4">
@@ -381,8 +535,12 @@ export default function ResumePreview({
           left: -99999,
           visibility: "hidden",
           pointerEvents: "none",
-          width: pageWidth ? pageWidth * (1 - PAGE_PADDING_PCT * 2) : undefined,
+          width: pageWidth
+            ? mainColumnWidthPx - paddingLeftRightPx * 2
+            : undefined,
           fontSize,
+          fontFamily: theme.fontFamily,
+          lineHeight: theme.lineHeight,
         }}
       >
         {blocks.map((b) => (
@@ -398,18 +556,96 @@ export default function ResumePreview({
             </p>
           )}
           <div
-            className="bg-white text-neutral-800 shadow-xl rounded-sm w-full aspect-210/297 overflow-hidden"
-            style={{ fontSize }}
+            className="shadow-xl rounded-sm w-full overflow-hidden"
+            style={{
+              fontSize,
+              fontFamily: theme.fontFamily,
+              lineHeight: theme.lineHeight,
+              aspectRatio:
+                customization.pageFormat === "letter" ? "8.5/11" : "210/297",
+              backgroundColor: pageBackgroundColor,
+              color: theme.bodyTextColor,
+              border:
+                customization.colorLayout === "border"
+                  ? `4px solid ${theme.headingBgColor}`
+                  : undefined,
+            }}
           >
-            <div className="h-full p-[7%] overflow-hidden">
-              {pageBlocks.map((b, i) => (
-                <div
-                  key={b.key}
-                  style={{ marginTop: i === 0 ? 0 : b.gapBefore }}
-                >
-                  {b.node}
-                </div>
-              ))}
+            <div
+              className={showSidebar ? "h-full flex" : "h-full overflow-hidden"}
+              style={
+                showSidebar
+                  ? undefined
+                  : {
+                      paddingTop: `${paddingTopBottomPct}%`,
+                      paddingBottom: `${paddingTopBottomPct}%`,
+                      paddingLeft: `${paddingLeftRightPct}%`,
+                      paddingRight: `${paddingLeftRightPct}%`,
+                    }
+              }
+            >
+              {showSidebar && sidebarSide === "left" && (
+                <SidebarColumn
+                  personal={personal}
+                  customization={customization}
+                  theme={theme}
+                  accent={accent}
+                  textColor={headerTextColor}
+                  headerInSidebar={headerInSidebar}
+                  listsInSidebar={listsInSidebar}
+                  skills={skills}
+                  languages={languages}
+                  references={references}
+                  includeReferences={includeReferences}
+                  showContent={pageIndex === 0}
+                  paddingTopBottomPx={paddingTopBottomPx}
+                  paddingLeftRightPx={paddingLeftRightPx}
+                />
+              )}
+              <div
+                className={
+                  showSidebar
+                    ? "flex-1 min-w-0 h-full overflow-hidden"
+                    : undefined
+                }
+                style={
+                  showSidebar
+                    ? {
+                        paddingTop: paddingTopBottomPx,
+                        paddingBottom: paddingTopBottomPx,
+                        paddingLeft: paddingLeftRightPx,
+                        paddingRight: paddingLeftRightPx,
+                      }
+                    : undefined
+                }
+              >
+                {pageBlocks.map((b, i) => (
+                  <div
+                    key={b.key}
+                    style={{ marginTop: i === 0 ? 0 : b.gapBefore }}
+                  >
+                    {b.node}
+                  </div>
+                ))}
+              </div>
+              {showSidebar && sidebarSide === "right" && (
+                <SidebarColumn
+                  personal={personal}
+                  customization={customization}
+                  theme={theme}
+                  accent={accent}
+                  textColor={headerTextColor}
+                  headerInSidebar={headerInSidebar}
+                  listsInSidebar={listsInSidebar}
+                  skills={skills}
+                  languages={languages}
+                  references={references}
+                  includeReferences={includeReferences}
+                  showContent={pageIndex === 0}
+                  paddingTopBottomPx={paddingTopBottomPx}
+                  paddingLeftRightPx={paddingLeftRightPx}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -418,94 +654,468 @@ export default function ResumePreview({
   );
 }
 
-
-function HeaderBlock({
-  personal,
+function SkillsBody({
+  skills,
+  theme,
   accent,
 }: {
-  personal: PersonalInfo;
+  skills: SkillItem[];
+  theme: Theme;
   accent: string;
 }) {
-  return (
-    <header className="text-center space-y-2">
-      {personal.photoUrl && (
-        <div className="size-20 rounded-full overflow-hidden mx-auto">
-          <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
-        </div>
-      )}
-      <h1 className="text-[1.9em] font-bold leading-tight">
-        {personal.fullName || "Your Name"}
-      </h1>
-      <p className="text-[1.15em] font-medium" style={{ color: accent }}>
-        {personal.jobTitle || "Job Title"}
-      </p>
-      <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[0.8em] text-neutral-600 pt-1">
-        {personal.phone && <IconText icon="phone">{personal.phone}</IconText>}
-        {personal.email && <IconText icon="mail">{personal.email}</IconText>}
-        {personal.location && (
-          <IconText icon="pin">{personal.location}</IconText>
-        )}
-        {personal.nationality && (
-          <IconText icon="flag">{personal.nationality}</IconText>
-        )}
-        {personal.portfolio.map((entry) => (
-          <LinkText key={entry.id} icon="briefcase" entry={entry} />
+  return theme.showDots ? (
+    <div className="space-y-1">
+      {skills
+        .filter((s) => s.name)
+        .map((s) => (
+          <div key={s.id} className="flex items-center justify-between gap-2">
+            <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+              {s.name}
+            </p>
+            <DotRow level={s.level} accent={accent} />
+          </div>
         ))}
-        {personal.website.map((entry) => (
-          <LinkText key={entry.id} icon="globe" entry={entry} />
-        ))}
-        {personal.linkedin.map((entry) => (
-          <LinkText key={entry.id} icon="linkedin" entry={entry} />
-        ))}
-        {personal.github.map((entry) => (
-          <LinkText key={entry.id} icon="github" entry={entry} />
-        ))}
-        {personal.gitlab.map((entry) => (
-          <LinkText key={entry.id} icon="gitlab" entry={entry} />
-        ))}
-        {personal.stackoverflow.map((entry) => (
-          <LinkText key={entry.id} icon="stackoverflow" entry={entry} />
-        ))}
-        {personal.telegram.map((entry) => (
-          <LinkText key={entry.id} icon="send" entry={entry} />
-        ))}
-        {personal.passportId && (
-          <IconText icon="id">{personal.passportId}</IconText>
-        )}
-      </div>
-    </header>
+    </div>
+  ) : (
+    <p
+      className="text-[0.85em] leading-relaxed"
+      style={{ color: theme.bodyTextColor }}
+    >
+      {skills
+        .map((s) =>
+          s.name ? `${s.name} (${SKILL_LEVEL_LABELS[s.level - 1]})` : "",
+        )
+        .filter(Boolean)
+        .join(" - ")}
+    </p>
   );
 }
 
-function ExperienceHeader({ exp }: { exp: ExperienceItem }) {
+function LanguagesBody({
+  languages,
+  theme,
+  accent,
+}: {
+  languages: LanguageItem[];
+  theme: Theme;
+  accent: string;
+}) {
+  return theme.showDots ? (
+    <div className="space-y-1">
+      {languages
+        .filter((l) => l.name)
+        .map((l) => (
+          <div key={l.id} className="flex items-center justify-between gap-2">
+            <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+              {l.name}
+            </p>
+            <DotRow level={l.level} accent={accent} />
+          </div>
+        ))}
+    </div>
+  ) : (
+    <p
+      className="text-[0.85em] leading-relaxed"
+      style={{ color: theme.bodyTextColor }}
+    >
+      {languages
+        .map((l) =>
+          l.name ? `${l.name} (${LANGUAGE_LEVEL_LABELS[l.level - 1]})` : "",
+        )
+        .filter(Boolean)
+        .join(" - ")}
+    </p>
+  );
+}
+
+function ReferenceEntry({ r, theme }: { r: ReferenceItem; theme: Theme }) {
   return (
-    <div className="flex justify-between gap-3 items-baseline">
-      <p className="font-semibold text-[0.95em]">
-        {exp.jobTitle || "Job title"}
-        {(exp.company || exp.location) && (
-          <span className="font-normal text-neutral-600">
-            {" "}
-            - {[exp.company, exp.location].filter(Boolean).join(", ")}
-          </span>
-        )}
+    <div className="text-[0.85em] leading-relaxed">
+      <p className="font-semibold" style={{ color: theme.bodyTextColor }}>
+        {r.name || "Reference name"}
       </p>
-      <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
-        {fmtDate(exp.startDate)}
-        {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate)}
+      <p style={{ color: theme.bodyAccentColor }}>
+        {[r.jobTitle, r.company].filter(Boolean).join(", ")}
+      </p>
+      <p className="text-[0.9em]" style={{ color: theme.bodyAccentColor }}>
+        {[r.email, r.phone].filter(Boolean).join(" - ")}
       </p>
     </div>
   );
 }
 
-function NoExperienceHeader({ exp }: { exp: NoExperienceItem }) {
+function DotRow({ level, accent }: { level: number; accent: string }) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span
+          key={i}
+          className="size-[0.5em] rounded-full"
+          style={{ backgroundColor: i < level ? accent : "#e5e5e5" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function photoRadiusFor(shape: Customization["photoShape"]) {
+  return shape === "circle" ? "9999px" : shape === "rounded" ? "16%" : "0px";
+}
+
+function contactItems(personal: PersonalInfo, theme: Theme) {
+  const items: React.ReactNode[] = [];
+  if (personal.phone)
+    items.push(
+      <IconText key="phone" icon="phone" theme={theme} isHeaderIcon>
+        {personal.phone}
+      </IconText>,
+    );
+  if (personal.email)
+    items.push(
+      <IconText key="email" icon="mail" theme={theme} isHeaderIcon>
+        {personal.email}
+      </IconText>,
+    );
+  if (personal.location)
+    items.push(
+      <IconText key="location" icon="pin" theme={theme} isHeaderIcon>
+        {personal.location}
+      </IconText>,
+    );
+  if (personal.nationality)
+    items.push(
+      <IconText key="nationality" icon="flag" theme={theme} isHeaderIcon>
+        {personal.nationality}
+      </IconText>,
+    );
+  personal.portfolio.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="briefcase" entry={entry} theme={theme} />,
+    ),
+  );
+  personal.website.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="globe" entry={entry} theme={theme} />,
+    ),
+  );
+  personal.linkedin.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="linkedin" entry={entry} theme={theme} />,
+    ),
+  );
+  personal.github.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="github" entry={entry} theme={theme} />,
+    ),
+  );
+  personal.gitlab.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="gitlab" entry={entry} theme={theme} />,
+    ),
+  );
+  personal.stackoverflow.forEach((entry) =>
+    items.push(
+      <LinkText
+        key={entry.id}
+        icon="stackoverflow"
+        entry={entry}
+        theme={theme}
+      />,
+    ),
+  );
+  personal.telegram.forEach((entry) =>
+    items.push(
+      <LinkText key={entry.id} icon="send" entry={entry} theme={theme} />,
+    ),
+  );
+  if (personal.passportId)
+    items.push(
+      <IconText key="passport" icon="id" theme={theme} isHeaderIcon>
+        {personal.passportId}
+      </IconText>,
+    );
+  return items;
+}
+
+function HeaderBlock({
+  personal,
+  customization,
+  theme,
+  textColor,
+}: {
+  personal: PersonalInfo;
+  customization: Customization;
+  theme: Theme;
+  textColor: string;
+}) {
+  const showPhoto = customization.showPhoto && !!personal.photoUrl;
+  const isFilled = customization.colorLayout === "column";
+
+  return (
+    <header
+      className="text-center space-y-2"
+      style={{
+        backgroundColor: isFilled ? theme.headingBgColor : undefined,
+      }}
+    >
+      {showPhoto && (
+        <div
+          className="overflow-hidden mx-auto"
+          style={{
+            width: customization.photoSize,
+            height: customization.photoSize,
+            borderRadius: photoRadiusFor(customization.photoShape),
+          }}
+        >
+          <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
+        </div>
+      )}
+      <h1
+        className="font-bold leading-tight"
+        style={{ fontSize: customization.fullNameSize, color: textColor }}
+      >
+        {personal.fullName || "Your Name"}
+      </h1>
+      {customization.toggles.jobTitle && (
+        <p
+          className="font-medium"
+          style={{ fontSize: customization.titleSize, color: theme.accent }}
+        >
+          {personal.jobTitle || "Job Title"}
+        </p>
+      )}
+      <div
+        className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[0.8em] pt-1"
+        style={{ color: textColor }}
+      >
+        {contactItems(personal, theme)}
+      </div>
+    </header>
+  );
+}
+
+/** vertical variant of HeaderBlock, used inside the sidebar column when
+ *  headerPosition is "left" or "right" instead of the full-width banner */
+function SidebarHeaderBlock({
+  personal,
+  customization,
+  theme,
+  textColor,
+}: {
+  personal: PersonalInfo;
+  customization: Customization;
+  theme: Theme;
+  textColor: string;
+}) {
+  const showPhoto = customization.showPhoto && !!personal.photoUrl;
+
+  return (
+    <header className="text-center space-y-2">
+      {showPhoto && (
+        <div
+          className="overflow-hidden mx-auto"
+          style={{
+            width: customization.photoSize,
+            height: customization.photoSize,
+            borderRadius: photoRadiusFor(customization.photoShape),
+          }}
+        >
+          <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
+        </div>
+      )}
+      <h1
+        className="font-bold leading-tight"
+        style={{ fontSize: customization.fullNameSize, color: textColor }}
+      >
+        {personal.fullName || "Your Name"}
+      </h1>
+      {customization.toggles.jobTitle && (
+        <p
+          className="font-medium"
+          style={{ fontSize: customization.titleSize, color: theme.accent }}
+        >
+          {personal.jobTitle || "Job Title"}
+        </p>
+      )}
+      <div
+        className="flex flex-col items-start gap-1.5 text-[0.8em] pt-1 text-left"
+        style={{ color: textColor }}
+      >
+        {contactItems(personal, theme)}
+      </div>
+    </header>
+  );
+}
+
+/** the narrow side column shown when headerPosition is left/right, and/or
+ *  columns is "two" — carries the header and/or the skills/languages/
+ *  references sections that would otherwise sit in the main flow. Repeats
+ *  as an empty colored strip on pages after the first, since its content
+ *  is assumed to fit on page one. */
+function SidebarColumn({
+  personal,
+  customization,
+  theme,
+  accent,
+  textColor,
+  headerInSidebar,
+  listsInSidebar,
+  skills,
+  languages,
+  references,
+  includeReferences,
+  showContent,
+  paddingTopBottomPx,
+  paddingLeftRightPx,
+}: {
+  personal: PersonalInfo;
+  customization: Customization;
+  theme: Theme;
+  accent: string;
+  textColor: string;
+  headerInSidebar: boolean;
+  listsInSidebar: boolean;
+  skills: SkillItem[];
+  languages: LanguageItem[];
+  references: ReferenceItem[];
+  includeReferences: boolean;
+  showContent: boolean;
+  paddingTopBottomPx: number;
+  paddingLeftRightPx: number;
+}) {
+  const isFilled = customization.colorLayout === "column";
+
+  return (
+    <div
+      className="h-full shrink-0 overflow-hidden"
+      style={{
+        width: `${SIDEBAR_WIDTH_FRACTION * 100}%`,
+        backgroundColor: isFilled ? theme.headingBgColor : undefined,
+      }}
+    >
+      {showContent && (
+        <div
+          className="space-y-5"
+          style={{
+            paddingTop: paddingTopBottomPx,
+            paddingBottom: paddingTopBottomPx,
+            paddingLeft: paddingLeftRightPx,
+            paddingRight: paddingLeftRightPx,
+          }}
+        >
+          {headerInSidebar && (
+            <SidebarHeaderBlock
+              personal={personal}
+              customization={customization}
+              theme={theme}
+              textColor={textColor}
+            />
+          )}
+          {listsInSidebar &&
+            orderedSidebarKeys(customization.sectionOrder).map((key) => {
+              if (key === "skills" && skills.length > 0) {
+                return (
+                  <Section key="skills" title="Skills" theme={theme}>
+                    <SkillsBody
+                      skills={skills}
+                      theme={theme}
+                      accent={accent}
+                    />
+                  </Section>
+                );
+              }
+              if (key === "language" && languages.length > 0) {
+                return (
+                  <Section key="language" title="Languages" theme={theme}>
+                    <LanguagesBody
+                      languages={languages}
+                      theme={theme}
+                      accent={accent}
+                    />
+                  </Section>
+                );
+              }
+              if (
+                key === "references" &&
+                includeReferences &&
+                references.length > 0
+              ) {
+                return (
+                  <Section key="references" title="References" theme={theme}>
+                    <div className="space-y-3">
+                      {references.map((r) => (
+                        <ReferenceEntry key={r.id} r={r} theme={theme} />
+                      ))}
+                    </div>
+                  </Section>
+                );
+              }
+              return null;
+            })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExperienceHeader({
+  exp,
+  theme,
+}: {
+  exp: ExperienceItem;
+  theme: Theme;
+}) {
+  return (
+    <div className="flex justify-between gap-3 items-baseline">
+      <p
+        className="font-semibold text-[0.95em]"
+        style={{ color: theme.bodyTextColor }}
+      >
+        {exp.jobTitle || "Job title"}
+        {(exp.company || exp.location) && (
+          <span
+            className="font-normal"
+            style={{ color: theme.bodyAccentColor }}
+          >
+            {" "}
+            - {[exp.company, exp.location].filter(Boolean).join(", ")}
+          </span>
+        )}
+      </p>
+      {theme.showDates && (
+        <p
+          className="text-[0.78em] whitespace-nowrap"
+          style={{ color: theme.bodyAccentColor }}
+        >
+          {fmtDate(exp.startDate)}
+          {(exp.startDate || exp.endDate || exp.current) && " – "}
+          {exp.current ? "Present" : fmtDate(exp.endDate)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function NoExperienceHeader({
+  exp,
+  theme,
+}: {
+  exp: NoExperienceItem;
+  theme: Theme;
+}) {
   const hasUrl = exp.url.trim() !== "";
   return (
     <div className="flex justify-between gap-3 items-baseline">
-      <p className="font-semibold text-[0.95em]">
+      <p
+        className="font-semibold text-[0.95em]"
+        style={{ color: theme.bodyTextColor }}
+      >
         {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
         {(exp.title || exp.subtitle) && (
-          <span className="font-normal text-neutral-600">
+          <span
+            className="font-normal"
+            style={{ color: theme.bodyAccentColor }}
+          >
             {" "}
             -{" "}
             {exp.title &&
@@ -526,52 +1136,89 @@ function NoExperienceHeader({ exp }: { exp: NoExperienceItem }) {
           </span>
         )}
       </p>
-      <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
-        {fmtDate(exp.startDate)}
-        {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate)}
-      </p>
+      {theme.showDates && (
+        <p
+          className="text-[0.78em] whitespace-nowrap"
+          style={{ color: theme.bodyAccentColor }}
+        >
+          {fmtDate(exp.startDate)}
+          {(exp.startDate || exp.endDate || exp.current) && " – "}
+          {exp.current ? "Present" : fmtDate(exp.endDate)}
+        </p>
+      )}
     </div>
   );
 }
 
-function EducationEntry({ edu }: { edu: EducationItem }) {
+function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
   return (
     <div className="flex justify-between gap-3">
       <div>
-        <p className="font-semibold text-[0.95em]">
+        <p
+          className="font-semibold text-[0.95em]"
+          style={{ color: theme.bodyTextColor }}
+        >
           {[edu.degree, edu.field].filter(Boolean).join(" in ") || "Degree"}
         </p>
-        <p className="text-[0.85em] text-neutral-600">
-          {[edu.school, edu.gpa && `GPA: ${edu.gpa}`].filter(Boolean).join(" · ")}
+        <p className="text-[0.85em]" style={{ color: theme.bodyAccentColor }}>
+          {[edu.school, edu.gpa && `GPA: ${edu.gpa}`]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       </div>
-      <p className="text-[0.78em] text-neutral-500 whitespace-nowrap">
-        {fmtDate(edu.startDate)}
-        {(edu.startDate || edu.endDate || edu.current) && " – "}
-        {edu.current ? "Present" : fmtDate(edu.endDate)}
-      </p>
+      {theme.showDates && (
+        <p
+          className="text-[0.78em] whitespace-nowrap"
+          style={{ color: theme.bodyAccentColor }}
+        >
+          {fmtDate(edu.startDate)}
+          {(edu.startDate || edu.endDate || edu.current) && " – "}
+          {edu.current ? "Present" : fmtDate(edu.endDate)}
+        </p>
+      )}
     </div>
   );
 }
 
 function Section({
   title,
-  accent,
+  theme,
   children,
 }: {
   title: string;
-  accent: string;
+  theme: Theme;
   children: React.ReactNode;
 }) {
+  const isFilled = theme.headingBorder === "filled";
+  const isOutline = theme.headingBorder === "outline";
+  const headingStyle: React.CSSProperties = {
+    color: isFilled ? "#fff" : theme.accent,
+    fontSize: theme.headingSizePx,
+    textTransform: theme.textTransform,
+    backgroundColor: isFilled ? theme.accent : undefined,
+    borderColor: theme.accent,
+    borderWidth: isOutline
+      ? 1
+      : theme.showHeadingLine && !isFilled
+        ? undefined
+        : 0,
+    borderStyle: isOutline ? "solid" : undefined,
+    borderBottomWidth:
+      !isOutline && !isFilled ? (theme.showHeadingLine ? 1 : 0) : undefined,
+    padding: isOutline || isFilled ? "3px 8px" : undefined,
+    borderRadius: isFilled ? 4 : undefined,
+  };
+
   return (
     <section>
-      <h2
-        className="text-[0.8em] font-bold tracking-[0.18em] uppercase pb-1 mb-2 border-b"
-        style={{ color: accent, borderColor: accent }}
-      >
-        {title}
-      </h2>
+      {theme.showHeadingTitle && (
+        <h2
+          className="font-bold tracking-[0.18em] pb-1 mb-2 inline-block"
+          style={headingStyle}
+        >
+          {title}
+        </h2>
+      )}
       {children}
     </section>
   );
@@ -595,15 +1242,25 @@ const icons: Record<string, LucideIcon> = {
 function LinkText({
   icon,
   entry,
+  theme,
 }: {
   icon: keyof typeof icons;
   entry: LinkItem;
+  theme: Theme;
 }) {
   if (!entry.title.trim()) return null;
   return (
-    <IconText icon={icon}>
+    <IconText icon={icon} theme={theme}>
       {entry.url ? (
-        <a href={entry.url} target="_blank" rel="noreferrer" className="hover:underline">
+        <a
+          href={entry.url}
+          target="_blank"
+          rel="noreferrer"
+          className={theme.linkStyle === "underline" ? "underline" : undefined}
+          style={
+            theme.linkStyle === "color" ? { color: theme.accent } : undefined
+          }
+        >
           {entry.title}
         </a>
       ) : (
@@ -616,14 +1273,19 @@ function LinkText({
 function IconText({
   icon,
   children,
+  theme,
+  isHeaderIcon,
 }: {
   icon: keyof typeof icons;
   children: React.ReactNode;
+  theme: Theme;
+  isHeaderIcon?: boolean;
 }) {
   const Icon = icons[icon];
+  const showIcon = isHeaderIcon ? theme.showHeaderIcons : theme.showLinkIcons;
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Icon size="1em" strokeWidth={1.8} className="shrink-0" />
+      {showIcon && <Icon size="1em" strokeWidth={1.8} className="shrink-0" />}
       {children}
     </span>
   );
