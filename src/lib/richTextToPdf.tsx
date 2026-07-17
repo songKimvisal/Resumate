@@ -1,4 +1,5 @@
 import { Text, Link, View } from "@react-pdf/renderer";
+import { pdfFontVariants, type PdfFontFamily } from "./fonts";
 
 /** Tiptap's "empty" output is still a non-empty string like "<p></p>" */
 export function hasVisibleText(html: string) {
@@ -7,7 +8,11 @@ export function hasVisibleText(html: string) {
 
 /** Converts one inline node (text, <strong>, <em>, <u>, <a>, <br>) into
  *  nested react-pdf <Text>/<Link> elements. Callers only pass inline content. */
-function renderInline(node: ChildNode, key: React.Key): React.ReactNode {
+function renderInline(
+  node: ChildNode,
+  key: React.Key,
+  fontFamily: PdfFontFamily,
+): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
   }
@@ -19,21 +24,22 @@ function renderInline(node: ChildNode, key: React.Key): React.ReactNode {
   if (tag === "br") return "\n";
 
   const children = Array.from(el.childNodes).map((child, i) =>
-    renderInline(child, i),
+    renderInline(child, i, fontFamily),
   );
+  const variants = pdfFontVariants(fontFamily);
 
   switch (tag) {
     case "strong":
     case "b":
       return (
-        <Text key={key} style={{ fontFamily: "Helvetica-Bold" }}>
+        <Text key={key} style={{ fontFamily: variants.bold }}>
           {children}
         </Text>
       );
     case "em":
     case "i":
       return (
-        <Text key={key} style={{ fontFamily: "Helvetica-Oblique" }}>
+        <Text key={key} style={{ fontFamily: variants.italic }}>
           {children}
         </Text>
       );
@@ -62,6 +68,8 @@ type RichTextOptions = {
   fontSize: number;
   color?: string;
   align?: "left" | "center" | "right" | "justify";
+  fontFamily?: PdfFontFamily;
+  lineHeight?: number;
 };
 
 /** Converts Tiptap HTML (paragraphs, lists, bold/italic/underline/links)
@@ -69,7 +77,13 @@ type RichTextOptions = {
  *  list item. Unknown block tags render as a plain paragraph. */
 export function richTextToPdf(
   html: string,
-  { fontSize, color, align = "left" }: RichTextOptions,
+  {
+    fontSize,
+    color,
+    align = "left",
+    fontFamily = "Helvetica",
+    lineHeight,
+  }: RichTextOptions,
 ): React.ReactNode[] {
   const container = document.createElement("div");
   container.innerHTML = html;
@@ -85,7 +99,7 @@ export function richTextToPdf(
     if (tag === "ul" || tag === "ol") {
       Array.from(el.children).forEach((li, j) => {
         const inline = Array.from(li.childNodes).map((c, k) =>
-          renderInline(c, k),
+          renderInline(c, k, fontFamily),
         );
         blocks.push(
           <View
@@ -95,21 +109,29 @@ export function richTextToPdf(
               marginTop: i === 0 && j === 0 ? 0 : 2,
             }}
           >
-            <Text style={{ width: 10, fontSize, color }}>
+            <Text style={{ width: 10, fontSize, color, lineHeight }}>
               {tag === "ol" ? `${j + 1}.` : "•"}
             </Text>
-            <Text style={{ flex: 1, fontSize, color }}>{inline}</Text>
+            <Text style={{ flex: 1, fontSize, color, lineHeight }}>
+              {inline}
+            </Text>
           </View>,
         );
       });
     } else {
       const inline = Array.from(el.childNodes).map((c, k) =>
-        renderInline(c, k),
+        renderInline(c, k, fontFamily),
       );
       blocks.push(
         <Text
           key={i}
-          style={{ fontSize, color, textAlign, marginTop: i === 0 ? 0 : 4 }}
+          style={{
+            fontSize,
+            color,
+            textAlign,
+            lineHeight,
+            marginTop: i === 0 ? 0 : 4,
+          }}
         >
           {inline}
         </Text>,
