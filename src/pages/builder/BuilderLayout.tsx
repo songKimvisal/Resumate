@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { Sun, Moon, LayoutGrid, FileText, ArrowLeft, Eye, X } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  LayoutGrid,
+  FileText,
+  ArrowLeft,
+  Eye,
+  X,
+} from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useResumeStore } from "../../store/resumeStore";
 import ResumePreview from "../../components/resume/ResumePreview";
@@ -171,7 +179,7 @@ export default function BuilderLayout() {
       {/* ================= step indicator ================= */}
       <div
         ref={stepBarRef}
-        className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm"
+        className="sticky top-0 z-30 bg-bg will-change-transform"
       >
         {customizeOpen ? (
           <div className="max-w-7xl w-full mx-auto px-4 lg:px-1.5 py-3">
@@ -228,9 +236,9 @@ export default function BuilderLayout() {
             {customizeOpen ? (
               <motion.div
                 key="customize"
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
                 <CustomizePage />
@@ -238,9 +246,9 @@ export default function BuilderLayout() {
             ) : (
               <motion.div
                 key={step}
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
                 {step === 1 && <Step1Personal />}

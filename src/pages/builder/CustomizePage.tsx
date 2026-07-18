@@ -46,7 +46,7 @@ type SectionKey =
   | "spacing";
 
 const SECTION_CARD =
-  "rounded-xl border border-line p-4 md:p-5 space-y-5 scroll-mt-24";
+  "rounded-xl border border-line p-3 sm:p-4 md:p-5 space-y-5 scroll-mt-24";
 const SECTION_TITLE = "text-sm font-semibold text-brand";
 
 /** quick shortcuts for the heading-style grid: each preset only sets the
@@ -181,7 +181,7 @@ export default function CustomizePage() {
       {/* ---------- section nav: horizontal pills below md, since the
           vertical rail alongside the sections has no room to sit next to
           the single-column content on small screens ---------- */}
-      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg/95 backdrop-blur-sm">
+      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg will-change-transform">
         <div className="flex gap-2 px-4 py-2 w-max">
           {navItems.map((item) => (
             <button
@@ -203,7 +203,7 @@ export default function CustomizePage() {
 
       <div className="flex gap-6 items-start mt-4 md:mt-6">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-32 shrink-0 sticky top-24 self-start">
+        <div className="hidden md:block w-32 shrink-0 sticky top-(--step-bar-height) self-start">
           <div className="flex flex-col border-l border-line">
             {navItems.map((item) => (
               <button
@@ -259,7 +259,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.columns")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.columnsOne")}
                   selected={customization.columns === "one"}
@@ -282,7 +282,7 @@ export default function CustomizePage() {
                 <p className="text-sm font-medium text-text">
                   {t("builder.customizePage.layout.headerPosition")}
                 </p>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <OptionCard
                     label={t("builder.customizePage.layout.headerLeft")}
                     selected={customization.headerPosition === "left"}
@@ -393,7 +393,7 @@ export default function CustomizePage() {
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.layout.photoShape")}
                   </p>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <OptionCard
                       label={t("builder.customizePage.layout.shapeCircle")}
                       selected={customization.photoShape === "circle"}
@@ -439,7 +439,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.pageFormat")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.formatA4")}
                   selected={customization.pageFormat === "a4"}
@@ -556,7 +556,7 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.sectionHeadings")}
             </p>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {HEADING_PRESETS.map((preset, i) => (
                 <button
                   key={i}
@@ -591,7 +591,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.capitalization")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.sectionHeadings.capitalize")}
                   selected={customization.capitalization === "capitalize"}
@@ -613,7 +613,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.linkStyle")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t(
                     "builder.customizePage.sectionHeadings.linkUnderline",
@@ -647,7 +647,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.layoutMode")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.colors.layoutFullPage")}
                   selected={customization.colorLayout === "full"}
@@ -676,7 +676,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.paletteMode")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.colors.paletteSingle")}
                   selected={customization.paletteMode === "single"}
@@ -1024,7 +1024,7 @@ function OptionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
+        "flex-1 min-w-24 max-w-40 flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
         selected ? "border-brand bg-brand/5" : "border-line hover:bg-surface-2",
       )}
     >
@@ -1181,7 +1181,7 @@ function ColorPicker({
   return (
     <div className="space-y-1.5">
       <span className="text-[11px] text-text-secondary">{label}</span>
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {presets.map((preset) => (
           <button
             key={preset}
