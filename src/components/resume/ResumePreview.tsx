@@ -47,8 +47,6 @@ function fmtDate(value: string) {
 }
 
 const fontSizes = { small: "13px", medium: "14.5px", large: "16px" } as const;
-
-/** Tiptap's "empty" output is still a non-empty string like "<p></p>" */
 function hasText(html: string) {
   return html.replace(/<[^>]*>/g, "").trim().length > 0;
 }
@@ -84,12 +82,7 @@ interface Block {
   gapBefore: number;
   node: React.ReactNode;
 }
-
-/** fraction of the page width the sidebar column occupies, when present */
 const SIDEBAR_WIDTH_FRACTION = 0.34;
-
-/** Theme values derived from `customization`, threaded through every block
- *  so live preview and the measuring pass stay in sync. */
 interface Theme {
   accent: string;
   fontSize: string;
@@ -150,9 +143,6 @@ function useTheme(customization: Customization): Theme {
       bodyAccentColor,
       linkStyle: customization.linkStyle,
       showDates: customization.toggles.dates,
-      // "Link icon" style forces icons on for link entries even when the
-      // "Link icons" toggle is off, so it's a real distinct choice from
-      // Underline/Blue Color instead of a no-op
       showLinkIcons:
         customization.toggles.linkIcons || customization.linkStyle === "icon",
       showHeaderIcons: customization.toggles.headerIcons,
@@ -183,8 +173,6 @@ export default function ResumePreview({
 
   const pageAspect =
     customization.pageFormat === "letter" ? 11 / 8.5 : 297 / 210;
-  // browsers resolve padding percentages (including top/bottom) against the
-  // containing block's width, so both axes convert through the same basis
   const paddingTopBottomPct = marginPercentCss(
     customization.topBottomMargin,
     customization.pageFormat,
@@ -195,20 +183,11 @@ export default function ResumePreview({
   );
 
   // ---------- sidebar layout derived from `columns` + `headerPosition` ----------
-  // the sidebar only exists in two-column mode, so toggling `columns` always
-  // has a visible effect; `headerPosition` then picks where within it (or
-  // whether at all, for "top") the header sits.
   const showSidebar = customization.columns === "two";
   const headerInSidebar = showSidebar && customization.headerPosition !== "top";
+  const topHeaderBanner = showSidebar && customization.headerPosition === "top";
   const listsInSidebar = showSidebar;
   const sidebarSide = headerInSidebar ? customization.headerPosition : "left";
-
-  // ---------- how the heading color paints the page ----------
-  // "column"/"full" both keep the header text on a colored surface (the
-  // sidebar/banner itself, or the whole page respectively), so theme's
-  // heading text color stays legible either way. "border" drops the fill
-  // entirely, so the header text falls back to bodyTextColor to stay
-  // legible against the plain page.
   const headerTextColor =
     customization.colorLayout === "border"
       ? customization.bodyTextColor
@@ -220,8 +199,7 @@ export default function ResumePreview({
 
   const blocks = useMemo<Block[]>(() => {
     const list: Block[] = [];
-
-    if (!headerInSidebar) {
+    if (!showSidebar) {
       list.push({
         key: "header",
         gapBefore: 0,
@@ -263,11 +241,6 @@ export default function ResumePreview({
         });
       });
     }
-
-    // experience/education and skills+languages/references are built as
-    // independent groups, then concatenated in `sectionOrder` — each
-    // group's own first block already carries gapSection, so it stays
-    // correctly spaced no matter which group ends up next to it
     const expEduBlocks: Block[] = [];
 
     experience.forEach((exp, i) => {
@@ -423,7 +396,10 @@ export default function ResumePreview({
       });
     }
 
-    const groups: Record<"experience" | "skillsLanguage" | "references", Block[]> = {
+    const groups: Record<
+      "experience" | "skillsLanguage" | "references",
+      Block[]
+    > = {
       experience: expEduBlocks,
       skillsLanguage: skillsLanguageBlocks,
       references: referencesBlocks,
@@ -442,7 +418,7 @@ export default function ResumePreview({
     languages,
     references,
     includeReferences,
-    headerInSidebar,
+    showSidebar,
     listsInSidebar,
     customization,
     theme,
@@ -483,11 +459,29 @@ export default function ResumePreview({
     setHeights(next);
     setMeasuredWidth(pageWidth);
   }, [blocks, pageWidth]);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const [bannerHeightPx, setBannerHeightPx] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = bannerRef.current;
+    if (!el) {
+      setBannerHeightPx(0);
+      return;
+    }
+    const update = () => setBannerHeightPx(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [topHeaderBanner]);
 
   const pages = useMemo(() => {
     if (pageWidth === 0 || measuredWidth !== pageWidth) return [blocks];
     const verticalPaddingPx = pageWidth * (paddingTopBottomPct / 100);
     const contentHeightPx = pageWidth * pageAspect - verticalPaddingPx * 2;
+    const firstPageContentHeightPx = topHeaderBanner
+      ? contentHeightPx - bannerHeightPx
+      : contentHeightPx;
 
     const result: Block[][] = [[]];
     let used = 0;
@@ -496,7 +490,9 @@ export default function ResumePreview({
       const currentPage = result[result.length - 1];
       const isFirstOnPage = currentPage.length === 0;
       const needed = (isFirstOnPage ? 0 : b.gapBefore) + h;
-      if (!isFirstOnPage && used + needed > contentHeightPx) {
+      const limit =
+        result.length === 1 ? firstPageContentHeightPx : contentHeightPx;
+      if (!isFirstOnPage && used + needed > limit) {
         result.push([b]);
         used = h;
       } else {
@@ -509,13 +505,12 @@ export default function ResumePreview({
     blocks,
     heights,
     pageWidth,
+    topHeaderBanner,
+    bannerHeightPx,
     measuredWidth,
     pageAspect,
     paddingTopBottomPct,
   ]);
-
-  // pixel padding, only needed when a sidebar is present (percentage padding
-  // resolves against the narrower column's own width, not the page width)
   const paddingTopBottomPx = pageWidth * (paddingTopBottomPct / 100);
   const paddingLeftRightPx = pageWidth * (paddingLeftRightPct / 100);
   const mainColumnWidthPx = showSidebar
@@ -524,8 +519,6 @@ export default function ResumePreview({
 
   return (
     <div ref={wrapperRef} className="space-y-4">
-      {/* off-screen measuring pass: same width/font-size as a real page, so
-          the heights used for pagination match what actually renders */}
       <div
         ref={measureContainerRef}
         aria-hidden
@@ -571,81 +564,105 @@ export default function ResumePreview({
                   : undefined,
             }}
           >
-            <div
-              className={showSidebar ? "h-full flex" : "h-full overflow-hidden"}
-              style={
-                showSidebar
-                  ? undefined
-                  : {
-                      paddingTop: `${paddingTopBottomPct}%`,
-                      paddingBottom: `${paddingTopBottomPct}%`,
-                      paddingLeft: `${paddingLeftRightPct}%`,
-                      paddingRight: `${paddingLeftRightPct}%`,
-                    }
-              }
-            >
-              {showSidebar && sidebarSide === "left" && (
-                <SidebarColumn
-                  personal={personal}
-                  customization={customization}
-                  theme={theme}
-                  accent={accent}
-                  textColor={headerTextColor}
-                  headerInSidebar={headerInSidebar}
-                  listsInSidebar={listsInSidebar}
-                  skills={skills}
-                  languages={languages}
-                  references={references}
-                  includeReferences={includeReferences}
-                  showContent={pageIndex === 0}
-                  paddingTopBottomPx={paddingTopBottomPx}
-                  paddingLeftRightPx={paddingLeftRightPx}
-                />
+            <div className="h-full flex flex-col">
+              {topHeaderBanner && pageIndex === 0 && (
+                <div
+                  ref={bannerRef}
+                  style={{
+                    paddingTop: paddingTopBottomPx,
+                    paddingLeft: paddingLeftRightPx,
+                    paddingRight: paddingLeftRightPx,
+                    paddingBottom: gapSection,
+                  }}
+                >
+                  <HeaderBlock
+                    personal={personal}
+                    customization={customization}
+                    theme={theme}
+                    textColor={headerTextColor}
+                  />
+                </div>
               )}
               <div
                 className={
                   showSidebar
-                    ? "flex-1 min-w-0 h-full overflow-hidden"
-                    : undefined
+                    ? "flex-1 min-h-0 flex"
+                    : "flex-1 min-h-0 overflow-hidden"
                 }
                 style={
                   showSidebar
-                    ? {
-                        paddingTop: paddingTopBottomPx,
-                        paddingBottom: paddingTopBottomPx,
-                        paddingLeft: paddingLeftRightPx,
-                        paddingRight: paddingLeftRightPx,
+                    ? undefined
+                    : {
+                        paddingTop: `${paddingTopBottomPct}%`,
+                        paddingBottom: `${paddingTopBottomPct}%`,
+                        paddingLeft: `${paddingLeftRightPct}%`,
+                        paddingRight: `${paddingLeftRightPct}%`,
                       }
-                    : undefined
                 }
               >
-                {pageBlocks.map((b, i) => (
-                  <div
-                    key={b.key}
-                    style={{ marginTop: i === 0 ? 0 : b.gapBefore }}
-                  >
-                    {b.node}
-                  </div>
-                ))}
+                {showSidebar && sidebarSide === "left" && (
+                  <SidebarColumn
+                    personal={personal}
+                    customization={customization}
+                    theme={theme}
+                    accent={accent}
+                    textColor={headerTextColor}
+                    headerInSidebar={headerInSidebar}
+                    listsInSidebar={listsInSidebar}
+                    skills={skills}
+                    languages={languages}
+                    references={references}
+                    includeReferences={includeReferences}
+                    showContent={pageIndex === 0}
+                    paddingTopBottomPx={paddingTopBottomPx}
+                    paddingLeftRightPx={paddingLeftRightPx}
+                  />
+                )}
+                <div
+                  className={
+                    showSidebar
+                      ? "flex-1 min-w-0 h-full overflow-hidden"
+                      : undefined
+                  }
+                  style={
+                    showSidebar
+                      ? {
+                          paddingTop: paddingTopBottomPx,
+                          paddingBottom: paddingTopBottomPx,
+                          paddingLeft: paddingLeftRightPx,
+                          paddingRight: paddingLeftRightPx,
+                        }
+                      : undefined
+                  }
+                >
+                  {pageBlocks.map((b, i) => (
+                    <div
+                      key={b.key}
+                      style={{ marginTop: i === 0 ? 0 : b.gapBefore }}
+                    >
+                      {b.node}
+                    </div>
+                  ))}
+                </div>
+                {showSidebar && sidebarSide === "right" && (
+                  <SidebarColumn
+                    personal={personal}
+                    customization={customization}
+                    theme={theme}
+                    accent={accent}
+                    textColor={headerTextColor}
+                    headerInSidebar={headerInSidebar}
+                    listsInSidebar={listsInSidebar}
+                    skills={skills}
+                    languages={languages}
+                    references={references}
+                    includeReferences={includeReferences}
+                    showContent={pageIndex === 0}
+                    paddingTopBottomPx={paddingTopBottomPx}
+                    paddingLeftRightPx={paddingLeftRightPx}
+                  />
+                )}
               </div>
-              {showSidebar && sidebarSide === "right" && (
-                <SidebarColumn
-                  personal={personal}
-                  customization={customization}
-                  theme={theme}
-                  accent={accent}
-                  textColor={headerTextColor}
-                  headerInSidebar={headerInSidebar}
-                  listsInSidebar={listsInSidebar}
-                  skills={skills}
-                  languages={languages}
-                  references={references}
-                  includeReferences={includeReferences}
-                  showContent={pageIndex === 0}
-                  paddingTopBottomPx={paddingTopBottomPx}
-                  paddingLeftRightPx={paddingLeftRightPx}
-                />
-              )}
             </div>
           </div>
         </div>
@@ -893,9 +910,6 @@ function HeaderBlock({
     </header>
   );
 }
-
-/** vertical variant of HeaderBlock, used inside the sidebar column when
- *  headerPosition is "left" or "right" instead of the full-width banner */
 function SidebarHeaderBlock({
   personal,
   customization,
@@ -946,12 +960,6 @@ function SidebarHeaderBlock({
     </header>
   );
 }
-
-/** the narrow side column shown when headerPosition is left/right, and/or
- *  columns is "two" — carries the header and/or the skills/languages/
- *  references sections that would otherwise sit in the main flow. Repeats
- *  as an empty colored strip on pages after the first, since its content
- *  is assumed to fit on page one. */
 function SidebarColumn({
   personal,
   customization,
@@ -1016,11 +1024,7 @@ function SidebarColumn({
               if (key === "skills" && skills.length > 0) {
                 return (
                   <Section key="skills" title="Skills" theme={theme}>
-                    <SkillsBody
-                      skills={skills}
-                      theme={theme}
-                      accent={accent}
-                    />
+                    <SkillsBody skills={skills} theme={theme} accent={accent} />
                   </Section>
                 );
               }
