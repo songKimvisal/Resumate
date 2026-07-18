@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { GripVertical, Lock, Minus, Pipette, Plus } from "lucide-react";
+import { Globe, GripVertical, Lock, Minus, Pipette, Plus } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
 import type {
   Customization,
@@ -39,6 +39,7 @@ const FONT_SIZE_PX = { small: "13px", medium: "14.5px", large: "16px" };
 
 type SectionKey =
   | "layout"
+  | "header"
   | "font"
   | "fontSize"
   | "sectionHeadings"
@@ -74,6 +75,49 @@ const HEADING_BORDER_LABEL_KEY: Record<Customization["headingBorder"], string> =
   underline: "borderUnderline",
 };
 
+const SECTION_ICON_OPTIONS: Customization["sectionIcon"][] = [
+  "none",
+  "outline",
+  "filled",
+];
+
+const SECTION_ICON_LABEL_KEY: Record<Customization["sectionIcon"], string> = {
+  none: "sectionIconNone",
+  outline: "sectionIconOutline",
+  filled: "sectionIconFilled",
+};
+
+const CONTACT_SEPARATOR_OPTIONS: Customization["contactSeparator"][] = [
+  "icon",
+  "bullet",
+  "bar",
+];
+
+const CONTACT_SEPARATOR_LABEL_KEY: Record<
+  Customization["contactSeparator"],
+  string
+> = {
+  icon: "separatorIcon",
+  bullet: "separatorBullet",
+  bar: "separatorBar",
+};
+
+const ICON_STYLES: Customization["iconStyle"][] = [
+  "plain",
+  "filled",
+  "outline",
+  "square",
+  "faded",
+];
+
+const ICON_STYLE_LABEL_KEY: Record<Customization["iconStyle"], string> = {
+  plain: "iconPlain",
+  filled: "iconFilled",
+  outline: "iconOutline",
+  square: "iconSquare",
+  faded: "iconFaded",
+};
+
 export default function CustomizePage() {
   const { t } = useTranslation();
   const customization = useResumeStore((s) => s.resume.customization);
@@ -99,6 +143,16 @@ export default function CustomizePage() {
   const patchToggle = (key: keyof CustomizationToggles) =>
     updateCustomization({
       toggles: { ...customization.toggles, [key]: !customization.toggles[key] },
+    });
+
+  // Link Style is a multi-select — any combination of underline/color/icon
+  // can be active at once, so picking one toggles it in the set rather
+  // than replacing the whole selection
+  const toggleLinkStyle = (option: Customization["linkStyle"][number]) =>
+    updateCustomization({
+      linkStyle: customization.linkStyle.includes(option)
+        ? customization.linkStyle.filter((o) => o !== option)
+        : [...customization.linkStyle, option],
     });
 
   // ---- section layout drag-and-drop ----
@@ -159,6 +213,7 @@ export default function CustomizePage() {
 
   // ---- section nav + scroll spy ----
   const layoutRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const fontRef = useRef<HTMLDivElement>(null);
   const fontSizeRef = useRef<HTMLDivElement>(null);
   const sectionHeadingsRef = useRef<HTMLDivElement>(null);
@@ -170,6 +225,7 @@ export default function CustomizePage() {
     React.RefObject<HTMLDivElement | null>
   > = {
     layout: layoutRef,
+    header: headerRef,
     font: fontRef,
     fontSize: fontSizeRef,
     sectionHeadings: sectionHeadingsRef,
@@ -204,19 +260,28 @@ export default function CustomizePage() {
     });
 
   const navItems: { key: SectionKey; label: string }[] = [
-    { key: "layout", label: t("builder.customizePage.nav.layout") },
+    { key: "colors", label: t("builder.customizePage.nav.colors") },
     { key: "font", label: t("builder.customizePage.nav.font") },
     { key: "fontSize", label: t("builder.customizePage.nav.fontSize") },
+    { key: "layout", label: t("builder.customizePage.nav.layout") },
+    { key: "header", label: t("builder.customizePage.nav.header") },
     {
       key: "sectionHeadings",
       label: t("builder.customizePage.nav.sectionHeadings"),
     },
-    { key: "colors", label: t("builder.customizePage.nav.colors") },
     { key: "spacing", label: t("builder.customizePage.nav.spacing") },
   ];
 
   const { main: mainSectionKeys, sidebar: sidebarSectionKeys } =
     partitionSectionOrder(customization.sectionOrder, customization.sidebarKeys);
+
+  // Text Alignment / Details Arrangement only affect the header when it
+  // renders as its own banner (one-column, or two-column with the header
+  // pulled to the top) — inside a left/right sidebar it always renders as
+  // a narrow left-aligned stack, so those controls would have no visible
+  // effect there and are hidden to avoid dead controls
+  const headerIsBanner =
+    customization.columns === "one" || customization.headerPosition === "top";
 
   const fontSizeStepIndex = FONT_SIZE_STEPS.indexOf(customization.fontSize);
   const pageMarginValue = Math.round(
@@ -274,15 +339,19 @@ export default function CustomizePage() {
 
       <div className="flex gap-6 items-start mt-4 md:mt-6">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-32 shrink-0 sticky top-(--step-bar-height) self-start">
-          <div className="flex flex-col border-l border-line">
+        <div className="hidden md:block w-40 shrink-0 sticky top-(--step-bar-height) self-start">
+          <div className="flex flex-col gap-0.5 border-l border-line">
             {navItems.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => scrollTo(item.key)}
                 className={cn(
-                  "text-left text-sm py-2 pl-4 -ml-px border-l-2 transition-colors",
+                  // whitespace-nowrap + the wider w-40 rail keep every label
+                  // (even "Section Headings") on one line — a label wrapping
+                  // to two lines while its siblings stay single-line broke
+                  // the list's even vertical rhythm
+                  "whitespace-nowrap text-left text-sm py-2 pl-4 -ml-px border-l-2 transition-colors",
                   activeSection === item.key
                     ? "border-brand text-brand font-medium"
                     : "border-transparent text-text-secondary hover:text-text",
@@ -320,6 +389,228 @@ export default function CustomizePage() {
             </button>
           </div>
 
+          {/* ================= colors ================= */}
+          <div ref={colorsRef} data-section="colors" className={SECTION_CARD}>
+            <p className={SECTION_TITLE}>
+              {t("builder.customizePage.nav.colors")}
+            </p>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.colors.layoutMode")}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <OptionCard
+                  label={t("builder.customizePage.colors.layoutFullPage")}
+                  selected={customization.colorLayout === "full"}
+                  onClick={() => updateCustomization({ colorLayout: "full" })}
+                >
+                  <HeaderStylePreview mode="full" color={customization.headingBgColor} />
+                </OptionCard>
+                <OptionCard
+                  label={t("builder.customizePage.colors.layoutColumn")}
+                  selected={customization.colorLayout === "column"}
+                  onClick={() => updateCustomization({ colorLayout: "column" })}
+                >
+                  <HeaderStylePreview mode="column" color={customization.headingBgColor} />
+                </OptionCard>
+                <OptionCard
+                  label={t("builder.customizePage.colors.layoutBorder")}
+                  selected={customization.colorLayout === "border"}
+                  onClick={() => updateCustomization({ colorLayout: "border" })}
+                >
+                  <HeaderStylePreview mode="border" color={customization.headingBgColor} />
+                </OptionCard>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.colors.paletteMode")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <OptionCard
+                  label={t("builder.customizePage.colors.paletteSingle")}
+                  selected={customization.paletteMode === "single"}
+                  onClick={() => updateCustomization({ paletteMode: "single" })}
+                />
+                <OptionCard
+                  label={t("builder.customizePage.colors.paletteMulti")}
+                  selected={customization.paletteMode === "multi"}
+                  onClick={() => updateCustomization({ paletteMode: "multi" })}
+                />
+              </div>
+            </div>
+
+            {customization.paletteMode === "single" ? (
+              <ColorPicker
+                label={t("builder.customizePage.colors.accent")}
+                color={customization.accentColor}
+                role="accent"
+                onChange={(c) => updateCustomization({ accentColor: c })}
+              />
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
+                    {t("builder.customizePage.colors.headingSection")}
+                  </p>
+                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.text")}
+                      color={customization.headingTextColor}
+                      role="text"
+                      onChange={(c) =>
+                        updateCustomization({ headingTextColor: c })
+                      }
+                    />
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.background")}
+                      color={customization.headingBgColor}
+                      role="background"
+                      onChange={(c) =>
+                        updateCustomization({ headingBgColor: c })
+                      }
+                    />
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.accent")}
+                      color={customization.accentColor}
+                      role="accent"
+                      onChange={(c) => updateCustomization({ accentColor: c })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
+                    {t("builder.customizePage.colors.bodySection")}
+                  </p>
+                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.text")}
+                      color={customization.bodyTextColor}
+                      role="text"
+                      onChange={(c) =>
+                        updateCustomization({ bodyTextColor: c })
+                      }
+                    />
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.background")}
+                      color={customization.bodyBgColor}
+                      role="background"
+                      onChange={(c) => updateCustomization({ bodyBgColor: c })}
+                    />
+                    <ColorPicker
+                      label={t("builder.customizePage.colors.accent")}
+                      color={customization.bodyAccentColor}
+                      role="accent"
+                      onChange={(c) =>
+                        updateCustomization({ bodyAccentColor: c })
+                      }
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {(
+                Object.keys(
+                  customization.toggles,
+                ) as (keyof CustomizationToggles)[]
+              ).map((key) => (
+                <label
+                  key={key}
+                  className="flex items-center gap-2 text-sm text-text cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={customization.toggles[key]}
+                    onChange={() => patchToggle(key)}
+                    className="size-4 accent-brand rounded"
+                  />
+                  {t(`builder.customizePage.colors.toggles.${key}`)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* ================= font ================= */}
+          <div ref={fontRef} data-section="font" className={SECTION_CARD}>
+            <p className={SECTION_TITLE}>
+              {t("builder.customizePage.nav.font")}
+            </p>
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.font.fontFamily")}
+              </p>
+              <Select
+                value={customization.fontFamily}
+                onValueChange={(v) =>
+                  updateCustomization({
+                    fontFamily: v ?? customization.fontFamily,
+                  })
+                }
+              >
+                <SelectTrigger className="w-full h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_FAMILIES.map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* ================= font size ================= */}
+          <div
+            ref={fontSizeRef}
+            data-section="fontSize"
+            className={SECTION_CARD}
+          >
+            <p className={SECTION_TITLE}>
+              {t("builder.customizePage.nav.fontSize")}
+            </p>
+            <SliderRow
+              label={t("builder.customizePage.fontSize.fontSize")}
+              value={fontSizeStepIndex}
+              displayValue={FONT_SIZE_PX[customization.fontSize]}
+              min={0}
+              max={2}
+              onChange={(v) =>
+                updateCustomization({ fontSize: FONT_SIZE_STEPS[v] })
+              }
+            />
+            <SliderRow
+              label={t("builder.customizePage.fontSize.fullName")}
+              value={customization.fullNameSize}
+              displayValue={`${customization.fullNameSize}px`}
+              min={16}
+              max={40}
+              onChange={(v) => updateCustomization({ fullNameSize: v })}
+            />
+            <SliderRow
+              label={t("builder.customizePage.fontSize.professionalTitle")}
+              value={customization.titleSize}
+              displayValue={`${customization.titleSize}px`}
+              min={10}
+              max={24}
+              onChange={(v) => updateCustomization({ titleSize: v })}
+            />
+            <SliderRow
+              label={t("builder.customizePage.fontSize.sectionHeadings")}
+              value={customization.headingsSize}
+              displayValue={`${customization.headingsSize}px`}
+              min={8}
+              max={16}
+              onChange={(v) => updateCustomization({ headingsSize: v })}
+            />
+          </div>
+
           {/* ================= layout ================= */}
           <div ref={layoutRef} data-section="layout" className={SECTION_CARD}>
             <p className={SECTION_TITLE}>
@@ -330,7 +621,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.columns")}
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.columnsOne")}
                   selected={customization.columns === "one"}
@@ -353,7 +644,7 @@ export default function CustomizePage() {
                 <p className="text-sm font-medium text-text">
                   {t("builder.customizePage.layout.headerPosition")}
                 </p>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <OptionCard
                     label={t("builder.customizePage.layout.headerLeft")}
                     selected={customization.headerPosition === "left"}
@@ -507,7 +798,7 @@ export default function CustomizePage() {
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.layout.photoShape")}
                   </p>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <OptionCard
                       label={t("builder.customizePage.layout.shapeCircle")}
                       selected={customization.photoShape === "circle"}
@@ -574,7 +865,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.pageFormat")}
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.formatA4")}
                   selected={customization.pageFormat === "a4"}
@@ -605,80 +896,120 @@ export default function CustomizePage() {
             />
           </div>
 
-          {/* ================= font ================= */}
-          <div ref={fontRef} data-section="font" className={SECTION_CARD}>
+          {/* ================= header ================= */}
+          <div ref={headerRef} data-section="header" className={SECTION_CARD}>
             <p className={SECTION_TITLE}>
-              {t("builder.customizePage.nav.font")}
+              {t("builder.customizePage.nav.header")}
             </p>
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.font.fontFamily")}
-              </p>
-              <Select
-                value={customization.fontFamily}
-                onValueChange={(v) =>
-                  updateCustomization({
-                    fontFamily: v ?? customization.fontFamily,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FONT_FAMILIES.map((f) => (
-                    <SelectItem key={f} value={f}>
-                      {f}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          {/* ================= font size ================= */}
-          <div
-            ref={fontSizeRef}
-            data-section="fontSize"
-            className={SECTION_CARD}
-          >
-            <p className={SECTION_TITLE}>
-              {t("builder.customizePage.nav.fontSize")}
-            </p>
-            <SliderRow
-              label={t("builder.customizePage.fontSize.fontSize")}
-              value={fontSizeStepIndex}
-              displayValue={FONT_SIZE_PX[customization.fontSize]}
-              min={0}
-              max={2}
-              onChange={(v) =>
-                updateCustomization({ fontSize: FONT_SIZE_STEPS[v] })
-              }
-            />
-            <SliderRow
-              label={t("builder.customizePage.fontSize.fullName")}
-              value={customization.fullNameSize}
-              displayValue={`${customization.fullNameSize}px`}
-              min={16}
-              max={40}
-              onChange={(v) => updateCustomization({ fullNameSize: v })}
-            />
-            <SliderRow
-              label={t("builder.customizePage.fontSize.professionalTitle")}
-              value={customization.titleSize}
-              displayValue={`${customization.titleSize}px`}
-              min={10}
-              max={24}
-              onChange={(v) => updateCustomization({ titleSize: v })}
-            />
-            <SliderRow
-              label={t("builder.customizePage.fontSize.sectionHeadings")}
-              value={customization.headingsSize}
-              displayValue={`${customization.headingsSize}px`}
-              min={8}
-              max={16}
-              onChange={(v) => updateCustomization({ headingsSize: v })}
-            />
+            {headerIsBanner && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-text">
+                    {t("builder.customizePage.header.textAlignment")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <OptionCard
+                      label={t("builder.customizePage.header.alignLeft")}
+                      selected={customization.headerAlignment === "left"}
+                      onClick={() =>
+                        updateCustomization({ headerAlignment: "left" })
+                      }
+                    >
+                      <HeaderAlignmentPreview align="left" />
+                    </OptionCard>
+                    <OptionCard
+                      label={t("builder.customizePage.header.alignCenter")}
+                      selected={customization.headerAlignment === "center"}
+                      onClick={() =>
+                        updateCustomization({ headerAlignment: "center" })
+                      }
+                    >
+                      <HeaderAlignmentPreview align="center" />
+                    </OptionCard>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-text">
+                    {t("builder.customizePage.header.detailsArrangement")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <OptionCard
+                      label={t("builder.customizePage.header.arrangementInline")}
+                      selected={customization.contactArrangement === "inline"}
+                      onClick={() =>
+                        updateCustomization({ contactArrangement: "inline" })
+                      }
+                    >
+                      <ContactArrangementPreview arrangement="inline" />
+                    </OptionCard>
+                    <OptionCard
+                      label={t("builder.customizePage.header.arrangementStacked")}
+                      selected={customization.contactArrangement === "stacked"}
+                      onClick={() =>
+                        updateCustomization({ contactArrangement: "stacked" })
+                      }
+                    >
+                      <ContactArrangementPreview arrangement="stacked" />
+                    </OptionCard>
+                  </div>
+                </div>
+
+                {customization.contactArrangement === "inline" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-text">
+                      {t("builder.customizePage.header.separator")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {CONTACT_SEPARATOR_OPTIONS.map((option) => (
+                        <OptionCard
+                          key={option}
+                          label={t(
+                            `builder.customizePage.header.${CONTACT_SEPARATOR_LABEL_KEY[option]}`,
+                          )}
+                          selected={customization.contactSeparator === option}
+                          onClick={() =>
+                            updateCustomization({ contactSeparator: option })
+                          }
+                        >
+                          <ContactSeparatorPreview separator={option} />
+                        </OptionCard>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.header.iconStyle")}
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {ICON_STYLES.map((style) => (
+                  <button
+                    key={style}
+                    type="button"
+                    title={t(
+                      `builder.customizePage.header.${ICON_STYLE_LABEL_KEY[style]}`,
+                    )}
+                    onClick={() => updateCustomization({ iconStyle: style })}
+                    className={cn(
+                      "flex size-11 items-center justify-center rounded-lg border-2 transition-colors",
+                      customization.iconStyle === style
+                        ? "border-brand bg-brand/5"
+                        : "border-line hover:bg-surface-2",
+                    )}
+                  >
+                    <IconStyleSwatch
+                      style={style}
+                      accentColor={customization.accentColor}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* ================= section headings ================= */}
@@ -720,7 +1051,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.capitalization")}
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <OptionCard
                   label={t("builder.customizePage.sectionHeadings.capitalize")}
                   selected={customization.capitalization === "capitalize"}
@@ -740,175 +1071,45 @@ export default function CustomizePage() {
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.sectionHeadings.sectionIcon")}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {SECTION_ICON_OPTIONS.map((option) => (
+                  <OptionCard
+                    key={option}
+                    label={t(
+                      `builder.customizePage.sectionHeadings.${SECTION_ICON_LABEL_KEY[option]}`,
+                    )}
+                    selected={customization.sectionIcon === option}
+                    onClick={() => updateCustomization({ sectionIcon: option })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.linkStyle")}
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <OptionCard
                   label={t(
                     "builder.customizePage.sectionHeadings.linkUnderline",
                   )}
-                  selected={customization.linkStyle === "underline"}
-                  onClick={() =>
-                    updateCustomization({ linkStyle: "underline" })
-                  }
+                  selected={customization.linkStyle.includes("underline")}
+                  onClick={() => toggleLinkStyle("underline")}
                 />
                 <OptionCard
                   label={t("builder.customizePage.sectionHeadings.linkColor")}
-                  selected={customization.linkStyle === "color"}
-                  onClick={() => updateCustomization({ linkStyle: "color" })}
+                  selected={customization.linkStyle.includes("color")}
+                  onClick={() => toggleLinkStyle("color")}
                 />
                 <OptionCard
                   label={t("builder.customizePage.sectionHeadings.linkIcon")}
-                  selected={customization.linkStyle === "icon"}
-                  onClick={() => updateCustomization({ linkStyle: "icon" })}
+                  selected={customization.linkStyle.includes("icon")}
+                  onClick={() => toggleLinkStyle("icon")}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* ================= colors ================= */}
-          <div ref={colorsRef} data-section="colors" className={SECTION_CARD}>
-            <p className={SECTION_TITLE}>
-              {t("builder.customizePage.nav.colors")}
-            </p>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.colors.layoutMode")}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutFullPage")}
-                  selected={customization.colorLayout === "full"}
-                  onClick={() => updateCustomization({ colorLayout: "full" })}
-                >
-                  <HeaderStylePreview mode="full" color={customization.headingBgColor} />
-                </OptionCard>
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutColumn")}
-                  selected={customization.colorLayout === "column"}
-                  onClick={() => updateCustomization({ colorLayout: "column" })}
-                >
-                  <HeaderStylePreview mode="column" color={customization.headingBgColor} />
-                </OptionCard>
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutBorder")}
-                  selected={customization.colorLayout === "border"}
-                  onClick={() => updateCustomization({ colorLayout: "border" })}
-                >
-                  <HeaderStylePreview mode="border" color={customization.headingBgColor} />
-                </OptionCard>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.colors.paletteMode")}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <OptionCard
-                  label={t("builder.customizePage.colors.paletteSingle")}
-                  selected={customization.paletteMode === "single"}
-                  onClick={() => updateCustomization({ paletteMode: "single" })}
-                />
-                <OptionCard
-                  label={t("builder.customizePage.colors.paletteMulti")}
-                  selected={customization.paletteMode === "multi"}
-                  onClick={() => updateCustomization({ paletteMode: "multi" })}
-                />
-              </div>
-            </div>
-
-            {customization.paletteMode === "single" ? (
-              <ColorPicker
-                label={t("builder.customizePage.colors.accent")}
-                color={customization.accentColor}
-                role="accent"
-                onChange={(c) => updateCustomization({ accentColor: c })}
-              />
-            ) : (
-              <>
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
-                    {t("builder.customizePage.colors.headingSection")}
-                  </p>
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.text")}
-                      color={customization.headingTextColor}
-                      role="text"
-                      onChange={(c) =>
-                        updateCustomization({ headingTextColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.background")}
-                      color={customization.headingBgColor}
-                      role="background"
-                      onChange={(c) =>
-                        updateCustomization({ headingBgColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.accent")}
-                      color={customization.accentColor}
-                      role="accent"
-                      onChange={(c) => updateCustomization({ accentColor: c })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
-                    {t("builder.customizePage.colors.bodySection")}
-                  </p>
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.text")}
-                      color={customization.bodyTextColor}
-                      role="text"
-                      onChange={(c) =>
-                        updateCustomization({ bodyTextColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.background")}
-                      color={customization.bodyBgColor}
-                      role="background"
-                      onChange={(c) => updateCustomization({ bodyBgColor: c })}
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.accent")}
-                      color={customization.bodyAccentColor}
-                      role="accent"
-                      onChange={(c) =>
-                        updateCustomization({ bodyAccentColor: c })
-                      }
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-              {(
-                Object.keys(
-                  customization.toggles,
-                ) as (keyof CustomizationToggles)[]
-              ).map((key) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-2 text-sm text-text cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={customization.toggles[key]}
-                    onChange={() => patchToggle(key)}
-                    className="size-4 accent-brand rounded"
-                  />
-                  {t(`builder.customizePage.colors.toggles.${key}`)}
-                </label>
-              ))}
             </div>
           </div>
 
@@ -1037,6 +1238,137 @@ function HeaderPositionPreview({
         </>
       )}
     </div>
+  );
+}
+
+/** mini page thumbnail showing the name/title/contact-line block aligned
+ *  left vs centered, mirroring HeaderBlock in ResumePreview.tsx */
+function HeaderAlignmentPreview({ align }: { align: "left" | "center" }) {
+  const isLeft = align === "left";
+  return (
+    <div className={cn(THUMB, "flex-col justify-center gap-1 px-2")}>
+      <div
+        className={cn(
+          "h-1.5 rounded-full bg-brand/70",
+          isLeft ? "w-1/2 self-start" : "w-1/2 self-center",
+        )}
+      />
+      <div
+        className={cn(
+          "h-1 rounded-full bg-line",
+          isLeft ? "w-3/5 self-start" : "w-3/5 self-center",
+        )}
+      />
+    </div>
+  );
+}
+
+/** mini page thumbnail contrasting a wrapped single-line contact row
+ *  ("inline") with a one-per-line list ("stacked") */
+function ContactArrangementPreview({
+  arrangement,
+}: {
+  arrangement: "inline" | "stacked";
+}) {
+  if (arrangement === "stacked") {
+    return (
+      <div className={cn(THUMB, "flex-col justify-center gap-1 px-2")}>
+        <div className="h-1 w-3/5 rounded-full bg-line" />
+        <div className="h-1 w-2/5 rounded-full bg-line" />
+        <div className="h-1 w-1/2 rounded-full bg-line" />
+      </div>
+    );
+  }
+  return (
+    <div className={cn(THUMB, "items-center justify-center gap-1 px-2")}>
+      <div className="h-1 w-1/4 rounded-full bg-line" />
+      <div className="h-1 w-1/5 rounded-full bg-line" />
+      <div className="h-1 w-1/4 rounded-full bg-line" />
+    </div>
+  );
+}
+
+/** mini page thumbnail contrasting how consecutive contact items are told
+ *  apart on the inline row: a leading icon per item, vs. a bullet/bar
+ *  divider drawn between items (which drops the icons — see
+ *  withContactSeparators in ResumePreview.tsx) */
+function ContactSeparatorPreview({
+  separator,
+}: {
+  separator: Customization["contactSeparator"];
+}) {
+  if (separator === "icon") {
+    return (
+      <div className={cn(THUMB, "items-center justify-center gap-2.5 px-2")}>
+        <div className="flex items-center gap-1">
+          <Globe size={9} strokeWidth={2} className="shrink-0 text-text-secondary" />
+          <div className="h-1 w-3 rounded-full bg-line" />
+        </div>
+        <div className="flex items-center gap-1">
+          <Globe size={9} strokeWidth={2} className="shrink-0 text-text-secondary" />
+          <div className="h-1 w-3 rounded-full bg-line" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={cn(THUMB, "items-center justify-center gap-1.5 px-2")}>
+      <div className="h-1 w-4 rounded-full bg-line" />
+      <span className="text-[10px] leading-none text-text-secondary">
+        {separator === "bullet" ? "•" : "|"}
+      </span>
+      <div className="h-1 w-4 rounded-full bg-line" />
+    </div>
+  );
+}
+
+/** a single glyph rendered exactly as StyledIcon in ResumePreview.tsx would
+ *  render it, so the swatch is a true preview and not just an abstract icon.
+ *  Reused (at a smaller size) by LinkStylePreview's "icon" option, so that
+ *  preview reflects whatever Icon Style the user has actually picked instead
+ *  of always showing a bare globe */
+function IconStyleSwatch({
+  style,
+  accentColor,
+  size = "md",
+}: {
+  style: Customization["iconStyle"];
+  accentColor: string;
+  size?: "sm" | "md";
+}) {
+  const badgeSize = size === "sm" ? 20 : 26;
+  const glyphSize = size === "sm" ? 11 : 14;
+  const plainGlyphSize = size === "sm" ? 13 : 18;
+  if (style === "plain" || style === "faded") {
+    return (
+      <Globe
+        size={plainGlyphSize}
+        strokeWidth={1.8}
+        className={cn("text-text-secondary", style === "faded" && "opacity-50")}
+      />
+    );
+  }
+  const isFilled = style === "filled" || style === "square";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center",
+        style === "square" ? "rounded-sm" : "rounded-full",
+        !isFilled && "border",
+      )}
+      style={{
+        width: badgeSize,
+        height: badgeSize,
+        backgroundColor: isFilled ? accentColor : undefined,
+        borderColor: isFilled ? undefined : accentColor,
+      }}
+    >
+      <Globe
+        size={glyphSize}
+        strokeWidth={1.8}
+        color={isFilled ? "#fff" : accentColor}
+      />
+    </span>
   );
 }
 
@@ -1183,7 +1515,12 @@ function OptionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 min-w-24 max-w-40 flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
+        // no width utility here — the parent grid (grid-cols-2/3, sized to
+        // that group's option count, same pattern as the Heading Presets
+        // grid below) divides the full row width evenly, so every card
+        // fills its column edge-to-edge instead of leaving a ragged gap
+        // when a row has fewer options than its neighbors
+        "flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
         selected ? "border-brand bg-brand/5" : "border-line hover:bg-surface-2",
       )}
     >
