@@ -133,7 +133,14 @@ export interface Customization {
   headingsSize: number;
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   capitalization: "capitalize" | "uppercase";
-  linkStyle: "underline" | "color" | "icon";
+  // a multi-select: any combination of these three traits can be active
+  // at once (e.g. underlined AND accent-colored AND icon-tagged)
+  linkStyle: ("underline" | "color" | "icon")[];
+  sectionIcon: "none" | "outline" | "filled";
+  headerAlignment: "left" | "center";
+  contactArrangement: "inline" | "stacked";
+  contactSeparator: "icon" | "bullet" | "bar";
+  iconStyle: "plain" | "filled" | "outline" | "square" | "faded";
   headingTextColor: string;
   headingBgColor: string;
   bodyTextColor: string;
@@ -216,7 +223,12 @@ export const emptyResume: Resume = {
     headingsSize: 12,
     headingBorder: "none",
     capitalization: "uppercase",
-    linkStyle: "underline",
+    linkStyle: ["underline"],
+    sectionIcon: "none",
+    headerAlignment: "center",
+    contactArrangement: "inline",
+    contactSeparator: "icon",
+    iconStyle: "plain",
     headingTextColor: "#262626",
     headingBgColor: "#ffffff",
     bodyTextColor: "#262626",

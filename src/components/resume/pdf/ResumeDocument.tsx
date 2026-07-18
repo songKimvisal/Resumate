@@ -75,7 +75,13 @@ type IconKey =
   | "gitlab"
   | "stackoverflow"
   | "send"
-  | "id";
+  | "id"
+  | "fileText"
+  | "graduationCap"
+  | "sparkles"
+  | "languages"
+  | "users"
+  | "link";
 
 type IconShape =
   | { type: "path"; d: string }
@@ -159,6 +165,57 @@ const ICON_SHAPES: Record<IconKey, IconShape[]> = {
     { type: "circle", cx: "9", cy: "11", r: "2" },
     { type: "rect", x: "2", y: "5", width: "20", height: "14", rx: "2" },
   ],
+  fileText: [
+    {
+      type: "path",
+      d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+    },
+    { type: "path", d: "M14 2v5a1 1 0 0 0 1 1h5" },
+    { type: "path", d: "M10 9H8" },
+    { type: "path", d: "M16 13H8" },
+    { type: "path", d: "M16 17H8" },
+  ],
+  graduationCap: [
+    {
+      type: "path",
+      d: "M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z",
+    },
+    { type: "path", d: "M22 10v6" },
+    { type: "path", d: "M6 12.5V16a6 3 0 0 0 12 0v-3.5" },
+  ],
+  sparkles: [
+    {
+      type: "path",
+      d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
+    },
+    { type: "path", d: "M20 2v4" },
+    { type: "path", d: "M22 4h-4" },
+    { type: "circle", cx: "4", cy: "20", r: "2" },
+  ],
+  languages: [
+    { type: "path", d: "m5 8 6 6" },
+    { type: "path", d: "m4 14 6-6 2-3" },
+    { type: "path", d: "M2 5h12" },
+    { type: "path", d: "M7 2h1" },
+    { type: "path", d: "m22 22-5-10-5 10" },
+    { type: "path", d: "M14 18h6" },
+  ],
+  users: [
+    { type: "path", d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" },
+    { type: "path", d: "M16 3.128a4 4 0 0 1 0 7.744" },
+    { type: "path", d: "M22 21v-2a4 4 0 0 0-3-3.87" },
+    { type: "circle", cx: "9", cy: "7", r: "4" },
+  ],
+  link: [
+    {
+      type: "path",
+      d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71",
+    },
+    {
+      type: "path",
+      d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+    },
+  ],
 };
 
 function PdfIcon({
@@ -197,6 +254,114 @@ function PdfIcon({
         ),
       )}
     </Svg>
+  );
+}
+
+/** maps each Section's literal title to its icon key, mirroring
+ *  SECTION_ICONS in ResumePreview.tsx */
+const SECTION_ICON_KEYS: Record<string, IconKey> = {
+  Summary: "fileText",
+  Experience: "briefcase",
+  Education: "graduationCap",
+  Skills: "sparkles",
+  Languages: "languages",
+  References: "users",
+};
+
+/** renders a Section heading's icon per the "Section icon" pick, mirroring
+ *  SectionHeadingIcon in ResumePreview.tsx: "outline" is a bare glyph
+ *  colored to match the heading text, "filled" is a solid circular badge
+ *  that inverts when the heading itself already sits on a solid accent
+ *  background (headingBorder "filled"), so it doesn't disappear into it */
+function SectionPdfIcon({
+  iconKey,
+  size,
+  accent,
+  onAccentBg,
+  sectionIcon,
+}: {
+  iconKey: IconKey;
+  size: number;
+  accent: string;
+  onAccentBg: boolean;
+  sectionIcon: Customization["sectionIcon"];
+}) {
+  const isFilled = sectionIcon === "filled";
+  // "filled"'s bg/icon are an inverted pair for contrast; "outline" has no
+  // fill, so its border and icon both just take the "ink" color (white on
+  // an accent-filled heading, accent otherwise) — mirrors SectionHeadingIcon
+  // in ResumePreview.tsx
+  const badgeBg = onAccentBg ? "#fff" : accent;
+  const filledIconColor = onAccentBg ? accent : "#fff";
+  const boxSize = size * 1.5;
+  return (
+    <View
+      style={{
+        width: boxSize,
+        height: boxSize,
+        borderRadius: boxSize / 2,
+        backgroundColor: isFilled ? badgeBg : undefined,
+        borderWidth: isFilled ? 0 : 1.5,
+        borderColor: isFilled ? undefined : badgeBg,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <PdfIcon
+        icon={iconKey}
+        size={size * 0.85}
+        color={isFilled ? filledIconColor : badgeBg}
+      />
+    </View>
+  );
+}
+
+/** wraps PdfIcon per the "Icon Style" pick, mirroring StyledIcon in
+ *  ResumePreview.tsx so the exported PDF matches the live preview */
+function StyledPdfIcon({
+  icon,
+  size,
+  color,
+  accent,
+  iconStyle,
+}: {
+  icon: IconKey;
+  size: number;
+  color: string;
+  accent: string;
+  iconStyle: Customization["iconStyle"];
+}) {
+  if (iconStyle === "faded") {
+    return (
+      <View style={{ opacity: 0.5 }}>
+        <PdfIcon icon={icon} size={size} color={color} />
+      </View>
+    );
+  }
+  if (iconStyle === "plain") {
+    return <PdfIcon icon={icon} size={size} color={color} />;
+  }
+  const isFilled = iconStyle === "filled" || iconStyle === "square";
+  const boxSize = size * 1.7;
+  return (
+    <View
+      style={{
+        width: boxSize,
+        height: boxSize,
+        borderRadius: iconStyle === "square" ? boxSize * 0.2 : boxSize / 2,
+        backgroundColor: isFilled ? accent : undefined,
+        borderWidth: isFilled ? 0 : 1,
+        borderColor: isFilled ? undefined : accent,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <PdfIcon
+        icon={icon}
+        size={size * 0.85}
+        color={isFilled ? "#fff" : accent}
+      />
+    </View>
   );
 }
 
@@ -265,52 +430,90 @@ function ContactRow({
   variant: "row" | "column";
 }) {
   if (items.length === 0) return null;
-  const showLinkIcons = c.toggles.linkIcons || c.linkStyle === "icon";
-  const linkStyle =
-    c.linkStyle === "underline"
-      ? { textDecoration: "underline" as const, color }
-      : c.linkStyle === "color"
-        ? { color: accent }
-        : { color };
+  const showLinkIcons = c.toggles.linkIcons || c.linkStyle.includes("icon");
+  // react-pdf's <Link> carries its own hardcoded default style
+  // ({ color: 'blue', textDecoration: 'underline' }) that only the
+  // explicit `style` prop can override — this must always set both
+  // properties (even the "neither trait picked" case) or that default
+  // bleeds through as an unwanted blue underline in the exported PDF.
+  // linkStyle is a multi-select, so underline/color can both be active.
+  const linkStyle = {
+    textDecoration: c.linkStyle.includes("underline")
+      ? ("underline" as const)
+      : ("none" as const),
+    color: c.linkStyle.includes("color") ? accent : color,
+  };
 
+  const rowStacked = variant === "row" && c.contactArrangement === "stacked";
+  // a bullet/bar separator replaces each item's icon with a divider drawn
+  // between items, mirroring withContactSeparators in ResumePreview.tsx —
+  // only meaningful on the true inline row (the sidebar's "column" variant
+  // and the stacked row both keep their icons untouched)
+  const useSeparator =
+    variant === "row" && !rowStacked && c.contactSeparator !== "icon";
+  const separatorGlyph = c.contactSeparator === "bullet" ? "•" : "|";
   return (
     <View
       style={
-        variant === "row"
+        rowStacked
           ? {
-              flexDirection: "row",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              columnGap: 12,
-              rowGap: 2,
-              marginTop: 6,
-            }
-          : {
               flexDirection: "column",
               rowGap: 3,
-              marginTop: 3,
-              alignItems: "flex-start",
+              marginTop: 6,
+              alignItems: c.headerAlignment === "left" ? "flex-start" : "center",
             }
+          : variant === "row"
+            ? {
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent:
+                  c.headerAlignment === "left" ? "flex-start" : "center",
+                columnGap: 12,
+                rowGap: 2,
+                marginTop: 6,
+              }
+            : {
+                flexDirection: "column",
+                rowGap: 3,
+                marginTop: 3,
+                alignItems: "flex-start",
+              }
       }
     >
-      {items.map((item) => {
-        const showIcon = item.isHeader ? c.toggles.headerIcons : showLinkIcons;
+      {items.map((item, i) => {
+        const showIcon =
+          !useSeparator && (item.isHeader ? c.toggles.headerIcons : showLinkIcons);
         return (
-          <View
-            key={item.key}
-            style={{ flexDirection: "row", alignItems: "center", columnGap: 3 }}
-          >
-            {showIcon && <PdfIcon icon={item.icon} size={fontSize} color={color} />}
-            <Text style={{ fontSize, color }}>
-              {item.url ? (
-                <Link src={item.url} style={linkStyle}>
-                  {item.text}
-                </Link>
-              ) : (
-                item.text
+          <Fragment key={item.key}>
+            {useSeparator && i > 0 && (
+              <Text style={{ fontSize, color, opacity: 0.5 }}>
+                {separatorGlyph}
+              </Text>
+            )}
+            <View style={{ flexDirection: "row", alignItems: "center", columnGap: 3 }}>
+              {showIcon && (
+                <StyledPdfIcon
+                  icon={item.icon}
+                  size={fontSize}
+                  color={color}
+                  accent={accent}
+                  iconStyle={c.iconStyle}
+                />
               )}
-            </Text>
-          </View>
+              <Text style={{ fontSize, color }}>
+                {item.url ? (
+                  <Link src={item.url} style={linkStyle}>
+                    {item.text}
+                  </Link>
+                ) : (
+                  item.text
+                )}
+              </Text>
+              {c.linkStyle.includes("icon") && item.url && (
+                <PdfIcon icon="link" size={fontSize * 0.8} color={color} />
+              )}
+            </View>
+          </Fragment>
         );
       })}
     </View>
@@ -418,7 +621,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     },
     sidebarSection: { marginTop: gapSection, alignSelf: "stretch" },
     header: {
-      alignItems: "center",
+      alignItems: c.headerAlignment === "left" ? "flex-start" : "center",
       marginBottom: gapSection,
       backgroundColor: isColorFilled ? headingBgColorEff : undefined,
     },
@@ -499,29 +702,98 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   // that spans the rest of the row (or the full width below it), which a
   // plain <Text> can't do — every section heading goes through here so
   // those variants stay in sync everywhere
-  const renderSectionTitle = (title: string, extraStyle?: Record<string, unknown>) =>
-    isLongLine ? (
+  // narrowed to its one actual caller-supplied shape (sidebar heading
+  // alignment) rather than a generic Record, which react-pdf's own Style
+  // type can't structurally satisfy inside a style array
+  const renderSectionTitle = (
+    title: string,
+    extraStyle?: { alignSelf?: "flex-start" },
+  ) => {
+    const iconKey = SECTION_ICON_KEYS[title];
+    const showIcon = c.sectionIcon !== "none" && !!iconKey;
+    const icon = showIcon ? (
+      <SectionPdfIcon
+        iconKey={iconKey}
+        size={c.headingsSize}
+        accent={accent}
+        onAccentBg={isFilled}
+        sectionIcon={c.sectionIcon}
+      />
+    ) : null;
+
+    if (isLongLine) {
+      return (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 6,
+            columnGap: 6,
+          }}
+        >
+          {icon}
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
+          <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: accent }} />
+        </View>
+      );
+    }
+    if (isLongUnderline) {
+      return (
+        <View style={{ marginBottom: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", columnGap: 4 }}>
+            {icon}
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
+          </View>
+          <View
+            style={{ marginTop: 3, borderTopWidth: 1, borderTopColor: accent, width: "100%" }}
+          />
+        </View>
+      );
+    }
+    if (!showIcon) {
+      return (
+        <Text style={extraStyle ? [styles.sectionTitle, extraStyle] : styles.sectionTitle}>
+          {title}
+        </Text>
+      );
+    }
+    return (
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 6,
-          columnGap: 6,
-        }}
+        style={[
+          {
+            flexDirection: "row",
+            alignItems: "center",
+            columnGap: 4,
+            alignSelf: styles.sectionTitle.alignSelf,
+            backgroundColor: styles.sectionTitle.backgroundColor,
+            borderColor: styles.sectionTitle.borderColor,
+            borderWidth: styles.sectionTitle.borderWidth,
+            borderRadius: styles.sectionTitle.borderRadius,
+            paddingHorizontal: styles.sectionTitle.paddingHorizontal,
+            paddingTop: styles.sectionTitle.paddingTop,
+            paddingBottom: styles.sectionTitle.paddingBottom,
+            borderBottomWidth: styles.sectionTitle.borderBottomWidth,
+            marginBottom: styles.sectionTitle.marginBottom,
+          },
+          ...(extraStyle ? [extraStyle] : []),
+        ]}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
-        <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: accent }} />
+        {icon}
+        <Text
+          style={{
+            fontSize: styles.sectionTitle.fontSize,
+            fontFamily: styles.sectionTitle.fontFamily,
+            textTransform: styles.sectionTitle.textTransform,
+            letterSpacing: styles.sectionTitle.letterSpacing,
+            color: styles.sectionTitle.color,
+            lineHeight: styles.sectionTitle.lineHeight,
+          }}
+        >
+          {title}
+        </Text>
       </View>
-    ) : isLongUnderline ? (
-      <View style={{ marginBottom: 6 }}>
-        <Text style={[styles.sectionTitle, { marginBottom: 3 }]}>{title}</Text>
-        <View style={{ borderTopWidth: 1, borderTopColor: accent, width: "100%" }} />
-      </View>
-    ) : (
-      <Text style={extraStyle ? [styles.sectionTitle, extraStyle] : styles.sectionTitle}>
-        {title}
-      </Text>
     );
+  };
 
   const renderLevels = (
     items: { id: string; name: string; level: number }[],
@@ -614,7 +886,21 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                       —{" "}
                       {exp.title &&
                         (exp.url.trim() ? (
-                          <Link src={exp.url}>{exp.title}</Link>
+                          <Link
+                            src={exp.url}
+                            style={{
+                              // see the comment on ContactRow's linkStyle for
+                              // why this must always set both properties
+                              textDecoration: c.linkStyle.includes("underline")
+                                ? ("underline" as const)
+                                : ("none" as const),
+                              color: c.linkStyle.includes("color")
+                                ? accent
+                                : bodyAccentColorEff,
+                            }}
+                          >
+                            {exp.title}
+                          </Link>
                         ) : (
                           exp.title
                         ))}

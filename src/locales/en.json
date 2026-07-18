@@ -453,9 +453,10 @@
       "contentButton": "Content",
       "nav": {
         "layout": "Layout",
+        "header": "Header",
         "font": "Font",
         "fontSize": "Font Size",
-        "sectionHeadings": "Section Headings",
+        "sectionHeadings": "Heading",
         "colors": "Colors",
         "spacing": "Spacing"
       },
@@ -493,6 +494,24 @@
         "marginsNormal": "Normal",
         "marginsWide": "Wide"
       },
+      "header": {
+        "textAlignment": "Text Alignment",
+        "alignLeft": "Left",
+        "alignCenter": "Center",
+        "detailsArrangement": "Details Arrangement",
+        "arrangementInline": "Inline",
+        "arrangementStacked": "Stacked",
+        "separator": "Separator",
+        "separatorIcon": "Icon",
+        "separatorBullet": "Bullet",
+        "separatorBar": "Bar",
+        "iconStyle": "Icon Style",
+        "iconPlain": "Plain",
+        "iconFilled": "Filled",
+        "iconOutline": "Outline",
+        "iconSquare": "Square",
+        "iconFaded": "Faded"
+      },
       "font": {
         "fontFamily": "Font family"
       },
@@ -511,6 +530,10 @@
         "borderFilled": "Filled",
         "borderLine": "Long Line",
         "borderUnderline": "Long Underline",
+        "sectionIcon": "Icon",
+        "sectionIconNone": "None",
+        "sectionIconOutline": "Outline",
+        "sectionIconFilled": "Filled",
         "linkStyle": "Link Style",
         "linkUnderline": "Underline",
         "linkColor": "Accent Color",
