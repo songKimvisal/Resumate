@@ -12,6 +12,12 @@ import {
   MessageCircle,
   Send,
   IdCard,
+  FileText,
+  GraduationCap,
+  Sparkles,
+  Languages as LanguagesIcon,
+  Users,
+  Link as LinkGlyph,
   type LucideIcon,
 } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
@@ -101,7 +107,12 @@ interface Theme {
   headingBgColor: string;
   bodyTextColor: string;
   bodyAccentColor: string;
-  linkStyle: "underline" | "color" | "icon";
+  linkStyle: ("underline" | "color" | "icon")[];
+  sectionIcon: "none" | "outline" | "filled";
+  headerAlignment: "left" | "center";
+  contactArrangement: "inline" | "stacked";
+  contactSeparator: "icon" | "bullet" | "bar";
+  iconStyle: "plain" | "filled" | "outline" | "square" | "faded";
   showDates: boolean;
   showLinkIcons: boolean;
   showHeaderIcons: boolean;
@@ -143,9 +154,15 @@ function useTheme(customization: Customization): Theme {
       bodyTextColor: customization.bodyTextColor,
       bodyAccentColor,
       linkStyle: customization.linkStyle,
+      sectionIcon: customization.sectionIcon,
+      headerAlignment: customization.headerAlignment,
+      contactArrangement: customization.contactArrangement,
+      contactSeparator: customization.contactSeparator,
+      iconStyle: customization.iconStyle,
       showDates: customization.toggles.dates,
       showLinkIcons:
-        customization.toggles.linkIcons || customization.linkStyle === "icon",
+        customization.toggles.linkIcons ||
+        customization.linkStyle.includes("icon"),
       showHeaderIcons: customization.toggles.headerIcons,
       showDots: customization.toggles.dots,
     };
@@ -951,6 +968,29 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
   return items;
 }
 
+/** inserts a "•" or "|" divider between contact items when the "Details
+ *  Arrangement" separator isn't "icon" — the caller (HeaderBlock) has
+ *  already re-rendered `items` with icons suppressed, so this just fills
+ *  in the gap they leave behind */
+function withContactSeparators(
+  items: React.ReactNode[],
+  theme: Theme,
+): React.ReactNode[] {
+  const glyph = theme.contactSeparator === "bullet" ? "•" : "|";
+  const out: React.ReactNode[] = [];
+  items.forEach((item, i) => {
+    if (i > 0) {
+      out.push(
+        <span key={`sep-${i}`} aria-hidden="true" className="opacity-50">
+          {glyph}
+        </span>,
+      );
+    }
+    out.push(item);
+  });
+  return out;
+}
+
 function HeaderBlock({
   personal,
   customization,
@@ -964,17 +1004,27 @@ function HeaderBlock({
 }) {
   const showPhoto = customization.showPhoto && !!personal.photoUrl;
   const isFilled = customization.colorLayout === "column";
+  const isLeft = theme.headerAlignment === "left";
+  const isStacked = theme.contactArrangement === "stacked";
+  // a bullet/bar separator replaces each item's icon with a divider drawn
+  // between items, so it only makes sense — and only fires — on the
+  // inline row; SidebarHeaderBlock always renders a stacked column and
+  // calls contactItems() with the unmodified theme, so it never sees this
+  const useContactSeparator = !isStacked && theme.contactSeparator !== "icon";
+  const contactTheme = useContactSeparator
+    ? { ...theme, showHeaderIcons: false, showLinkIcons: false }
+    : theme;
 
   return (
     <header
-      className="text-center space-y-2"
+      className={cn("space-y-2", isLeft ? "text-left" : "text-center")}
       style={{
         backgroundColor: isFilled ? theme.headingBgColor : undefined,
       }}
     >
       {showPhoto && (
         <div
-          className="overflow-hidden mx-auto"
+          className={cn("overflow-hidden", !isLeft && "mx-auto")}
           style={{
             width: customization.photoSize,
             height: customization.photoSize,
@@ -999,10 +1049,20 @@ function HeaderBlock({
         </p>
       )}
       <div
-        className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[0.8em] pt-1"
+        className={cn(
+          "flex text-[0.8em] pt-1",
+          isStacked
+            ? cn("flex-col gap-1", isLeft ? "items-start" : "items-center")
+            : cn(
+                "flex-wrap gap-x-5 gap-y-1",
+                isLeft ? "justify-start" : "justify-center",
+              ),
+        )}
         style={{ color: textColor }}
       >
-        {contactItems(personal, theme)}
+        {useContactSeparator
+          ? withContactSeparators(contactItems(personal, contactTheme), theme)
+          : contactItems(personal, theme)}
       </div>
     </header>
   );
@@ -1309,14 +1369,32 @@ function NoExperienceHeader({
             -{" "}
             {exp.title &&
               (hasUrl ? (
-                <a
-                  href={exp.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:underline"
-                >
-                  {exp.title}
-                </a>
+                <>
+                  <a
+                    href={exp.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={
+                      theme.linkStyle.includes("underline")
+                        ? "underline"
+                        : undefined
+                    }
+                    style={
+                      theme.linkStyle.includes("color")
+                        ? { color: theme.accent }
+                        : undefined
+                    }
+                  >
+                    {exp.title}
+                  </a>
+                  {theme.linkStyle.includes("icon") && (
+                    <LinkGlyph
+                      size="0.85em"
+                      strokeWidth={2}
+                      className="ml-1 inline-block shrink-0 align-middle"
+                    />
+                  )}
+                </>
               ) : (
                 exp.title
               ))}
@@ -1369,6 +1447,59 @@ function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
   );
 }
 
+/** maps each Section's literal title to the glyph shown when "Section
+ *  icon" isn't "none" — titles are hardcoded English strings at every
+ *  call site below, so keying off them is safe */
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  Summary: FileText,
+  Experience: Briefcase,
+  Education: GraduationCap,
+  Skills: Sparkles,
+  Languages: LanguagesIcon,
+  References: Users,
+};
+
+/** renders a Section's icon per the "Section icon" pick. "outline" is a
+ *  bare glyph colored to match the heading text (lucide icons are already
+ *  stroke-only, so no border is needed to read as "outline"); "filled" is
+ *  a solid circular badge. When the heading itself already sits on a solid
+ *  accent background (headingBorder "filled"), the badge inverts (white
+ *  circle + accent icon, or accent-colored glyph) so it stays visible
+ *  instead of disappearing into a same-color background */
+function SectionHeadingIcon({
+  icon: Icon,
+  theme,
+  onAccentBg,
+}: {
+  icon: LucideIcon;
+  theme: Theme;
+  onAccentBg: boolean;
+}) {
+  const isFilled = theme.sectionIcon === "filled";
+  // "filled"'s bg/icon are an inverted pair for contrast; "outline" has no
+  // fill, so its border and icon both just take the "ink" color (white on
+  // an accent-filled heading, accent otherwise) — no inversion needed
+  const badgeBg = onAccentBg ? "#fff" : theme.accent;
+  const filledIconColor = onAccentBg ? theme.accent : "#fff";
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-full"
+      style={{
+        width: "1.5em",
+        height: "1.5em",
+        backgroundColor: isFilled ? badgeBg : undefined,
+        border: isFilled ? undefined : `1.5px solid ${badgeBg}`,
+      }}
+    >
+      <Icon
+        size="0.85em"
+        strokeWidth={2}
+        color={isFilled ? filledIconColor : badgeBg}
+      />
+    </span>
+  );
+}
+
 function Section({
   title,
   theme,
@@ -1382,6 +1513,8 @@ function Section({
   const isOutline = theme.headingBorder === "outline";
   const isLongLine = theme.headingBorder === "line";
   const isLongUnderline = theme.headingBorder === "underline";
+  const Icon = SECTION_ICONS[title];
+  const showIcon = theme.sectionIcon !== "none" && !!Icon;
   const headingStyle: React.CSSProperties = {
     color: isFilled ? "#fff" : theme.accent,
     fontSize: theme.headingSizePx,
@@ -1409,6 +1542,9 @@ function Section({
       {theme.showHeadingTitle &&
         (isLongLine ? (
           <div className="mb-2 flex items-center gap-2">
+            {showIcon && (
+              <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={false} />
+            )}
             <h2
               className="shrink-0 font-bold tracking-[0.18em]"
               style={{
@@ -1426,16 +1562,21 @@ function Section({
           </div>
         ) : isLongUnderline ? (
           <div className="mb-2">
-            <h2
-              className="font-bold tracking-[0.18em]"
-              style={{
-                color: theme.accent,
-                fontSize: theme.headingSizePx,
-                textTransform: theme.textTransform,
-              }}
-            >
-              {title}
-            </h2>
+            <div className="flex items-center gap-1.5">
+              {showIcon && (
+                <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={false} />
+              )}
+              <h2
+                className="font-bold tracking-[0.18em]"
+                style={{
+                  color: theme.accent,
+                  fontSize: theme.headingSizePx,
+                  textTransform: theme.textTransform,
+                }}
+              >
+                {title}
+              </h2>
+            </div>
             <div
               className="mt-1 h-px w-full"
               style={{ backgroundColor: theme.accent }}
@@ -1443,9 +1584,12 @@ function Section({
           </div>
         ) : (
           <h2
-            className="font-bold tracking-[0.18em] pb-1 mb-2 inline-block"
+            className="font-bold tracking-[0.18em] pb-1 mb-2 inline-flex items-center gap-1.5"
             style={headingStyle}
           >
+            {showIcon && (
+              <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={isFilled} />
+            )}
             {title}
           </h2>
         ))}
@@ -1479,6 +1623,10 @@ function LinkText({
   theme: Theme;
 }) {
   if (!entry.title.trim()) return null;
+  // "Link icon" style tags the title itself with a small chain-link glyph,
+  // on top of (not instead of) whatever the Icon Style section shows in
+  // the leading icon slot — the two are independent settings
+  const showLinkGlyph = theme.linkStyle.includes("icon") && !!entry.url;
   return (
     <IconText icon={icon} theme={theme}>
       {entry.url ? (
@@ -1486,9 +1634,13 @@ function LinkText({
           href={entry.url}
           target="_blank"
           rel="noreferrer"
-          className={theme.linkStyle === "underline" ? "underline" : undefined}
+          className={
+            theme.linkStyle.includes("underline") ? "underline" : undefined
+          }
           style={
-            theme.linkStyle === "color" ? { color: theme.accent } : undefined
+            theme.linkStyle.includes("color")
+              ? { color: theme.accent }
+              : undefined
           }
         >
           {entry.title}
@@ -1496,7 +1648,49 @@ function LinkText({
       ) : (
         entry.title
       )}
+      {showLinkGlyph && (
+        <LinkGlyph
+          size="0.85em"
+          strokeWidth={2}
+          className="ml-1 inline-block shrink-0 align-middle"
+        />
+      )}
     </IconText>
+  );
+}
+
+/** wraps a contact icon per the "Icon Style" pick — plain/faded render the
+ *  glyph inline (colored by the current text color), while filled/outline/
+ *  square give it its own accent-colored badge, independent of the icon's
+ *  own on/off toggles */
+function StyledIcon({ Icon, theme }: { Icon: LucideIcon; theme: Theme }) {
+  if (theme.iconStyle === "faded") {
+    return <Icon size="1em" strokeWidth={1.8} className="shrink-0 opacity-50" />;
+  }
+  if (theme.iconStyle === "plain") {
+    return <Icon size="1em" strokeWidth={1.8} className="shrink-0" />;
+  }
+  const isFilled = theme.iconStyle === "filled" || theme.iconStyle === "square";
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center",
+        theme.iconStyle === "square" ? "rounded-sm" : "rounded-full",
+        !isFilled && "border",
+      )}
+      style={{
+        width: "1.75em",
+        height: "1.75em",
+        backgroundColor: isFilled ? theme.accent : undefined,
+        borderColor: isFilled ? undefined : theme.accent,
+      }}
+    >
+      <Icon
+        size="0.95em"
+        strokeWidth={1.8}
+        color={isFilled ? "#fff" : theme.accent}
+      />
+    </span>
   );
 }
 
@@ -1515,7 +1709,7 @@ function IconText({
   const showIcon = isHeaderIcon ? theme.showHeaderIcons : theme.showLinkIcons;
   return (
     <span className="inline-flex items-center gap-1.5">
-      {showIcon && <Icon size="1em" strokeWidth={1.8} className="shrink-0" />}
+      {showIcon && <StyledIcon Icon={Icon} theme={theme} />}
       {children}
     </span>
   );
