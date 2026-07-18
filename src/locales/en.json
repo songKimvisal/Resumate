@@ -119,8 +119,8 @@
     "about": "About",
     "login": "Log in",
     "dashboard": "Dashboard",
-    "settings":"Setting",
-    "logout":"Logout"
+    "settings": "Setting",
+    "logout": "Logout"
   },
   "footer": {
     "product": "Product",
@@ -509,6 +509,8 @@
         "borderNone": "None",
         "borderOutline": "Outline",
         "borderFilled": "Filled",
+        "borderLine": "Long Line",
+        "borderUnderline": "Long Underline",
         "linkStyle": "Link Style",
         "linkUnderline": "Underline",
         "linkColor": "Accent Color",

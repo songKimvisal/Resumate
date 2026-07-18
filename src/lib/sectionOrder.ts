@@ -36,3 +36,33 @@ export function orderedSidebarKeys(
   });
   return result;
 }
+
+const ALL_SECTION_KEYS: SectionOrderKey[] = [
+  "skills",
+  "experience",
+  "references",
+  "language",
+];
+
+/** splits `order` into the sections that render in the main column vs. the
+ *  sidebar column, preserving each side's relative order — used in
+ *  two-column mode, where `sidebarKeys` records which sections the user has
+ *  dragged into the sidebar (anything else defaults to the main column) */
+export function partitionSectionOrder(
+  order: SectionOrderKey[],
+  sidebarKeys: SectionOrderKey[] | undefined,
+): { main: SectionOrderKey[]; sidebar: SectionOrderKey[] } {
+  const sidebarSet = new Set(sidebarKeys ?? []);
+  const seen = new Set<string>();
+  const main: SectionOrderKey[] = [];
+  const sidebar: SectionOrderKey[] = [];
+  for (const key of order) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    (sidebarSet.has(key) ? sidebar : main).push(key);
+  }
+  ALL_SECTION_KEYS.forEach((key) => {
+    if (!seen.has(key)) main.push(key);
+  });
+  return { main, sidebar };
+}

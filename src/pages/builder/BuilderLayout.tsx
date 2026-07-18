@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { Sun, Moon, LayoutGrid, FileText, ArrowLeft, Eye, X } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  LayoutGrid,
+  FileText,
+  ArrowLeft,
+  Eye,
+  X,
+} from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useResumeStore } from "../../store/resumeStore";
 import ResumePreview from "../../components/resume/ResumePreview";
@@ -17,7 +25,6 @@ import mascot from "../../assets/logo/tip_mascot.png";
 import { cn } from "../../lib/utils";
 
 const TOTAL_STEPS = 5;
-// 210mm in real CSS px (1in = 96px)
 const A4_WIDTH_PX = 210 * (96 / 25.4);
 
 export default function BuilderLayout() {
@@ -46,9 +53,6 @@ export default function BuilderLayout() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
-  // measure the sticky step-indicator bar so the preview panel can stick
-  // flush beneath it, regardless of locale/text length affecting its height
   const stepBarRef = useRef<HTMLDivElement>(null);
   const [stepBarHeight, setStepBarHeight] = useState(80);
 
@@ -70,14 +74,9 @@ export default function BuilderLayout() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [previewOpen]);
-
-  // CSS `position: sticky` wasn't holding inside this grid layout, so pin
-  // the preview panel below the step bar manually based on scroll position
   const previewWrapperRef = useRef<HTMLDivElement>(null);
   const previewPanelRef = useRef<HTMLDivElement>(null);
   const previewHeaderRef = useRef<HTMLDivElement>(null);
-  // measures the unclamped content height, so the wrapper always reserves
-  // enough space even once the panel is pinned and scrolls internally
   const previewContentRef = useRef<HTMLButtonElement>(null);
   const [previewPanelHeight, setPreviewPanelHeight] = useState(0);
   const [previewHeaderHeight, setPreviewHeaderHeight] = useState(0);
@@ -171,7 +170,7 @@ export default function BuilderLayout() {
       {/* ================= step indicator ================= */}
       <div
         ref={stepBarRef}
-        className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm"
+        className="sticky top-0 z-30 bg-bg will-change-transform"
       >
         {customizeOpen ? (
           <div className="max-w-7xl w-full mx-auto px-4 lg:px-1.5 py-3">
@@ -228,9 +227,9 @@ export default function BuilderLayout() {
             {customizeOpen ? (
               <motion.div
                 key="customize"
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
                 <CustomizePage />
@@ -238,9 +237,9 @@ export default function BuilderLayout() {
             ) : (
               <motion.div
                 key={step}
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
                 {step === 1 && <Step1Personal />}
@@ -354,10 +353,6 @@ export default function BuilderLayout() {
                 <ResumePreview pageLabelClassName="text-white/80" />
               </motion.div>
             </motion.div>
-
-            {/* fixed to the viewport (not the scrollable content) so it
-                stays reachable no matter how far you've scrolled through a
-                multi-page resume, with strong contrast against any page */}
             <motion.button
               type="button"
               onClick={() => setPreviewOpen(false)}
@@ -373,9 +368,7 @@ export default function BuilderLayout() {
         )}
       </AnimatePresence>
 
-      {/* ================= floating mascot tip =================
-          desktop-only: below lg there's no preview panel for it to float
-          beside, so it just drifts over the full-width form instead */}
+      {/* ================= floating mascot tip ================= */}
       <div
         ref={tipRef}
         className="hidden lg:block fixed bottom-20 right-6 z-40"
@@ -412,11 +405,7 @@ export default function BuilderLayout() {
         </motion.button>
       </div>
 
-      {/* ================= floating preview / customize buttons =================
-          mobile-only: the live preview column (and its Customize toggle)
-          above is desktop-only (lg+), so smaller screens need their own way
-          to reach both. Fixed in place (not just in the header) so they stay
-          reachable no matter how far the user has scrolled down the form. */}
+      {/* ================= floating preview / customize buttons =================*/}
       <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3">
         {!customizeOpen && (
           <motion.button

@@ -17,7 +17,7 @@ import {
 } from "../../components/ui/select";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor } from "../../lib/color";
-import { orderedSidebarKeys } from "../../lib/sectionOrder";
+import { partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
 const ACCENT_COLORS = [
@@ -46,7 +46,7 @@ type SectionKey =
   | "spacing";
 
 const SECTION_CARD =
-  "rounded-xl border border-line p-4 md:p-5 space-y-5 scroll-mt-24";
+  "rounded-xl border border-line p-3 sm:p-4 md:p-5 space-y-5 scroll-mt-24";
 const SECTION_TITLE = "text-sm font-semibold text-brand";
 
 /** quick shortcuts for the heading-style grid: each preset only sets the
@@ -62,12 +62,39 @@ const HEADING_PRESETS: HeadingPreset[] = [
   { headingBorder: "none", headingsLine: false },
   { headingBorder: "outline", headingsLine: false },
   { headingBorder: "filled", headingsLine: false },
+  { headingBorder: "line", headingsLine: false },
+  { headingBorder: "underline", headingsLine: false },
 ];
+
+const HEADING_BORDER_LABEL_KEY: Record<Customization["headingBorder"], string> = {
+  none: "borderNone",
+  outline: "borderOutline",
+  filled: "borderFilled",
+  line: "borderLine",
+  underline: "borderUnderline",
+};
 
 export default function CustomizePage() {
   const { t } = useTranslation();
   const customization = useResumeStore((s) => s.resume.customization);
   const updateCustomization = useResumeStore((s) => s.updateCustomization);
+  const experience = useResumeStore((s) => s.resume.experience);
+  const noExperience = useResumeStore((s) => s.resume.noExperience);
+  const education = useResumeStore((s) => s.resume.education);
+  const skills = useResumeStore((s) => s.resume.skills);
+  const languages = useResumeStore((s) => s.resume.languages);
+  const references = useResumeStore((s) => s.resume.references);
+  const includeReferences = useResumeStore((s) => s.resume.includeReferences);
+
+  // a Section Layout row only appears once the user has actually put
+  // something in it — "Experience" also covers Education, since both
+  // render under the same heading in ResumePreview's `experience` block
+  const sectionHasContent: Record<SectionOrderKey, boolean> = {
+    experience: experience.length > 0 || noExperience.length > 0 || education.length > 0,
+    skills: skills.length > 0,
+    language: languages.length > 0,
+    references: includeReferences && references.length > 0,
+  };
 
   const patchToggle = (key: keyof CustomizationToggles) =>
     updateCustomization({
@@ -87,6 +114,47 @@ export default function CustomizePage() {
     order.splice(from, 1);
     order.splice(to, 0, dragKey);
     updateCustomization({ sectionOrder: order });
+  };
+
+  // falls back to empty when an in-memory resume predates the `sidebarKeys`
+  // field (e.g. a builder tab left open across a hot-reload)
+  const sidebarKeys = customization.sidebarKeys ?? [];
+
+  // moves `dragKey` into `toSidebar`'s column, keeping the rest of
+  // sidebarKeys untouched
+  const assignSectionColumn = (dragKey: SectionOrderKey, toSidebar: boolean) =>
+    toSidebar
+      ? sidebarKeys.includes(dragKey)
+        ? sidebarKeys
+        : [...sidebarKeys, dragKey]
+      : sidebarKeys.filter((k) => k !== dragKey);
+
+  // dropping a section onto another row moves it next to that row, and
+  // into whichever column that row is currently in
+  const dropSectionOnRow = (dragKey: SectionOrderKey, overKey: SectionOrderKey) => {
+    if (dragKey === overKey) return;
+    const order = [...customization.sectionOrder];
+    const from = order.indexOf(dragKey);
+    const to = order.indexOf(overKey);
+    if (from !== -1 && to !== -1) {
+      order.splice(from, 1);
+      order.splice(to, 0, dragKey);
+    }
+    updateCustomization({
+      sectionOrder: order,
+      sidebarKeys: assignSectionColumn(dragKey, sidebarKeys.includes(overKey)),
+    });
+  };
+
+  // dropping on empty column space (not on a specific row) appends the
+  // section to the end of that column
+  const dropSectionInColumn = (dragKey: SectionOrderKey, toSidebar: boolean) => {
+    const order = customization.sectionOrder.filter((k) => k !== dragKey);
+    order.push(dragKey);
+    updateCustomization({
+      sectionOrder: order,
+      sidebarKeys: assignSectionColumn(dragKey, toSidebar),
+    });
   };
 
   // ---- section nav + scroll spy ----
@@ -147,6 +215,9 @@ export default function CustomizePage() {
     { key: "spacing", label: t("builder.customizePage.nav.spacing") },
   ];
 
+  const { main: mainSectionKeys, sidebar: sidebarSectionKeys } =
+    partitionSectionOrder(customization.sectionOrder, customization.sidebarKeys);
+
   const fontSizeStepIndex = FONT_SIZE_STEPS.indexOf(customization.fontSize);
   const pageMarginValue = Math.round(
     (customization.topBottomMargin + customization.leftRightMargin) / 2,
@@ -181,7 +252,7 @@ export default function CustomizePage() {
       {/* ---------- section nav: horizontal pills below md, since the
           vertical rail alongside the sections has no room to sit next to
           the single-column content on small screens ---------- */}
-      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg/95 backdrop-blur-sm">
+      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg will-change-transform">
         <div className="flex gap-2 px-4 py-2 w-max">
           {navItems.map((item) => (
             <button
@@ -203,7 +274,7 @@ export default function CustomizePage() {
 
       <div className="flex gap-6 items-start mt-4 md:mt-6">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-32 shrink-0 sticky top-24 self-start">
+        <div className="hidden md:block w-32 shrink-0 sticky top-(--step-bar-height) self-start">
           <div className="flex flex-col border-l border-line">
             {navItems.map((item) => (
               <button
@@ -259,7 +330,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.columns")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.columnsOne")}
                   selected={customization.columns === "one"}
@@ -282,7 +353,7 @@ export default function CustomizePage() {
                 <p className="text-sm font-medium text-text">
                   {t("builder.customizePage.layout.headerPosition")}
                 </p>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <OptionCard
                     label={t("builder.customizePage.layout.headerLeft")}
                     selected={customization.headerPosition === "left"}
@@ -319,39 +390,80 @@ export default function CustomizePage() {
                 {t("builder.customizePage.layout.sectionLayout")}
               </p>
               {customization.columns === "two" ? (
-                // two-column mode: Skills/References/Language actually move
-                // into the sidebar, while Personal Details + Experience stay
-                // fixed in the main flow — so the list is split to match,
-                // instead of implying everything shares one reorderable flow.
-                // The lock icon (via `pinned`) carries that distinction
-                // instead of a column-heading label, to keep this compact.
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
+                // two-column mode: every section except Personal Details can
+                // be dragged into either column — dropping onto a row moves
+                // it next to that row (and into that row's column);
+                // dropping on empty column space appends it to that column.
+                // Header Position "top" pulls Personal Details out of the
+                // columns into its own full-width row, mirroring the actual
+                // resume where it renders as a banner instead of inside the
+                // sidebar (see topHeaderBanner in ResumePreview.tsx)
+                <div className="space-y-2">
+                  {customization.headerPosition === "top" && (
                     <DragRow
                       label={t("builder.customizePage.layout.personalDetails")}
                       pinned
                     />
-                    <DragRow
-                      label={t("builder.customizePage.layout.experience")}
-                      pinned
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    {orderedSidebarKeys(customization.sectionOrder).map(
-                      (key) => (
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className="space-y-2 min-h-8"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragSectionKey)
+                          dropSectionInColumn(dragSectionKey, false);
+                        setDragSectionKey(null);
+                      }}
+                    >
+                      {customization.headerPosition !== "top" && (
                         <DragRow
-                          key={key}
-                          label={t(`builder.customizePage.layout.${key}`)}
-                          draggable
-                          onDragStart={() => setDragSectionKey(key)}
-                          onDropOn={() => {
-                            if (dragSectionKey)
-                              moveSectionOrder(dragSectionKey, key);
-                            setDragSectionKey(null);
-                          }}
+                          label={t("builder.customizePage.layout.personalDetails")}
+                          pinned
                         />
-                      ),
-                    )}
+                      )}
+                      {mainSectionKeys
+                        .filter((key) => sectionHasContent[key])
+                        .map((key) => (
+                          <DragRow
+                            key={key}
+                            label={t(`builder.customizePage.layout.${key}`)}
+                            draggable
+                            onDragStart={() => setDragSectionKey(key)}
+                            onDropOn={() => {
+                              if (dragSectionKey)
+                                dropSectionOnRow(dragSectionKey, key);
+                              setDragSectionKey(null);
+                            }}
+                          />
+                        ))}
+                    </div>
+                    <div
+                      className="space-y-2 min-h-8"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragSectionKey)
+                          dropSectionInColumn(dragSectionKey, true);
+                        setDragSectionKey(null);
+                      }}
+                    >
+                      {sidebarSectionKeys
+                        .filter((key) => sectionHasContent[key])
+                        .map((key) => (
+                          <DragRow
+                            key={key}
+                            label={t(`builder.customizePage.layout.${key}`)}
+                            draggable
+                            onDragStart={() => setDragSectionKey(key)}
+                            onDropOn={() => {
+                              if (dragSectionKey)
+                                dropSectionOnRow(dragSectionKey, key);
+                              setDragSectionKey(null);
+                            }}
+                          />
+                        ))}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -360,7 +472,9 @@ export default function CustomizePage() {
                     label={t("builder.customizePage.layout.personalDetails")}
                     pinned
                   />
-                  {customization.sectionOrder.map((key) => (
+                  {customization.sectionOrder
+                    .filter((key) => sectionHasContent[key])
+                    .map((key) => (
                     <DragRow
                       key={key}
                       label={t(`builder.customizePage.layout.${key}`)}
@@ -393,7 +507,7 @@ export default function CustomizePage() {
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.layout.photoShape")}
                   </p>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <OptionCard
                       label={t("builder.customizePage.layout.shapeCircle")}
                       selected={customization.photoShape === "circle"}
@@ -401,7 +515,14 @@ export default function CustomizePage() {
                         updateCustomization({ photoShape: "circle" })
                       }
                     >
-                      <div className="size-8 rounded-full bg-line/60" />
+                      <div
+                        className={cn(
+                          "size-8 rounded-full",
+                          customization.photoShape === "circle"
+                            ? "bg-brand"
+                            : "bg-line/60",
+                        )}
+                      />
                     </OptionCard>
                     <OptionCard
                       label={t("builder.customizePage.layout.shapeRounded")}
@@ -410,7 +531,14 @@ export default function CustomizePage() {
                         updateCustomization({ photoShape: "rounded" })
                       }
                     >
-                      <div className="size-8 rounded-md bg-line/60" />
+                      <div
+                        className={cn(
+                          "size-8 rounded-md",
+                          customization.photoShape === "rounded"
+                            ? "bg-brand"
+                            : "bg-line/60",
+                        )}
+                      />
                     </OptionCard>
                     <OptionCard
                       label={t("builder.customizePage.layout.shapeSquare")}
@@ -419,7 +547,14 @@ export default function CustomizePage() {
                         updateCustomization({ photoShape: "square" })
                       }
                     >
-                      <div className="size-8 bg-line/60" />
+                      <div
+                        className={cn(
+                          "size-8",
+                          customization.photoShape === "square"
+                            ? "bg-brand"
+                            : "bg-line/60",
+                        )}
+                      />
                     </OptionCard>
                   </div>
                 </div>
@@ -439,7 +574,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.pageFormat")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.layout.formatA4")}
                   selected={customization.pageFormat === "a4"}
@@ -556,23 +691,17 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.sectionHeadings")}
             </p>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {HEADING_PRESETS.map((preset, i) => (
                 <button
                   key={i}
                   type="button"
-                  title={
-                    preset.headingBorder === "filled"
-                      ? t("builder.customizePage.sectionHeadings.borderFilled")
-                      : preset.headingBorder === "outline"
-                        ? t(
-                            "builder.customizePage.sectionHeadings.borderOutline",
-                          )
-                        : t("builder.customizePage.sectionHeadings.borderNone")
-                  }
+                  title={t(
+                    `builder.customizePage.sectionHeadings.${HEADING_BORDER_LABEL_KEY[preset.headingBorder]}`,
+                  )}
                   onClick={() => applyHeadingPreset(i)}
                   className={cn(
-                    "rounded-lg border-2 flex flex-col items-center justify-center gap-2 p-3 transition-colors",
+                    "rounded-lg border-2 flex flex-col items-center justify-center gap-2 p-4 transition-colors",
                     activeHeadingPreset === i
                       ? "border-brand bg-brand/5 ring-1 ring-brand"
                       : "border-line hover:bg-surface-2 hover:border-line/70",
@@ -591,7 +720,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.capitalization")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.sectionHeadings.capitalize")}
                   selected={customization.capitalization === "capitalize"}
@@ -613,7 +742,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.linkStyle")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t(
                     "builder.customizePage.sectionHeadings.linkUnderline",
@@ -647,7 +776,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.layoutMode")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.colors.layoutFullPage")}
                   selected={customization.colorLayout === "full"}
@@ -676,7 +805,7 @@ export default function CustomizePage() {
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.paletteMode")}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <OptionCard
                   label={t("builder.customizePage.colors.paletteSingle")}
                   selected={customization.paletteMode === "single"}
@@ -978,28 +1107,58 @@ function HeadingPresetPreview({
 }) {
   const isFilled = preset.headingBorder === "filled";
   const isOutline = preset.headingBorder === "outline";
+  const isLongLine = preset.headingBorder === "line";
+  const isLongUnderline = preset.headingBorder === "underline";
 
   return (
-    <div className="flex w-full flex-col items-center gap-2">
-      <span
-        className={cn(
-          "text-[8px] font-bold leading-none tracking-[0.15em]",
-          capitalization,
-          isFilled
-            ? "rounded px-1.5 py-1 text-white"
-            : isOutline
-              ? "rounded-sm border px-1.5 py-1"
-              : preset.headingsLine && "border-b pb-0.5",
-        )}
-        style={{
-          color: isFilled ? "#fff" : accentColor,
-          backgroundColor: isFilled ? accentColor : undefined,
-          borderColor:
-            isOutline || preset.headingsLine ? accentColor : undefined,
-        }}
-      >
-        heading
-      </span>
+    <div className="flex w-full flex-col items-center gap-3">
+      {isLongLine ? (
+        <div className="flex w-full items-center gap-1.5">
+          <span
+            className={cn(
+              "shrink-0 text-[9px] font-bold leading-none tracking-[0.15em]",
+              capitalization,
+            )}
+            style={{ color: accentColor }}
+          >
+            heading
+          </span>
+          <div className="h-px flex-1" style={{ backgroundColor: accentColor }} />
+        </div>
+      ) : isLongUnderline ? (
+        <div className="flex w-full flex-col items-start gap-1.5">
+          <span
+            className={cn(
+              "text-[9px] font-bold leading-none tracking-[0.15em]",
+              capitalization,
+            )}
+            style={{ color: accentColor }}
+          >
+            heading
+          </span>
+          <div className="h-px w-full" style={{ backgroundColor: accentColor }} />
+        </div>
+      ) : (
+        <span
+          className={cn(
+            "text-[9px] font-bold leading-none tracking-[0.15em]",
+            capitalization,
+            isFilled
+              ? "rounded px-1.5 py-1 text-white"
+              : isOutline
+                ? "rounded-sm border px-1.5 py-1"
+                : preset.headingsLine && "border-b pb-0.5",
+          )}
+          style={{
+            color: isFilled ? "#fff" : accentColor,
+            backgroundColor: isFilled ? accentColor : undefined,
+            borderColor:
+              isOutline || preset.headingsLine ? accentColor : undefined,
+          }}
+        >
+          heading
+        </span>
+      )}
       <div className="flex w-full flex-col items-center gap-1">
         <div className="h-1 w-full rounded-full bg-line/70" />
         <div className="h-1 w-2/3 rounded-full bg-line/70" />
@@ -1024,7 +1183,7 @@ function OptionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
+        "flex-1 min-w-24 max-w-40 flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
         selected ? "border-brand bg-brand/5" : "border-line hover:bg-surface-2",
       )}
     >
@@ -1130,7 +1289,14 @@ function DragRow({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragOver={draggable ? (e) => e.preventDefault() : undefined}
-      onDrop={onDropOn}
+      onDrop={
+        onDropOn &&
+        ((e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDropOn();
+        })
+      }
       title={pinned ? t("builder.customizePage.layout.alwaysFirst") : undefined}
       className={cn(
         "flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-text-secondary",
@@ -1181,7 +1347,7 @@ function ColorPicker({
   return (
     <div className="space-y-1.5">
       <span className="text-[11px] text-text-secondary">{label}</span>
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {presets.map((preset) => (
           <button
             key={preset}

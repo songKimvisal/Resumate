@@ -367,6 +367,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   const isFilled = c.headingBorder === "filled";
   const isOutline = c.headingBorder === "outline";
+  const isLongLine = c.headingBorder === "line";
+  const isLongUnderline = c.headingBorder === "underline";
 
   // ---------- sidebar layout derived from `columns` + `headerPosition` ----------
   // the sidebar only exists in two-column mode, so toggling `columns` always
@@ -452,7 +454,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       color: isFilled ? "#ffffff" : accent,
       backgroundColor: isFilled ? accent : undefined,
       borderColor: accent,
-      borderBottomWidth: !isOutline && !isFilled && c.toggles.headingsLine ? 1 : 0,
+      borderBottomWidth:
+        !isOutline && !isFilled && !isLongLine && !isLongUnderline && c.toggles.headingsLine
+          ? 1
+          : 0,
       borderWidth: isOutline ? 1 : 0,
       paddingHorizontal: isOutline || isFilled ? 6 : 0,
       paddingTop: isOutline || isFilled ? 2 : 0,
@@ -489,6 +494,34 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   const richTextOpts = { fontFamily, lineHeight: c.lineHeight };
   const showPhoto = c.showPhoto && !!personal.photoUrl;
+
+  // "line" and "underline" heading styles need the title text plus a rule
+  // that spans the rest of the row (or the full width below it), which a
+  // plain <Text> can't do — every section heading goes through here so
+  // those variants stay in sync everywhere
+  const renderSectionTitle = (title: string, extraStyle?: Record<string, unknown>) =>
+    isLongLine ? (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 6,
+          columnGap: 6,
+        }}
+      >
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
+        <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: accent }} />
+      </View>
+    ) : isLongUnderline ? (
+      <View style={{ marginBottom: 6 }}>
+        <Text style={[styles.sectionTitle, { marginBottom: 3 }]}>{title}</Text>
+        <View style={{ borderTopWidth: 1, borderTopColor: accent, width: "100%" }} />
+      </View>
+    ) : (
+      <Text style={extraStyle ? [styles.sectionTitle, extraStyle] : styles.sectionTitle}>
+        {title}
+      </Text>
+    );
 
   const renderLevels = (
     items: { id: string; name: string; level: number }[],
@@ -540,9 +573,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     <>
       {experience.length > 0 && (
         <View style={styles.section} minPresenceAhead={40}>
-          {c.toggles.headings && (
-            <Text style={styles.sectionTitle}>Experience</Text>
-          )}
+          {c.toggles.headings && renderSectionTitle("Experience")}
           {experience.map((exp) => (
             <View key={exp.id} style={styles.entry} wrap={false}>
               <View style={styles.entryHeaderRow}>
@@ -571,9 +602,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
       {experience.length === 0 && noExperience.length > 0 && (
         <View style={styles.section} minPresenceAhead={40}>
-          {c.toggles.headings && (
-            <Text style={styles.sectionTitle}>Experience</Text>
-          )}
+          {c.toggles.headings && renderSectionTitle("Experience")}
           {noExperience.map((exp) => (
             <View key={exp.id} style={styles.entry} wrap={false}>
               <View style={styles.entryHeaderRow}>
@@ -611,9 +640,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
       {education.length > 0 && (
         <View style={styles.section} minPresenceAhead={40}>
-          {c.toggles.headings && (
-            <Text style={styles.sectionTitle}>Education</Text>
-          )}
+          {c.toggles.headings && renderSectionTitle("Education")}
           {education.map((edu) => (
             <View key={edu.id} style={styles.entry} wrap={false}>
               <View style={styles.entryHeaderRow}>
@@ -650,17 +677,13 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       <View style={styles.twoCol} wrap={false}>
         {skills.length > 0 && (
           <View style={styles.col}>
-            {c.toggles.headings && (
-              <Text style={styles.sectionTitle}>Skills</Text>
-            )}
+            {c.toggles.headings && renderSectionTitle("Skills")}
             {renderLevels(skills, SKILL_LEVEL_LABELS)}
           </View>
         )}
         {languages.length > 0 && (
           <View style={styles.col}>
-            {c.toggles.headings && (
-              <Text style={styles.sectionTitle}>Languages</Text>
-            )}
+            {c.toggles.headings && renderSectionTitle("Languages")}
             {renderLevels(languages, LANGUAGE_LEVEL_LABELS)}
           </View>
         )}
@@ -671,9 +694,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     includeReferences &&
     references.length > 0 && (
       <View style={styles.section} minPresenceAhead={40}>
-        {c.toggles.headings && (
-          <Text style={styles.sectionTitle}>References</Text>
-        )}
+        {c.toggles.headings && renderSectionTitle("References")}
         <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 8 }}>
           {references.map((r) => (
             <View key={r.id} style={{ width: "50%", paddingRight: 8 }} wrap={false}>
@@ -730,11 +751,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 if (key === "skills" && skills.length > 0) {
                   return (
                     <View key="skills" style={styles.sidebarSection}>
-                      {c.toggles.headings && (
-                        <Text style={[styles.sectionTitle, { alignSelf: "flex-start" }]}>
-                          Skills
-                        </Text>
-                      )}
+                      {c.toggles.headings &&
+                        renderSectionTitle("Skills", { alignSelf: "flex-start" })}
                       {renderLevels(skills, SKILL_LEVEL_LABELS)}
                     </View>
                   );
@@ -742,11 +760,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 if (key === "language" && languages.length > 0) {
                   return (
                     <View key="language" style={styles.sidebarSection}>
-                      {c.toggles.headings && (
-                        <Text style={[styles.sectionTitle, { alignSelf: "flex-start" }]}>
-                          Languages
-                        </Text>
-                      )}
+                      {c.toggles.headings &&
+                        renderSectionTitle("Languages", { alignSelf: "flex-start" })}
                       {renderLevels(languages, LANGUAGE_LEVEL_LABELS)}
                     </View>
                   );
@@ -758,11 +773,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 ) {
                   return (
                     <View key="references" style={styles.sidebarSection}>
-                      {c.toggles.headings && (
-                        <Text style={[styles.sectionTitle, { alignSelf: "flex-start" }]}>
-                          References
-                        </Text>
-                      )}
+                      {c.toggles.headings &&
+                        renderSectionTitle("References", { alignSelf: "flex-start" })}
                       {references.map((r) => (
                         <View key={r.id} style={{ marginTop: 6 }}>
                           <Text style={{ fontSize: base * 0.95, fontFamily: variants.bold, color: c.bodyTextColor }}>
@@ -804,9 +816,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
         {hasVisibleText(personal.summary) && (
           <View style={styles.section} minPresenceAhead={40}>
-            {c.toggles.headings && (
-              <Text style={styles.sectionTitle}>Summary</Text>
-            )}
+            {c.toggles.headings && renderSectionTitle("Summary")}
             {richTextToPdf(personal.summary, {
               fontSize: base * 0.9,
               color: c.bodyTextColor,
