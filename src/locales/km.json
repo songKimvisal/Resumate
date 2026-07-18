@@ -453,9 +453,10 @@
       "contentButton": "ខ្លឹមសារ",
       "nav": {
         "layout": "ប្លង់",
+        "header": "ក្បាលទំព័រ",
         "font": "ពុម្ពអក្សរ",
         "fontSize": "ទំហំអក្សរ",
-        "sectionHeadings": "ចំណងជើងផ្នែក",
+        "sectionHeadings": "ចំណងជើង",
         "colors": "ពណ៌",
         "spacing": "គម្លាត"
       },
@@ -493,6 +494,24 @@
         "marginsNormal": "ធម្មតា",
         "marginsWide": "ធំទូលាយ"
       },
+      "header": {
+        "textAlignment": "ការតម្រឹមអក្សរ",
+        "alignLeft": "ខាងឆ្វេង",
+        "alignCenter": "កណ្តាល",
+        "detailsArrangement": "ការរៀបចំព័ត៌មានលម្អិត",
+        "arrangementInline": "ជាជួរតែមួយ",
+        "arrangementStacked": "តម្រៀបជាបញ្ជី",
+        "separator": "សញ្ញាបំបែក",
+        "separatorIcon": "រូបតំណាង",
+        "separatorBullet": "ចំណុច",
+        "separatorBar": "របារ",
+        "iconStyle": "រចនាប័ទ្មរូបតំណាង",
+        "iconPlain": "សាមញ្ញ",
+        "iconFilled": "មានពណ៌ផ្ទៃខាងក្រោយ",
+        "iconOutline": "មានស៊ុមព័ទ្ធជុំវិញ",
+        "iconSquare": "ការ៉េ",
+        "iconFaded": "ស្រអាប់"
+      },
       "font": {
         "fontFamily": "ក្រុមពុម្ពអក្សរ"
       },
@@ -511,6 +530,10 @@
         "borderFilled": "មានពណ៌ផ្ទៃខាងក្រោយ",
         "borderLine": "បន្ទាត់វែង",
         "borderUnderline": "គូសបន្ទាត់ក្រោមវែង",
+        "sectionIcon": "រូបតំណាង",
+        "sectionIconNone": "គ្មាន",
+        "sectionIconOutline": "មានស៊ុមព័ទ្ធជុំវិញ",
+        "sectionIconFilled": "មានពណ៌ផ្ទៃខាងក្រោយ",
         "linkStyle": "រចនាប័ទ្មតំណភ្ជាប់",
         "linkUnderline": "គូសបន្ទាត់ពីក្រោម",
         "linkColor": "ពណ៌លេចធ្លោ (Accent)",
