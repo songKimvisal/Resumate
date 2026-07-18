@@ -20,6 +20,7 @@ import {
   LANGUAGE_LEVEL_LABELS,
   SKILL_LEVEL_LABELS,
   type Customization,
+  type SectionOrderKey,
   type ExperienceItem,
   type NoExperienceItem,
   type EducationItem,
@@ -33,7 +34,7 @@ import { photoImgStyle } from "../../lib/photoFit";
 import { cssFontStack } from "../../lib/fonts";
 import { marginPercentCss } from "../../lib/pageSize";
 import { idealTextColor } from "../../lib/color";
-import { orderedMainGroups, orderedSidebarKeys } from "../../lib/sectionOrder";
+import { orderedMainGroups, partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
 function fmtDate(value: string) {
@@ -92,7 +93,7 @@ interface Theme {
   gapExpItem: number;
   gapEduItem: number;
   textTransform: "uppercase" | "capitalize";
-  headingBorder: "none" | "outline" | "filled";
+  headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   showHeadingLine: boolean;
   showHeadingTitle: boolean;
   headingSizePx: number;
@@ -186,8 +187,35 @@ export default function ResumePreview({
   const showSidebar = customization.columns === "two";
   const headerInSidebar = showSidebar && customization.headerPosition !== "top";
   const topHeaderBanner = showSidebar && customization.headerPosition === "top";
-  const listsInSidebar = showSidebar;
   const sidebarSide = headerInSidebar ? customization.headerPosition : "left";
+  // which of the 4 movable sections render in each column, when the
+  // sidebar is showing — everything else stays in the single main flow.
+  // Memoized so `mainSectionKeys`/`sidebarSectionKeys` keep a stable
+  // identity across renders (partitionSectionOrder builds new arrays every
+  // call), otherwise the `blocks` useMemo below never memoizes and the
+  // height-measuring useLayoutEffect re-triggers on every render.
+  const { main: mainSectionKeys, sidebar: sidebarSectionKeys } = useMemo(
+    () =>
+      showSidebar
+        ? partitionSectionOrder(customization.sectionOrder, customization.sidebarKeys)
+        : { main: customization.sectionOrder, sidebar: [] as SectionOrderKey[] },
+    [showSidebar, customization.sectionOrder, customization.sidebarKeys],
+  );
+  // the sidebar column only reserves page width when it actually has
+  // something to show — otherwise (e.g. two-column + header-top with no
+  // skills/language/references/education filled in) it would sit there
+  // empty and push the main content off the page's left edge
+  const sidebarHasContent = (key: SectionOrderKey) => {
+    if (key === "skills") return skills.length > 0;
+    if (key === "language") return languages.length > 0;
+    if (key === "references") return includeReferences && references.length > 0;
+    if (key === "experience")
+      return experience.length > 0 || noExperience.length > 0 || education.length > 0;
+    return false;
+  };
+  const sidebarColumnVisible =
+    showSidebar &&
+    (headerInSidebar || sidebarSectionKeys.some(sidebarHasContent));
   const headerTextColor =
     customization.colorLayout === "border"
       ? customization.bodyTextColor
@@ -353,60 +381,123 @@ export default function ResumePreview({
       }
     });
 
-    const skillsLanguageBlocks: Block[] = [];
-    if (!listsInSidebar && (skills.length > 0 || languages.length > 0)) {
-      skillsLanguageBlocks.push({
-        key: "skills-languages",
-        gapBefore: gapSection,
-        node: (
-          <div className="grid grid-cols-2 gap-6">
-            {skills.length > 0 && (
-              <Section title="Skills" theme={theme}>
-                <SkillsBody skills={skills} theme={theme} accent={accent} />
-              </Section>
-            )}
-            {languages.length > 0 && (
-              <Section title="Languages" theme={theme}>
-                <LanguagesBody
-                  languages={languages}
-                  theme={theme}
-                  accent={accent}
-                />
-              </Section>
-            )}
-          </div>
-        ),
-      });
-    }
-
-    const referencesBlocks: Block[] = [];
-    if (!listsInSidebar && includeReferences && references.length > 0) {
-      referencesBlocks.push({
-        key: "references",
-        gapBefore: gapSection,
-        node: (
-          <Section title="References" theme={theme}>
-            <div className="grid grid-cols-2 gap-4">
-              {references.map((r) => (
-                <ReferenceEntry key={r.id} r={r} theme={theme} />
-              ))}
+    if (!showSidebar) {
+      // one-column mode: skills+languages share a single 2-col grid block,
+      // and section order only ever groups by "experience" / "skillsLanguage"
+      // / "references" — unaffected by per-section sidebar placement
+      const skillsLanguageBlocks: Block[] = [];
+      if (skills.length > 0 || languages.length > 0) {
+        skillsLanguageBlocks.push({
+          key: "skills-languages",
+          gapBefore: gapSection,
+          node: (
+            <div className="grid grid-cols-2 gap-6">
+              {skills.length > 0 && (
+                <Section title="Skills" theme={theme}>
+                  <SkillsBody skills={skills} theme={theme} accent={accent} />
+                </Section>
+              )}
+              {languages.length > 0 && (
+                <Section title="Languages" theme={theme}>
+                  <LanguagesBody
+                    languages={languages}
+                    theme={theme}
+                    accent={accent}
+                  />
+                </Section>
+              )}
             </div>
-          </Section>
-        ),
-      });
-    }
+          ),
+        });
+      }
 
-    const groups: Record<
-      "experience" | "skillsLanguage" | "references",
-      Block[]
-    > = {
-      experience: expEduBlocks,
-      skillsLanguage: skillsLanguageBlocks,
-      references: referencesBlocks,
-    };
-    orderedMainGroups(customization.sectionOrder).forEach((g) =>
-      list.push(...groups[g]),
-    );
+      const referencesBlocks: Block[] = [];
+      if (includeReferences && references.length > 0) {
+        referencesBlocks.push({
+          key: "references",
+          gapBefore: gapSection,
+          node: (
+            <Section title="References" theme={theme}>
+              <div className="grid grid-cols-2 gap-4">
+                {references.map((r) => (
+                  <ReferenceEntry key={r.id} r={r} theme={theme} />
+                ))}
+              </div>
+            </Section>
+          ),
+        });
+      }
+
+      const groups: Record<
+        "experience" | "skillsLanguage" | "references",
+        Block[]
+      > = {
+        experience: expEduBlocks,
+        skillsLanguage: skillsLanguageBlocks,
+        references: referencesBlocks,
+      };
+      orderedMainGroups(customization.sectionOrder).forEach((g) =>
+        list.push(...groups[g]),
+      );
+    } else {
+      // two-column mode: each of the 4 movable sections is independently
+      // placed, so only the ones the user left in the main column land here
+      // — whatever's in `sidebarSectionKeys` renders inside SidebarColumn
+      const skillsBlocks: Block[] = [];
+      if (skills.length > 0) {
+        skillsBlocks.push({
+          key: "skills",
+          gapBefore: gapSection,
+          node: (
+            <Section title="Skills" theme={theme}>
+              <SkillsBody skills={skills} theme={theme} accent={accent} />
+            </Section>
+          ),
+        });
+      }
+
+      const languageBlocks: Block[] = [];
+      if (languages.length > 0) {
+        languageBlocks.push({
+          key: "language",
+          gapBefore: gapSection,
+          node: (
+            <Section title="Languages" theme={theme}>
+              <LanguagesBody
+                languages={languages}
+                theme={theme}
+                accent={accent}
+              />
+            </Section>
+          ),
+        });
+      }
+
+      const referencesBlocks: Block[] = [];
+      if (includeReferences && references.length > 0) {
+        referencesBlocks.push({
+          key: "references",
+          gapBefore: gapSection,
+          node: (
+            <Section title="References" theme={theme}>
+              <div className="grid grid-cols-2 gap-4">
+                {references.map((r) => (
+                  <ReferenceEntry key={r.id} r={r} theme={theme} />
+                ))}
+              </div>
+            </Section>
+          ),
+        });
+      }
+
+      const keyBlocks: Record<SectionOrderKey, Block[]> = {
+        skills: skillsBlocks,
+        language: languageBlocks,
+        references: referencesBlocks,
+        experience: expEduBlocks,
+      };
+      mainSectionKeys.forEach((key) => list.push(...keyBlocks[key]));
+    }
 
     return list;
   }, [
@@ -419,7 +510,7 @@ export default function ResumePreview({
     references,
     includeReferences,
     showSidebar,
-    listsInSidebar,
+    mainSectionKeys,
     customization,
     theme,
     accent,
@@ -513,7 +604,7 @@ export default function ResumePreview({
   ]);
   const paddingTopBottomPx = pageWidth * (paddingTopBottomPct / 100);
   const paddingLeftRightPx = pageWidth * (paddingLeftRightPct / 100);
-  const mainColumnWidthPx = showSidebar
+  const mainColumnWidthPx = sidebarColumnVisible
     ? pageWidth * (1 - SIDEBAR_WIDTH_FRACTION)
     : pageWidth;
 
@@ -585,12 +676,12 @@ export default function ResumePreview({
               )}
               <div
                 className={
-                  showSidebar
+                  sidebarColumnVisible
                     ? "flex-1 min-h-0 flex"
                     : "flex-1 min-h-0 overflow-hidden"
                 }
                 style={
-                  showSidebar
+                  sidebarColumnVisible
                     ? undefined
                     : {
                         paddingTop: `${paddingTopBottomPct}%`,
@@ -600,7 +691,7 @@ export default function ResumePreview({
                       }
                 }
               >
-                {showSidebar && sidebarSide === "left" && (
+                {sidebarColumnVisible && sidebarSide === "left" && (
                   <SidebarColumn
                     personal={personal}
                     customization={customization}
@@ -608,7 +699,10 @@ export default function ResumePreview({
                     accent={accent}
                     textColor={headerTextColor}
                     headerInSidebar={headerInSidebar}
-                    listsInSidebar={listsInSidebar}
+                    sidebarSectionKeys={sidebarSectionKeys}
+                    experience={experience}
+                    noExperience={noExperience}
+                    education={education}
                     skills={skills}
                     languages={languages}
                     references={references}
@@ -620,12 +714,12 @@ export default function ResumePreview({
                 )}
                 <div
                   className={
-                    showSidebar
+                    sidebarColumnVisible
                       ? "flex-1 min-w-0 h-full overflow-hidden"
                       : undefined
                   }
                   style={
-                    showSidebar
+                    sidebarColumnVisible
                       ? {
                           paddingTop: paddingTopBottomPx,
                           paddingBottom: paddingTopBottomPx,
@@ -644,7 +738,7 @@ export default function ResumePreview({
                     </div>
                   ))}
                 </div>
-                {showSidebar && sidebarSide === "right" && (
+                {sidebarColumnVisible && sidebarSide === "right" && (
                   <SidebarColumn
                     personal={personal}
                     customization={customization}
@@ -652,7 +746,10 @@ export default function ResumePreview({
                     accent={accent}
                     textColor={headerTextColor}
                     headerInSidebar={headerInSidebar}
-                    listsInSidebar={listsInSidebar}
+                    sidebarSectionKeys={sidebarSectionKeys}
+                    experience={experience}
+                    noExperience={noExperience}
+                    education={education}
                     skills={skills}
                     languages={languages}
                     references={references}
@@ -967,7 +1064,10 @@ function SidebarColumn({
   accent,
   textColor,
   headerInSidebar,
-  listsInSidebar,
+  sidebarSectionKeys,
+  experience,
+  noExperience,
+  education,
   skills,
   languages,
   references,
@@ -982,7 +1082,10 @@ function SidebarColumn({
   accent: string;
   textColor: string;
   headerInSidebar: boolean;
-  listsInSidebar: boolean;
+  sidebarSectionKeys: SectionOrderKey[];
+  experience: ExperienceItem[];
+  noExperience: NoExperienceItem[];
+  education: EducationItem[];
   skills: SkillItem[];
   languages: LanguageItem[];
   references: ReferenceItem[];
@@ -1019,46 +1122,128 @@ function SidebarColumn({
               textColor={textColor}
             />
           )}
-          {listsInSidebar &&
-            orderedSidebarKeys(customization.sectionOrder).map((key) => {
-              if (key === "skills" && skills.length > 0) {
-                return (
-                  <Section key="skills" title="Skills" theme={theme}>
-                    <SkillsBody skills={skills} theme={theme} accent={accent} />
-                  </Section>
-                );
-              }
-              if (key === "language" && languages.length > 0) {
-                return (
-                  <Section key="language" title="Languages" theme={theme}>
-                    <LanguagesBody
-                      languages={languages}
-                      theme={theme}
-                      accent={accent}
-                    />
-                  </Section>
-                );
-              }
-              if (
-                key === "references" &&
-                includeReferences &&
-                references.length > 0
-              ) {
-                return (
-                  <Section key="references" title="References" theme={theme}>
-                    <div className="space-y-3">
-                      {references.map((r) => (
-                        <ReferenceEntry key={r.id} r={r} theme={theme} />
-                      ))}
-                    </div>
-                  </Section>
-                );
-              }
-              return null;
-            })}
+          {sidebarSectionKeys.map((key) => {
+            if (key === "skills" && skills.length > 0) {
+              return (
+                <Section key="skills" title="Skills" theme={theme}>
+                  <SkillsBody skills={skills} theme={theme} accent={accent} />
+                </Section>
+              );
+            }
+            if (key === "language" && languages.length > 0) {
+              return (
+                <Section key="language" title="Languages" theme={theme}>
+                  <LanguagesBody
+                    languages={languages}
+                    theme={theme}
+                    accent={accent}
+                  />
+                </Section>
+              );
+            }
+            if (
+              key === "references" &&
+              includeReferences &&
+              references.length > 0
+            ) {
+              return (
+                <Section key="references" title="References" theme={theme}>
+                  <div className="space-y-3">
+                    {references.map((r) => (
+                      <ReferenceEntry key={r.id} r={r} theme={theme} />
+                    ))}
+                  </div>
+                </Section>
+              );
+            }
+            if (key === "experience") {
+              return (
+                <SidebarExperienceBody
+                  key="experience"
+                  experience={experience}
+                  noExperience={noExperience}
+                  education={education}
+                  theme={theme}
+                />
+              );
+            }
+            return null;
+          })}
         </div>
       )}
     </div>
+  );
+}
+
+/** simplified experience+education renderer for when "Experience" is
+ *  dragged into the sidebar — unlike the main column, sidebar content isn't
+ *  paginated (see the module comment above SidebarColumn), so entries are
+ *  just stacked directly instead of built as measurable/splittable Blocks */
+function SidebarExperienceBody({
+  experience,
+  noExperience,
+  education,
+  theme,
+}: {
+  experience: ExperienceItem[];
+  noExperience: NoExperienceItem[];
+  education: EducationItem[];
+  theme: Theme;
+}) {
+  const showNoExperience = experience.length === 0;
+
+  return (
+    <>
+      {(experience.length > 0 || (showNoExperience && noExperience.length > 0)) && (
+        <Section title="Experience" theme={theme}>
+          <div className="space-y-3">
+            {experience.map((exp) => (
+              <div key={exp.id}>
+                <ExperienceHeader exp={exp} theme={theme} />
+                {hasText(exp.description) && (
+                  <div
+                    className="rte-content text-[0.85em] leading-relaxed mt-1"
+                    style={{ color: theme.bodyTextColor }}
+                    dangerouslySetInnerHTML={{ __html: exp.description }}
+                  />
+                )}
+              </div>
+            ))}
+            {showNoExperience &&
+              noExperience.map((exp) => (
+                <div key={exp.id}>
+                  <NoExperienceHeader exp={exp} theme={theme} />
+                  {hasText(exp.description) && (
+                    <div
+                      className="rte-content text-[0.85em] leading-relaxed mt-1"
+                      style={{ color: theme.bodyTextColor }}
+                      dangerouslySetInnerHTML={{ __html: exp.description }}
+                    />
+                  )}
+                </div>
+              ))}
+          </div>
+        </Section>
+      )}
+      {education.length > 0 && (
+        <Section title="Education" theme={theme}>
+          <div className="space-y-3">
+            {education.map((edu) => (
+              <div key={edu.id}>
+                <EducationEntry edu={edu} theme={theme} />
+                {hasText(edu.description) && (
+                  <div
+                    className="rte-content text-[0.85em] leading-relaxed mt-1"
+                    style={{ color: theme.bodyTextColor }}
+                    dangerouslySetInnerHTML={{ __html: edu.description }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+    </>
   );
 }
 
@@ -1195,6 +1380,8 @@ function Section({
 }) {
   const isFilled = theme.headingBorder === "filled";
   const isOutline = theme.headingBorder === "outline";
+  const isLongLine = theme.headingBorder === "line";
+  const isLongUnderline = theme.headingBorder === "underline";
   const headingStyle: React.CSSProperties = {
     color: isFilled ? "#fff" : theme.accent,
     fontSize: theme.headingSizePx,
@@ -1208,21 +1395,60 @@ function Section({
         : 0,
     borderStyle: isOutline ? "solid" : undefined,
     borderBottomWidth:
-      !isOutline && !isFilled ? (theme.showHeadingLine ? 1 : 0) : undefined,
+      !isOutline && !isFilled && !isLongLine && !isLongUnderline
+        ? theme.showHeadingLine
+          ? 1
+          : 0
+        : undefined,
     padding: isOutline || isFilled ? "3px 8px" : undefined,
     borderRadius: isFilled ? 4 : undefined,
   };
 
   return (
     <section>
-      {theme.showHeadingTitle && (
-        <h2
-          className="font-bold tracking-[0.18em] pb-1 mb-2 inline-block"
-          style={headingStyle}
-        >
-          {title}
-        </h2>
-      )}
+      {theme.showHeadingTitle &&
+        (isLongLine ? (
+          <div className="mb-2 flex items-center gap-2">
+            <h2
+              className="shrink-0 font-bold tracking-[0.18em]"
+              style={{
+                color: theme.accent,
+                fontSize: theme.headingSizePx,
+                textTransform: theme.textTransform,
+              }}
+            >
+              {title}
+            </h2>
+            <span
+              className="h-px flex-1"
+              style={{ backgroundColor: theme.accent }}
+            />
+          </div>
+        ) : isLongUnderline ? (
+          <div className="mb-2">
+            <h2
+              className="font-bold tracking-[0.18em]"
+              style={{
+                color: theme.accent,
+                fontSize: theme.headingSizePx,
+                textTransform: theme.textTransform,
+              }}
+            >
+              {title}
+            </h2>
+            <div
+              className="mt-1 h-px w-full"
+              style={{ backgroundColor: theme.accent }}
+            />
+          </div>
+        ) : (
+          <h2
+            className="font-bold tracking-[0.18em] pb-1 mb-2 inline-block"
+            style={headingStyle}
+          >
+            {title}
+          </h2>
+        ))}
       {children}
     </section>
   );

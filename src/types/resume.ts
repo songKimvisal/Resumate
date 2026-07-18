@@ -131,7 +131,7 @@ export interface Customization {
   fullNameSize: number;
   titleSize: number;
   headingsSize: number;
-  headingBorder: "none" | "outline" | "filled";
+  headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   capitalization: "capitalize" | "uppercase";
   linkStyle: "underline" | "color" | "icon";
   headingTextColor: string;
@@ -150,6 +150,9 @@ export interface Customization {
   topBottomMargin: number;
   leftRightMargin: number;
   sectionOrder: SectionOrderKey[];
+  /** which of `sectionOrder`'s sections render in the sidebar column vs.
+   *  the main column, when `columns` is "two" */
+  sidebarKeys: SectionOrderKey[];
   toggles: CustomizationToggles;
 }
 
@@ -230,6 +233,7 @@ export const emptyResume: Resume = {
     topBottomMargin: 6,
     leftRightMargin: 6,
     sectionOrder: ["skills", "experience", "references", "language"],
+    sidebarKeys: ["skills", "references", "language"],
     toggles: {
       jobTitle: true,
       headings: true,
