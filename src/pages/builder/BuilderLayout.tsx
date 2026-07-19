@@ -220,7 +220,7 @@ export default function BuilderLayout() {
 
       {/* ================= form + preview ================= */}
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-0 py-10 pb-28 grid lg:grid-cols-[45fr_55fr] lg:divide-x divide-line gap-10 items-start">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-0 py-10 pb-28 grid lg:grid-cols-[45fr_auto_55fr] gap-10 lg:gap-0 items-start">
         {/* ---------- left: current step / customize ---------- */}
         <div>
           <AnimatePresence mode="popLayout">
@@ -255,6 +255,9 @@ export default function BuilderLayout() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+        <div className="hidden lg:flex h-full justify-center self-stretch px-8">
+          <div className="w-px bg-line" />
         </div>
 
         {/* ---------- right: live preview ---------- */}

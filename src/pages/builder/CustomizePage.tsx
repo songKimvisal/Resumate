@@ -47,7 +47,7 @@ type SectionKey =
   | "spacing";
 
 const SECTION_CARD =
-  "rounded-xl border border-line p-3 sm:p-4 md:p-5 space-y-5 scroll-mt-24";
+  "rounded-xl border border-line bg-bg p-4 sm:p-5 md:p-6 space-y-6 scroll-mt-24";
 const SECTION_TITLE = "text-sm font-semibold text-brand";
 
 /** quick shortcuts for the heading-style grid: each preset only sets the
@@ -253,11 +253,16 @@ export default function CustomizePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const scrollTo = (key: SectionKey) =>
+  const scrollTo = (key: SectionKey) => {
+    // set the active nav item immediately on click, instead of waiting for
+    // the scroll-spy observer to catch up once the smooth scroll settles —
+    // that lag was making the indicator feel slow/laggy
+    setActiveSection(key);
     sectionRefs[key].current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
+  };
 
   const navItems: { key: SectionKey; label: string }[] = [
     { key: "colors", label: t("builder.customizePage.nav.colors") },
@@ -337,26 +342,31 @@ export default function CustomizePage() {
         </div>
       </div>
 
-      <div className="flex gap-6 items-start mt-4 md:mt-6">
+      <div className="flex gap-8 items-start mt-5 md:mt-8">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-40 shrink-0 sticky top-(--step-bar-height) self-start">
-          <div className="flex flex-col gap-0.5 border-l border-line">
+        <div className="hidden md:block w-32 shrink-0 sticky top-(--step-bar-height) self-start">
+          <div className="relative flex flex-col gap-1 border-l border-line">
             {navItems.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => scrollTo(item.key)}
                 className={cn(
-                  // whitespace-nowrap + the wider w-40 rail keep every label
-                  // (even "Section Headings") on one line — a label wrapping
-                  // to two lines while its siblings stay single-line broke
-                  // the list's even vertical rhythm
-                  "whitespace-nowrap text-left text-sm py-2 pl-4 -ml-px border-l-2 transition-colors",
+                  // whitespace-nowrap keeps every label on one line — a label
+                  // wrapping to two lines while its siblings stay single-line
+                  // broke the list's even vertical rhythm.
+                  // No transition on the active state itself — it should
+                  // snap immediately on click rather than slide/lag behind
+                  // the smooth scroll to that section.
+                  "relative -ml-px whitespace-nowrap text-left text-sm py-2.5 pl-3.5 pr-2 rounded-r-md",
                   activeSection === item.key
-                    ? "border-brand text-brand font-medium"
-                    : "border-transparent text-text-secondary hover:text-text",
+                    ? "bg-brand/5 text-brand font-medium"
+                    : "text-text-secondary transition-colors hover:text-text hover:bg-surface-2",
                 )}
               >
+                {activeSection === item.key && (
+                  <span className="absolute inset-y-0 left-0 w-0.5 rounded-full bg-brand" />
+                )}
                 {item.label}
               </button>
             ))}
@@ -364,7 +374,7 @@ export default function CustomizePage() {
         </div>
 
         {/* ---------- sections ---------- */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="flex-1 min-w-0 space-y-6">
           {/* change templates */}
           <div className={SECTION_CARD}>
             <p className={SECTION_TITLE}>
@@ -395,7 +405,7 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.colors")}
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.layoutMode")}
               </p>
@@ -424,7 +434,7 @@ export default function CustomizePage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.colors.paletteMode")}
               </p>
@@ -451,7 +461,7 @@ export default function CustomizePage() {
               />
             ) : (
               <>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
                     {t("builder.customizePage.colors.headingSection")}
                   </p>
@@ -481,7 +491,7 @@ export default function CustomizePage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
                     {t("builder.customizePage.colors.bodySection")}
                   </p>
@@ -513,7 +523,7 @@ export default function CustomizePage() {
               </>
             )}
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               {(
                 Object.keys(
                   customization.toggles,
@@ -617,7 +627,7 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.layout")}
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.columns")}
               </p>
@@ -640,7 +650,7 @@ export default function CustomizePage() {
             </div>
 
             {customization.columns === "two" && (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <p className="text-sm font-medium text-text">
                   {t("builder.customizePage.layout.headerPosition")}
                 </p>
@@ -676,7 +686,7 @@ export default function CustomizePage() {
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.sectionLayout")}
               </p>
@@ -689,7 +699,7 @@ export default function CustomizePage() {
                 // columns into its own full-width row, mirroring the actual
                 // resume where it renders as a banner instead of inside the
                 // sidebar (see topHeaderBanner in ResumePreview.tsx)
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {customization.headerPosition === "top" && (
                     <DragRow
                       label={t("builder.customizePage.layout.personalDetails")}
@@ -758,7 +768,7 @@ export default function CustomizePage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <DragRow
                     label={t("builder.customizePage.layout.personalDetails")}
                     pinned
@@ -794,7 +804,7 @@ export default function CustomizePage() {
 
             {customization.showPhoto && (
               <>
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.layout.photoShape")}
                   </p>
@@ -861,7 +871,7 @@ export default function CustomizePage() {
               </>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.layout.pageFormat")}
               </p>
@@ -904,7 +914,7 @@ export default function CustomizePage() {
 
             {headerIsBanner && (
               <>
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.header.textAlignment")}
                   </p>
@@ -930,7 +940,7 @@ export default function CustomizePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.header.detailsArrangement")}
                   </p>
@@ -957,7 +967,7 @@ export default function CustomizePage() {
                 </div>
 
                 {customization.contactArrangement === "inline" && (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <p className="text-sm font-medium text-text">
                       {t("builder.customizePage.header.separator")}
                     </p>
@@ -982,7 +992,7 @@ export default function CustomizePage() {
               </>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.header.iconStyle")}
               </p>
@@ -1047,7 +1057,7 @@ export default function CustomizePage() {
               ))}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.capitalization")}
               </p>
@@ -1069,7 +1079,7 @@ export default function CustomizePage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.sectionIcon")}
               </p>
@@ -1087,7 +1097,7 @@ export default function CustomizePage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.linkStyle")}
               </p>
