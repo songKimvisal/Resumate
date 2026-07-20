@@ -717,8 +717,8 @@ export default function CustomizePage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between rounded-lg bg-surface-2 px-4 py-3">
-              <p className="text-sm font-medium text-text">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+              <p className="min-w-0 truncate text-sm font-medium text-text">
                 {t("builder.customizePage.layout.showPhoto")}
               </p>
               <Switch
@@ -1438,19 +1438,19 @@ function SliderRow({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-text">{label}</span>
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 truncate font-medium text-text">{label}</span>
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={decrease}
             disabled={value <= min}
             aria-label={`Decrease ${label}`}
-            className="flex size-6 items-center justify-center rounded-md border border-line text-text-secondary transition-colors hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded-md border border-line text-text-secondary transition-colors hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Minus size={12} />
           </button>
-          <span className="min-w-[3.5ch] text-center font-medium text-brand">
+          <span className="min-w-[3.5ch] shrink-0 text-center font-medium text-brand">
             {displayValue}
           </span>
           <button
@@ -1458,7 +1458,7 @@ function SliderRow({
             onClick={increase}
             disabled={value >= max}
             aria-label={`Increase ${label}`}
-            className="flex size-6 items-center justify-center rounded-md border border-line text-text-secondary transition-colors hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded-md border border-line text-text-secondary transition-colors hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Plus size={12} />
           </button>
