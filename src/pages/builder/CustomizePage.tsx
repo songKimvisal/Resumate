@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Globe, GripVertical, Lock, Minus, Pipette, Plus } from "lucide-react";
+import {
+  Check,
+  Globe,
+  GripVertical,
+  Lock,
+  Minus,
+  Pipette,
+  Plus,
+} from "lucide-react";
+import { HexColorPicker } from "react-colorful";
 import { useResumeStore } from "../../store/resumeStore";
 import type {
   Customization,
@@ -15,8 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../components/ui/popover";
 import { FONT_FAMILIES } from "../../lib/fonts";
-import { idealTextColor } from "../../lib/color";
+import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
@@ -32,8 +46,16 @@ const ACCENT_COLORS = [
   "#DB2777",
   "#374151",
 ];
-const TEXT_COLORS = ["#171717", "#404040", "#57534E", "#ffffff"];
-const BACKGROUND_COLORS = ["#ffffff", "#F8F5F0", "#F3F4F6", "#111827"];
+const TEXT_COLOR_PRESETS = [
+  { labelKey: "textInk", value: "#171717" },
+  { labelKey: "textSlate", value: "#475569" },
+  { labelKey: "textNavy", value: "#1E293B" },
+];
+const BACKGROUND_COLOR_PRESETS = [
+  { labelKey: "bgWhite", value: "#ffffff" },
+  { labelKey: "bgWarm", value: "#FAF6F0" },
+  { labelKey: "bgCool", value: "#F4F6F9" },
+];
 const FONT_SIZE_STEPS = ["small", "medium", "large"] as const;
 const FONT_SIZE_PX = { small: "13px", medium: "14.5px", large: "16px" };
 
@@ -49,11 +71,8 @@ type SectionKey =
 const SECTION_CARD =
   "rounded-xl border border-line bg-bg p-4 sm:p-5 md:p-6 space-y-6 scroll-mt-24";
 const SECTION_TITLE = "text-sm font-semibold text-brand";
-
-/** quick shortcuts for the heading-style grid: each preset only sets the
- *  border/underline treatment, so it stays independent from the
- *  Capitalization control below — picking a preset never changes case, and
- *  picking a case never changes which preset looks active */
+const COLOR_LABEL =
+  "text-xs font-semibold tracking-wide text-text-secondary uppercase";
 type HeadingPreset = Pick<Customization, "headingBorder"> & {
   headingsLine: boolean;
 };
@@ -67,13 +86,14 @@ const HEADING_PRESETS: HeadingPreset[] = [
   { headingBorder: "underline", headingsLine: false },
 ];
 
-const HEADING_BORDER_LABEL_KEY: Record<Customization["headingBorder"], string> = {
-  none: "borderNone",
-  outline: "borderOutline",
-  filled: "borderFilled",
-  line: "borderLine",
-  underline: "borderUnderline",
-};
+const HEADING_BORDER_LABEL_KEY: Record<Customization["headingBorder"], string> =
+  {
+    none: "borderNone",
+    outline: "borderOutline",
+    filled: "borderFilled",
+    line: "borderLine",
+    underline: "borderUnderline",
+  };
 
 const SECTION_ICON_OPTIONS: Customization["sectionIcon"][] = [
   "none",
@@ -129,12 +149,9 @@ export default function CustomizePage() {
   const languages = useResumeStore((s) => s.resume.languages);
   const references = useResumeStore((s) => s.resume.references);
   const includeReferences = useResumeStore((s) => s.resume.includeReferences);
-
-  // a Section Layout row only appears once the user has actually put
-  // something in it — "Experience" also covers Education, since both
-  // render under the same heading in ResumePreview's `experience` block
   const sectionHasContent: Record<SectionOrderKey, boolean> = {
-    experience: experience.length > 0 || noExperience.length > 0 || education.length > 0,
+    experience:
+      experience.length > 0 || noExperience.length > 0 || education.length > 0,
     skills: skills.length > 0,
     language: languages.length > 0,
     references: includeReferences && references.length > 0,
@@ -145,9 +162,6 @@ export default function CustomizePage() {
       toggles: { ...customization.toggles, [key]: !customization.toggles[key] },
     });
 
-  // Link Style is a multi-select — any combination of underline/color/icon
-  // can be active at once, so picking one toggles it in the set rather
-  // than replacing the whole selection
   const toggleLinkStyle = (option: Customization["linkStyle"][number]) =>
     updateCustomization({
       linkStyle: customization.linkStyle.includes(option)
@@ -159,7 +173,10 @@ export default function CustomizePage() {
   const [dragSectionKey, setDragSectionKey] = useState<SectionOrderKey | null>(
     null,
   );
-  const moveSectionOrder = (dragKey: SectionOrderKey, overKey: SectionOrderKey) => {
+  const moveSectionOrder = (
+    dragKey: SectionOrderKey,
+    overKey: SectionOrderKey,
+  ) => {
     if (dragKey === overKey) return;
     const order = [...customization.sectionOrder];
     const from = order.indexOf(dragKey);
@@ -169,13 +186,8 @@ export default function CustomizePage() {
     order.splice(to, 0, dragKey);
     updateCustomization({ sectionOrder: order });
   };
-
-  // falls back to empty when an in-memory resume predates the `sidebarKeys`
-  // field (e.g. a builder tab left open across a hot-reload)
   const sidebarKeys = customization.sidebarKeys ?? [];
 
-  // moves `dragKey` into `toSidebar`'s column, keeping the rest of
-  // sidebarKeys untouched
   const assignSectionColumn = (dragKey: SectionOrderKey, toSidebar: boolean) =>
     toSidebar
       ? sidebarKeys.includes(dragKey)
@@ -183,9 +195,10 @@ export default function CustomizePage() {
         : [...sidebarKeys, dragKey]
       : sidebarKeys.filter((k) => k !== dragKey);
 
-  // dropping a section onto another row moves it next to that row, and
-  // into whichever column that row is currently in
-  const dropSectionOnRow = (dragKey: SectionOrderKey, overKey: SectionOrderKey) => {
+  const dropSectionOnRow = (
+    dragKey: SectionOrderKey,
+    overKey: SectionOrderKey,
+  ) => {
     if (dragKey === overKey) return;
     const order = [...customization.sectionOrder];
     const from = order.indexOf(dragKey);
@@ -199,10 +212,10 @@ export default function CustomizePage() {
       sidebarKeys: assignSectionColumn(dragKey, sidebarKeys.includes(overKey)),
     });
   };
-
-  // dropping on empty column space (not on a specific row) appends the
-  // section to the end of that column
-  const dropSectionInColumn = (dragKey: SectionOrderKey, toSidebar: boolean) => {
+  const dropSectionInColumn = (
+    dragKey: SectionOrderKey,
+    toSidebar: boolean,
+  ) => {
     const order = customization.sectionOrder.filter((k) => k !== dragKey);
     order.push(dragKey);
     updateCustomization({
@@ -254,9 +267,6 @@ export default function CustomizePage() {
   }, []);
 
   const scrollTo = (key: SectionKey) => {
-    // set the active nav item immediately on click, instead of waiting for
-    // the scroll-spy observer to catch up once the smooth scroll settles —
-    // that lag was making the indicator feel slow/laggy
     setActiveSection(key);
     sectionRefs[key].current?.scrollIntoView({
       behavior: "smooth",
@@ -278,13 +288,10 @@ export default function CustomizePage() {
   ];
 
   const { main: mainSectionKeys, sidebar: sidebarSectionKeys } =
-    partitionSectionOrder(customization.sectionOrder, customization.sidebarKeys);
-
-  // Text Alignment / Details Arrangement only affect the header when it
-  // renders as its own banner (one-column, or two-column with the header
-  // pulled to the top) — inside a left/right sidebar it always renders as
-  // a narrow left-aligned stack, so those controls would have no visible
-  // effect there and are hidden to avoid dead controls
+    partitionSectionOrder(
+      customization.sectionOrder,
+      customization.sidebarKeys,
+    );
   const headerIsBanner =
     customization.columns === "one" || customization.headerPosition === "top";
 
@@ -319,9 +326,6 @@ export default function CustomizePage() {
         </p>
       </div>
 
-      {/* ---------- section nav: horizontal pills below md, since the
-          vertical rail alongside the sections has no room to sit next to
-          the single-column content on small screens ---------- */}
       <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg will-change-transform">
         <div className="flex gap-2 px-4 py-2 w-max">
           {navItems.map((item) => (
@@ -344,7 +348,7 @@ export default function CustomizePage() {
 
       <div className="flex gap-8 items-start mt-5 md:mt-8">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-32 shrink-0 sticky top-(--step-bar-height) self-start">
+        <div className="hidden md:block w-32 km:w-36 shrink-0 sticky top-(--step-bar-height) self-start">
           <div className="relative flex flex-col gap-1 border-l border-line">
             {navItems.map((item) => (
               <button
@@ -352,13 +356,7 @@ export default function CustomizePage() {
                 type="button"
                 onClick={() => scrollTo(item.key)}
                 className={cn(
-                  // whitespace-nowrap keeps every label on one line — a label
-                  // wrapping to two lines while its siblings stay single-line
-                  // broke the list's even vertical rhythm.
-                  // No transition on the active state itself — it should
-                  // snap immediately on click rather than slide/lag behind
-                  // the smooth scroll to that section.
-                  "relative -ml-px whitespace-nowrap text-left text-sm py-2.5 pl-3.5 pr-2 rounded-r-md",
+                  "relative -ml-px whitespace-nowrap km:whitespace-normal km:leading-snug text-left text-sm py-2.5 pl-3.5 pr-2 rounded-r-md",
                   activeSection === item.key
                     ? "bg-brand/5 text-brand font-medium"
                     : "text-text-secondary transition-colors hover:text-text hover:bg-surface-2",
@@ -405,143 +403,76 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.colors")}
             </p>
 
-            <div className="space-y-2.5">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.colors.layoutMode")}
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutFullPage")}
-                  selected={customization.colorLayout === "full"}
-                  onClick={() => updateCustomization({ colorLayout: "full" })}
-                >
-                  <HeaderStylePreview mode="full" color={customization.headingBgColor} />
-                </OptionCard>
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutColumn")}
-                  selected={customization.colorLayout === "column"}
-                  onClick={() => updateCustomization({ colorLayout: "column" })}
-                >
-                  <HeaderStylePreview mode="column" color={customization.headingBgColor} />
-                </OptionCard>
-                <OptionCard
-                  label={t("builder.customizePage.colors.layoutBorder")}
-                  selected={customization.colorLayout === "border"}
-                  onClick={() => updateCustomization({ colorLayout: "border" })}
-                >
-                  <HeaderStylePreview mode="border" color={customization.headingBgColor} />
-                </OptionCard>
-              </div>
+            <div className="space-y-5">
+              <ColorSwatchGroup
+                label={t("builder.customizePage.colors.textColor")}
+                options={TEXT_COLOR_PRESETS}
+                value={customization.bodyTextColor}
+                onChange={(c) => updateCustomization({ bodyTextColor: c })}
+              />
+              <ColorSwatchGroup
+                label={t("builder.customizePage.colors.background")}
+                options={BACKGROUND_COLOR_PRESETS}
+                value={customization.bodyBgColor}
+                onChange={(c) => updateCustomization({ bodyBgColor: c })}
+              />
             </div>
 
-            <div className="space-y-2.5">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.colors.paletteMode")}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <OptionCard
-                  label={t("builder.customizePage.colors.paletteSingle")}
-                  selected={customization.paletteMode === "single"}
-                  onClick={() => updateCustomization({ paletteMode: "single" })}
-                />
-                <OptionCard
-                  label={t("builder.customizePage.colors.paletteMulti")}
-                  selected={customization.paletteMode === "multi"}
-                  onClick={() => updateCustomization({ paletteMode: "multi" })}
-                />
-              </div>
-            </div>
+            <div className="border-t border-line" />
 
-            {customization.paletteMode === "single" ? (
-              <ColorPicker
-                label={t("builder.customizePage.colors.accent")}
+            <div className="space-y-5">
+              <AccentColorPicker
                 color={customization.accentColor}
-                role="accent"
                 onChange={(c) => updateCustomization({ accentColor: c })}
               />
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
-                    {t("builder.customizePage.colors.headingSection")}
-                  </p>
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.text")}
-                      color={customization.headingTextColor}
-                      role="text"
-                      onChange={(c) =>
-                        updateCustomization({ headingTextColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.background")}
-                      color={customization.headingBgColor}
-                      role="background"
-                      onChange={(c) =>
-                        updateCustomization({ headingBgColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.accent")}
-                      color={customization.accentColor}
-                      role="accent"
-                      onChange={(c) => updateCustomization({ accentColor: c })}
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
-                    {t("builder.customizePage.colors.bodySection")}
-                  </p>
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.text")}
-                      color={customization.bodyTextColor}
-                      role="text"
-                      onChange={(c) =>
-                        updateCustomization({ bodyTextColor: c })
-                      }
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.background")}
-                      color={customization.bodyBgColor}
-                      role="background"
-                      onChange={(c) => updateCustomization({ bodyBgColor: c })}
-                    />
-                    <ColorPicker
-                      label={t("builder.customizePage.colors.accent")}
-                      color={customization.bodyAccentColor}
-                      role="accent"
-                      onChange={(c) =>
-                        updateCustomization({ bodyAccentColor: c })
-                      }
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-              {(
-                Object.keys(
-                  customization.toggles,
-                ) as (keyof CustomizationToggles)[]
-              ).map((key) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-2 text-sm text-text cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={customization.toggles[key]}
-                    onChange={() => patchToggle(key)}
-                    className="size-4 accent-brand rounded"
+              <div className="space-y-2.5">
+                <p className={COLOR_LABEL}>
+                  {t("builder.customizePage.colors.applyAccentTo")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyName")}
+                    selected={customization.toggles.fullName}
+                    onClick={() => patchToggle("fullName")}
                   />
-                  {t(`builder.customizePage.colors.toggles.${key}`)}
-                </label>
-              ))}
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyJobTitle")}
+                    selected={customization.toggles.jobTitle}
+                    onClick={() => patchToggle("jobTitle")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyHeadings")}
+                    selected={customization.toggles.headings}
+                    onClick={() => patchToggle("headings")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyHeadingLine")}
+                    selected={customization.toggles.headingsLine}
+                    onClick={() => patchToggle("headingsLine")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyDots")}
+                    selected={customization.toggles.dots}
+                    onClick={() => patchToggle("dots")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyDates")}
+                    selected={customization.toggles.dates}
+                    onClick={() => patchToggle("dates")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyLinkIcons")}
+                    selected={customization.toggles.linkIcons}
+                    onClick={() => patchToggle("linkIcons")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyHeaderIcons")}
+                    selected={customization.toggles.headerIcons}
+                    onClick={() => patchToggle("headerIcons")}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -691,14 +622,6 @@ export default function CustomizePage() {
                 {t("builder.customizePage.layout.sectionLayout")}
               </p>
               {customization.columns === "two" ? (
-                // two-column mode: every section except Personal Details can
-                // be dragged into either column — dropping onto a row moves
-                // it next to that row (and into that row's column);
-                // dropping on empty column space appends it to that column.
-                // Header Position "top" pulls Personal Details out of the
-                // columns into its own full-width row, mirroring the actual
-                // resume where it renders as a banner instead of inside the
-                // sidebar (see topHeaderBanner in ResumePreview.tsx)
                 <div className="space-y-2.5">
                   {customization.headerPosition === "top" && (
                     <DragRow
@@ -719,7 +642,9 @@ export default function CustomizePage() {
                     >
                       {customization.headerPosition !== "top" && (
                         <DragRow
-                          label={t("builder.customizePage.layout.personalDetails")}
+                          label={t(
+                            "builder.customizePage.layout.personalDetails",
+                          )}
                           pinned
                         />
                       )}
@@ -776,17 +701,18 @@ export default function CustomizePage() {
                   {customization.sectionOrder
                     .filter((key) => sectionHasContent[key])
                     .map((key) => (
-                    <DragRow
-                      key={key}
-                      label={t(`builder.customizePage.layout.${key}`)}
-                      draggable
-                      onDragStart={() => setDragSectionKey(key)}
-                      onDropOn={() => {
-                        if (dragSectionKey) moveSectionOrder(dragSectionKey, key);
-                        setDragSectionKey(null);
-                      }}
-                    />
-                  ))}
+                      <DragRow
+                        key={key}
+                        label={t(`builder.customizePage.layout.${key}`)}
+                        draggable
+                        onDragStart={() => setDragSectionKey(key)}
+                        onDropOn={() => {
+                          if (dragSectionKey)
+                            moveSectionOrder(dragSectionKey, key);
+                          setDragSectionKey(null);
+                        }}
+                      />
+                    ))}
                 </div>
               )}
             </div>
@@ -946,7 +872,9 @@ export default function CustomizePage() {
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <OptionCard
-                      label={t("builder.customizePage.header.arrangementInline")}
+                      label={t(
+                        "builder.customizePage.header.arrangementInline",
+                      )}
                       selected={customization.contactArrangement === "inline"}
                       onClick={() =>
                         updateCustomization({ contactArrangement: "inline" })
@@ -955,7 +883,9 @@ export default function CustomizePage() {
                       <ContactArrangementPreview arrangement="inline" />
                     </OptionCard>
                     <OptionCard
-                      label={t("builder.customizePage.header.arrangementStacked")}
+                      label={t(
+                        "builder.customizePage.header.arrangementStacked",
+                      )}
                       selected={customization.contactArrangement === "stacked"}
                       onClick={() =>
                         updateCustomization({ contactArrangement: "stacked" })
@@ -1189,9 +1119,6 @@ function ContentLines({ count = 3 }: { count?: number }) {
     </div>
   );
 }
-
-/** mini page thumbnail: one flowing column of text, or a narrow content
- *  column beside a wider one — mirrors the actual resume layout */
 function ColumnsPreview({ columns }: { columns: "one" | "two" }) {
   if (columns === "one") {
     return (
@@ -1212,8 +1139,6 @@ function ColumnsPreview({ columns }: { columns: "one" | "two" }) {
     </div>
   );
 }
-
-/** mini page thumbnail highlighting where the header band sits */
 function HeaderPositionPreview({
   position,
 }: {
@@ -1251,8 +1176,6 @@ function HeaderPositionPreview({
   );
 }
 
-/** mini page thumbnail showing the name/title/contact-line block aligned
- *  left vs centered, mirroring HeaderBlock in ResumePreview.tsx */
 function HeaderAlignmentPreview({ align }: { align: "left" | "center" }) {
   const isLeft = align === "left";
   return (
@@ -1273,8 +1196,6 @@ function HeaderAlignmentPreview({ align }: { align: "left" | "center" }) {
   );
 }
 
-/** mini page thumbnail contrasting a wrapped single-line contact row
- *  ("inline") with a one-per-line list ("stacked") */
 function ContactArrangementPreview({
   arrangement,
 }: {
@@ -1297,11 +1218,6 @@ function ContactArrangementPreview({
     </div>
   );
 }
-
-/** mini page thumbnail contrasting how consecutive contact items are told
- *  apart on the inline row: a leading icon per item, vs. a bullet/bar
- *  divider drawn between items (which drops the icons — see
- *  withContactSeparators in ResumePreview.tsx) */
 function ContactSeparatorPreview({
   separator,
 }: {
@@ -1311,11 +1227,19 @@ function ContactSeparatorPreview({
     return (
       <div className={cn(THUMB, "items-center justify-center gap-2.5 px-2")}>
         <div className="flex items-center gap-1">
-          <Globe size={9} strokeWidth={2} className="shrink-0 text-text-secondary" />
+          <Globe
+            size={9}
+            strokeWidth={2}
+            className="shrink-0 text-text-secondary"
+          />
           <div className="h-1 w-3 rounded-full bg-line" />
         </div>
         <div className="flex items-center gap-1">
-          <Globe size={9} strokeWidth={2} className="shrink-0 text-text-secondary" />
+          <Globe
+            size={9}
+            strokeWidth={2}
+            className="shrink-0 text-text-secondary"
+          />
           <div className="h-1 w-3 rounded-full bg-line" />
         </div>
       </div>
@@ -1331,12 +1255,6 @@ function ContactSeparatorPreview({
     </div>
   );
 }
-
-/** a single glyph rendered exactly as StyledIcon in ResumePreview.tsx would
- *  render it, so the swatch is a true preview and not just an abstract icon.
- *  Reused (at a smaller size) by LinkStylePreview's "icon" option, so that
- *  preview reflects whatever Icon Style the user has actually picked instead
- *  of always showing a bare globe */
 function IconStyleSwatch({
   style,
   accentColor,
@@ -1382,62 +1300,6 @@ function IconStyleSwatch({
   );
 }
 
-/** mini page thumbnail showing how the heading color paints the page for
- *  each "Header style" option. Built on THUMB, which always keeps a neutral
- *  border/frame — so the shape stays legible even when the picked color is
- *  white (a real case, since white is the customization default). */
-function HeaderStylePreview({
-  mode,
-  color,
-}: {
-  mode: "full" | "column" | "border";
-  color: string;
-}) {
-  if (mode === "full") {
-    const lineColor = idealTextColor(color);
-    return (
-      <div className={THUMB} style={{ backgroundColor: color }}>
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col justify-center gap-1">
-          <div
-            className="h-1 w-4/5 rounded-full"
-            style={{ backgroundColor: lineColor, opacity: 0.55 }}
-          />
-          <div
-            className="h-1 w-3/5 rounded-full"
-            style={{ backgroundColor: lineColor, opacity: 0.55 }}
-          />
-        </div>
-      </div>
-    );
-  }
-  if (mode === "column") {
-    return (
-      <div className={THUMB}>
-        <div
-          className="w-[30%] shrink-0 rounded-sm"
-          style={{ backgroundColor: color }}
-        />
-        <div className="flex-1 min-w-0 rounded-sm bg-surface-2 flex flex-col justify-center gap-1 px-1.5">
-          <div className="h-1 w-full rounded-full bg-line" />
-          <div className="h-1 w-2/3 rounded-full bg-line" />
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className={THUMB} style={{ boxShadow: `inset 0 0 0 3px ${color}` }}>
-      <div className="flex-1 min-w-0 min-h-0 flex flex-col justify-center gap-1">
-        <div className="h-1 w-4/5 rounded-full bg-line" />
-        <div className="h-1 w-3/5 rounded-full bg-line" />
-      </div>
-    </div>
-  );
-}
-
-/** mirrors the real Section heading's border/fill/underline + text-case
- *  rules (see Section() in ResumePreview.tsx) at a miniature scale, using
- *  the resume's actual accent color — so each preset shows exactly what
- *  it will look like, not just an abstract shape */
 function HeadingPresetPreview({
   preset,
   capitalization,
@@ -1465,7 +1327,10 @@ function HeadingPresetPreview({
           >
             heading
           </span>
-          <div className="h-px flex-1" style={{ backgroundColor: accentColor }} />
+          <div
+            className="h-px flex-1"
+            style={{ backgroundColor: accentColor }}
+          />
         </div>
       ) : isLongUnderline ? (
         <div className="flex w-full flex-col items-start gap-1.5">
@@ -1478,7 +1343,10 @@ function HeadingPresetPreview({
           >
             heading
           </span>
-          <div className="h-px w-full" style={{ backgroundColor: accentColor }} />
+          <div
+            className="h-px w-full"
+            style={{ backgroundColor: accentColor }}
+          />
         </div>
       ) : (
         <span
@@ -1525,12 +1393,7 @@ function OptionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        // no width utility here — the parent grid (grid-cols-2/3, sized to
-        // that group's option count, same pattern as the Heading Presets
-        // grid below) divides the full row width evenly, so every card
-        // fills its column edge-to-edge instead of leaving a ragged gap
-        // when a row has fewer options than its neighbors
-        "flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors",
+        "flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 transition-colors",
         selected ? "border-brand bg-brand/5" : "border-line hover:bg-surface-2",
       )}
     >
@@ -1661,74 +1524,291 @@ function DragRow({
     </div>
   );
 }
-
-type SwatchRole = "text" | "background" | "accent";
-
-const SWATCH_PRESETS: Record<SwatchRole, string[]> = {
-  text: TEXT_COLORS,
-  background: BACKGROUND_COLORS,
-  accent: ACCENT_COLORS,
-};
-
-/** a labeled row of preset swatches for a single color field, plus a
- *  "custom" swatch that opens the native picker — replaces the old
- *  ColorDot/AccentDot split so every color field looks and behaves the
- *  same, whether it's normally picked from a preset or a one-off hex */
-function ColorPicker({
+function ColorSwatchGroup({
   label,
-  color,
-  role,
+  options,
+  value,
   onChange,
 }: {
   label: string;
-  color: string;
-  role: SwatchRole;
+  options: { labelKey: string; value: string }[];
+  value: string;
   onChange: (hex: string) => void;
 }) {
   const { t } = useTranslation();
-  const presets = SWATCH_PRESETS[role];
-  const isCustom = !presets.some(
+  return (
+    <div className="space-y-2.5">
+      <p className={COLOR_LABEL}>{label}</p>
+      <div className="grid grid-cols-3 gap-3">
+        {options.map((option) => {
+          const selected = value.toLowerCase() === option.value.toLowerCase();
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg border-2 px-3.5 py-2.5 transition-colors",
+                selected
+                  ? "border-brand bg-brand/5"
+                  : "border-line hover:bg-surface-2",
+              )}
+            >
+              <span
+                className="size-4 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: option.value }}
+              />
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  selected ? "text-brand" : "text-text",
+                )}
+              >
+                {t(`builder.customizePage.colors.${option.labelKey}`)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AccentColorPicker({
+  color,
+  onChange,
+}: {
+  color: string;
+  onChange: (hex: string) => void;
+}) {
+  const { t } = useTranslation();
+  const isCustom = !ACCENT_COLORS.some(
     (p) => p.toLowerCase() === color.toLowerCase(),
   );
 
   return (
-    <div className="space-y-1.5">
-      <span className="text-[11px] text-text-secondary">{label}</span>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {presets.map((preset) => (
+    <div className="space-y-2.5">
+      <p className={COLOR_LABEL}>
+        {t("builder.customizePage.colors.accentColor")}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        {ACCENT_COLORS.map((preset) => (
           <button
             key={preset}
             type="button"
             onClick={() => onChange(preset)}
             aria-label={preset}
             className={cn(
-              "size-6 shrink-0 rounded-full border transition-transform hover:scale-110",
+              "size-7 shrink-0 rounded-full border transition-transform hover:scale-110",
               color.toLowerCase() === preset.toLowerCase()
-                ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-bg"
+                ? "border-transparent ring-2 ring-offset-2 ring-offset-bg"
                 : "border-line",
             )}
-            style={{ backgroundColor: preset }}
+            style={{
+              backgroundColor: preset,
+              ...(color.toLowerCase() === preset.toLowerCase()
+                ? ({ "--tw-ring-color": preset } as React.CSSProperties)
+                : {}),
+            }}
           />
         ))}
-        <label
-          className={cn(
-            "relative flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border",
-            isCustom
-              ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-bg"
-              : "border-dashed border-line",
-          )}
-          style={isCustom ? { backgroundColor: color } : undefined}
-          title={t("builder.customizePage.colors.custom")}
-        >
-          {!isCustom && <Pipette size={11} className="text-text-secondary" />}
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          />
-        </label>
+        <Popover>
+          <PopoverTrigger
+            type="button"
+            aria-label={t("builder.customizePage.colors.custom")}
+            title={t("builder.customizePage.colors.custom")}
+            className={cn(
+              "relative flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full border transition-transform hover:scale-110",
+              isCustom
+                ? "border-transparent ring-2 ring-offset-2 ring-offset-bg"
+                : "border-dashed border-line",
+            )}
+            style={
+              isCustom
+                ? ({
+                    backgroundColor: color,
+                    "--tw-ring-color": color,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <Pipette
+              size={12}
+              className={isCustom ? undefined : "text-text-secondary"}
+              style={isCustom ? { color: idealTextColor(color) } : undefined}
+            />
+          </PopoverTrigger>
+          <PopoverContent className="w-60 space-y-3 p-3" align="start">
+            <CustomColorFields color={color} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
+  );
+}
+function CustomColorFields({
+  color,
+  onChange,
+}: {
+  color: string;
+  onChange: (hex: string) => void;
+}) {
+  const { t } = useTranslation();
+  const rgb = hexToRgb(color);
+  const [hexDraft, setHexDraft] = useState(color);
+  useEffect(() => setHexDraft(color), [color]);
+
+  const commitHex = (value: string) => {
+    const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim());
+    if (!match) {
+      setHexDraft(color);
+      return;
+    }
+    const digits = match[1];
+    const normalized =
+      digits.length === 3
+        ? `#${digits[0]}${digits[0]}${digits[1]}${digits[1]}${digits[2]}${digits[2]}`
+        : `#${digits}`;
+    onChange(normalized.toLowerCase());
+  };
+
+  const supportsEyeDropper =
+    typeof window !== "undefined" && "EyeDropper" in window;
+  const pickFromScreen = async () => {
+    try {
+      // EyeDropper is a browser API still missing from lib.dom.d.ts
+      // @ts-expect-error -- see above
+      const result = await new window.EyeDropper().open();
+      onChange(result.sRGBHex);
+    } catch {}
+  };
+
+  return (
+    <div className="space-y-3">
+      <HexColorPicker
+        color={color}
+        onChange={onChange}
+        style={{ width: "100%", height: 160 }}
+      />
+      <div className="flex items-center gap-2">
+        {supportsEyeDropper && (
+          <button
+            type="button"
+            onClick={pickFromScreen}
+            aria-label={t("builder.customizePage.colors.eyedropper")}
+            title={t("builder.customizePage.colors.eyedropper")}
+            className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line text-text-secondary transition-colors hover:bg-surface-2 hover:text-text"
+          >
+            <Pipette size={14} />
+          </button>
+        )}
+        <div className="flex-1 space-y-1">
+          <label className="block text-[10px] font-medium tracking-wide text-text-secondary uppercase">
+            {t("builder.customizePage.colors.hex")}
+          </label>
+          <input
+            type="text"
+            value={hexDraft}
+            onChange={(e) => setHexDraft(e.target.value)}
+            onBlur={(e) => commitHex(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitHex(hexDraft);
+            }}
+            spellCheck={false}
+            maxLength={7}
+            className="w-full rounded-md border border-line bg-bg px-2 py-1 text-xs font-mono uppercase text-text focus:outline-none focus:ring-1 focus:ring-brand"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <RgbField
+          label="R"
+          value={rgb.r}
+          onCommit={(v) => onChange(rgbToHex(v, rgb.g, rgb.b))}
+        />
+        <RgbField
+          label="G"
+          value={rgb.g}
+          onCommit={(v) => onChange(rgbToHex(rgb.r, v, rgb.b))}
+        />
+        <RgbField
+          label="B"
+          value={rgb.b}
+          onCommit={(v) => onChange(rgbToHex(rgb.r, rgb.g, v))}
+        />
+      </div>
+    </div>
+  );
+}
+function RgbField({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  onCommit: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+
+  const commit = () => {
+    const n = Number(draft);
+    if (!Number.isFinite(n)) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = Math.max(0, Math.min(255, Math.round(n)));
+    setDraft(String(clamped));
+    onCommit(clamped);
+  };
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-center text-[10px] font-medium tracking-wide text-text-secondary uppercase">
+        {label}
+      </label>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+        }}
+        className="w-full rounded-md border border-line bg-bg px-2 py-1 text-center text-xs text-text focus:outline-none focus:ring-1 focus:ring-brand"
+      />
+    </div>
+  );
+}
+function ToggleChip({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-sm font-medium transition-colors",
+        selected
+          ? "border-brand bg-brand/5 text-brand"
+          : "border-line text-text-secondary hover:bg-surface-2 hover:text-text",
+      )}
+    >
+      <Check
+        size={13}
+        strokeWidth={3}
+        className={selected ? "opacity-100" : "opacity-0"}
+      />
+      {label}
+    </button>
   );
 }
