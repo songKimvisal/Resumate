@@ -39,8 +39,10 @@ import {
 import { photoImgStyle } from "../../lib/photoFit";
 import { cssFontStack } from "../../lib/fonts";
 import { marginPercentCss } from "../../lib/pageSize";
-import { idealTextColor } from "../../lib/color";
-import { orderedMainGroups, partitionSectionOrder } from "../../lib/sectionOrder";
+import {
+  orderedMainGroups,
+  partitionSectionOrder,
+} from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
 function fmtDate(value: string) {
@@ -92,6 +94,10 @@ interface Block {
 const SIDEBAR_WIDTH_FRACTION = 0.34;
 interface Theme {
   accent: string;
+  /** accent-as-ink for text/borders/icon badges — kept distinct from
+   *  `accent` since some spots (self-contained filled badges) need the raw
+   *  accent instead */
+  accentText: string;
   fontSize: string;
   fontFamily: string;
   lineHeight: number;
@@ -101,10 +107,8 @@ interface Theme {
   textTransform: "uppercase" | "capitalize";
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   showHeadingLine: boolean;
-  showHeadingTitle: boolean;
+  headingsAccentOn: boolean;
   headingSizePx: number;
-  headingTextColor: string;
-  headingBgColor: string;
   bodyTextColor: string;
   bodyAccentColor: string;
   linkStyle: ("underline" | "color" | "icon")[];
@@ -113,7 +117,7 @@ interface Theme {
   contactArrangement: "inline" | "stacked";
   contactSeparator: "icon" | "bullet" | "bar";
   iconStyle: "plain" | "filled" | "outline" | "square" | "faded";
-  showDates: boolean;
+  datesAccentOn: boolean;
   showLinkIcons: boolean;
   showHeaderIcons: boolean;
   showDots: boolean;
@@ -121,23 +125,9 @@ interface Theme {
 
 function useTheme(customization: Customization): Theme {
   return useMemo(() => {
-    // "single" palette mode derives heading/body accent surfaces from the
-    // one accent pick without ever touching the independent multi-mode
-    // fields in the store — switching modes never discards an edit, it just
-    // changes which values are in effect
-    const isSinglePalette = customization.paletteMode === "single";
-    const headingBgColor = isSinglePalette
-      ? customization.accentColor
-      : customization.headingBgColor;
-    const headingTextColor = isSinglePalette
-      ? idealTextColor(customization.accentColor)
-      : customization.headingTextColor;
-    const bodyAccentColor = isSinglePalette
-      ? customization.accentColor
-      : customization.bodyAccentColor;
-
     return {
       accent: customization.accentColor,
+      accentText: customization.accentColor,
       fontSize: fontSizes[customization.fontSize],
       fontFamily: cssFontStack(customization.fontFamily),
       lineHeight: customization.lineHeight,
@@ -147,19 +137,17 @@ function useTheme(customization: Customization): Theme {
       textTransform: customization.capitalization,
       headingBorder: customization.headingBorder,
       showHeadingLine: customization.toggles.headingsLine,
-      showHeadingTitle: customization.toggles.headings,
+      headingsAccentOn: customization.toggles.headings,
       headingSizePx: customization.headingsSize,
-      headingTextColor,
-      headingBgColor,
       bodyTextColor: customization.bodyTextColor,
-      bodyAccentColor,
+      bodyAccentColor: customization.accentColor,
       linkStyle: customization.linkStyle,
       sectionIcon: customization.sectionIcon,
       headerAlignment: customization.headerAlignment,
       contactArrangement: customization.contactArrangement,
       contactSeparator: customization.contactSeparator,
       iconStyle: customization.iconStyle,
-      showDates: customization.toggles.dates,
+      datesAccentOn: customization.toggles.dates,
       showLinkIcons:
         customization.toggles.linkIcons ||
         customization.linkStyle.includes("icon"),
@@ -205,42 +193,34 @@ export default function ResumePreview({
   const headerInSidebar = showSidebar && customization.headerPosition !== "top";
   const topHeaderBanner = showSidebar && customization.headerPosition === "top";
   const sidebarSide = headerInSidebar ? customization.headerPosition : "left";
-  // which of the 4 movable sections render in each column, when the
-  // sidebar is showing — everything else stays in the single main flow.
-  // Memoized so `mainSectionKeys`/`sidebarSectionKeys` keep a stable
-  // identity across renders (partitionSectionOrder builds new arrays every
-  // call), otherwise the `blocks` useMemo below never memoizes and the
-  // height-measuring useLayoutEffect re-triggers on every render.
   const { main: mainSectionKeys, sidebar: sidebarSectionKeys } = useMemo(
     () =>
       showSidebar
-        ? partitionSectionOrder(customization.sectionOrder, customization.sidebarKeys)
-        : { main: customization.sectionOrder, sidebar: [] as SectionOrderKey[] },
+        ? partitionSectionOrder(
+            customization.sectionOrder,
+            customization.sidebarKeys,
+          )
+        : {
+            main: customization.sectionOrder,
+            sidebar: [] as SectionOrderKey[],
+          },
     [showSidebar, customization.sectionOrder, customization.sidebarKeys],
   );
-  // the sidebar column only reserves page width when it actually has
-  // something to show — otherwise (e.g. two-column + header-top with no
-  // skills/language/references/education filled in) it would sit there
-  // empty and push the main content off the page's left edge
   const sidebarHasContent = (key: SectionOrderKey) => {
     if (key === "skills") return skills.length > 0;
     if (key === "language") return languages.length > 0;
     if (key === "references") return includeReferences && references.length > 0;
     if (key === "experience")
-      return experience.length > 0 || noExperience.length > 0 || education.length > 0;
+      return (
+        experience.length > 0 || noExperience.length > 0 || education.length > 0
+      );
     return false;
   };
   const sidebarColumnVisible =
     showSidebar &&
     (headerInSidebar || sidebarSectionKeys.some(sidebarHasContent));
-  const headerTextColor =
-    customization.colorLayout === "border"
-      ? customization.bodyTextColor
-      : theme.headingTextColor;
-  const pageBackgroundColor =
-    customization.colorLayout === "full"
-      ? theme.headingBgColor
-      : customization.bodyBgColor;
+  const headerTextColor = customization.bodyTextColor;
+  const pageBackgroundColor = customization.bodyBgColor;
 
   const blocks = useMemo<Block[]>(() => {
     const list: Block[] = [];
@@ -666,10 +646,6 @@ export default function ResumePreview({
                 customization.pageFormat === "letter" ? "8.5/11" : "210/297",
               backgroundColor: pageBackgroundColor,
               color: theme.bodyTextColor,
-              border:
-                customization.colorLayout === "border"
-                  ? `4px solid ${theme.headingBgColor}`
-                  : undefined,
             }}
           >
             <div className="h-full flex flex-col">
@@ -1003,7 +979,6 @@ function HeaderBlock({
   textColor: string;
 }) {
   const showPhoto = customization.showPhoto && !!personal.photoUrl;
-  const isFilled = customization.colorLayout === "column";
   const isLeft = theme.headerAlignment === "left";
   const isStacked = theme.contactArrangement === "stacked";
   // a bullet/bar separator replaces each item's icon with a divider drawn
@@ -1016,12 +991,7 @@ function HeaderBlock({
     : theme;
 
   return (
-    <header
-      className={cn("space-y-2", isLeft ? "text-left" : "text-center")}
-      style={{
-        backgroundColor: isFilled ? theme.headingBgColor : undefined,
-      }}
-    >
+    <header className={cn("space-y-2", isLeft ? "text-left" : "text-center")}>
       {showPhoto && (
         <div
           className={cn("overflow-hidden", !isLeft && "mx-auto")}
@@ -1036,18 +1006,25 @@ function HeaderBlock({
       )}
       <h1
         className="font-bold leading-tight"
-        style={{ fontSize: customization.fullNameSize, color: textColor }}
+        style={{
+          fontSize: customization.fullNameSize,
+          color: customization.toggles.fullName ? theme.accentText : textColor,
+        }}
       >
         {personal.fullName || "Your Name"}
       </h1>
-      {customization.toggles.jobTitle && (
-        <p
-          className="font-medium"
-          style={{ fontSize: customization.titleSize, color: theme.accent }}
-        >
-          {personal.jobTitle || "Job Title"}
-        </p>
-      )}
+      <p
+        className="font-medium"
+        style={{
+          fontSize: customization.titleSize,
+          // unchecking "Job title" un-applies the accent color, it doesn't
+          // remove the job title itself — falls back to the same color as
+          // the name above it
+          color: customization.toggles.jobTitle ? theme.accentText : textColor,
+        }}
+      >
+        {personal.jobTitle || "Job Title"}
+      </p>
       <div
         className={cn(
           "flex text-[0.8em] pt-1",
@@ -1096,18 +1073,25 @@ function SidebarHeaderBlock({
       )}
       <h1
         className="font-bold leading-tight"
-        style={{ fontSize: customization.fullNameSize, color: textColor }}
+        style={{
+          fontSize: customization.fullNameSize,
+          color: customization.toggles.fullName ? theme.accentText : textColor,
+        }}
       >
         {personal.fullName || "Your Name"}
       </h1>
-      {customization.toggles.jobTitle && (
-        <p
-          className="font-medium"
-          style={{ fontSize: customization.titleSize, color: theme.accent }}
-        >
-          {personal.jobTitle || "Job Title"}
-        </p>
-      )}
+      <p
+        className="font-medium"
+        style={{
+          fontSize: customization.titleSize,
+          // unchecking "Job title" un-applies the accent color, it doesn't
+          // remove the job title itself — falls back to the same color as
+          // the name above it
+          color: customization.toggles.jobTitle ? theme.accentText : textColor,
+        }}
+      >
+        {personal.jobTitle || "Job Title"}
+      </p>
       <div
         className="flex flex-col items-start gap-1.5 text-[0.8em] pt-1 text-left"
         style={{ color: textColor }}
@@ -1154,15 +1138,10 @@ function SidebarColumn({
   paddingTopBottomPx: number;
   paddingLeftRightPx: number;
 }) {
-  const isFilled = customization.colorLayout === "column";
-
   return (
     <div
       className="h-full shrink-0 overflow-hidden"
-      style={{
-        width: `${SIDEBAR_WIDTH_FRACTION * 100}%`,
-        backgroundColor: isFilled ? theme.headingBgColor : undefined,
-      }}
+      style={{ width: `${SIDEBAR_WIDTH_FRACTION * 100}%` }}
     >
       {showContent && (
         <div
@@ -1254,7 +1233,8 @@ function SidebarExperienceBody({
 
   return (
     <>
-      {(experience.length > 0 || (showNoExperience && noExperience.length > 0)) && (
+      {(experience.length > 0 ||
+        (showNoExperience && noExperience.length > 0)) && (
         <Section title="Experience" theme={theme}>
           <div className="space-y-3">
             {experience.map((exp) => (
@@ -1331,16 +1311,18 @@ function ExperienceHeader({
           </span>
         )}
       </p>
-      {theme.showDates && (
-        <p
-          className="text-[0.78em] whitespace-nowrap"
-          style={{ color: theme.bodyAccentColor }}
-        >
-          {fmtDate(exp.startDate)}
-          {(exp.startDate || exp.endDate || exp.current) && " – "}
-          {exp.current ? "Present" : fmtDate(exp.endDate)}
-        </p>
-      )}
+      <p
+        className="text-[0.78em] whitespace-nowrap"
+        style={{
+          color: theme.datesAccentOn
+            ? theme.bodyAccentColor
+            : theme.bodyTextColor,
+        }}
+      >
+        {fmtDate(exp.startDate)}
+        {(exp.startDate || exp.endDate || exp.current) && " – "}
+        {exp.current ? "Present" : fmtDate(exp.endDate)}
+      </p>
     </div>
   );
 }
@@ -1381,7 +1363,7 @@ function NoExperienceHeader({
                     }
                     style={
                       theme.linkStyle.includes("color")
-                        ? { color: theme.accent }
+                        ? { color: theme.accentText }
                         : undefined
                     }
                   >
@@ -1403,16 +1385,18 @@ function NoExperienceHeader({
           </span>
         )}
       </p>
-      {theme.showDates && (
-        <p
-          className="text-[0.78em] whitespace-nowrap"
-          style={{ color: theme.bodyAccentColor }}
-        >
-          {fmtDate(exp.startDate)}
-          {(exp.startDate || exp.endDate || exp.current) && " – "}
-          {exp.current ? "Present" : fmtDate(exp.endDate)}
-        </p>
-      )}
+      <p
+        className="text-[0.78em] whitespace-nowrap"
+        style={{
+          color: theme.datesAccentOn
+            ? theme.bodyAccentColor
+            : theme.bodyTextColor,
+        }}
+      >
+        {fmtDate(exp.startDate)}
+        {(exp.startDate || exp.endDate || exp.current) && " – "}
+        {exp.current ? "Present" : fmtDate(exp.endDate)}
+      </p>
     </div>
   );
 }
@@ -1433,23 +1417,21 @@ function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
             .join(" · ")}
         </p>
       </div>
-      {theme.showDates && (
-        <p
-          className="text-[0.78em] whitespace-nowrap"
-          style={{ color: theme.bodyAccentColor }}
-        >
-          {fmtDate(edu.startDate)}
-          {(edu.startDate || edu.endDate || edu.current) && " – "}
-          {edu.current ? "Present" : fmtDate(edu.endDate)}
-        </p>
-      )}
+      <p
+        className="text-[0.78em] whitespace-nowrap"
+        style={{
+          color: theme.datesAccentOn
+            ? theme.bodyAccentColor
+            : theme.bodyTextColor,
+        }}
+      >
+        {fmtDate(edu.startDate)}
+        {(edu.startDate || edu.endDate || edu.current) && " – "}
+        {edu.current ? "Present" : fmtDate(edu.endDate)}
+      </p>
     </div>
   );
 }
-
-/** maps each Section's literal title to the glyph shown when "Section
- *  icon" isn't "none" — titles are hardcoded English strings at every
- *  call site below, so keying off them is safe */
 const SECTION_ICONS: Record<string, LucideIcon> = {
   Summary: FileText,
   Experience: Briefcase,
@@ -1458,14 +1440,6 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   Languages: LanguagesIcon,
   References: Users,
 };
-
-/** renders a Section's icon per the "Section icon" pick. "outline" is a
- *  bare glyph colored to match the heading text (lucide icons are already
- *  stroke-only, so no border is needed to read as "outline"); "filled" is
- *  a solid circular badge. When the heading itself already sits on a solid
- *  accent background (headingBorder "filled"), the badge inverts (white
- *  circle + accent icon, or accent-colored glyph) so it stays visible
- *  instead of disappearing into a same-color background */
 function SectionHeadingIcon({
   icon: Icon,
   theme,
@@ -1476,9 +1450,6 @@ function SectionHeadingIcon({
   onAccentBg: boolean;
 }) {
   const isFilled = theme.sectionIcon === "filled";
-  // "filled"'s bg/icon are an inverted pair for contrast; "outline" has no
-  // fill, so its border and icon both just take the "ink" color (white on
-  // an accent-filled heading, accent otherwise) — no inversion needed
   const badgeBg = onAccentBg ? "#fff" : theme.accent;
   const filledIconColor = onAccentBg ? theme.accent : "#fff";
   return (
@@ -1515,12 +1486,19 @@ function Section({
   const isLongUnderline = theme.headingBorder === "underline";
   const Icon = SECTION_ICONS[title];
   const showIcon = theme.sectionIcon !== "none" && !!Icon;
+  const resolvedInk = theme.headingsAccentOn
+    ? theme.accentText
+    : theme.bodyTextColor;
+  const resolvedFill = theme.headingsAccentOn
+    ? theme.accent
+    : theme.bodyTextColor;
+  const iconTheme = { ...theme, accent: resolvedFill };
   const headingStyle: React.CSSProperties = {
-    color: isFilled ? "#fff" : theme.accent,
+    color: isFilled ? "#fff" : resolvedInk,
     fontSize: theme.headingSizePx,
     textTransform: theme.textTransform,
-    backgroundColor: isFilled ? theme.accent : undefined,
-    borderColor: theme.accent,
+    backgroundColor: isFilled ? resolvedFill : undefined,
+    borderColor: resolvedInk,
     borderWidth: isOutline
       ? 1
       : theme.showHeadingLine && !isFilled
@@ -1539,60 +1517,71 @@ function Section({
 
   return (
     <section>
-      {theme.showHeadingTitle &&
-        (isLongLine ? (
-          <div className="mb-2 flex items-center gap-2">
+      {isLongLine ? (
+        <div className="mb-2 flex items-center gap-2">
+          {showIcon && (
+            <SectionHeadingIcon
+              icon={Icon}
+              theme={iconTheme}
+              onAccentBg={false}
+            />
+          )}
+          <h2
+            className="shrink-0 font-bold tracking-[0.18em]"
+            style={{
+              color: resolvedInk,
+              fontSize: theme.headingSizePx,
+              textTransform: theme.textTransform,
+            }}
+          >
+            {title}
+          </h2>
+          <span
+            className="h-px flex-1"
+            style={{ backgroundColor: resolvedInk }}
+          />
+        </div>
+      ) : isLongUnderline ? (
+        <div className="mb-2">
+          <div className="flex items-center gap-1.5">
             {showIcon && (
-              <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={false} />
+              <SectionHeadingIcon
+                icon={Icon}
+                theme={iconTheme}
+                onAccentBg={false}
+              />
             )}
             <h2
-              className="shrink-0 font-bold tracking-[0.18em]"
+              className="font-bold tracking-[0.18em]"
               style={{
-                color: theme.accent,
+                color: resolvedInk,
                 fontSize: theme.headingSizePx,
                 textTransform: theme.textTransform,
               }}
             >
               {title}
             </h2>
-            <span
-              className="h-px flex-1"
-              style={{ backgroundColor: theme.accent }}
-            />
           </div>
-        ) : isLongUnderline ? (
-          <div className="mb-2">
-            <div className="flex items-center gap-1.5">
-              {showIcon && (
-                <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={false} />
-              )}
-              <h2
-                className="font-bold tracking-[0.18em]"
-                style={{
-                  color: theme.accent,
-                  fontSize: theme.headingSizePx,
-                  textTransform: theme.textTransform,
-                }}
-              >
-                {title}
-              </h2>
-            </div>
-            <div
-              className="mt-1 h-px w-full"
-              style={{ backgroundColor: theme.accent }}
+          <div
+            className="mt-1 h-px w-full"
+            style={{ backgroundColor: resolvedInk }}
+          />
+        </div>
+      ) : (
+        <h2
+          className="font-bold tracking-[0.18em] pb-1 mb-2 inline-flex items-center gap-1.5"
+          style={headingStyle}
+        >
+          {showIcon && (
+            <SectionHeadingIcon
+              icon={Icon}
+              theme={iconTheme}
+              onAccentBg={isFilled}
             />
-          </div>
-        ) : (
-          <h2
-            className="font-bold tracking-[0.18em] pb-1 mb-2 inline-flex items-center gap-1.5"
-            style={headingStyle}
-          >
-            {showIcon && (
-              <SectionHeadingIcon icon={Icon} theme={theme} onAccentBg={isFilled} />
-            )}
-            {title}
-          </h2>
-        ))}
+          )}
+          {title}
+        </h2>
+      )}
       {children}
     </section>
   );
@@ -1639,7 +1628,7 @@ function LinkText({
           }
           style={
             theme.linkStyle.includes("color")
-              ? { color: theme.accent }
+              ? { color: theme.accentText }
               : undefined
           }
         >
@@ -1658,14 +1647,11 @@ function LinkText({
     </IconText>
   );
 }
-
-/** wraps a contact icon per the "Icon Style" pick — plain/faded render the
- *  glyph inline (colored by the current text color), while filled/outline/
- *  square give it its own accent-colored badge, independent of the icon's
- *  own on/off toggles */
 function StyledIcon({ Icon, theme }: { Icon: LucideIcon; theme: Theme }) {
   if (theme.iconStyle === "faded") {
-    return <Icon size="1em" strokeWidth={1.8} className="shrink-0 opacity-50" />;
+    return (
+      <Icon size="1em" strokeWidth={1.8} className="shrink-0 opacity-50" />
+    );
   }
   if (theme.iconStyle === "plain") {
     return <Icon size="1em" strokeWidth={1.8} className="shrink-0" />;
@@ -1682,13 +1668,13 @@ function StyledIcon({ Icon, theme }: { Icon: LucideIcon; theme: Theme }) {
         width: "1.75em",
         height: "1.75em",
         backgroundColor: isFilled ? theme.accent : undefined,
-        borderColor: isFilled ? undefined : theme.accent,
+        borderColor: isFilled ? undefined : theme.accentText,
       }}
     >
       <Icon
         size="0.95em"
         strokeWidth={1.8}
-        color={isFilled ? "#fff" : theme.accent}
+        color={isFilled ? "#fff" : theme.accentText}
       />
     </span>
   );

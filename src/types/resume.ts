@@ -31,10 +31,10 @@ export interface ExperienceItem {
   jobTitle: string;
   company: string;
   location: string;
-  startDate: string; 
+  startDate: string;
   endDate: string;
   current: boolean;
-  description: string; 
+  description: string;
 }
 export type NoExperienceType =
   | "university"
@@ -56,8 +56,8 @@ export interface NoExperienceItem {
   title: string;
   subtitle: string;
   url: string;
-  startDate: string; 
-  endDate: string; 
+  startDate: string;
+  endDate: string;
   current: boolean;
   description: string;
 }
@@ -87,7 +87,6 @@ export const SKILL_LEVEL_LABELS = [
   "Expert",
 ];
 
-
 export interface LanguageItem {
   id: string;
   name: string;
@@ -111,6 +110,7 @@ export interface ReferenceItem {
 }
 
 export interface CustomizationToggles {
+  fullName: boolean;
   jobTitle: boolean;
   headings: boolean;
   headingsLine: boolean;
@@ -119,7 +119,11 @@ export interface CustomizationToggles {
   linkIcons: boolean;
   headerIcons: boolean;
 }
-export type SectionOrderKey = "skills" | "experience" | "references" | "language";
+export type SectionOrderKey =
+  | "skills"
+  | "experience"
+  | "references"
+  | "language";
 
 export interface Customization {
   template: string;
@@ -133,21 +137,14 @@ export interface Customization {
   headingsSize: number;
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   capitalization: "capitalize" | "uppercase";
-  // a multi-select: any combination of these three traits can be active
-  // at once (e.g. underlined AND accent-colored AND icon-tagged)
   linkStyle: ("underline" | "color" | "icon")[];
   sectionIcon: "none" | "outline" | "filled";
   headerAlignment: "left" | "center";
   contactArrangement: "inline" | "stacked";
   contactSeparator: "icon" | "bullet" | "bar";
   iconStyle: "plain" | "filled" | "outline" | "square" | "faded";
-  headingTextColor: string;
-  headingBgColor: string;
   bodyTextColor: string;
   bodyBgColor: string;
-  bodyAccentColor: string;
-  colorLayout: "column" | "full" | "border";
-  paletteMode: "single" | "multi";
   showPhoto: boolean;
   photoShape: "circle" | "rounded" | "square";
   photoSize: number;
@@ -157,15 +154,13 @@ export interface Customization {
   topBottomMargin: number;
   leftRightMargin: number;
   sectionOrder: SectionOrderKey[];
-  /** which of `sectionOrder`'s sections render in the sidebar column vs.
-   *  the main column, when `columns` is "two" */
   sidebarKeys: SectionOrderKey[];
   toggles: CustomizationToggles;
 }
 
 export interface Resume {
-  id: string | null; 
-  title: string; 
+  id: string | null;
+  title: string;
   /** Step 2 entry choice: has experience, none (fresh graduate), or not asked yet */
   experienceChoice: "has" | "none" | null;
   personal: PersonalInfo;
@@ -229,13 +224,8 @@ export const emptyResume: Resume = {
     contactArrangement: "inline",
     contactSeparator: "icon",
     iconStyle: "plain",
-    headingTextColor: "#262626",
-    headingBgColor: "#ffffff",
-    bodyTextColor: "#262626",
+    bodyTextColor: "#171717",
     bodyBgColor: "#ffffff",
-    bodyAccentColor: "#737373",
-    colorLayout: "column",
-    paletteMode: "multi",
     showPhoto: true,
     photoShape: "circle",
     photoSize: 80,
@@ -247,6 +237,7 @@ export const emptyResume: Resume = {
     sectionOrder: ["skills", "experience", "references", "language"],
     sidebarKeys: ["skills", "references", "language"],
     toggles: {
+      fullName: false,
       jobTitle: true,
       headings: true,
       headingsLine: true,
