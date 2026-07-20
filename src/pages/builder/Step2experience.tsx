@@ -13,7 +13,6 @@ import {
   Link as LinkIcon,
   Sparkles,
   Trash2,
-  X,
 } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
 import type {
@@ -72,12 +71,8 @@ export default function Step2Experience() {
   );
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [modalDismissed, setModalDismissed] = useState(false);
   const modalOpen =
-    !modalDismissed &&
-    choice === null &&
-    experience.length === 0 &&
-    noExperience.length === 0;
+    choice === null && experience.length === 0 && noExperience.length === 0;
 
   const chooseHas = () => {
     setChoice("has");
@@ -225,24 +220,14 @@ export default function Step2Experience() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
-              onClick={() => setModalDismissed(true)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 16 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                onClick={(e) => e.stopPropagation()}
                 className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 shadow-2xl"
               >
-                <button
-                  onClick={() => setModalDismissed(true)}
-                  className="absolute top-3 right-3 sm:top-6 sm:right-6 size-8 sm:size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text inline-flex items-center justify-center"
-                  aria-label={t("builder.close")}
-                >
-                  <X size={18} />
-                </button>
-
                 <div className="grid md:grid-cols-[1fr_auto] gap-4 sm:gap-8 items-center">
                   <div className="space-y-4 sm:space-y-6">
                     <div>
