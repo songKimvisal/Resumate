@@ -131,7 +131,7 @@ export default function BuilderLayout() {
       }
     >
       {/* ================= header ================= */}
-      <header className="flex items-center justify-between px-6 h-16">
+      <header className="max-w-7xl w-full mx-auto flex items-center justify-between px-4 h-16">
         <Link to="/dashboard">
           <img src={logo} alt="ResuMate" className="h-9 w-auto" />
         </Link>
