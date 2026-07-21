@@ -1,6 +1,8 @@
 {
   "common": {
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "comingSoon": "Coming soon",
+    "comingSoonSubtitle": "We're working on this. Check back soon!"
   },
   "refund": {
     "label": "Legal",
@@ -119,8 +121,14 @@
     "about": "About",
     "login": "Log in",
     "dashboard": "Dashboard",
+    "myResumes": "My Resumes",
+    "interviewPrep": "Interview prep",
+    "billing": "Billing",
+    "aiUsage": "AI Usage",
     "settings": "Setting",
-    "logout": "Logout"
+    "logout": "Logout",
+    "upgrade": "Upgrade to Starter",
+    "welcomeBack": "Welcome back"
   },
   "footer": {
     "product": "Product",
@@ -480,6 +488,7 @@
       "saveToDashboard": "Save to dashboard",
       "saving": "Saving…",
       "saved": "Saved",
+      "goToDashboard": "Go to dashboard",
       "saveError": "Couldn't save your resume. Please try again.",
       "pdfNote": "PDF keeps your design exactly as shown fonts, colors, and layout will not shift on any device.",
       "items": {
@@ -831,6 +840,66 @@
         "collapse": "Hide details",
         "expand": "Show details"
       }
+    }
+  },
+  "dashboard": {
+    "welcomeTitle": "Welcome back, {{name}}",
+    "comingSoonTitle": "Your dashboard is coming soon",
+    "comingSoonSubtitle": "We're building AI resume scoring, interview prep, and job-readiness reports. In the meantime, manage your resumes below.",
+    "goToMyResumes": "Go to My Resumes"
+  },
+  "myResumes": {
+    "title": "My",
+    "titleAccent": "Resumes",
+    "subtitle": "Your first resume is free forever. Need more than one resume?",
+    "upgradeLink": "Upgrade your plan",
+    "newResume": "New resume",
+    "untitled": "Untitled resume",
+    "loadError": "Couldn't load your resumes. Please try again.",
+    "retry": "Retry",
+    "empty": {
+      "title": "No resumes yet",
+      "subtitle": "Create your first resume to get started.",
+      "cta": "Create a resume"
+    },
+    "menu": {
+      "open": "Resume options",
+      "continue": "Continue editing",
+      "download": "Download PDF",
+      "downloading": "Preparing…",
+      "delete": "Delete",
+      "confirmDelete": "Delete this resume?",
+      "confirmYes": "Yes, delete",
+      "confirmCancel": "Cancel",
+      "deleting": "Deleting…"
+    }
+  },
+  "settings": {
+    "subtitle": "Manage your profile and account preferences.",
+    "profile": {
+      "nameLabel": "Full name",
+      "namePlaceholder": "Enter your full name",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Couldn't save your changes. Please try again."
+    },
+    "preference": {
+      "title": "Preference",
+      "languageLabel": "Interface language",
+      "languageDesc": "Switch the whole app between English and Khmer",
+      "themeLabel": "Dark mode",
+      "themeDesc": "Use dark appearance across the website"
+    },
+    "deleteAccount": {
+      "title": "Delete account",
+      "description": "Permanently remove your account and all resumes.",
+      "delete": "Delete",
+      "confirm": "This deletes all your saved resumes and signs you out. This can't be undone.",
+      "confirmYes": "Yes, delete",
+      "confirmCancel": "Cancel",
+      "deleting": "Deleting…",
+      "error": "Couldn't delete your account. Please try again."
     }
   }
 }

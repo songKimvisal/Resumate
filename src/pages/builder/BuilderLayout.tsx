@@ -137,7 +137,7 @@ export default function BuilderLayout() {
     >
       {/* ================= header ================= */}
       <header className="max-w-7xl w-full mx-auto flex items-center justify-between px-4 h-16">
-        <Link to="/dashboard">
+        <Link to="/my-resumes">
           <img src={logo} alt="ResuMate" className="h-9 w-auto" />
         </Link>
         <div className="flex items-center gap-3">
@@ -443,7 +443,7 @@ export default function BuilderLayout() {
                 ← {t("builder.back")}
               </Button>
             ) : (
-              <Link to="/dashboard">
+              <Link to="/my-resumes">
                 <Button size="sm" variant="outline">
                   ← {t("builder.back")}
                 </Button>

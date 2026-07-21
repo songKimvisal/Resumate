@@ -10,7 +10,12 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ScrollToTop from "./components/ScrollToTop";
 // Protected pages
+import DashboardShell from "./components/layout/DashboardShell";
 import Dashboard from "./pages/dashboard/Dashboard";
+import MyResumes from "./pages/dashboard/MyResumes";
+import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
+import Billing from "./pages/billing/Billing";
+import AiUsage from "./pages/aiUsage/AiUsage";
 import BuilderLayout from "./pages/builder/BuilderLayout";
 import Marketplace from "./pages/marketplace/Marketplace";
 import Settings from "./pages/settings/Settings";
@@ -30,10 +35,16 @@ export default function App() {
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route element={<DashboardShell />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/my-resumes" element={<MyResumes />} />
+            <Route path="/interview-prep" element={<InterviewPrep />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/ai-usage" element={<AiUsage />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
           <Route path="/builder" element={<BuilderLayout />} />
           <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/settings" element={<Settings />} />
         </Route>
 
         {/* Fallback */}
