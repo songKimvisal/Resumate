@@ -254,7 +254,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
             <Button
               size="compact"
               variant="outline"
-              onClick={handleSave}
+              onClick={saved ? () => navigate("/my-resumes") : handleSave}
               disabled={saving}
             >
               {saved ? (
@@ -265,7 +265,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
               {saving
                 ? t("builder.review.saving")
                 : saved
-                  ? t("builder.review.saved")
+                  ? t("builder.review.goToDashboard")
                   : t("builder.review.saveToDashboard")}
             </Button>
           </div>

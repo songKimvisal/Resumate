@@ -25,6 +25,7 @@ import {
   NO_EXPERIENCE_TYPE_LABELS,
   LANGUAGE_LEVEL_LABELS,
   SKILL_LEVEL_LABELS,
+  type Resume,
   type Customization,
   type SectionOrderKey,
   type ExperienceItem,
@@ -155,11 +156,17 @@ function useTheme(customization: Customization): Theme {
 }
 
 export default function ResumePreview({
+  resume: resumeProp,
   pageLabelClassName = "text-text-secondary",
+  singlePage = false,
 }: {
+  resume?: Resume;
   pageLabelClassName?: string;
+  /** Render only the first page, with no "Page X of Y" label — used for small thumbnails. */
+  singlePage?: boolean;
 }) {
-  const resume = useResumeStore((s) => s.resume);
+  const storeResume = useResumeStore((s) => s.resume);
+  const resume = resumeProp ?? storeResume;
   const {
     personal,
     experience,
@@ -626,9 +633,9 @@ export default function ResumePreview({
         ))}
       </div>
 
-      {pages.map((pageBlocks, pageIndex) => (
+      {(singlePage ? pages.slice(0, 1) : pages).map((pageBlocks, pageIndex) => (
         <div key={pageIndex}>
-          {pages.length > 1 && (
+          {!singlePage && pages.length > 1 && (
             <p className={cn("mb-1.5 text-center text-xs", pageLabelClassName)}>
               Page {pageIndex + 1} of {pages.length}
             </p>
