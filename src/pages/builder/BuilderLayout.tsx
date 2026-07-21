@@ -122,7 +122,10 @@ export default function BuilderLayout() {
   }, [stepBarHeight]);
 
   const next = () => setStep((s) => Math.min(TOTAL_STEPS, s + 1));
-  const back = () => setStep((s) => Math.max(1, s - 1));
+  const back = () => {
+    setStep((s) => Math.max(1, s - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const goToStep = (n: number) => {
     setStep(n);
     window.scrollTo({ top: 0, behavior: "smooth" });
