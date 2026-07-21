@@ -1,12 +1,41 @@
-import { Navigate } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { AuthError } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "../hooks/UseAuth";
+import { Input } from "../components/ui/Input";
+import { PasswordInput } from "../components/ui/PasswordInput";
+import { Button } from "../components/ui/button";
 import logo from "../assets/logo/resumate.png";
 import logoMobile from "../assets/logo/logo.png";
 
 export default function Login() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithPassword } = useAuth();
   const { t } = useTranslation();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const { error } = await signInWithPassword(email, password);
+      if (error) throw error;
+    } catch (err) {
+      setError(
+        err instanceof AuthError
+          ? err.message
+          : t("login.errorInvalidCredentials"),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -17,11 +46,11 @@ export default function Login() {
   }
 
   // Already signed in → skip the login page
-  if (user) return <Navigate to="/~" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4 lg:p-10">
-      <div className="lg:h-[707px] w-full max-w-6xl grid lg:grid-cols-2 rounded-2xl overflow-hidden border border-line shadow-sm">
+      <div className="lg:min-h-[707px] w-full max-w-6xl grid lg:grid-cols-2 rounded-2xl overflow-hidden border border-line shadow-sm">
         {/* ============ Left panel — brand ============ */}
         <div className="relative hidden lg:flex flex-col justify-between bg-brand text-white p-12 overflow-hidden">
           {/* decorative circles */}
@@ -115,6 +144,57 @@ export default function Login() {
               </svg>
               {t("login.google")}
             </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-line" />
+              <span className="text-xs text-text-placeholder uppercase">
+                {t("login.orDivider")}
+              </span>
+              <div className="h-px flex-1 bg-line" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                type="email"
+                label={t("login.emailLabel")}
+                placeholder={t("login.emailPlaceholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+              <div className="space-y-1.5">
+                <PasswordInput
+                  label={t("login.passwordLabel")}
+                  placeholder={t("login.passwordPlaceholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  error={error ?? undefined}
+                  required
+                />
+                <div className="flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-brand hover:underline"
+                  >
+                    {t("login.forgotPassword")}
+                  </Link>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting && <Loader2 size={16} className="animate-spin" />}
+                {submitting ? t("login.submitting") : t("login.submit")}
+              </Button>
+            </form>
+
+            <p className="text-sm text-text-secondary">
+              {t("login.noAccount")}{" "}
+              <Link to="/signup" className="text-brand hover:underline">
+                {t("login.signUpLink")}
+              </Link>
+            </p>
 
             <p className="text-sm text-text-placeholder">
               {t("login.termsPrefix")}{" "}

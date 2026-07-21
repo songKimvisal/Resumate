@@ -4,6 +4,9 @@ import ProtectedRoute from "./components/Protectedroute";
 // Public pages
 import Home from "./pages/Home";
 import Login from "./pages/login";
+import Signup from "./pages/signup";
+import ForgotPassword from "./pages/forgot-password";
+import ResetPassword from "./pages/reset-password";
 import About from "./pages/About";
 import Refund from "./pages/Refund";
 import Terms from "./pages/Terms";
@@ -28,6 +31,9 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/terms" element={<Terms />} />
