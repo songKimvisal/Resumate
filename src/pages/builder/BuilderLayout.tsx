@@ -19,6 +19,7 @@ import Step1Personal from "./Step1Personal";
 import Step2Experience from "./Step2experience";
 import Step3Education from "./Step3Education";
 import Step4Skills from "./Step4Skills";
+import Step5Review from "./Step5Review";
 import CustomizePage from "./CustomizePage";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
@@ -122,6 +123,10 @@ export default function BuilderLayout() {
 
   const next = () => setStep((s) => Math.min(TOTAL_STEPS, s + 1));
   const back = () => setStep((s) => Math.max(1, s - 1));
+  const goToStep = (n: number) => {
+    setStep(n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div
@@ -246,12 +251,7 @@ export default function BuilderLayout() {
                 {step === 2 && <Step2Experience />}
                 {step === 3 && <Step3Education />}
                 {step === 4 && <Step4Skills />}
-                {step > 4 && (
-                  <div className="py-16 text-center text-text-secondary">
-                    <p className="font-medium">{stepLabels[step - 1]}</p>
-                    <p className="text-sm mt-2">{t("builder.comingSoon")}</p>
-                  </div>
-                )}
+                {step === 5 && <Step5Review onGoToStep={goToStep} />}
               </motion.div>
             )}
           </AnimatePresence>
@@ -458,9 +458,20 @@ export default function BuilderLayout() {
               </span>
             </p>
 
-            <Button size="sm" onClick={next} disabled={step === TOTAL_STEPS}>
-              {t("builder.next")} →
-            </Button>
+            {step < TOTAL_STEPS ? (
+              <Button size="sm" onClick={next}>
+                {t("builder.next")} →
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="invisible pointer-events-none"
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                {t("builder.next")} →
+              </Button>
+            )}
           </div>
         </div>
       )}
