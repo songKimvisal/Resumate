@@ -447,6 +447,76 @@
       "medium": "Medium",
       "large": "Large"
     },
+    "review": {
+      "title": "Review & score",
+      "subtitle": "Check your score and fix any missing items before downloading.",
+      "scoreLabel": "Score",
+      "band": {
+        "excellent": {
+          "title": "Perfect resume",
+          "message": "Excellent! Your resume covers everything."
+        },
+        "strong": {
+          "title": "Strong resume",
+          "message": "Good! Your resume is ready."
+        },
+        "good": {
+          "title": "Good progress",
+          "message": "You're getting there keep going."
+        },
+        "needsWork": {
+          "title": "Needs work",
+          "message": "Let's fill in the essentials first."
+        }
+      },
+      "coversAll": "Covers all key sections employers look for.",
+      "fixItems_one": "Fix the {{count}} item below to reach 100%.",
+      "fixItems_other": "Fix the {{count}} items below to reach 100%.",
+      "checklist": "Checklist",
+      "fixInStep": "Fix in Step {{step}}",
+      "download": "Download",
+      "readyToDownload": "Ready to download",
+      "readyToDownloadDesc": "Your resume is formatted in clean, professional English ready to send to any employer.",
+      "saveToDashboard": "Save to dashboard",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Couldn't save your resume. Please try again.",
+      "pdfNote": "PDF keeps your design exactly as shown fonts, colors, and layout will not shift on any device.",
+      "items": {
+        "fullName": {
+          "title": "Missing full name",
+          "description": "Add your full name so employers know who you are."
+        },
+        "jobTitle": {
+          "title": "Missing job title",
+          "description": "Add the job title you're applying for or your current role."
+        },
+        "contact": {
+          "title": "Incomplete contact info",
+          "description": "Add a valid email, phone number, and location so employers can reach you."
+        },
+        "summary": {
+          "title": "Missing professional summary",
+          "description": "Add a short summary highlighting your experience and goals."
+        },
+        "photo": {
+          "title": "Missing profile image",
+          "description": "Please upload a profile image for templates that include a photo slot. If you don't, a placeholder will be displayed on your resume."
+        },
+        "experience": {
+          "title": "Missing work experience",
+          "description": "Add at least one work experience, internship, or project."
+        },
+        "education": {
+          "title": "Missing education",
+          "description": "Add your most recent school or degree."
+        },
+        "skills": {
+          "title": "Missing skills",
+          "description": "Add a few skills relevant to the job you want."
+        }
+      }
+    },
     "customizePage": {
       "title": "Customize",
       "subtitle": "Start with the basics this appears at the top of your resume.",
