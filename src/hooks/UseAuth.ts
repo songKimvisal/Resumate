@@ -36,9 +36,39 @@ export function useAuth() {
       },
     });
 
+  const signUpWithPassword = (email: string, password: string) =>
+    supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+  const signInWithPassword = (email: string, password: string) =>
+    supabase.auth.signInWithPassword({ email, password });
+
+  const resetPasswordForEmail = (email: string) =>
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+  const updatePassword = (password: string) =>
+    supabase.auth.updateUser({ password });
+
   const signOut = () => supabase.auth.signOut();
 
   const user: User | null = session?.user ?? null;
 
-  return { session, user, loading, signInWithGoogle, signOut };
+  return {
+    session,
+    user,
+    loading,
+    signInWithGoogle,
+    signUpWithPassword,
+    signInWithPassword,
+    resetPasswordForEmail,
+    updatePassword,
+    signOut,
+  };
 }
