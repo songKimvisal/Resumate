@@ -610,10 +610,17 @@
         "subtitle": "Update your entire resume design with one click",
         "button": "Change Templates"
       },
+      "locked": {
+        "title": "{{style}} is a premium template",
+        "subtitle": "Unlock it to customize colors, fonts, and layout. Free templates can't be edited into a premium look.",
+        "changeTemplate": "Choose another template",
+        "unlockCta": "Unlock template"
+      },
       "layout": {
         "columns": "Columns",
         "columnsOne": "One",
         "columnsTwo": "Two",
+        "columnsTwoPremiumHint": "Two-column sidebar layouts are a Premium feature. Unlock a premium template to use one.",
         "headerPosition": "Header Position",
         "headerLeft": "Left",
         "headerTop": "Top",
@@ -626,11 +633,17 @@
         "references": "References",
         "language": "Language",
         "showPhoto": "Show profile photo",
+        "sidebarPhotoFill": "Full-bleed sidebar photo",
         "photoShape": "Photo shape",
         "shapeCircle": "Circle",
         "shapeRounded": "Rounded",
         "shapeSquare": "Square",
         "photoSize": "Photo size",
+        "topAccentBar": "Top accent bar",
+        "footerBar": "Footer bar",
+        "skillsDisplay": "Skills style",
+        "skillsMeter": "Rating meter",
+        "skillsList": "Plain list",
         "pageFormat": "Page format",
         "formatA4": "A4",
         "formatLetter": "US Letter",
@@ -640,6 +653,9 @@
         "marginsWide": "Wide"
       },
       "header": {
+        "photoLayout": "Photo Layout",
+        "photoStacked": "Stacked",
+        "photoRow": "Side by side",
         "textAlignment": "Text Alignment",
         "alignLeft": "Left",
         "alignCenter": "Center",
@@ -693,6 +709,8 @@
         "bgWhite": "White",
         "bgWarm": "Warm",
         "bgCool": "Cool",
+        "sidebarBackground": "Sidebar background",
+        "sidebarBackgroundNone": "No fill",
         "accentColor": "Accent color",
         "custom": "Custom color",
         "hex": "Hex",
@@ -705,7 +723,8 @@
         "applyDots": "Rating dots",
         "applyDates": "Dates",
         "applyLinkIcons": "Link icons",
-        "applyHeaderIcons": "Header icons"
+        "applyHeaderIcons": "Header icons",
+        "applyTimeline": "Timeline"
       },
       "spacing": {
         "lineHeight": "Line Height",
@@ -906,6 +925,127 @@
         "collapse": "Hide details",
         "expand": "Show details"
       }
+    }
+  },
+  "marketplace": {
+    "hero": {
+      "title": "Pick your",
+      "titleAccent": "template.",
+      "subtitle": "Choose a layout that fits your industry and vibe. Switch anytime without losing your data."
+    },
+    "aiBanner": {
+      "title": "Not sure which template to pick?",
+      "subtitle": "Answer 3 quick questions or mix and match manually. AI picks the best layout, color, and font for you.",
+      "cta": "AI pick for me"
+    },
+    "filters": {
+      "all": "All",
+      "free": "Free",
+      "premium": "Premium",
+      "industryLabel": "Filter by industry",
+      "clearIndustry": "All industries"
+    },
+    "industries": {
+      "banking": "Banking",
+      "ngo": "NGO",
+      "tech": "Tech",
+      "hospitality": "Hospitality",
+      "freshgrad": "Fresh grad",
+      "designer": "Designer"
+    },
+    "premiumBadge": "Premium",
+    "premiumHover": "Unlock template",
+    "unlockModal": {
+      "description": "This is a premium template. Unlock it to use this design and customize it freely.",
+      "cancel": "Cancel",
+      "unlockCta": "Unlock template"
+    },
+    "empty": "No templates match your filters.",
+    "pagination": {
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "styleNames": {
+      "classicBanking": "Classic Banking",
+      "modernBanking": "Modern Banking",
+      "communityClean": "Community Clean",
+      "communitySidebar": "Community Sidebar",
+      "boldTech": "Bold Tech",
+      "modernTech": "Modern Tech",
+      "warmHospitality": "Warm Hospitality",
+      "elegantHospitality": "Elegant Hospitality",
+      "freshStart": "Fresh Start",
+      "freshSidebar": "Fresh Sidebar",
+      "modernDesigner": "Modern Designer",
+      "essentialBanking": "Essential Banking",
+      "essentialDesigner": "Essential Designer",
+      "essentialFreshgrad": "Essential Fresh Grad",
+      "essentialTech": "Essential Tech",
+      "essentialHospitality": "Essential Hospitality",
+      "essentialNgo": "Essential NGO"
+    },
+    "colorNames": {
+      "crimson": "Crimson",
+      "orange": "Orange",
+      "amber": "Amber",
+      "green": "Green",
+      "teal": "Teal",
+      "cyan": "Cyan",
+      "blue": "Blue",
+      "violet": "Violet",
+      "pink": "Pink",
+      "navy": "Navy"
+    },
+    "aiPicker": {
+      "title": "AI design picker",
+      "subtitle": "Let AI choose or mix and match yourself",
+      "q1": "What industry are you applying to?",
+      "q2": "What is your experience level?",
+      "q3": "What feeling do you want your resume to give?",
+      "industryOptions": {
+        "banking": "Banking & Finance",
+        "ngo": "NGO / Development",
+        "tech": "Tech / Startup",
+        "hospitality": "Hospitality & Tourism",
+        "freshgrad": "Fresh Graduate",
+        "designer": "Designer / Portfolio",
+        "government": "Government / Public"
+      },
+      "experienceOptions": {
+        "fresh": "Fresh graduate",
+        "junior": "Junior (1-3 years)",
+        "mid": "Mid-level (3-6 years)",
+        "senior": "Senior (6+ years)"
+      },
+      "vibeOptions": {
+        "professional": "Professional",
+        "modernCreative": "Modern & creative",
+        "cleanMinimal": "Clean & minimal",
+        "boldConfident": "Bold & confident",
+        "friendly": "Friendly",
+        "elegantRefined": "Elegant & refined"
+      },
+      "cancel": "Cancel",
+      "generate": "Generate my design"
+    },
+    "aiResult": {
+      "eyebrow": "AI design picker",
+      "title": "Your design is",
+      "titleAccent": "ready.",
+      "description": "A {{layout}} layout in {{color}}, styled to feel {{vibe}} tuned for a {{industry}} application.",
+      "specTitle": "Design spec",
+      "specLayout": "Layout",
+      "specColor": "Color",
+      "specFont": "Font",
+      "specStyle": "Template style",
+      "accentColorLabel": "Accent color",
+      "typefaceLabel": "Typeface",
+      "note": "This is a starting point you can adjust the layout, color, or font anytime in Step 5 Review.",
+      "switchHint": "Tap a layout to switch adjust the accent and color on the left",
+      "changeAnswers": "← Change my answer",
+      "continue": "Continue editing →",
+      "layoutClassic": "Classic",
+      "layoutSidebar": "Sidebar"
     }
   },
   "dashboard": {
