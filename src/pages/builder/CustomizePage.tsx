@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Check,
+  Crown,
   Globe,
   GripVertical,
   Lock,
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 import { HexColorPicker } from "react-colorful";
 import { useResumeStore } from "../../store/resumeStore";
+import { useEntitlementStore } from "../../store/entitlementStore";
 import type {
   Customization,
   CustomizationToggles,
@@ -29,10 +32,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover";
+import { TEMPLATE_PRESETS } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
+import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 
 const ACCENT_COLORS = [
   "#C1121F",
@@ -140,8 +145,29 @@ const ICON_STYLE_LABEL_KEY: Record<Customization["iconStyle"], string> = {
 
 export default function CustomizePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const customization = useResumeStore((s) => s.resume.customization);
   const updateCustomization = useResumeStore((s) => s.updateCustomization);
+
+  // a premium template applied from the marketplace/AI picker leaves its
+  // preset id in customization.template; while it's not unlocked, Customize
+  // stays locked so a free user can't dial a free template to match it
+  const activeTemplatePreset = TEMPLATE_PRESETS.find(
+    (p) => p.id === customization.template,
+  );
+  const isTemplateUnlocked = useEntitlementStore((s) =>
+    activeTemplatePreset ? s.isUnlocked(activeTemplatePreset.id) : true,
+  );
+  const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
+  const isLocked =
+    activeTemplatePreset?.tier === "premium" && !isTemplateUnlocked;
+  // the two-column sidebar layout is premium's signature look; gating it
+  // behind an unlocked premium template (rather than just the template's own
+  // starting layout) stops a free resume from being dialed in to match one
+  const hasPremiumLayoutAccess =
+    activeTemplatePreset?.tier === "premium" && isTemplateUnlocked;
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+
   const experience = useResumeStore((s) => s.resume.experience);
   const noExperience = useResumeStore((s) => s.resume.noExperience);
   const education = useResumeStore((s) => s.resume.education);
@@ -315,6 +341,66 @@ export default function CustomizePage() {
     });
   };
 
+  if (isLocked && activeTemplatePreset) {
+    return (
+      <div>
+        <div>
+          <h2 className="text-2xl font-bold">
+            {t("builder.customizePage.title")}
+          </h2>
+          <p className="text-sm text-text-secondary mt-1">
+            {t("builder.customizePage.subtitle")}
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-line bg-bg p-6 sm:p-8 text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950">
+            <Crown size={12} strokeWidth={2.5} />
+            {t("marketplace.premiumBadge")}
+          </span>
+          <div>
+            <p className="font-semibold text-text">
+              {t("builder.customizePage.locked.title", {
+                style: t(
+                  `marketplace.styleNames.${activeTemplatePreset.styleKey}`,
+                ),
+              })}
+            </p>
+            <p className="text-sm text-text-secondary mt-1.5 max-w-sm">
+              {t("builder.customizePage.locked.subtitle")}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/marketplace")}
+              className="rounded-full border border-line px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-2 hover:text-text transition-colors"
+            >
+              {t("builder.customizePage.locked.changeTemplate")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnlockModalOpen(true)}
+              className="rounded-full bg-brand text-white text-sm font-medium px-5 py-2.5"
+            >
+              {t("builder.customizePage.locked.unlockCta")}
+            </button>
+          </div>
+        </div>
+
+        <UnlockTemplateModal
+          open={unlockModalOpen}
+          preset={activeTemplatePreset}
+          onCancel={() => setUnlockModalOpen(false)}
+          onUnlock={() => {
+            unlockTemplate(activeTemplatePreset.id);
+            setUnlockModalOpen(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div>
@@ -391,6 +477,7 @@ export default function CustomizePage() {
             </div>
             <button
               type="button"
+              onClick={() => navigate("/marketplace")}
               className="w-full rounded-full bg-brand text-white text-sm font-medium py-2.5"
             >
               {t("builder.customizePage.templates.button")}
@@ -416,6 +503,12 @@ export default function CustomizePage() {
                 value={customization.bodyBgColor}
                 onChange={(c) => updateCustomization({ bodyBgColor: c })}
               />
+              {customization.columns === "two" && (
+                <SidebarColorPicker
+                  color={customization.sidebarBgColor}
+                  onChange={(c) => updateCustomization({ sidebarBgColor: c })}
+                />
+              )}
             </div>
 
             <div className="border-t border-line" />
@@ -470,6 +563,11 @@ export default function CustomizePage() {
                     label={t("builder.customizePage.colors.applyHeaderIcons")}
                     selected={customization.toggles.headerIcons}
                     onClick={() => patchToggle("headerIcons")}
+                  />
+                  <ToggleChip
+                    label={t("builder.customizePage.colors.applyTimeline")}
+                    selected={customization.toggles.timeline}
+                    onClick={() => patchToggle("timeline")}
                   />
                 </div>
               </div>
@@ -574,10 +672,16 @@ export default function CustomizePage() {
                   label={t("builder.customizePage.layout.columnsTwo")}
                   selected={customization.columns === "two"}
                   onClick={() => updateCustomization({ columns: "two" })}
+                  premiumLocked={!hasPremiumLayoutAccess}
                 >
                   <ColumnsPreview columns="two" />
                 </OptionCard>
               </div>
+              {!hasPremiumLayoutAccess && (
+                <p className="text-xs text-text-secondary">
+                  {t("builder.customizePage.layout.columnsTwoPremiumHint")}
+                </p>
+              )}
             </div>
 
             {customization.columns === "two" && (
@@ -616,6 +720,46 @@ export default function CustomizePage() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+              <p className="min-w-0 truncate text-sm font-medium text-text">
+                {t("builder.customizePage.layout.topAccentBar")}
+              </p>
+              <Switch
+                checked={customization.topAccentBar}
+                onCheckedChange={(v) => updateCustomization({ topAccentBar: v })}
+                ariaLabel={t("builder.customizePage.layout.topAccentBar")}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+              <p className="min-w-0 truncate text-sm font-medium text-text">
+                {t("builder.customizePage.layout.footerBar")}
+              </p>
+              <Switch
+                checked={customization.footerBar}
+                onCheckedChange={(v) => updateCustomization({ footerBar: v })}
+                ariaLabel={t("builder.customizePage.layout.footerBar")}
+              />
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.layout.skillsDisplay")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <OptionCard
+                  label={t("builder.customizePage.layout.skillsMeter")}
+                  selected={customization.skillsDisplay === "meter"}
+                  onClick={() => updateCustomization({ skillsDisplay: "meter" })}
+                />
+                <OptionCard
+                  label={t("builder.customizePage.layout.skillsList")}
+                  selected={customization.skillsDisplay === "list"}
+                  onClick={() => updateCustomization({ skillsDisplay: "list" })}
+                />
+              </div>
+            </div>
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -727,6 +871,21 @@ export default function CustomizePage() {
                 ariaLabel={t("builder.customizePage.layout.showPhoto")}
               />
             </div>
+
+            {customization.showPhoto && customization.columns === "two" && (
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+                <p className="min-w-0 truncate text-sm font-medium text-text">
+                  {t("builder.customizePage.layout.sidebarPhotoFill")}
+                </p>
+                <Switch
+                  checked={customization.sidebarPhotoFill}
+                  onCheckedChange={(v) =>
+                    updateCustomization({ sidebarPhotoFill: v })
+                  }
+                  ariaLabel={t("builder.customizePage.layout.sidebarPhotoFill")}
+                />
+              </div>
+            )}
 
             {customization.showPhoto && (
               <>
@@ -840,6 +999,34 @@ export default function CustomizePage() {
 
             {headerIsBanner && (
               <>
+                {customization.showPhoto && (
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-text">
+                      {t("builder.customizePage.header.photoLayout")}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <OptionCard
+                        label={t("builder.customizePage.header.photoStacked")}
+                        selected={customization.headerLayout === "stacked"}
+                        onClick={() =>
+                          updateCustomization({ headerLayout: "stacked" })
+                        }
+                      >
+                        <PhotoLayoutPreview layout="stacked" />
+                      </OptionCard>
+                      <OptionCard
+                        label={t("builder.customizePage.header.photoRow")}
+                        selected={customization.headerLayout === "row"}
+                        onClick={() =>
+                          updateCustomization({ headerLayout: "row" })
+                        }
+                      >
+                        <PhotoLayoutPreview layout="row" />
+                      </OptionCard>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2.5">
                   <p className="text-sm font-medium text-text">
                     {t("builder.customizePage.header.textAlignment")}
@@ -1176,6 +1363,26 @@ function HeaderPositionPreview({
   );
 }
 
+function PhotoLayoutPreview({ layout }: { layout: "stacked" | "row" }) {
+  if (layout === "row") {
+    return (
+      <div className={cn(THUMB, "items-center gap-1.5 px-2")}>
+        <div className="size-5 shrink-0 rounded-full bg-brand/70" />
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          <div className="h-1.5 w-4/5 rounded-full bg-line" />
+          <div className="h-1 w-3/5 rounded-full bg-line" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={cn(THUMB, "flex-col items-center justify-center gap-1")}>
+      <div className="size-5 rounded-full bg-brand/70" />
+      <div className="h-1.5 w-3/5 rounded-full bg-line" />
+    </div>
+  );
+}
+
 function HeaderAlignmentPreview({ align }: { align: "left" | "center" }) {
   const isLeft = align === "left";
   return (
@@ -1382,26 +1589,41 @@ function OptionCard({
   selected,
   onClick,
   children,
+  premiumLocked,
 }: {
   label: string;
   selected: boolean;
   onClick: () => void;
   children?: React.ReactNode;
+  /** shows a premium badge and blocks the click instead of applying it —
+   *  used to keep premium-only layout options visible but unreachable from
+   *  a free template, so free resumes can't be dialed in to look premium */
+  premiumLocked?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={premiumLocked ? undefined : onClick}
+      aria-disabled={premiumLocked}
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 transition-colors",
-        selected ? "border-brand bg-brand/5" : "border-line hover:bg-surface-2",
+        "relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 transition-colors",
+        premiumLocked
+          ? "cursor-not-allowed border-line opacity-60"
+          : selected
+            ? "border-brand bg-brand/5"
+            : "border-line hover:bg-surface-2",
       )}
     >
+      {premiumLocked && (
+        <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-full bg-linear-to-r from-amber-400 to-yellow-500 p-1 text-amber-950">
+          <Crown size={10} strokeWidth={2.5} />
+        </span>
+      )}
       {children}
       <span
         className={cn(
           "text-xs font-medium",
-          selected ? "text-brand" : "text-text-secondary",
+          selected && !premiumLocked ? "text-brand" : "text-text-secondary",
         )}
       >
         {label}
@@ -1640,6 +1862,102 @@ function AccentColorPicker({
           </PopoverTrigger>
           <PopoverContent className="w-60 space-y-3 p-3" align="start">
             <CustomColorFields color={color} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
+
+const SIDEBAR_BG_PRESETS = [
+  "#111827",
+  "#1E293B",
+  "#134E4A",
+  "#1E1B4B",
+  "#500724",
+];
+
+function SidebarColorPicker({
+  color,
+  onChange,
+}: {
+  color: string;
+  onChange: (hex: string) => void;
+}) {
+  const { t } = useTranslation();
+  const isNone = color === "";
+  const isCustom =
+    !isNone &&
+    !SIDEBAR_BG_PRESETS.some((p) => p.toLowerCase() === color.toLowerCase());
+
+  return (
+    <div className="space-y-2.5">
+      <p className={COLOR_LABEL}>
+        {t("builder.customizePage.colors.sidebarBackground")}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label={t("builder.customizePage.colors.sidebarBackgroundNone")}
+          title={t("builder.customizePage.colors.sidebarBackgroundNone")}
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full border bg-bg text-text-secondary transition-transform hover:scale-110",
+            isNone
+              ? "border-transparent ring-2 ring-brand ring-offset-2 ring-offset-bg"
+              : "border-line",
+          )}
+        >
+          <Minus size={12} />
+        </button>
+        {SIDEBAR_BG_PRESETS.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => onChange(preset)}
+            aria-label={preset}
+            className={cn(
+              "size-7 shrink-0 rounded-full border transition-transform hover:scale-110",
+              color.toLowerCase() === preset.toLowerCase()
+                ? "border-transparent ring-2 ring-offset-2 ring-offset-bg"
+                : "border-line",
+            )}
+            style={{
+              backgroundColor: preset,
+              ...(color.toLowerCase() === preset.toLowerCase()
+                ? ({ "--tw-ring-color": preset } as React.CSSProperties)
+                : {}),
+            }}
+          />
+        ))}
+        <Popover>
+          <PopoverTrigger
+            type="button"
+            aria-label={t("builder.customizePage.colors.custom")}
+            title={t("builder.customizePage.colors.custom")}
+            className={cn(
+              "relative flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full border transition-transform hover:scale-110",
+              isCustom
+                ? "border-transparent ring-2 ring-offset-2 ring-offset-bg"
+                : "border-dashed border-line",
+            )}
+            style={
+              isCustom
+                ? ({
+                    backgroundColor: color,
+                    "--tw-ring-color": color,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <Pipette
+              size={12}
+              className={isCustom ? undefined : "text-text-secondary"}
+              style={isCustom ? { color: idealTextColor(color) } : undefined}
+            />
+          </PopoverTrigger>
+          <PopoverContent className="w-60 space-y-3 p-3" align="start">
+            <CustomColorFields color={color || "#1F2937"} onChange={onChange} />
           </PopoverContent>
         </Popover>
       </div>
