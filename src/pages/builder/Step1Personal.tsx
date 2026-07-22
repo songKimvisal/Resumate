@@ -115,6 +115,7 @@ export default function Step1Personal() {
   const { t } = useTranslation();
   const personal = useResumeStore((s) => s.resume.personal);
   const updatePersonal = useResumeStore((s) => s.updatePersonal);
+  const showPhoto = useResumeStore((s) => s.resume.customization.showPhoto);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoBoxRef = useRef<HTMLDivElement>(null);
   // in-progress drag-to-reposition of the photo in "crop" mode
@@ -277,7 +278,12 @@ export default function Step1Personal() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6",
+          showPhoto && "sm:grid-cols-[1fr_auto]",
+        )}
+      >
         <div className="order-2 sm:order-1 space-y-4">
           <Input
             label={t("builder.personal.fullName")}
@@ -299,7 +305,8 @@ export default function Step1Personal() {
           />
         </div>
 
-        {/* photo upload */}
+        {/* photo upload — hidden when the selected template has no photo slot */}
+        {showPhoto && (
         <div className="order-1 sm:order-2 space-y-2 text-center">
           <p className="text-sm font-medium text-text">
             {t("builder.personal.image")}
@@ -393,6 +400,7 @@ export default function Step1Personal() {
             onChange={(e) => onPhotoPick(e.target.files?.[0])}
           />
         </div>
+        )}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
