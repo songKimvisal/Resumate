@@ -37,8 +37,6 @@ export default function Navbar() {
   const toggleLanguage = () =>
     i18n.changeLanguage(i18n.language === "en" ? "km" : "en");
 
-  /** Scroll to a homepage section. Works from any page:
-   *  on "/" it scrolls directly; elsewhere it navigates home first. */
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
     if (location.pathname === "/") {
@@ -49,7 +47,6 @@ export default function Navbar() {
   };
 
   const sectionLinks = [
-    { id: "templates", label: t("nav.templates") },
     { id: "features", label: t("nav.features") },
     { id: "pricing", label: t("nav.pricing") },
   ];
@@ -75,6 +72,12 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
+          <Link
+            to="/marketplace"
+            className="text-sm text-text-secondary hover:text-text transition-colors"
+          >
+            {t("nav.templates")}
+          </Link>
           {sectionLinks.map((l) => (
             <button
               key={l.id}
@@ -207,6 +210,13 @@ export default function Navbar() {
       {/* mobile nav links */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-line px-4 py-3 flex flex-col gap-1">
+          <Link
+            to="/marketplace"
+            onClick={() => setMobileMenuOpen(false)}
+            className="py-2 text-sm text-text-secondary hover:text-text transition-colors"
+          >
+            {t("nav.templates")}
+          </Link>
           {sectionLinks.map((l) => (
             <button
               key={l.id}
