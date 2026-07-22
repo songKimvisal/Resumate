@@ -42,7 +42,7 @@ export default function MyResumes() {
 
   const handleNewResume = () => {
     resetResume();
-    navigate("/builder");
+    navigate("/marketplace");
   };
 
   const handleContinue = (item: DashboardResume) => {

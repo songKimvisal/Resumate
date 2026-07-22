@@ -118,6 +118,8 @@ export interface CustomizationToggles {
   dates: boolean;
   linkIcons: boolean;
   headerIcons: boolean;
+  /** small accent-colored dot + short line beside each experience entry */
+  timeline: boolean;
 }
 export type SectionOrderKey =
   | "skills"
@@ -128,6 +130,9 @@ export type SectionOrderKey =
 export interface Customization {
   template: string;
   accentColor: string;
+  /** fills the sidebar column edge-to-edge in two-column layouts; "" means
+   *  no fill (sidebar just sits on the page background, the old behavior) */
+  sidebarBgColor: string;
   columns: "one" | "two";
   headerPosition: "left" | "top" | "right";
   fontSize: "small" | "medium" | "large";
@@ -140,6 +145,10 @@ export interface Customization {
   linkStyle: ("underline" | "color" | "icon")[];
   sectionIcon: "none" | "outline" | "filled";
   headerAlignment: "left" | "center";
+  /** "row" places the photo beside the name/title/contact block instead of
+   *  above it — only applies to the full-width header (columns "one", or
+   *  columns "two" with headerPosition "top") */
+  headerLayout: "stacked" | "row";
   contactArrangement: "inline" | "stacked";
   contactSeparator: "icon" | "bullet" | "bar";
   iconStyle: "plain" | "filled" | "outline" | "square" | "faded";
@@ -148,6 +157,17 @@ export interface Customization {
   showPhoto: boolean;
   photoShape: "circle" | "rounded" | "square";
   photoSize: number;
+  /** photo bleeds full-width across the top of the sidebar column, edge to
+   *  edge, instead of the small inset headshot — only applies when the
+   *  header lives in the sidebar (headerPosition left/right) */
+  sidebarPhotoFill: boolean;
+  /** "meter" keeps the existing dot-rating/inline-text behavior (governed
+   *  by toggles.dots); "list" shows names only, one per line, no rating */
+  skillsDisplay: "meter" | "list";
+  /** thin flat accentColor bar in the page's top corner, pure decoration */
+  topAccentBar: boolean;
+  /** solid bar at the bottom of every page, colored from sidebarBgColor */
+  footerBar: boolean;
   pageFormat: "a4" | "letter";
   lineHeight: number;
   elementSpacing: number;
@@ -209,6 +229,7 @@ export const emptyResume: Resume = {
   customization: {
     template: "classic",
     accentColor: "#C1121F",
+    sidebarBgColor: "",
     columns: "one",
     headerPosition: "left",
     fontSize: "medium",
@@ -221,6 +242,7 @@ export const emptyResume: Resume = {
     linkStyle: ["underline"],
     sectionIcon: "none",
     headerAlignment: "center",
+    headerLayout: "stacked",
     contactArrangement: "inline",
     contactSeparator: "icon",
     iconStyle: "plain",
@@ -229,6 +251,10 @@ export const emptyResume: Resume = {
     showPhoto: true,
     photoShape: "circle",
     photoSize: 80,
+    sidebarPhotoFill: false,
+    skillsDisplay: "meter",
+    topAccentBar: false,
+    footerBar: false,
     pageFormat: "a4",
     lineHeight: 1.5,
     elementSpacing: 12,
@@ -245,6 +271,7 @@ export const emptyResume: Resume = {
       dates: true,
       linkIcons: true,
       headerIcons: true,
+      timeline: false,
     },
   },
 };

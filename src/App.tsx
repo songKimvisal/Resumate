@@ -38,6 +38,7 @@ export default function App() {
         <Route path="/refund" element={<Refund />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/dev-preview-marketplace" element={<Marketplace />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>

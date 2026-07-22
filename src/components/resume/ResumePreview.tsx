@@ -37,6 +37,7 @@ import {
   type LanguageItem,
   type ReferenceItem,
 } from "../../types/resume";
+import { idealTextColor } from "../../lib/color";
 import { photoImgStyle } from "../../lib/photoFit";
 import { cssFontStack } from "../../lib/fonts";
 import { marginPercentCss, PAGE_SIZE_MM } from "../../lib/pageSize";
@@ -119,6 +120,8 @@ interface Theme {
   showLinkIcons: boolean;
   showHeaderIcons: boolean;
   showDots: boolean;
+  showTimeline: boolean;
+  skillsListMode: boolean;
 }
 
 function useTheme(customization: Customization): Theme {
@@ -151,6 +154,8 @@ function useTheme(customization: Customization): Theme {
         customization.linkStyle.includes("icon"),
       showHeaderIcons: customization.toggles.headerIcons,
       showDots: customization.toggles.dots,
+      showTimeline: customization.toggles.timeline,
+      skillsListMode: customization.skillsDisplay === "list",
     };
   }, [customization]);
 }
@@ -223,8 +228,21 @@ export default function ResumePreview({
   const sidebarColumnVisible =
     showSidebar &&
     (headerInSidebar || sidebarSectionKeys.some(sidebarHasContent));
-  const headerTextColor = customization.bodyTextColor;
+  const sidebarBgColor = customization.sidebarBgColor;
+  const sidebarTextColor = sidebarBgColor
+    ? idealTextColor(sidebarBgColor)
+    : customization.bodyTextColor;
+  const headerTextColor =
+    headerInSidebar && sidebarBgColor
+      ? sidebarTextColor
+      : customization.bodyTextColor;
   const pageBackgroundColor = customization.bodyBgColor;
+  // sections placed in the sidebar (Section/SkillsBody/etc. all key their
+  // ink off `theme.bodyTextColor`) need to swap to a contrast-safe color
+  // when the sidebar has its own fill, independently of the main column
+  const sidebarTheme: Theme = sidebarBgColor
+    ? { ...theme, bodyTextColor: sidebarTextColor }
+    : theme;
 
   const blocks = useMemo<Block[]>(() => {
     const list: Block[] = [];
@@ -663,6 +681,12 @@ export default function ResumePreview({
                 }}
               >
                 <div className="h-full flex flex-col">
+                  {customization.topAccentBar && (
+                    <div
+                      className="h-[2.5%] w-[30%] shrink-0"
+                      style={{ backgroundColor: accent }}
+                    />
+                  )}
                   {topHeaderBanner && pageIndex === 0 && (
                     <div
                       ref={bannerRef}
@@ -702,9 +726,10 @@ export default function ResumePreview({
                       <SidebarColumn
                         personal={personal}
                         customization={customization}
-                        theme={theme}
+                        theme={sidebarTheme}
                         accent={accent}
                         textColor={headerTextColor}
+                        bgColor={sidebarBgColor}
                         headerInSidebar={headerInSidebar}
                         sidebarSectionKeys={sidebarSectionKeys}
                         experience={experience}
@@ -749,9 +774,10 @@ export default function ResumePreview({
                       <SidebarColumn
                         personal={personal}
                         customization={customization}
-                        theme={theme}
+                        theme={sidebarTheme}
                         accent={accent}
                         textColor={headerTextColor}
+                        bgColor={sidebarBgColor}
                         headerInSidebar={headerInSidebar}
                         sidebarSectionKeys={sidebarSectionKeys}
                         experience={experience}
@@ -767,6 +793,14 @@ export default function ResumePreview({
                       />
                     )}
                   </div>
+                  {customization.footerBar && (
+                    <div
+                      className="h-[2%] w-full shrink-0"
+                      style={{
+                        backgroundColor: customization.sidebarBgColor || "#1F2937",
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -786,6 +820,27 @@ function SkillsBody({
   theme: Theme;
   accent: string;
 }) {
+  if (theme.skillsListMode) {
+    return (
+      <ul className="space-y-1">
+        {skills
+          .filter((s) => s.name)
+          .map((s) => (
+            <li
+              key={s.id}
+              className="flex items-center gap-1.5 text-[0.85em]"
+              style={{ color: theme.bodyTextColor }}
+            >
+              <span
+                className="size-1 shrink-0 rounded-full"
+                style={{ backgroundColor: accent }}
+              />
+              {s.name}
+            </li>
+          ))}
+      </ul>
+    );
+  }
   return theme.showDots ? (
     <div className="space-y-1">
       {skills
@@ -795,7 +850,7 @@ function SkillsBody({
             <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
               {s.name}
             </p>
-            <DotRow level={s.level} accent={accent} />
+            <DotRow level={s.level} accent={accent} theme={theme} />
           </div>
         ))}
     </div>
@@ -823,6 +878,27 @@ function LanguagesBody({
   theme: Theme;
   accent: string;
 }) {
+  if (theme.skillsListMode) {
+    return (
+      <ul className="space-y-1">
+        {languages
+          .filter((l) => l.name)
+          .map((l) => (
+            <li
+              key={l.id}
+              className="flex items-center gap-1.5 text-[0.85em]"
+              style={{ color: theme.bodyTextColor }}
+            >
+              <span
+                className="size-1 shrink-0 rounded-full"
+                style={{ backgroundColor: accent }}
+              />
+              {l.name}
+            </li>
+          ))}
+      </ul>
+    );
+  }
   return theme.showDots ? (
     <div className="space-y-1">
       {languages
@@ -832,7 +908,7 @@ function LanguagesBody({
             <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
               {l.name}
             </p>
-            <DotRow level={l.level} accent={accent} />
+            <DotRow level={l.level} accent={accent} theme={theme} />
           </div>
         ))}
     </div>
@@ -867,14 +943,26 @@ function ReferenceEntry({ r, theme }: { r: ReferenceItem; theme: Theme }) {
   );
 }
 
-function DotRow({ level, accent }: { level: number; accent: string }) {
+function DotRow({
+  level,
+  accent,
+  theme,
+}: {
+  level: number;
+  accent: string;
+  theme: Theme;
+}) {
   return (
     <div className="flex items-center gap-1 shrink-0">
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
           className="size-[0.5em] rounded-full"
-          style={{ backgroundColor: i < level ? accent : "#e5e5e5" }}
+          style={
+            i < level
+              ? { backgroundColor: accent }
+              : { backgroundColor: theme.bodyTextColor, opacity: 0.2 }
+          }
         />
       ))}
     </div>
@@ -990,27 +1078,29 @@ function HeaderBlock({
   textColor: string;
 }) {
   const showPhoto = customization.showPhoto && !!personal.photoUrl;
-  const isLeft = theme.headerAlignment === "left";
+  const isRow = customization.headerLayout === "row" && showPhoto;
+  const isLeft = theme.headerAlignment === "left" || isRow;
   const isStacked = theme.contactArrangement === "stacked";
   const useContactSeparator = !isStacked && theme.contactSeparator !== "icon";
   const contactTheme = useContactSeparator
     ? { ...theme, showHeaderIcons: false, showLinkIcons: false }
     : theme;
 
-  return (
-    <header className={cn("space-y-2", isLeft ? "text-left" : "text-center")}>
-      {showPhoto && (
-        <div
-          className={cn("overflow-hidden", !isLeft && "mx-auto")}
-          style={{
-            width: customization.photoSize,
-            height: customization.photoSize,
-            borderRadius: photoRadiusFor(customization.photoShape),
-          }}
-        >
-          <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
-        </div>
-      )}
+  const photoNode = showPhoto && (
+    <div
+      className={cn("overflow-hidden shrink-0", !isRow && !isLeft && "mx-auto")}
+      style={{
+        width: customization.photoSize,
+        height: customization.photoSize,
+        borderRadius: photoRadiusFor(customization.photoShape),
+      }}
+    >
+      <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
+    </div>
+  );
+
+  const textNode = (
+    <>
       <h1
         className="font-bold leading-tight"
         style={{
@@ -1045,6 +1135,22 @@ function HeaderBlock({
           ? withContactSeparators(contactItems(personal, contactTheme), theme)
           : contactItems(personal, theme)}
       </div>
+    </>
+  );
+
+  if (isRow) {
+    return (
+      <header className="flex items-center gap-4">
+        {photoNode}
+        <div className="space-y-2 text-left min-w-0">{textNode}</div>
+      </header>
+    );
+  }
+
+  return (
+    <header className={cn("space-y-2", isLeft ? "text-left" : "text-center")}>
+      {photoNode}
+      {textNode}
     </header>
   );
 }
@@ -1059,7 +1165,8 @@ function SidebarHeaderBlock({
   theme: Theme;
   textColor: string;
 }) {
-  const showPhoto = customization.showPhoto && !!personal.photoUrl;
+  const showPhoto =
+    customization.showPhoto && !!personal.photoUrl && !customization.sidebarPhotoFill;
 
   return (
     <header className="text-center space-y-2">
@@ -1108,6 +1215,7 @@ function SidebarColumn({
   theme,
   accent,
   textColor,
+  bgColor,
   headerInSidebar,
   sidebarSectionKeys,
   experience,
@@ -1126,6 +1234,7 @@ function SidebarColumn({
   theme: Theme;
   accent: string;
   textColor: string;
+  bgColor?: string;
   headerInSidebar: boolean;
   sidebarSectionKeys: SectionOrderKey[];
   experience: ExperienceItem[];
@@ -1139,30 +1248,47 @@ function SidebarColumn({
   paddingTopBottomPx: number;
   paddingLeftRightPx: number;
 }) {
+  const showFullBleedPhoto =
+    headerInSidebar &&
+    customization.sidebarPhotoFill &&
+    customization.showPhoto &&
+    !!personal.photoUrl;
   return (
     <div
       className="h-full shrink-0 overflow-hidden"
-      style={{ width: `${SIDEBAR_WIDTH_FRACTION * 100}%` }}
+      style={{
+        width: `${SIDEBAR_WIDTH_FRACTION * 100}%`,
+        backgroundColor: bgColor || undefined,
+      }}
     >
       {showContent && (
-        <div
-          className="space-y-5"
-          style={{
-            paddingTop: paddingTopBottomPx,
-            paddingBottom: paddingTopBottomPx,
-            paddingLeft: paddingLeftRightPx,
-            paddingRight: paddingLeftRightPx,
-          }}
-        >
-          {headerInSidebar && (
-            <SidebarHeaderBlock
-              personal={personal}
-              customization={customization}
-              theme={theme}
-              textColor={textColor}
+        <>
+          {showFullBleedPhoto && (
+            <img
+              src={personal.photoUrl}
+              alt=""
+              className="block w-full object-cover"
+              style={{ aspectRatio: 0.92 }}
             />
           )}
-          {sidebarSectionKeys.map((key) => {
+          <div
+            className="space-y-5"
+            style={{
+              paddingTop: paddingTopBottomPx,
+              paddingBottom: paddingTopBottomPx,
+              paddingLeft: paddingLeftRightPx,
+              paddingRight: paddingLeftRightPx,
+            }}
+          >
+            {headerInSidebar && (
+              <SidebarHeaderBlock
+                personal={personal}
+                customization={customization}
+                theme={theme}
+                textColor={textColor}
+              />
+            )}
+            {sidebarSectionKeys.map((key) => {
             if (key === "skills" && skills.length > 0) {
               return (
                 <Section key="skills" title="Skills" theme={theme}>
@@ -1209,7 +1335,8 @@ function SidebarColumn({
             }
             return null;
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -1288,6 +1415,24 @@ function SidebarExperienceBody({
   );
 }
 
+/** self-contained per-entry dot + short line — deliberately NOT a
+ *  continuous line across entries, since entries can land on different
+ *  pages when the main column paginates */
+function TimelineMarker({ theme }: { theme: Theme }) {
+  return (
+    <>
+      <span
+        className="absolute left-0 top-[0.35em] size-1.5 rounded-full"
+        style={{ backgroundColor: theme.bodyAccentColor }}
+      />
+      <span
+        className="absolute left-0.5 top-[0.9em] w-px h-[1.6em]"
+        style={{ backgroundColor: theme.bodyAccentColor, opacity: 0.35 }}
+      />
+    </>
+  );
+}
+
 function ExperienceHeader({
   exp,
   theme,
@@ -1296,7 +1441,13 @@ function ExperienceHeader({
   theme: Theme;
 }) {
   return (
-    <div className="flex justify-between gap-3 items-baseline">
+    <div
+      className={cn(
+        "flex justify-between gap-3 items-baseline",
+        theme.showTimeline && "relative pl-3",
+      )}
+    >
+      {theme.showTimeline && <TimelineMarker theme={theme} />}
       <p
         className="font-semibold text-[0.95em]"
         style={{ color: theme.bodyTextColor }}
@@ -1337,7 +1488,13 @@ function NoExperienceHeader({
 }) {
   const hasUrl = exp.url.trim() !== "";
   return (
-    <div className="flex justify-between gap-3 items-baseline">
+    <div
+      className={cn(
+        "flex justify-between gap-3 items-baseline",
+        theme.showTimeline && "relative pl-3",
+      )}
+    >
+      {theme.showTimeline && <TimelineMarker theme={theme} />}
       <p
         className="font-semibold text-[0.95em]"
         style={{ color: theme.bodyTextColor }}
