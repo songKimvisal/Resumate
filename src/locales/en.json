@@ -935,8 +935,8 @@
     },
     "aiBanner": {
       "title": "Not sure which template to pick?",
-      "subtitle": "Answer 3 quick questions or mix and match manually. AI picks the best layout, color, and font for you.",
-      "cta": "AI pick for me"
+      "subtitle": "Answer 3 quick questions or mix and match manually. Smart picks the best layout, color, and font for you.",
+      "cta": "Smart pick for me"
     },
     "filters": {
       "all": "All",
@@ -997,11 +997,13 @@
       "navy": "Navy"
     },
     "aiPicker": {
-      "title": "AI design picker",
-      "subtitle": "Let AI choose or mix and match yourself",
+      "title": "Smart design picker",
+      "subtitle": "Let Smart choose or mix and match yourself",
       "q1": "What industry are you applying to?",
       "q2": "What is your experience level?",
       "q3": "What feeling do you want your resume to give?",
+      "multiHint": "pick as many as you like",
+      "multiSelectedCount": "{{count}} selected",
       "industryOptions": {
         "banking": "Banking & Finance",
         "ngo": "NGO / Development",
@@ -1029,7 +1031,7 @@
       "generate": "Generate my design"
     },
     "aiResult": {
-      "eyebrow": "AI design picker",
+      "eyebrow": "Smart design picker",
       "title": "Your design is",
       "titleAccent": "ready.",
       "description": "A {{layout}} layout in {{color}}, styled to feel {{vibe}} tuned for a {{industry}} application.",
@@ -1040,7 +1042,7 @@
       "specStyle": "Template style",
       "accentColorLabel": "Accent color",
       "typefaceLabel": "Typeface",
-      "note": "This is a starting point you can adjust the layout, color, or font anytime in Step 5 Review.",
+      "note": "This is just a starting point you can adjust the layout, colors, or fonts at any step using the Customize button",
       "switchHint": "Tap a layout to switch adjust the accent and color on the left",
       "changeAnswers": "← Change my answer",
       "continue": "Continue editing →",

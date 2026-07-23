@@ -365,7 +365,7 @@ export default function Home() {
           {...fadeUp}
           className="mt-8 flex flex-wrap justify-center gap-3"
         >
-          <Link to="/login">
+          <Link to="/marketplace">
             <Button size="default">{t("home.cta.primary")}</Button>
           </Link>
           <a href="#features">

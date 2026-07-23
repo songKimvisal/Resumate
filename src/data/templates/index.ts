@@ -23,12 +23,6 @@ export type {
   TemplateVibe,
 };
 
-/** All template presets, grouped one file per industry under `./free/` or
- *  `./premium/` depending on tier. To add a new industry: create
- *  `<industry>.ts` under the matching tier folder exporting a `preset()`
- *  array (see `types.ts`) and list it below. To add a variant to an existing
- *  industry, add a `preset()` call to that industry's file — nothing else to
- *  wire up. An industry that offers both tiers gets a file in each folder. */
 export const TEMPLATE_PRESETS: TemplatePreset[] = [
   ...BANKING_FREE_TEMPLATES,
   ...BANKING_PREMIUM_TEMPLATES,
@@ -41,13 +35,11 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
   ...DESIGNER_PREMIUM_TEMPLATES,
 ];
 
-/** Derived from the presets themselves, in first-seen order, so a new
- *  industry file shows up in the marketplace filters automatically. */
+
 export const INDUSTRIES: TemplateIndustry[] = Array.from(
   new Set(TEMPLATE_PRESETS.map((p) => p.industry)),
 );
 
-/** i18n key suffix under marketplace.colorNames, keyed by swatch hex. */
 export const ACCENT_COLOR_KEYS: Record<string, string> = {
   "#C1121F": "crimson",
   "#EA580C": "orange",
@@ -79,11 +71,9 @@ export type AiVibeAnswer = TemplateVibe;
 export interface AiAnswers {
   industry: AiIndustryAnswer;
   experience: AiExperienceAnswer;
-  vibe: AiVibeAnswer;
+  vibe: AiVibeAnswer[];
 }
 
-/** "Government / Public" has no dedicated gallery category — it maps to the
- *  same formal, understated tone as the Banking templates. */
 const INDUSTRY_MATCH: Record<AiIndustryAnswer, TemplateIndustry> = {
   banking: "banking",
   ngo: "ngo",
@@ -104,7 +94,7 @@ const EXPERIENCE_VIBE_HINTS: Record<AiExperienceAnswer, TemplateVibe[]> = {
 function scoreTemplate(candidate: TemplatePreset, answers: AiAnswers): number {
   let score = 0;
   if (candidate.industry === INDUSTRY_MATCH[answers.industry]) score += 4;
-  if (candidate.vibes.includes(answers.vibe)) score += 2;
+  score += answers.vibe.filter((v) => candidate.vibes.includes(v)).length * 2;
   score += EXPERIENCE_VIBE_HINTS[answers.experience].filter((v) =>
     candidate.vibes.includes(v),
   ).length;
@@ -113,13 +103,8 @@ function scoreTemplate(candidate: TemplatePreset, answers: AiAnswers): number {
 
 export interface AiRecommendation {
   primary: TemplatePreset;
-  /** same industry, opposite layout — shown side by side for comparison */
   sibling: TemplatePreset;
 }
-
-/** The AI picker only ever recommends premium templates — it's the upsell
- *  path into the paid catalog, so free templates never surface here even if
- *  they'd technically score higher. */
 export function recommendTemplates(answers: AiAnswers): AiRecommendation {
   const premiumOnly = TEMPLATE_PRESETS.filter((p) => p.tier === "premium");
   const ranked = [...premiumOnly].sort(
