@@ -18,6 +18,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import MyResumes from "./pages/dashboard/MyResumes";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
 import Billing from "./pages/billing/Billing";
+import BillingHistory from "./pages/billing/BillingHistory";
 import AiUsage from "./pages/aiUsage/AiUsage";
 import BuilderLayout from "./pages/builder/BuilderLayout";
 import Marketplace from "./pages/marketplace/Marketplace";
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/my-resumes" element={<MyResumes />} />
             <Route path="/interview-prep" element={<InterviewPrep />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/billing/history" element={<BillingHistory />} />
             <Route path="/ai-usage" element={<AiUsage />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
