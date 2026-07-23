@@ -236,6 +236,21 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-placeholder);
   }
+
+  .animate-marquee {
+    animation-name: marquee;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 .rte-content p {
   margin: 0;

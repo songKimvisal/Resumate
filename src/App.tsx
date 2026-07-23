@@ -8,6 +8,7 @@ import Signup from "./pages/signup";
 import ForgotPassword from "./pages/forgot-password";
 import ResetPassword from "./pages/reset-password";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import Refund from "./pages/Refund";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

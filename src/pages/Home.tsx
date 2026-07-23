@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { CircleCheck, Leaf, Crown, Zap } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import Testimonials from "../components/home/Testimonials";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
 import tpl1 from "../assets/templates/template-1.png";
@@ -354,6 +355,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ================= TESTIMONIALS ================= */}
+      <Testimonials />
 
       {/* ================= FINAL CTA ================= */}
       <section className="border-t border-line py-24 text-center px-4">
