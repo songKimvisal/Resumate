@@ -1110,5 +1110,83 @@
       "deleting": "Deleting…",
       "error": "Couldn't delete your account. Please try again."
     }
+  },
+  "billing": {
+    "title": "Billing &",
+    "titleAccent": "Timeline",
+    "subtitle": "Manage your subscription and payment method.",
+    "currentPlan": {
+      "label": "Current plan",
+      "perMonth": "/month",
+      "usageLabel": "AI writing used this month",
+      "usageCount": "{{used}} of {{total}} uses",
+      "upgradeCta": "Upgrade plan"
+    },
+    "paymentMethod": {
+      "label": "Payment method",
+      "nextBilling": "Next billing on {{date}}",
+      "chooseSubtitle": "Scan with KHQR, or pay by card via Stripe instant activation.",
+      "khqr": {
+        "name": "Bakong KHQR",
+        "desc": "Any Cambodian bank app"
+      },
+      "stripe": {
+        "name": "Stripe",
+        "desc": "Visa, Mastercard, or UnionPay"
+      },
+      "card": {
+        "nameLabel": "Name on card",
+        "namePlaceholder": "Full name",
+        "numberLabel": "Card number",
+        "expiryLabel": "Expiry",
+        "cvcLabel": "CVC",
+        "secureNote": "Payments are securely processed by Stripe."
+      },
+      "save": "Save Method",
+      "cancel": "Cancel"
+    },
+    "billingHistory": {
+      "label": "Billing history",
+      "viewInvoices": "View invoices"
+    },
+    "cancelSubscription": {
+      "label": "Cancel subscription",
+      "description": "Cancel anytime. Access continues until the current period ends.",
+      "cancel": "Cancel",
+      "confirm": "Your plan stays active until the end of the current billing period, then it won't renew.",
+      "confirmYes": "Yes, cancel",
+      "confirmCancel": "Keep subscription",
+      "cancelling": "Cancelling…",
+      "cancelled": "Your subscription has been cancelled."
+    }
+  },
+  "billingHistory": {
+    "title": "Billing",
+    "titleAccent": "History",
+    "subtitle": "Manage your subscription and payment method.",
+    "stats": {
+      "totalPaid": "Total paid",
+      "memberSince": "Member since",
+      "nextCharge": "Next Charge"
+    },
+    "filters": {
+      "all": "All",
+      "plan": "Monthly plan",
+      "template": "Templates"
+    },
+    "empty": "No transactions in this category yet.",
+    "back": "Back",
+    "receipt": {
+      "title": "Receipt",
+      "close": "Close",
+      "itemLabel": {
+        "plan": "Plan",
+        "template": "Template"
+      },
+      "date": "Date",
+      "paid": "Paid",
+      "transactionId": "Transaction ID",
+      "downloadPdf": "Download PDF"
+    }
   }
 }

@@ -4,7 +4,7 @@ import {
   LayoutGrid,
   FileText,
   MessagesSquare,
-  Receipt,
+  ReceiptText,
   PieChart,
   Settings as SettingsIcon,
   Sparkles,
@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutGrid, key: "dashboard" },
   { to: "/my-resumes", icon: FileText, key: "myResumes" },
   { to: "/interview-prep", icon: MessagesSquare, key: "interviewPrep" },
-  { to: "/billing", icon: Receipt, key: "billing" },
+  { to: "/billing", icon: ReceiptText, key: "billing" },
   { to: "/ai-usage", icon: PieChart, key: "aiUsage" },
   { to: "/settings", icon: SettingsIcon, key: "settings" },
 ] as const;
