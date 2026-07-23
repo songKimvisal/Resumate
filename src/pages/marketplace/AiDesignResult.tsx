@@ -61,7 +61,10 @@ export default function AiDesignResult({
   const colorKey = ACCENT_COLOR_KEYS[accentColor];
   const colorName = colorKey ? t(`marketplace.colorNames.${colorKey}`) : "";
   const industryLabel = t(`marketplace.industries.${activePreset.industry}`);
-  const vibeLabel = t(`marketplace.aiPicker.vibeOptions.${answers.vibe}`);
+  const vibeLabels = answers.vibe.map((v) =>
+    t(`marketplace.aiPicker.vibeOptions.${v}`),
+  );
+  const vibeLabel = vibeLabels.join(", ");
   const layoutLabel = t(
     `marketplace.aiResult.layout${activeLayout === "classic" ? "Classic" : "Sidebar"}`,
   );
@@ -118,7 +121,9 @@ export default function AiDesignResult({
               `marketplace.aiPicker.experienceOptions.${answers.experience}`,
             )}
           />
-          <AnswerBadge label={vibeLabel} />
+          {vibeLabels.map((label) => (
+            <AnswerBadge key={label} label={label} />
+          ))}
         </div>
 
         <div className="rounded-xl border border-line p-4 space-y-3">
