@@ -952,6 +952,10 @@
     },
     "premiumBadge": "ពិសេស",
     "premiumHover": "ដោះសោគំរូ",
+    "premiumOverlay": {
+      "title": "គំរូប្រវត្តិរូបកម្រិតពិសេស (Premium)",
+      "unlockFor": "បើកប្រើប្រាស់ក្នុងតម្លៃ ${{price}}"
+    },
     "unlockModal": {
       "description": "នេះជាគំរូពិសេស។ ដោះសោវាដើម្បីប្រើប្រាស់រចនាបថនេះ និងកែប្រែវាដោយសេរី។",
       "cancel": "បោះបង់",

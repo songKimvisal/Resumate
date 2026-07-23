@@ -139,21 +139,21 @@ export default function Marketplace() {
             </p>
 
             {/* ---------- AI pick banner ---------- */}
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl sm:rounded-full border-2 border-brand/30 bg-brand/5 px-5 py-4 sm:py-3">
-              <div className="flex items-center gap-3">
-                <span className="shrink-0 size-12 rounded-full bg-brand text-white inline-flex items-center justify-center">
-                  <Bot size={26} strokeWidth={2} />
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl sm:rounded-full border-2 border-brand/30 bg-brand/5 px-4 py-3 sm:py-2">
+              <div className="flex items-center gap-2.5">
+                <span className="shrink-0 size-9 rounded-full bg-brand text-white inline-flex items-center justify-center">
+                  <Bot size={18} strokeWidth={2} />
                 </span>
                 <div>
-                  <p className="font-semibold text-text">
+                  <p className="text-sm font-semibold text-text">
                     {t("marketplace.aiBanner.title")}
                   </p>
-                  <p className="text-sm text-text-secondary mt-0.5">
+                  <p className="text-xs text-text-secondary mt-0.5">
                     {t("marketplace.aiBanner.subtitle")}
                   </p>
                 </div>
               </div>
-              <Button size="default" className="shrink-0" onClick={openAiModal}>
+              <Button size="compact" className="shrink-0" onClick={openAiModal}>
                 {t("marketplace.aiBanner.cta")}
               </Button>
             </div>
