@@ -87,21 +87,28 @@ export default function Home() {
 
         <motion.div className="mt-8 flex flex-wrap justify-center gap-3">
           {user ? (
-            // ---------- logged IN: one button ----------
-            <Link to="/dashboard">
-              <Button size="default">{t("home.hero.ctaDashboard")}</Button>
-            </Link>
+            // ---------- logged IN ----------
+            <>
+              <Link to="/dashboard">
+                <Button size="default">{t("home.hero.ctaDashboard")}</Button>
+              </Link>
+              <Link to="/marketplace">
+                <Button size="default" variant="outline">
+                  {t("home.hero.ctaSecondary")}
+                </Button>
+              </Link>
+            </>
           ) : (
             // ---------- logged OUT: the original two ----------
             <>
               <Link to="/login">
                 <Button size="default">{t("home.hero.ctaPrimary")}</Button>
               </Link>
-              <a href="#templates">
+              <Link to="/marketplace">
                 <Button size="default" variant="outline">
                   {t("home.hero.ctaSecondary")}
                 </Button>
-              </a>
+              </Link>
             </>
           )}
         </motion.div>
@@ -284,10 +291,10 @@ export default function Home() {
             <motion.div
               key={plan.name}
               {...fadeUp}
-              className={`flex flex-col rounded-2xl p-8 space-y-6 ${
+              className={`flex flex-col rounded-2xl bg-bg p-8 space-y-6 ${
                 plan.popular
                   ? "border-2 border-brand shadow-lg"
-                  : "border border-line bg-surface"
+                  : "border border-line"
               }`}
             >
               <div className="space-y-2">
