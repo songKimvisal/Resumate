@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Crown } from "lucide-react";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { cn } from "../../lib/utils";
+
+const UNLOCK_PRICE = "2.99";
 
 export default function TemplateCard({
   preset,
@@ -26,37 +26,30 @@ export default function TemplateCard({
     <button
       type="button"
       onClick={() => onSelect(preset)}
-      className={cn(
-        "group relative text-left rounded-lg border bg-bg overflow-hidden transition-all duration-200",
-        isPremium
-          ? "border-2 border-amber-400 ring-1 ring-amber-200/70 shadow-[0_6px_20px_-6px_rgba(217,158,21,0.55)] hover:border-amber-500 hover:ring-2 hover:ring-amber-300/80 hover:shadow-[0_10px_28px_-6px_rgba(217,158,21,0.7)]"
-          : "border-line hover:border-brand/50 hover:ring-2 hover:ring-brand/30",
-      )}
+      className="group relative text-left rounded-lg border border-line bg-bg overflow-hidden shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-lg hover:ring-2 hover:ring-brand/20"
     >
       <div className="relative pointer-events-none">
         <ResumePreview singlePage resume={resume} />
 
-        {isPremium && (
-          <>
-            <span className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-400 via-yellow-300 to-amber-400" />
-            <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-md ring-2 ring-white">
-              <Crown size={12} strokeWidth={2.5} />
-              {t("marketplace.premiumBadge")}
-            </span>
+        {isPremium && !isUnlocked && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="mx-5 flex max-w-[85%] flex-col items-center gap-2.5 rounded-2xl bg-white/60 px-5 py-5 text-center shadow-[0_8px_24px_-6px_rgba(0,0,0,0.3)] ring-1 ring-black/6 backdrop-blur-lg backdrop-saturate-150 transition-transform duration-200 group-hover:scale-[1.04]">
+              <span className="text-sm leading-snug font-bold uppercase tracking-wide text-brand-dark">
+                {t("marketplace.premiumOverlay.title")}
+              </span>
+              <span className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-md shadow-brand/30">
+                {t("marketplace.premiumOverlay.unlockFor", {
+                  price: UNLOCK_PRICE,
+                })}
+              </span>
+            </div>
+          </div>
+        )}
 
-            {!isUnlocked && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/35 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">
-                <span className="flex scale-90 items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-amber-900 opacity-0 shadow-lg transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
-                  <Crown
-                    size={12}
-                    strokeWidth={2.5}
-                    className="text-amber-500"
-                  />
-                  {t("marketplace.premiumHover")}
-                </span>
-              </div>
-            )}
-          </>
+        {isPremium && isUnlocked && (
+          <span className="absolute top-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-dark shadow-sm ring-1 ring-black/6">
+            {t("marketplace.premiumBadge")}
+          </span>
         )}
       </div>
       <div className="px-3 py-2.5">

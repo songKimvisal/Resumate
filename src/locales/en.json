@@ -952,6 +952,10 @@
     },
     "premiumBadge": "Premium",
     "premiumHover": "Unlock template",
+    "premiumOverlay": {
+      "title": "Premium Template",
+      "unlockFor": "Unlock for ${{price}}"
+    },
     "unlockModal": {
       "description": "This is a premium template. Unlock it to use this design and customize it freely.",
       "cancel": "Cancel",
