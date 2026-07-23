@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AuthError } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
@@ -13,6 +13,8 @@ import logoMobile from "../assets/logo/logo.png";
 export default function Login() {
   const { user, loading, signInWithGoogle, signInWithPassword } = useAuth();
   const { t } = useTranslation();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +48,7 @@ export default function Login() {
   }
 
   // Already signed in → skip the login page
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to={from} replace />;
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4 lg:p-10">
@@ -115,7 +117,7 @@ export default function Login() {
             </div>
 
             <button
-              onClick={signInWithGoogle}
+              onClick={() => signInWithGoogle(from)}
               className="w-full flex items-center justify-center gap-3 bg-bg border border-line text-text font-medium px-4 py-3.5 rounded-xl hover:bg-surface-2 transition-colors"
             >
               {/* Google "G" in official colors */}

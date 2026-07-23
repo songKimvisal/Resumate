@@ -141,7 +141,7 @@ export default function Signup() {
                 </div>
 
                 <button
-                  onClick={signInWithGoogle}
+                  onClick={() => signInWithGoogle()}
                   className="w-full flex items-center justify-center gap-3 bg-bg border border-line text-text font-medium px-4 py-3.5 rounded-xl hover:bg-surface-2 transition-colors"
                 >
                   <svg

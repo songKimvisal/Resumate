@@ -355,10 +355,7 @@
             "3 resume templates",
             "1 resume saved",
             "PDF download (A4)",
-            "Smart writing 5 uses / month",
-            "1 job analysis / month",
-            "1 resume match analysis / month",
-            "Basic job readiness report"
+            "Smart writing 5 uses / month"
           ],
           "cta": "Get started free"
         },
@@ -369,10 +366,10 @@
           "includesLabel": "Everything in Free, plus",
           "features": [
             "All standard templates",
-            "Up to 5 resumes saved",
-            "50 smart writing credits / month",
-            "20 job analyses / month",
-            "20 interview question sets / month",
+            "Up to 2 resumes saved",
+            "30 smart writing credits / month",
+            "1 job analysis / month",
+            "1 interview question set / month",
             "Full job readiness reports",
             "Resume improvement suggestions"
           ],
@@ -386,11 +383,11 @@
           "includesLabel": "Everything in Starter, plus",
           "features": [
             "All standard + premium templates",
-            "Up to 20 resumes",
-            "300 smart writing credits / month",
-            "100 job & match analyses / month",
+            "Up to 6 resumes",
+            "60 smart writing credits / month",
+            "3 job & match analyses / month",
             "Detailed skill gap analysis",
-            "100 interview question sets / month",
+            "3 interview question sets / month",
             "Priority support & early access"
           ],
           "cta": "Upgrade to Pro"
