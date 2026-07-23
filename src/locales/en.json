@@ -114,6 +114,34 @@
       }
     ]
   },
+  "contact": {
+    "label": "Get in touch",
+    "title": "Contact us",
+    "subtitle": "Questions about your resume, a plan, or a bug? We usually reply within one business day.",
+    "form": {
+      "nameLabel": "Your Name",
+      "namePlaceholder": "Jane Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "topicLabel": "Topic",
+      "topics": {
+        "feedback": "Feedback",
+        "general": "General Question",
+        "billing": "Bill and Payment",
+        "bugs": "Bugs report",
+        "feature": "Feature Request"
+      },
+      "messageLabel": "Message",
+      "messagePlaceholder": "Tell us what's on your mind…",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "success": "Thanks! We've received your message and will reply within one business day.",
+      "error": "Something went wrong sending your message. Please try again.",
+      "nameRequired": "Please enter your name",
+      "emailRequired": "Please enter a valid email",
+      "messageRequired": "Please write a message"
+    }
+  },
   "nav": {
     "templates": "Templates",
     "features": "Features",
