@@ -367,6 +367,24 @@
         ]
       }
     },
+    "testimonials": {
+      "title": "What our",
+      "titleAccent": "users say.",
+      "subtitle": "Real feedback from job seekers who built their resume with ResuMate.",
+      "form": {
+        "title": "Share your experience",
+        "nameLabel": "Your Name",
+        "namePlaceholder": "Jane Doe",
+        "messageLabel": "Your message",
+        "messagePlaceholder": "Tell us about your experience with ResuMate…",
+        "submit": "Submit",
+        "sending": "Submitting…",
+        "success": "Thanks for sharing! Your message may be featured here soon.",
+        "error": "Something went wrong submitting your message. Please try again.",
+        "nameRequired": "Please enter your name",
+        "messageRequired": "Please write a message"
+      }
+    },
     "pricing": {
       "title": "Simple,",
       "titleAccent": "honest pricing.",
