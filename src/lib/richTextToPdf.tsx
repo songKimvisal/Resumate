@@ -64,12 +64,23 @@ function renderInline(
   }
 }
 
+type BulletStyle = "disc" | "dash" | "arrow" | "square" | "none";
+
+const BULLET_GLYPHS: Record<BulletStyle, string> = {
+  disc: "•",
+  dash: "–",
+  arrow: "→",
+  square: "▪",
+  none: "",
+};
+
 type RichTextOptions = {
   fontSize: number;
   color?: string;
   align?: "left" | "center" | "right" | "justify";
   fontFamily?: PdfFontFamily;
   lineHeight?: number;
+  bulletStyle?: BulletStyle;
 };
 
 /** Converts Tiptap HTML (paragraphs, lists, bold/italic/underline/links)
@@ -83,6 +94,7 @@ export function richTextToPdf(
     align = "left",
     fontFamily = "Helvetica",
     lineHeight,
+    bulletStyle = "disc",
   }: RichTextOptions,
 ): React.ReactNode[] {
   const container = document.createElement("div");
@@ -110,7 +122,7 @@ export function richTextToPdf(
             }}
           >
             <Text style={{ width: 10, fontSize, color, lineHeight }}>
-              {tag === "ol" ? `${j + 1}.` : "•"}
+              {tag === "ol" ? `${j + 1}.` : BULLET_GLYPHS[bulletStyle]}
             </Text>
             <Text style={{ flex: 1, fontSize, color, lineHeight }}>
               {inline}

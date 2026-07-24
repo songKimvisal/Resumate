@@ -651,13 +651,17 @@
       "templates": {
         "title": "Change Templates",
         "subtitle": "Update your entire resume design with one click",
-        "button": "Change Templates"
+        "button": "Browse all templates"
       },
       "locked": {
         "title": "{{style}} is a premium template",
         "subtitle": "Unlock it to customize colors, fonts, and layout. Free templates can't be edited into a premium look.",
         "changeTemplate": "Choose another template",
         "unlockCta": "Unlock template"
+      },
+      "premiumGate": {
+        "description": "Go monthly or unlock this template to access advanced styling.",
+        "cta": "Unlock full customization"
       },
       "layout": {
         "columns": "Columns",
@@ -682,6 +686,7 @@
         "shapeRounded": "Rounded",
         "shapeSquare": "Square",
         "photoSize": "Photo size",
+        "photoBorder": "Photo border ring",
         "topAccentBar": "Top accent bar",
         "footerBar": "Footer bar",
         "skillsDisplay": "Skills style",
@@ -741,7 +746,18 @@
         "linkStyle": "Link Style",
         "linkUnderline": "Underline",
         "linkColor": "Accent Color",
-        "linkIcon": "Link icon"
+        "linkIcon": "Link icon",
+        "letterSpacing": "Heading letter spacing",
+        "bulletStyle": "Bullet Style",
+        "bulletDisc": "Dot",
+        "bulletDash": "Dash",
+        "bulletArrow": "Arrow",
+        "bulletSquare": "Square",
+        "bulletNone": "None",
+        "dateFormat": "Date Format",
+        "dateFormatMonthYear": "Jan 2020",
+        "dateFormatNumeric": "01/2020",
+        "dateFormatYearOnly": "2020"
       },
       "colors": {
         "textColor": "Text Color",
@@ -773,7 +789,9 @@
         "lineHeight": "Line Height",
         "elementSpacing": "Space Between Elements",
         "topBottomMargin": "Top & Bottom Margin",
-        "leftRightMargin": "Left & Right Margin"
+        "leftRightMargin": "Left & Right Margin",
+        "pageBorder": "Page border frame",
+        "pageBorderWidth": "Border width"
       }
     },
     "personal": {
@@ -1120,6 +1138,7 @@
     "menu": {
       "open": "Resume options",
       "continue": "Continue editing",
+      "rename": "Rename",
       "download": "Download PDF",
       "downloading": "Preparing…",
       "delete": "Delete",
@@ -1163,10 +1182,17 @@
     "subtitle": "Manage your subscription and payment method.",
     "currentPlan": {
       "label": "Current plan",
+      "freeName": "Free",
+      "monthlyName": "Monthly",
       "perMonth": "/month",
       "usageLabel": "AI writing used this month",
       "usageCount": "{{used}} of {{total}} uses",
-      "upgradeCta": "Upgrade plan"
+      "upgradeCta": "Upgrade plan",
+      "upgradeConfirm": "Switch to the Monthly plan for ${{price}}/month and unlock full customization on every template.",
+      "upgradeConfirmYes": "Confirm upgrade",
+      "upgradeConfirmCancel": "Not now",
+      "comparePlans": "Compare plans",
+      "subscribedNote": "You're on the Monthly plan full customization unlocked."
     },
     "paymentMethod": {
       "label": "Payment method",

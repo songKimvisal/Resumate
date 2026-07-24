@@ -6,11 +6,12 @@ import { QrCode, CreditCard, Loader2, CheckCircle2, Lock } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
 import mascot from "../../assets/logo/mascot.png";
 
 type PaymentMethod = "khqr" | "stripe";
 
-const CURRENT_PLAN = { name: "Free", price: "0" };
+const MONTHLY_PRICE = "9.99";
 const USAGE = { used: 3, total: 5 };
 const NEXT_BILLING_DATE = "19 Jul 2026";
 
@@ -36,6 +37,15 @@ const detectCardBrand = (digits: string) => {
 export default function Billing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const isSubscribed = useSubscriptionStore((s) => s.isSubscribed);
+  const subscribe = useSubscriptionStore((s) => s.subscribe);
+  const unsubscribe = useSubscriptionStore((s) => s.unsubscribe);
+  const [confirmingUpgrade, setConfirmingUpgrade] = useState(false);
+
+  const CURRENT_PLAN = isSubscribed
+    ? { name: t("billing.currentPlan.monthlyName"), price: MONTHLY_PRICE }
+    : { name: t("billing.currentPlan.freeName"), price: "0" };
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("khqr");
   const [editingMethod, setEditingMethod] = useState(false);
@@ -92,6 +102,7 @@ export default function Billing() {
   const handleCancelSubscription = async () => {
     setCancelling(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
+    unsubscribe();
     setCancelling(false);
     setCancelled(true);
     setConfirmingCancel(false);
@@ -139,12 +150,68 @@ export default function Billing() {
             })}
           </p>
 
-          <Button
-            className="mt-5 w-full"
-            onClick={() => navigate("/", { state: { scrollTo: "pricing" } })}
-          >
-            {t("billing.currentPlan.upgradeCta")}
-          </Button>
+          {isSubscribed ? (
+            <p className="mt-5 flex items-center gap-1.5 text-sm text-success">
+              <CheckCircle2 size={15} strokeWidth={2} className="shrink-0" />
+              {t("billing.currentPlan.subscribedNote")}
+            </p>
+          ) : (
+            <>
+              <Button
+                className="mt-5 w-full"
+                onClick={() => setConfirmingUpgrade((v) => !v)}
+              >
+                {t("billing.currentPlan.upgradeCta")}
+              </Button>
+              <AnimatePresence initial={false}>
+                {confirmingUpgrade && (
+                  <motion.div
+                    key="upgrade-confirm"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 rounded-xl border border-line p-4 space-y-3">
+                      <p className="text-sm text-text">
+                        {t("billing.currentPlan.upgradeConfirm", {
+                          price: MONTHLY_PRICE,
+                        })}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="compact"
+                          onClick={() => {
+                            subscribe();
+                            setConfirmingUpgrade(false);
+                          }}
+                        >
+                          {t("billing.currentPlan.upgradeConfirmYes")}
+                        </Button>
+                        <Button
+                          size="compact"
+                          variant="outline"
+                          onClick={() => setConfirmingUpgrade(false)}
+                        >
+                          {t("billing.currentPlan.upgradeConfirmCancel")}
+                        </Button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate("/", { state: { scrollTo: "pricing" } })
+                        }
+                        className="text-xs text-text-secondary hover:text-text hover:underline"
+                      >
+                        {t("billing.currentPlan.comparePlans")}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
 
         <img
@@ -331,84 +398,90 @@ export default function Billing() {
           </button>
         </div>
 
-        <div className="border-t border-line p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-bold text-brand">
-                {t("billing.cancelSubscription.label")}
-              </p>
-              <p className="text-sm text-text-secondary mt-0.5">
-                {t("billing.cancelSubscription.description")}
-              </p>
+        {(isSubscribed || cancelled) && (
+          <div className="border-t border-line p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-bold text-brand">
+                  {t("billing.cancelSubscription.label")}
+                </p>
+                <p className="text-sm text-text-secondary mt-0.5">
+                  {t("billing.cancelSubscription.description")}
+                </p>
+              </div>
+              {!confirmingCancel && !cancelled && (
+                <Button
+                  size="compact"
+                  variant="destructive"
+                  className="shrink-0"
+                  onClick={() => setConfirmingCancel(true)}
+                >
+                  {t("billing.cancelSubscription.cancel")}
+                </Button>
+              )}
             </div>
-            {!confirmingCancel && !cancelled && (
-              <Button
-                size="compact"
-                variant="destructive"
-                className="shrink-0"
-                onClick={() => setConfirmingCancel(true)}
-              >
-                {t("billing.cancelSubscription.cancel")}
-              </Button>
-            )}
-          </div>
 
-          <AnimatePresence initial={false}>
-            {cancelled && (
-              <motion.p
-                key="cancelled"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="overflow-hidden mt-4 pt-4 border-t border-line flex items-center gap-1.5 text-sm text-success"
-              >
-                <CheckCircle2 size={15} strokeWidth={2} className="shrink-0" />
-                {t("billing.cancelSubscription.cancelled")}
-              </motion.p>
-            )}
+            <AnimatePresence initial={false}>
+              {cancelled && (
+                <motion.p
+                  key="cancelled"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="overflow-hidden mt-4 pt-4 border-t border-line flex items-center gap-1.5 text-sm text-success"
+                >
+                  <CheckCircle2
+                    size={15}
+                    strokeWidth={2}
+                    className="shrink-0"
+                  />
+                  {t("billing.cancelSubscription.cancelled")}
+                </motion.p>
+              )}
 
-            {confirmingCancel && (
-              <motion.div
-                key="confirm"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4 pt-4 border-t border-line space-y-3">
-                  <p className="text-sm text-text-secondary">
-                    {t("billing.cancelSubscription.confirm")}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="compact"
-                      variant="destructive"
-                      disabled={cancelling}
-                      onClick={handleCancelSubscription}
-                    >
-                      {cancelling && (
-                        <Loader2 size={15} className="animate-spin" />
-                      )}
-                      {cancelling
-                        ? t("billing.cancelSubscription.cancelling")
-                        : t("billing.cancelSubscription.confirmYes")}
-                    </Button>
-                    <Button
-                      size="compact"
-                      variant="outline"
-                      disabled={cancelling}
-                      onClick={() => setConfirmingCancel(false)}
-                    >
-                      {t("billing.cancelSubscription.confirmCancel")}
-                    </Button>
+              {confirmingCancel && (
+                <motion.div
+                  key="confirm"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 pt-4 border-t border-line space-y-3">
+                    <p className="text-sm text-text-secondary">
+                      {t("billing.cancelSubscription.confirm")}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="compact"
+                        variant="destructive"
+                        disabled={cancelling}
+                        onClick={handleCancelSubscription}
+                      >
+                        {cancelling && (
+                          <Loader2 size={15} className="animate-spin" />
+                        )}
+                        {cancelling
+                          ? t("billing.cancelSubscription.cancelling")
+                          : t("billing.cancelSubscription.confirmYes")}
+                      </Button>
+                      <Button
+                        size="compact"
+                        variant="outline"
+                        disabled={cancelling}
+                        onClick={() => setConfirmingCancel(false)}
+                      >
+                        {t("billing.cancelSubscription.confirmCancel")}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );

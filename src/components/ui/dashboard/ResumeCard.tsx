@@ -11,6 +11,7 @@ interface ResumeCardProps {
   onContinue: () => void;
   onDownload: () => Promise<void>;
   onDelete: () => Promise<void>;
+  onRename: (title: string) => Promise<void>;
 }
 
 export default function ResumeCard({
@@ -19,13 +20,17 @@ export default function ResumeCard({
   onContinue,
   onDownload,
   onDelete,
+  onRename,
 }: ResumeCardProps) {
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(resume.title);
   const menuRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -60,6 +65,28 @@ export default function ResumeCard({
     }
   };
 
+  const startRenaming = () => {
+    setMenuOpen(false);
+    setTitleDraft(resume.title);
+    setRenaming(true);
+  };
+
+  useEffect(() => {
+    if (renaming) titleInputRef.current?.select();
+  }, [renaming]);
+
+  const commitRename = async () => {
+    const trimmed = titleDraft.trim();
+    setRenaming(false);
+    if (!trimmed || trimmed === resume.title) return;
+    await onRename(trimmed);
+  };
+
+  const cancelRename = () => {
+    setTitleDraft(resume.title);
+    setRenaming(false);
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div
@@ -75,12 +102,27 @@ export default function ResumeCard({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <button
-          onClick={onContinue}
-          className="text-sm font-medium truncate hover:text-brand transition-colors"
-        >
-          {resume.title || t("myResumes.untitled")}
-        </button>
+        {renaming ? (
+          <input
+            ref={titleInputRef}
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") cancelRename();
+            }}
+            placeholder={t("myResumes.untitled")}
+            className="min-w-0 flex-1 rounded-md border border-brand bg-bg px-1.5 py-0.5 text-sm font-medium text-text focus:outline-none"
+          />
+        ) : (
+          <button
+            onClick={onContinue}
+            className="text-sm font-medium truncate hover:text-brand transition-colors"
+          >
+            {resume.title || t("myResumes.untitled")}
+          </button>
+        )}
 
         <div className="relative shrink-0" ref={menuRef}>
           <button
@@ -103,6 +145,12 @@ export default function ResumeCard({
                     className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
                   >
                     {t("myResumes.menu.continue")}
+                  </button>
+                  <button
+                    onClick={startRenaming}
+                    className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
+                  >
+                    {t("myResumes.menu.rename")}
                   </button>
                   <button
                     onClick={handleDownload}

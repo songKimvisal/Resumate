@@ -135,13 +135,21 @@ export interface Customization {
   sidebarBgColor: string;
   columns: "one" | "two";
   headerPosition: "left" | "top" | "right";
-  fontSize: "small" | "medium" | "large";
+  /** base body text size, in px */
+  fontSize: number;
   fontFamily: string;
   fullNameSize: number;
   titleSize: number;
   headingsSize: number;
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
+  /** extra tracking on section heading text, in px */
+  headingsLetterSpacing: number;
   capitalization: "capitalize" | "uppercase";
+  /** marker glyph used for bullet lists inside rich-text fields (summary,
+   *  experience/education descriptions) */
+  bulletStyle: "disc" | "dash" | "arrow" | "square" | "none";
+  /** how experience/education date ranges are formatted */
+  dateFormat: "monthYear" | "numeric" | "yearOnly";
   linkStyle: ("underline" | "color" | "icon")[];
   sectionIcon: "none" | "outline" | "filled";
   headerAlignment: "left" | "center";
@@ -157,6 +165,8 @@ export interface Customization {
   showPhoto: boolean;
   photoShape: "circle" | "rounded" | "square";
   photoSize: number;
+  /** thin accentColor ring around the profile photo */
+  photoBorder: boolean;
   /** photo bleeds full-width across the top of the sidebar column, edge to
    *  edge, instead of the small inset headshot — only applies when the
    *  header lives in the sidebar (headerPosition left/right) */
@@ -168,6 +178,10 @@ export interface Customization {
   topAccentBar: boolean;
   /** solid bar at the bottom of every page, colored from sidebarBgColor */
   footerBar: boolean;
+  /** thin accentColor frame around the page edge */
+  pageBorder: boolean;
+  /** thickness of the pageBorder frame, in px */
+  pageBorderWidth: number;
   pageFormat: "a4" | "letter";
   lineHeight: number;
   elementSpacing: number;
@@ -232,13 +246,16 @@ export const emptyResume: Resume = {
     sidebarBgColor: "",
     columns: "one",
     headerPosition: "left",
-    fontSize: "medium",
+    fontSize: 14.5,
     fontFamily: "Inter",
     fullNameSize: 28,
     titleSize: 17,
     headingsSize: 12,
     headingBorder: "none",
+    headingsLetterSpacing: 0,
     capitalization: "uppercase",
+    bulletStyle: "disc",
+    dateFormat: "monthYear",
     linkStyle: ["underline"],
     sectionIcon: "none",
     headerAlignment: "center",
@@ -251,10 +268,13 @@ export const emptyResume: Resume = {
     showPhoto: true,
     photoShape: "circle",
     photoSize: 80,
+    photoBorder: false,
     sidebarPhotoFill: false,
     skillsDisplay: "meter",
     topAccentBar: false,
     footerBar: false,
+    pageBorder: false,
+    pageBorderWidth: 1.5,
     pageFormat: "a4",
     lineHeight: 1.5,
     elementSpacing: 12,
