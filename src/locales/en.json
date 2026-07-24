@@ -1138,6 +1138,7 @@
     "menu": {
       "open": "Resume options",
       "continue": "Continue editing",
+      "rename": "Rename",
       "download": "Download PDF",
       "downloading": "Preparing…",
       "delete": "Delete",

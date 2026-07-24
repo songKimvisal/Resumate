@@ -45,6 +45,14 @@ export async function getResumesByUser(
   }));
 }
 
+export async function renameResume(id: string, title: string) {
+  const { error } = await supabase
+    .from("resumes")
+    .update({ title, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteResume(id: string) {
   const { error } = await supabase.from("resumes").delete().eq("id", id);
   if (error) throw error;

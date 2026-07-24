@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Plus, FileText, Loader2 } from "lucide-react";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
-import { getResumesByUser, deleteResume } from "../../lib/api";
+import { getResumesByUser, deleteResume, renameResume } from "../../lib/api";
 import type { DashboardResume } from "../../lib/api";
 import { downloadResumePdf } from "../../lib/downloadResumePdf";
 import { Button } from "../../components/ui/button";
@@ -56,6 +56,16 @@ export default function MyResumes() {
   const handleDelete = async (id: string) => {
     await deleteResume(id);
     setResumes((prev) => prev?.filter((r) => r.resume.id !== id) ?? prev);
+  };
+
+  const handleRename = async (id: string, title: string) => {
+    await renameResume(id, title);
+    setResumes(
+      (prev) =>
+        prev?.map((r) =>
+          r.resume.id === id ? { ...r, resume: { ...r.resume, title } } : r,
+        ) ?? prev,
+    );
   };
 
   return (
@@ -110,6 +120,9 @@ export default function MyResumes() {
               onContinue={() => handleContinue(item)}
               onDownload={() => handleDownload(item)}
               onDelete={() => handleDelete(item.resume.id as string)}
+              onRename={(title) =>
+                handleRename(item.resume.id as string, title)
+              }
             />
           ))}
 
