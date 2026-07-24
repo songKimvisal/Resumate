@@ -651,13 +651,17 @@
       "templates": {
         "title": "ប្តូរគំរូប្រវត្តិរូប",
         "subtitle": "ធ្វើបច្ចុប្បន្នភាពរចនាប័ទ្មប្រវត្តិរូបសង្ខេបទាំងមូលរបស់អ្នកដោយចុចតែម្តង",
-        "button": "ប្តូរគំរូប្រវត្តិរូប"
+        "button": "មើលគំរូប្រវត្តិរូបទាំងអស់"
       },
       "locked": {
         "title": "{{style}} គឺជាគំរូពិសេស",
         "subtitle": "ដោះសោវាដើម្បីកែប្រែពណ៌ ពុម្ពអក្សរ និងប្លង់។ គំរូឥតគិតថ្លៃមិនអាចកែឱ្យមានរូបរាងដូចគំរូពិសេសបានទេ។",
         "changeTemplate": "ជ្រើសរើសគំរូផ្សេងទៀត",
         "unlockCta": "ដោះសោគំរូ"
+      },
+      "premiumGate": {
+        "description": "ជាវប្រចាំខែ ឬបើកប្រើប្រាស់គំរូមួយនេះ ដើម្បីទទួលបានជម្រើសរចនាប័ទ្មកម្រិតជិតខ្ពស់។",
+        "cta": "បើកប្រើប្រាស់ការកែច្នៃពេញលេញ"
       },
       "layout": {
         "columns": "ជួរឈរ",
@@ -682,6 +686,7 @@
         "shapeRounded": "ជ្រុងមូល",
         "shapeSquare": "ការ៉េ",
         "photoSize": "ទំហំរូបថត",
+        "photoBorder": "ស៊ុមព័ទ្ធជុំវិញរូបថត",
         "topAccentBar": "របារពណ៌ខាងលើ",
         "footerBar": "របារខាងក្រោមទំព័រ",
         "skillsDisplay": "រចនាប័ទ្មជំនាញ",
@@ -741,7 +746,18 @@
         "linkStyle": "រចនាប័ទ្មតំណភ្ជាប់",
         "linkUnderline": "គូសបន្ទាត់ពីក្រោម",
         "linkColor": "ពណ៌លេចធ្លោ (Accent)",
-        "linkIcon": "រូបតំណាងភ្ជាប់ (Link icon)"
+        "linkIcon": "រូបតំណាងភ្ជាប់ (Link icon)",
+        "letterSpacing": "គម្លាតតួអក្សរចំណងជើង",
+        "bulletStyle": "រចនាប័ទ្មចំណុចរាយ",
+        "bulletDisc": "ចំណុច",
+        "bulletDash": "សញ្ញាដាច់",
+        "bulletArrow": "ព្រួញ",
+        "bulletSquare": "ការ៉េ",
+        "bulletNone": "គ្មាន",
+        "dateFormat": "ទម្រង់កាលបរិច្ឆេទ",
+        "dateFormatMonthYear": "មករា 2020",
+        "dateFormatNumeric": "01/2020",
+        "dateFormatYearOnly": "2020"
       },
       "colors": {
         "textColor": "ពណ៌អក្សរ",
@@ -773,7 +789,9 @@
         "lineHeight": "កម្ពស់បន្ទាត់",
         "elementSpacing": "គម្លាតរវាងធាតុ",
         "topBottomMargin": "រឹមខាងលើ និងខាងក្រោម",
-        "leftRightMargin": "រឹមខាងឆ្វេង និងខាងស្តាំ"
+        "leftRightMargin": "រឹមខាងឆ្វេង និងខាងស្តាំ",
+        "pageBorder": "ស៊ុមព័ទ្ធជុំវិញទំព័រ",
+        "pageBorderWidth": "កម្រាស់ស៊ុម"
       }
     },
     "personal": {

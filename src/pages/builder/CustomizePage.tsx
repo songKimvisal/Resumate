@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
 import { HexColorPicker } from "react-colorful";
 import { useResumeStore } from "../../store/resumeStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
 import type {
   Customization,
   CustomizationToggles,
@@ -32,12 +33,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover";
-import { TEMPLATE_PRESETS } from "../../data/templates";
+import { TEMPLATE_PRESETS, type TemplatePreset } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
+import ResumePreview from "../../components/resume/ResumePreview";
+import { DEMO_RESUME } from "../../data/demoResume";
 
 const ACCENT_COLORS = [
   "#C1121F",
@@ -61,9 +64,6 @@ const BACKGROUND_COLOR_PRESETS = [
   { labelKey: "bgWarm", value: "#FAF6F0" },
   { labelKey: "bgCool", value: "#F4F6F9" },
 ];
-const FONT_SIZE_STEPS = ["small", "medium", "large"] as const;
-const FONT_SIZE_PX = { small: "13px", medium: "14.5px", large: "16px" };
-
 type SectionKey =
   | "layout"
   | "header"
@@ -110,6 +110,42 @@ const SECTION_ICON_LABEL_KEY: Record<Customization["sectionIcon"], string> = {
   none: "sectionIconNone",
   outline: "sectionIconOutline",
   filled: "sectionIconFilled",
+};
+
+const BULLET_STYLE_OPTIONS: Customization["bulletStyle"][] = [
+  "disc",
+  "dash",
+  "arrow",
+  "square",
+  "none",
+];
+
+const BULLET_STYLE_LABEL_KEY: Record<Customization["bulletStyle"], string> = {
+  disc: "bulletDisc",
+  dash: "bulletDash",
+  arrow: "bulletArrow",
+  square: "bulletSquare",
+  none: "bulletNone",
+};
+
+const BULLET_STYLE_GLYPH: Record<Customization["bulletStyle"], string> = {
+  disc: "•",
+  dash: "–",
+  arrow: "→",
+  square: "▪",
+  none: "",
+};
+
+const DATE_FORMAT_OPTIONS: Customization["dateFormat"][] = [
+  "monthYear",
+  "numeric",
+  "yearOnly",
+];
+
+const DATE_FORMAT_LABEL_KEY: Record<Customization["dateFormat"], string> = {
+  monthYear: "dateFormatMonthYear",
+  numeric: "dateFormatNumeric",
+  yearOnly: "dateFormatYearOnly",
 };
 
 const CONTACT_SEPARATOR_OPTIONS: Customization["contactSeparator"][] = [
@@ -159,14 +195,57 @@ export default function CustomizePage() {
     activeTemplatePreset ? s.isUnlocked(activeTemplatePreset.id) : true,
   );
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
+  const isSubscribed = useSubscriptionStore((s) => s.isSubscribed);
+  // a monthly subscriber can open any premium template's customize page,
+  // not just ones they've individually bought
   const isLocked =
-    activeTemplatePreset?.tier === "premium" && !isTemplateUnlocked;
-  // the two-column sidebar layout is premium's signature look; gating it
-  // behind an unlocked premium template (rather than just the template's own
-  // starting layout) stops a free resume from being dialed in to match one
-  const hasPremiumLayoutAccess =
-    activeTemplatePreset?.tier === "premium" && isTemplateUnlocked;
-  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+    activeTemplatePreset?.tier === "premium" &&
+    !isTemplateUnlocked &&
+    !isSubscribed;
+  // full customization freedom (advanced styling controls, two-column
+  // layout) requires either a monthly subscription or having bought the
+  // active premium template outright
+  const hasFullCustomizationAccess =
+    isSubscribed ||
+    (activeTemplatePreset?.tier === "premium" && isTemplateUnlocked);
+  const isPresetUnlocked = useEntitlementStore((s) => s.isUnlocked);
+  const [unlockTarget, setUnlockTarget] = useState<TemplatePreset | null>(
+    null,
+  );
+  // CTA for any premium-gated control: unlock the active template if it's
+  // premium and not yet owned, otherwise send them to subscribe
+  const openUpgrade = () => {
+    if (activeTemplatePreset?.tier === "premium" && !isTemplateUnlocked) {
+      setUnlockTarget(activeTemplatePreset);
+    } else {
+      navigate("/billing");
+    }
+  };
+
+  // suggestions for the inline template switcher: same-industry templates
+  // first (closest match to what's already applied), then the rest, minus
+  // whatever is currently active
+  const templateSuggestions = useMemo(() => {
+    const others = TEMPLATE_PRESETS.filter(
+      (p) => p.id !== customization.template,
+    );
+    if (!activeTemplatePreset) return others.slice(0, 3);
+    const sameIndustry = others.filter(
+      (p) => p.industry === activeTemplatePreset.industry,
+    );
+    const rest = others.filter(
+      (p) => p.industry !== activeTemplatePreset.industry,
+    );
+    return [...sameIndustry, ...rest].slice(0, 3);
+  }, [customization.template, activeTemplatePreset]);
+
+  const selectTemplate = (preset: TemplatePreset) => {
+    if (preset.tier === "premium" && !isPresetUnlocked(preset.id)) {
+      setUnlockTarget(preset);
+      return;
+    }
+    updateCustomization(preset.customization);
+  };
 
   const experience = useResumeStore((s) => s.resume.experience);
   const noExperience = useResumeStore((s) => s.resume.noExperience);
@@ -321,13 +400,6 @@ export default function CustomizePage() {
   const headerIsBanner =
     customization.columns === "one" || customization.headerPosition === "top";
 
-  const fontSizeStepIndex = FONT_SIZE_STEPS.indexOf(customization.fontSize);
-  const pageMarginValue = Math.round(
-    (customization.topBottomMargin + customization.leftRightMargin) / 2,
-  );
-  const setPageMargins = (v: number) =>
-    updateCustomization({ topBottomMargin: v, leftRightMargin: v });
-
   const activeHeadingPreset = HEADING_PRESETS.findIndex(
     (p) =>
       p.headingBorder === customization.headingBorder &&
@@ -380,7 +452,7 @@ export default function CustomizePage() {
             </button>
             <button
               type="button"
-              onClick={() => setUnlockModalOpen(true)}
+              onClick={() => setUnlockTarget(activeTemplatePreset)}
               className="rounded-full bg-brand text-white text-sm font-medium px-5 py-2.5"
             >
               {t("builder.customizePage.locked.unlockCta")}
@@ -389,12 +461,14 @@ export default function CustomizePage() {
         </div>
 
         <UnlockTemplateModal
-          open={unlockModalOpen}
-          preset={activeTemplatePreset}
-          onCancel={() => setUnlockModalOpen(false)}
+          open={unlockTarget !== null}
+          preset={unlockTarget}
+          onCancel={() => setUnlockTarget(null)}
           onUnlock={() => {
-            unlockTemplate(activeTemplatePreset.id);
-            setUnlockModalOpen(false);
+            if (!unlockTarget) return;
+            unlockTemplate(unlockTarget.id);
+            updateCustomization(unlockTarget.customization);
+            setUnlockTarget(null);
           }}
         />
       </div>
@@ -467,18 +541,19 @@ export default function CustomizePage() {
             <p className="text-xs text-text-secondary -mt-3">
               {t("builder.customizePage.templates.subtitle")}
             </p>
-            <div className="flex items-center gap-3 rounded-lg bg-surface-2 p-4">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-24 flex-1 rounded-md bg-bg border border-line shadow-sm"
+            <div className="grid grid-cols-3 gap-3">
+              {templateSuggestions.map((preset) => (
+                <TemplateSwitchThumb
+                  key={preset.id}
+                  preset={preset}
+                  onSelect={selectTemplate}
                 />
               ))}
             </div>
             <button
               type="button"
               onClick={() => navigate("/marketplace")}
-              className="w-full rounded-full bg-brand text-white text-sm font-medium py-2.5"
+              className="w-full rounded-full border border-line text-text text-sm font-medium py-2.5 transition-colors hover:bg-surface-2"
             >
               {t("builder.customizePage.templates.button")}
             </button>
@@ -513,65 +588,74 @@ export default function CustomizePage() {
 
             <div className="border-t border-line" />
 
-            <div className="space-y-5">
-              <AccentColorPicker
-                color={customization.accentColor}
-                onChange={(c) => updateCustomization({ accentColor: c })}
-              />
+            <PremiumGate
+              locked={!hasFullCustomizationAccess}
+              onUpgrade={openUpgrade}
+            >
+              <div className="space-y-5">
+                <AccentColorPicker
+                  color={customization.accentColor}
+                  onChange={(c) => updateCustomization({ accentColor: c })}
+                />
 
-              <div className="space-y-2.5">
-                <p className={COLOR_LABEL}>
-                  {t("builder.customizePage.colors.applyAccentTo")}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyName")}
-                    selected={customization.toggles.fullName}
-                    onClick={() => patchToggle("fullName")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyJobTitle")}
-                    selected={customization.toggles.jobTitle}
-                    onClick={() => patchToggle("jobTitle")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyHeadings")}
-                    selected={customization.toggles.headings}
-                    onClick={() => patchToggle("headings")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyHeadingLine")}
-                    selected={customization.toggles.headingsLine}
-                    onClick={() => patchToggle("headingsLine")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyDots")}
-                    selected={customization.toggles.dots}
-                    onClick={() => patchToggle("dots")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyDates")}
-                    selected={customization.toggles.dates}
-                    onClick={() => patchToggle("dates")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyLinkIcons")}
-                    selected={customization.toggles.linkIcons}
-                    onClick={() => patchToggle("linkIcons")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyHeaderIcons")}
-                    selected={customization.toggles.headerIcons}
-                    onClick={() => patchToggle("headerIcons")}
-                  />
-                  <ToggleChip
-                    label={t("builder.customizePage.colors.applyTimeline")}
-                    selected={customization.toggles.timeline}
-                    onClick={() => patchToggle("timeline")}
-                  />
+                <div className="space-y-2.5">
+                  <p className={COLOR_LABEL}>
+                    {t("builder.customizePage.colors.applyAccentTo")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyName")}
+                      selected={customization.toggles.fullName}
+                      onClick={() => patchToggle("fullName")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyJobTitle")}
+                      selected={customization.toggles.jobTitle}
+                      onClick={() => patchToggle("jobTitle")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyHeadings")}
+                      selected={customization.toggles.headings}
+                      onClick={() => patchToggle("headings")}
+                    />
+                    <ToggleChip
+                      label={t(
+                        "builder.customizePage.colors.applyHeadingLine",
+                      )}
+                      selected={customization.toggles.headingsLine}
+                      onClick={() => patchToggle("headingsLine")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyDots")}
+                      selected={customization.toggles.dots}
+                      onClick={() => patchToggle("dots")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyDates")}
+                      selected={customization.toggles.dates}
+                      onClick={() => patchToggle("dates")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyLinkIcons")}
+                      selected={customization.toggles.linkIcons}
+                      onClick={() => patchToggle("linkIcons")}
+                    />
+                    <ToggleChip
+                      label={t(
+                        "builder.customizePage.colors.applyHeaderIcons",
+                      )}
+                      selected={customization.toggles.headerIcons}
+                      onClick={() => patchToggle("headerIcons")}
+                    />
+                    <ToggleChip
+                      label={t("builder.customizePage.colors.applyTimeline")}
+                      selected={customization.toggles.timeline}
+                      onClick={() => patchToggle("timeline")}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            </PremiumGate>
           </div>
 
           {/* ================= font ================= */}
@@ -616,13 +700,12 @@ export default function CustomizePage() {
             </p>
             <SliderRow
               label={t("builder.customizePage.fontSize.fontSize")}
-              value={fontSizeStepIndex}
-              displayValue={FONT_SIZE_PX[customization.fontSize]}
-              min={0}
-              max={2}
-              onChange={(v) =>
-                updateCustomization({ fontSize: FONT_SIZE_STEPS[v] })
-              }
+              value={customization.fontSize}
+              displayValue={`${customization.fontSize}px`}
+              min={11}
+              max={18}
+              step={0.5}
+              onChange={(v) => updateCustomization({ fontSize: v })}
             />
             <SliderRow
               label={t("builder.customizePage.fontSize.fullName")}
@@ -672,12 +755,12 @@ export default function CustomizePage() {
                   label={t("builder.customizePage.layout.columnsTwo")}
                   selected={customization.columns === "two"}
                   onClick={() => updateCustomization({ columns: "two" })}
-                  premiumLocked={!hasPremiumLayoutAccess}
+                  premiumLocked={!hasFullCustomizationAccess}
                 >
                   <ColumnsPreview columns="two" />
                 </OptionCard>
               </div>
-              {!hasPremiumLayoutAccess && (
+              {!hasFullCustomizationAccess && (
                 <p className="text-xs text-text-secondary">
                   {t("builder.customizePage.layout.columnsTwoPremiumHint")}
                 </p>
@@ -888,72 +971,90 @@ export default function CustomizePage() {
             )}
 
             {customization.showPhoto && (
-              <>
-                <div className="space-y-2.5">
-                  <p className="text-sm font-medium text-text">
-                    {t("builder.customizePage.layout.photoShape")}
-                  </p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <OptionCard
-                      label={t("builder.customizePage.layout.shapeCircle")}
-                      selected={customization.photoShape === "circle"}
-                      onClick={() =>
-                        updateCustomization({ photoShape: "circle" })
+              <PremiumGate
+                locked={!hasFullCustomizationAccess}
+                onUpgrade={openUpgrade}
+              >
+                <div className="space-y-6">
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-text">
+                      {t("builder.customizePage.layout.photoShape")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <OptionCard
+                        label={t("builder.customizePage.layout.shapeCircle")}
+                        selected={customization.photoShape === "circle"}
+                        onClick={() =>
+                          updateCustomization({ photoShape: "circle" })
+                        }
+                      >
+                        <div
+                          className={cn(
+                            "size-8 rounded-full",
+                            customization.photoShape === "circle"
+                              ? "bg-brand"
+                              : "bg-line/60",
+                          )}
+                        />
+                      </OptionCard>
+                      <OptionCard
+                        label={t("builder.customizePage.layout.shapeRounded")}
+                        selected={customization.photoShape === "rounded"}
+                        onClick={() =>
+                          updateCustomization({ photoShape: "rounded" })
+                        }
+                      >
+                        <div
+                          className={cn(
+                            "size-8 rounded-md",
+                            customization.photoShape === "rounded"
+                              ? "bg-brand"
+                              : "bg-line/60",
+                          )}
+                        />
+                      </OptionCard>
+                      <OptionCard
+                        label={t("builder.customizePage.layout.shapeSquare")}
+                        selected={customization.photoShape === "square"}
+                        onClick={() =>
+                          updateCustomization({ photoShape: "square" })
+                        }
+                      >
+                        <div
+                          className={cn(
+                            "size-8",
+                            customization.photoShape === "square"
+                              ? "bg-brand"
+                              : "bg-line/60",
+                          )}
+                        />
+                      </OptionCard>
+                    </div>
+                  </div>
+
+                  <SliderRow
+                    label={t("builder.customizePage.layout.photoSize")}
+                    value={customization.photoSize}
+                    displayValue={`${customization.photoSize}px`}
+                    min={40}
+                    max={140}
+                    onChange={(v) => updateCustomization({ photoSize: v })}
+                  />
+
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+                    <p className="min-w-0 truncate text-sm font-medium text-text">
+                      {t("builder.customizePage.layout.photoBorder")}
+                    </p>
+                    <Switch
+                      checked={customization.photoBorder}
+                      onCheckedChange={(v) =>
+                        updateCustomization({ photoBorder: v })
                       }
-                    >
-                      <div
-                        className={cn(
-                          "size-8 rounded-full",
-                          customization.photoShape === "circle"
-                            ? "bg-brand"
-                            : "bg-line/60",
-                        )}
-                      />
-                    </OptionCard>
-                    <OptionCard
-                      label={t("builder.customizePage.layout.shapeRounded")}
-                      selected={customization.photoShape === "rounded"}
-                      onClick={() =>
-                        updateCustomization({ photoShape: "rounded" })
-                      }
-                    >
-                      <div
-                        className={cn(
-                          "size-8 rounded-md",
-                          customization.photoShape === "rounded"
-                            ? "bg-brand"
-                            : "bg-line/60",
-                        )}
-                      />
-                    </OptionCard>
-                    <OptionCard
-                      label={t("builder.customizePage.layout.shapeSquare")}
-                      selected={customization.photoShape === "square"}
-                      onClick={() =>
-                        updateCustomization({ photoShape: "square" })
-                      }
-                    >
-                      <div
-                        className={cn(
-                          "size-8",
-                          customization.photoShape === "square"
-                            ? "bg-brand"
-                            : "bg-line/60",
-                        )}
-                      />
-                    </OptionCard>
+                      ariaLabel={t("builder.customizePage.layout.photoBorder")}
+                    />
                   </div>
                 </div>
-
-                <SliderRow
-                  label={t("builder.customizePage.layout.photoSize")}
-                  value={customization.photoSize}
-                  displayValue={`${customization.photoSize}px`}
-                  min={40}
-                  max={140}
-                  onChange={(v) => updateCustomization({ photoSize: v })}
-                />
-              </>
+              </PremiumGate>
             )}
 
             <div className="space-y-2.5">
@@ -973,22 +1074,6 @@ export default function CustomizePage() {
                 />
               </div>
             </div>
-
-            <SliderRow
-              label={t("builder.customizePage.layout.pageMargins")}
-              value={pageMarginValue}
-              displayValue={
-                pageMarginValue < 12
-                  ? t("builder.customizePage.layout.marginsNarrow")
-                  : pageMarginValue < 20
-                    ? t("builder.customizePage.layout.marginsNormal")
-                    : t("builder.customizePage.layout.marginsWide")
-              }
-              min={6}
-              max={30}
-              step={1}
-              onChange={setPageMargins}
-            />
           </div>
 
           {/* ================= header ================= */}
@@ -997,6 +1082,11 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.header")}
             </p>
 
+            <PremiumGate
+              locked={!hasFullCustomizationAccess}
+              onUpgrade={openUpgrade}
+            >
+            <div className="space-y-6">
             {headerIsBanner && (
               <>
                 {customization.showPhoto && (
@@ -1137,6 +1227,8 @@ export default function CustomizePage() {
                 ))}
               </div>
             </div>
+            </div>
+            </PremiumGate>
           </div>
 
           {/* ================= section headings ================= */}
@@ -1149,6 +1241,11 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.sectionHeadings")}
             </p>
 
+            <PremiumGate
+              locked={!hasFullCustomizationAccess}
+              onUpgrade={openUpgrade}
+            >
+            <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {HEADING_PRESETS.map((preset, i) => (
                 <button
@@ -1238,6 +1335,63 @@ export default function CustomizePage() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2.5">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.sectionHeadings.bulletStyle")}
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                {BULLET_STYLE_OPTIONS.map((option) => (
+                  <OptionCard
+                    key={option}
+                    label={t(
+                      `builder.customizePage.sectionHeadings.${BULLET_STYLE_LABEL_KEY[option]}`,
+                    )}
+                    selected={customization.bulletStyle === option}
+                    onClick={() => updateCustomization({ bulletStyle: option })}
+                  >
+                    <span
+                      className="text-base leading-none"
+                      style={{ color: customization.accentColor }}
+                    >
+                      {BULLET_STYLE_GLYPH[option] || "—"}
+                    </span>
+                  </OptionCard>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-sm font-medium text-text">
+                {t("builder.customizePage.sectionHeadings.dateFormat")}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {DATE_FORMAT_OPTIONS.map((option) => (
+                  <OptionCard
+                    key={option}
+                    label={t(
+                      `builder.customizePage.sectionHeadings.${DATE_FORMAT_LABEL_KEY[option]}`,
+                    )}
+                    selected={customization.dateFormat === option}
+                    onClick={() => updateCustomization({ dateFormat: option })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <SliderRow
+              label={t("builder.customizePage.sectionHeadings.letterSpacing")}
+              value={customization.headingsLetterSpacing}
+              displayValue={`${customization.headingsLetterSpacing}px`}
+              min={0}
+              max={3}
+              step={0.5}
+              onChange={(v) =>
+                updateCustomization({ headingsLetterSpacing: v })
+              }
+            />
+            </div>
+            </PremiumGate>
           </div>
 
           {/* ================= spacing ================= */}
@@ -1245,44 +1399,89 @@ export default function CustomizePage() {
             <p className={SECTION_TITLE}>
               {t("builder.customizePage.nav.spacing")}
             </p>
-            <SliderRow
-              label={t("builder.customizePage.spacing.lineHeight")}
-              value={customization.lineHeight}
-              displayValue={customization.lineHeight.toFixed(2)}
-              min={1}
-              max={2.2}
-              step={0.05}
-              onChange={(v) => updateCustomization({ lineHeight: v })}
-            />
-            <SliderRow
-              label={t("builder.customizePage.spacing.elementSpacing")}
-              value={customization.elementSpacing}
-              displayValue={`${customization.elementSpacing}px`}
-              min={0}
-              max={30}
-              onChange={(v) => updateCustomization({ elementSpacing: v })}
-            />
-            <SliderRow
-              label={t("builder.customizePage.spacing.topBottomMargin")}
-              value={customization.topBottomMargin}
-              displayValue={`${customization.topBottomMargin}mm`}
-              min={6}
-              max={30}
-              step={1}
-              onChange={(v) => updateCustomization({ topBottomMargin: v })}
-            />
-            <SliderRow
-              label={t("builder.customizePage.spacing.leftRightMargin")}
-              value={customization.leftRightMargin}
-              displayValue={`${customization.leftRightMargin}mm`}
-              min={6}
-              max={30}
-              step={1}
-              onChange={(v) => updateCustomization({ leftRightMargin: v })}
-            />
+            <PremiumGate
+              locked={!hasFullCustomizationAccess}
+              onUpgrade={openUpgrade}
+            >
+              <div className="space-y-6">
+                <SliderRow
+                  label={t("builder.customizePage.spacing.lineHeight")}
+                  value={customization.lineHeight}
+                  displayValue={customization.lineHeight.toFixed(2)}
+                  min={1}
+                  max={2.2}
+                  step={0.05}
+                  onChange={(v) => updateCustomization({ lineHeight: v })}
+                />
+                <SliderRow
+                  label={t("builder.customizePage.spacing.elementSpacing")}
+                  value={customization.elementSpacing}
+                  displayValue={`${customization.elementSpacing}px`}
+                  min={0}
+                  max={30}
+                  onChange={(v) => updateCustomization({ elementSpacing: v })}
+                />
+                <SliderRow
+                  label={t("builder.customizePage.spacing.topBottomMargin")}
+                  value={customization.topBottomMargin}
+                  displayValue={`${customization.topBottomMargin}mm`}
+                  min={6}
+                  max={30}
+                  step={1}
+                  onChange={(v) => updateCustomization({ topBottomMargin: v })}
+                />
+                <SliderRow
+                  label={t("builder.customizePage.spacing.leftRightMargin")}
+                  value={customization.leftRightMargin}
+                  displayValue={`${customization.leftRightMargin}mm`}
+                  min={6}
+                  max={30}
+                  step={1}
+                  onChange={(v) => updateCustomization({ leftRightMargin: v })}
+                />
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+                  <p className="min-w-0 truncate text-sm font-medium text-text">
+                    {t("builder.customizePage.spacing.pageBorder")}
+                  </p>
+                  <Switch
+                    checked={customization.pageBorder}
+                    onCheckedChange={(v) =>
+                      updateCustomization({ pageBorder: v })
+                    }
+                    ariaLabel={t("builder.customizePage.spacing.pageBorder")}
+                  />
+                </div>
+
+                {customization.pageBorder && (
+                  <SliderRow
+                    label={t("builder.customizePage.spacing.pageBorderWidth")}
+                    value={customization.pageBorderWidth}
+                    displayValue={`${customization.pageBorderWidth}px`}
+                    min={0.5}
+                    max={6}
+                    step={0.5}
+                    onChange={(v) =>
+                      updateCustomization({ pageBorderWidth: v })
+                    }
+                  />
+                )}
+              </div>
+            </PremiumGate>
           </div>
         </div>
       </div>
+
+      <UnlockTemplateModal
+        open={unlockTarget !== null}
+        preset={unlockTarget}
+        onCancel={() => setUnlockTarget(null)}
+        onUnlock={() => {
+          if (!unlockTarget) return;
+          unlockTemplate(unlockTarget.id);
+          updateCustomization(unlockTarget.customization);
+          setUnlockTarget(null);
+        }}
+      />
     </div>
   );
 }
@@ -1584,6 +1783,46 @@ function HeadingPresetPreview({
   );
 }
 
+/** dims+disables a block of premium-only controls and overlays a small
+ *  upgrade prompt — used to gate whole sections (colors' accent block,
+ *  header, section headings, spacing, photo styling) behind a monthly
+ *  subscription or an unlocked premium template */
+function PremiumGate({
+  locked,
+  onUpgrade,
+  children,
+}: {
+  locked: boolean;
+  onUpgrade: () => void;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  if (!locked) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div className="pointer-events-none opacity-40 select-none">
+        {children}
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-lg bg-bg/70 px-4 text-center backdrop-blur-[1px]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950">
+          <Crown size={12} strokeWidth={2.5} />
+          {t("marketplace.premiumBadge")}
+        </span>
+        <p className="max-w-60 text-xs text-text-secondary">
+          {t("builder.customizePage.premiumGate.description")}
+        </p>
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="rounded-full bg-brand text-white text-xs font-medium px-4 py-2"
+        >
+          {t("builder.customizePage.premiumGate.cta")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function OptionCard({
   label,
   selected,
@@ -1628,6 +1867,40 @@ function OptionCard({
       >
         {label}
       </span>
+    </button>
+  );
+}
+
+function TemplateSwitchThumb({
+  preset,
+  onSelect,
+}: {
+  preset: TemplatePreset;
+  onSelect: (preset: TemplatePreset) => void;
+}) {
+  const { t } = useTranslation();
+  const isUnlocked = useEntitlementStore((s) => s.isUnlocked(preset.id));
+  const isPremiumLocked = preset.tier === "premium" && !isUnlocked;
+  const resume = useMemo(
+    () => ({ ...DEMO_RESUME, customization: preset.customization }),
+    [preset],
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(preset)}
+      title={t(`marketplace.styleNames.${preset.styleKey}`)}
+      className="group relative min-w-0 overflow-hidden rounded-lg border-2 border-line bg-bg shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-md"
+    >
+      <div className="pointer-events-none">
+        <ResumePreview singlePage resume={resume} />
+      </div>
+      {isPremiumLocked && (
+        <span className="absolute top-1 right-1 inline-flex items-center justify-center rounded-full bg-linear-to-r from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-sm">
+          <Crown size={9} strokeWidth={2.5} />
+        </span>
+      )}
     </button>
   );
 }
@@ -1758,10 +2031,13 @@ function ColorSwatchGroup({
   onChange: (hex: string) => void;
 }) {
   const { t } = useTranslation();
+  const isCustom = !options.some(
+    (o) => o.value.toLowerCase() === value.toLowerCase(),
+  );
   return (
     <div className="space-y-2.5">
       <p className={COLOR_LABEL}>{label}</p>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {options.map((option) => {
           const selected = value.toLowerCase() === option.value.toLowerCase();
           return (
@@ -1791,6 +2067,43 @@ function ColorSwatchGroup({
             </button>
           );
         })}
+        <Popover>
+          <PopoverTrigger
+            type="button"
+            className={cn(
+              "flex items-center gap-2.5 rounded-lg border-2 px-3.5 py-2.5 transition-colors",
+              isCustom
+                ? "border-brand bg-brand/5"
+                : "border-dashed border-line hover:bg-surface-2",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                isCustom ? "border-black/10" : "border-line",
+              )}
+              style={isCustom ? { backgroundColor: value } : undefined}
+            >
+              {!isCustom && (
+                <Pipette size={10} className="text-text-secondary" />
+              )}
+            </span>
+            <span
+              className={cn(
+                "text-sm font-medium",
+                isCustom ? "text-brand" : "text-text",
+              )}
+            >
+              {t("builder.customizePage.colors.custom")}
+            </span>
+          </PopoverTrigger>
+          <PopoverContent className="w-60 space-y-3 p-3" align="start">
+            <CustomColorFields
+              color={isCustom ? value : options[0].value}
+              onChange={onChange}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

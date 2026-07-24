@@ -270,6 +270,23 @@
   padding-left: 1.25em;
 }
 
+/* customization.bulletStyle overrides — the disc default needs no override */
+.rte-content.bullet-dash ul li::marker {
+  content: "– ";
+}
+
+.rte-content.bullet-arrow ul li::marker {
+  content: "→ ";
+}
+
+.rte-content.bullet-square ul li::marker {
+  content: "▪ ";
+}
+
+.rte-content.bullet-none ul li::marker {
+  content: "";
+}
+
 .rte-content a {
   color: var(--brand-primary);
   text-decoration: underline;

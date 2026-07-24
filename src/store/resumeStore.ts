@@ -15,6 +15,19 @@ import { emptyResume } from "../types/resume";
 /** Generates ids for list items (experience entries, skills, ...) */
 export const uid = () => crypto.randomUUID();
 
+// resumes saved before fontSize became a plain px number stored it as this
+// enum — convert on load so old saves don't end up with a non-numeric size
+const LEGACY_FONT_SIZE_PX: Record<string, number> = {
+  small: 13,
+  medium: 14.5,
+  large: 16,
+};
+function normalizeFontSize(fontSize: unknown): number | undefined {
+  if (typeof fontSize === "string") return LEGACY_FONT_SIZE_PX[fontSize];
+  if (typeof fontSize === "number") return fontSize;
+  return undefined;
+}
+
 interface ResumeState {
   resume: Resume;
   /** true when there are changes not yet saved to Supabase */
@@ -63,7 +76,23 @@ export const useResumeStore = create<ResumeState>((set) => ({
   resume: emptyResume,
   dirty: false,
 
-  setResume: (resume) => set({ resume, dirty: false }),
+  // backfills any customization fields missing from resumes saved before
+  // they existed, so older resumes don't silently break newer styling
+  // options (e.g. a saved pageBorder=true with no pageBorderWidth yet)
+  setResume: (resume) =>
+    set({
+      resume: {
+        ...resume,
+        customization: {
+          ...emptyResume.customization,
+          ...resume.customization,
+          fontSize:
+            normalizeFontSize(resume.customization?.fontSize) ??
+            emptyResume.customization.fontSize,
+        },
+      },
+      dirty: false,
+    }),
   resetResume: () => set({ resume: emptyResume, dirty: false }),
   setTitle: (title) =>
     set((s) => ({ resume: { ...s.resume, title }, dirty: true })),

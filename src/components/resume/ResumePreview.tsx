@@ -47,17 +47,18 @@ import {
 } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
 
-function fmtDate(value: string) {
+function fmtDate(value: string, format: Customization["dateFormat"] = "monthYear") {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
   if (!y || !m) return value;
+  if (format === "yearOnly") return `${y}`;
+  if (format === "numeric") return `${String(m).padStart(2, "0")}/${y}`;
   return new Date(y, m - 1).toLocaleDateString("en-US", {
     month: "short",
     year: "numeric",
   });
 }
 
-const fontSizes = { small: "13px", medium: "14.5px", large: "16px" } as const;
 function hasText(html: string) {
   return html.replace(/<[^>]*>/g, "").trim().length > 0;
 }
@@ -105,6 +106,7 @@ interface Theme {
   gapEduItem: number;
   textTransform: "uppercase" | "capitalize";
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
+  headingsLetterSpacing: number;
   showHeadingLine: boolean;
   headingsAccentOn: boolean;
   headingSizePx: number;
@@ -122,6 +124,10 @@ interface Theme {
   showDots: boolean;
   showTimeline: boolean;
   skillsListMode: boolean;
+  dateFormat: Customization["dateFormat"];
+  /** className appended alongside "rte-content" to swap the bullet marker
+   *  glyph on rendered lists; empty for the browser-default disc */
+  bulletClass: string;
 }
 
 function useTheme(customization: Customization): Theme {
@@ -129,7 +135,7 @@ function useTheme(customization: Customization): Theme {
     return {
       accent: customization.accentColor,
       accentText: customization.accentColor,
-      fontSize: fontSizes[customization.fontSize],
+      fontSize: `${customization.fontSize}px`,
       fontFamily: cssFontStack(customization.fontFamily),
       lineHeight: customization.lineHeight,
       gapSection: customization.elementSpacing * (20 / 12),
@@ -137,6 +143,7 @@ function useTheme(customization: Customization): Theme {
       gapEduItem: customization.elementSpacing * (10 / 12),
       textTransform: customization.capitalization,
       headingBorder: customization.headingBorder,
+      headingsLetterSpacing: customization.headingsLetterSpacing,
       showHeadingLine: customization.toggles.headingsLine,
       headingsAccentOn: customization.toggles.headings,
       headingSizePx: customization.headingsSize,
@@ -156,6 +163,11 @@ function useTheme(customization: Customization): Theme {
       showDots: customization.toggles.dots,
       showTimeline: customization.toggles.timeline,
       skillsListMode: customization.skillsDisplay === "list",
+      dateFormat: customization.dateFormat,
+      bulletClass:
+        customization.bulletStyle === "disc"
+          ? ""
+          : `bullet-${customization.bulletStyle}`,
     };
   }, [customization]);
 }
@@ -267,7 +279,7 @@ export default function ResumePreview({
       fragments.forEach(({ html, tag }, i) => {
         const node = (
           <div
-            className="rte-content text-[0.9em] leading-relaxed"
+            className={cn("rte-content text-[0.9em] leading-relaxed", theme.bulletClass)}
             style={{ color: theme.bodyTextColor }}
             dangerouslySetInnerHTML={{ __html: html }}
           />
@@ -316,7 +328,7 @@ export default function ResumePreview({
             gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
             node: (
               <div
-                className="rte-content text-[0.85em] leading-relaxed"
+                className={cn("rte-content text-[0.85em] leading-relaxed", theme.bulletClass)}
                 style={{ color: theme.bodyTextColor }}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
@@ -390,7 +402,7 @@ export default function ResumePreview({
             gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
             node: (
               <div
-                className="rte-content text-[0.85em] leading-relaxed"
+                className={cn("rte-content text-[0.85em] leading-relaxed", theme.bulletClass)}
                 style={{ color: theme.bodyTextColor }}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
@@ -659,11 +671,17 @@ export default function ResumePreview({
             </p>
           )}
           <div
-            className="relative shadow-xl rounded-sm w-full"
+            className="relative shadow-xl rounded-sm w-full border border-line"
             style={{
               maxWidth: realPageWidthPx,
               aspectRatio:
                 customization.pageFormat === "letter" ? "8.5/11" : "210/297",
+              outline: customization.pageBorder
+                ? `${customization.pageBorderWidth}px solid ${accent}`
+                : undefined,
+              outlineOffset: customization.pageBorder
+                ? -customization.pageBorderWidth
+                : undefined,
             }}
           >
             <div className="absolute inset-0 overflow-hidden rounded-sm">
@@ -1093,6 +1111,10 @@ function HeaderBlock({
         width: customization.photoSize,
         height: customization.photoSize,
         borderRadius: photoRadiusFor(customization.photoShape),
+        outline: customization.photoBorder
+          ? `1.5px solid ${theme.accent}`
+          : undefined,
+        outlineOffset: customization.photoBorder ? -1.5 : undefined,
       }}
     >
       <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
@@ -1177,6 +1199,10 @@ function SidebarHeaderBlock({
             width: customization.photoSize,
             height: customization.photoSize,
             borderRadius: photoRadiusFor(customization.photoShape),
+            outline: customization.photoBorder
+              ? `1.5px solid ${theme.accent}`
+              : undefined,
+            outlineOffset: customization.photoBorder ? -1.5 : undefined,
           }}
         >
           <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
@@ -1370,7 +1396,7 @@ function SidebarExperienceBody({
                 <ExperienceHeader exp={exp} theme={theme} />
                 {hasText(exp.description) && (
                   <div
-                    className="rte-content text-[0.85em] leading-relaxed mt-1"
+                    className={cn("rte-content text-[0.85em] leading-relaxed mt-1", theme.bulletClass)}
                     style={{ color: theme.bodyTextColor }}
                     dangerouslySetInnerHTML={{ __html: exp.description }}
                   />
@@ -1383,7 +1409,7 @@ function SidebarExperienceBody({
                   <NoExperienceHeader exp={exp} theme={theme} />
                   {hasText(exp.description) && (
                     <div
-                      className="rte-content text-[0.85em] leading-relaxed mt-1"
+                      className={cn("rte-content text-[0.85em] leading-relaxed mt-1", theme.bulletClass)}
                       style={{ color: theme.bodyTextColor }}
                       dangerouslySetInnerHTML={{ __html: exp.description }}
                     />
@@ -1401,7 +1427,7 @@ function SidebarExperienceBody({
                 <EducationEntry edu={edu} theme={theme} />
                 {hasText(edu.description) && (
                   <div
-                    className="rte-content text-[0.85em] leading-relaxed mt-1"
+                    className={cn("rte-content text-[0.85em] leading-relaxed mt-1", theme.bulletClass)}
                     style={{ color: theme.bodyTextColor }}
                     dangerouslySetInnerHTML={{ __html: edu.description }}
                   />
@@ -1471,9 +1497,9 @@ function ExperienceHeader({
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(exp.startDate)}
+        {fmtDate(exp.startDate, theme.dateFormat)}
         {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate)}
+        {exp.current ? "Present" : fmtDate(exp.endDate, theme.dateFormat)}
       </p>
     </div>
   );
@@ -1551,9 +1577,9 @@ function NoExperienceHeader({
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(exp.startDate)}
+        {fmtDate(exp.startDate, theme.dateFormat)}
         {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate)}
+        {exp.current ? "Present" : fmtDate(exp.endDate, theme.dateFormat)}
       </p>
     </div>
   );
@@ -1583,9 +1609,9 @@ function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(edu.startDate)}
+        {fmtDate(edu.startDate, theme.dateFormat)}
         {(edu.startDate || edu.endDate || edu.current) && " – "}
-        {edu.current ? "Present" : fmtDate(edu.endDate)}
+        {edu.current ? "Present" : fmtDate(edu.endDate, theme.dateFormat)}
       </p>
     </div>
   );
@@ -1651,10 +1677,14 @@ function Section({
     ? theme.accent
     : theme.bodyTextColor;
   const iconTheme = { ...theme, accent: resolvedFill };
+  const letterSpacing = theme.headingsLetterSpacing
+    ? `calc(0.18em + ${theme.headingsLetterSpacing}px)`
+    : undefined;
   const headingStyle: React.CSSProperties = {
     color: isFilled ? "#fff" : resolvedInk,
     fontSize: theme.headingSizePx,
     textTransform: theme.textTransform,
+    letterSpacing,
     backgroundColor: isFilled ? resolvedFill : undefined,
     borderColor: resolvedInk,
     borderWidth: isOutline
@@ -1690,6 +1720,7 @@ function Section({
               color: resolvedInk,
               fontSize: theme.headingSizePx,
               textTransform: theme.textTransform,
+              letterSpacing,
             }}
           >
             {title}
@@ -1715,6 +1746,7 @@ function Section({
                 color: resolvedInk,
                 fontSize: theme.headingSizePx,
                 textTransform: theme.textTransform,
+                letterSpacing,
               }}
             >
               {title}

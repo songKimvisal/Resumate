@@ -27,13 +27,28 @@ import { idealTextColor } from "../../../lib/color";
 import { richTextToPdf, hasVisibleText } from "../../../lib/richTextToPdf";
 import { pdfFontFamily, pdfFontVariants } from "../../../lib/fonts";
 import { marginPercentPdf } from "../../../lib/pageSize";
-import { orderedMainGroups, orderedSidebarKeys } from "../../../lib/sectionOrder";
+import {
+  orderedMainGroups,
+  orderedSidebarKeys,
+} from "../../../lib/sectionOrder";
 
-const BASE_SIZE = { small: 9, medium: 10, large: 11 } as const;
-function fmtDate(value: string) {
+// PDF points render smaller than browser px for the same visual size on the
+// page; this ratio keeps the exported PDF matching the live preview (it's
+// the small/medium/large -> 9/10/11pt mapping this replaced, as a ratio).
+const PDF_FONT_SIZE_RATIO = 10 / 14.5;
+// the live preview measures the page in CSS px (96/inch); PDF pages are laid
+// out in points (72/inch) — this keeps a border set to Npx look the same
+// physical thickness in the exported PDF as it does in the preview.
+const PDF_PX_TO_PT = 72 / 96;
+function fmtDate(
+  value: string,
+  format: Customization["dateFormat"] = "monthYear",
+) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
   if (!y || !m) return value;
+  if (format === "yearOnly") return `${y}`;
+  if (format === "numeric") return `${String(m).padStart(2, "0")}/${y}`;
   return new Date(y, m - 1).toLocaleDateString("en-US", {
     month: "short",
     year: "numeric",
@@ -41,11 +56,15 @@ function fmtDate(value: string) {
 }
 
 function dateRange(
-  item: Pick<ExperienceItem | EducationItem, "startDate" | "endDate" | "current">,
+  item: Pick<
+    ExperienceItem | EducationItem,
+    "startDate" | "endDate" | "current"
+  >,
+  format?: Customization["dateFormat"],
 ) {
   if (!item.startDate && !item.endDate && !item.current) return "";
-  const end = item.current ? "Present" : fmtDate(item.endDate);
-  return `${fmtDate(item.startDate)} – ${end}`;
+  const end = item.current ? "Present" : fmtDate(item.endDate, format);
+  return `${fmtDate(item.startDate, format)} – ${end}`;
 }
 
 function photoRadius(shape: Customization["photoShape"], size: number) {
@@ -419,11 +438,6 @@ function buildContactItems(personal: PersonalInfo): ContactItem[] {
   pushHeader("passport", "id", personal.passportId);
   return items;
 }
-
-/** renders a HeaderBlock/SidebarHeaderBlock's contact list, honoring
- *  headerIcons/linkIcons and linkStyle exactly like ResumePreview.tsx's
- *  contactItems()/IconText/LinkText, which the live preview already did
- *  but the PDF previously ignored entirely */
 function ContactRow({
   items,
   c,
@@ -436,8 +450,6 @@ function ContactRow({
   items: ContactItem[];
   c: Customization;
   accent: string;
-  /** contrast-safe stand-in for `accent` used as ink — see the comment on
-   *  `accentText` in ResumeDocument's main render function */
   accentText: string;
   color: string;
   fontSize: number;
@@ -445,12 +457,7 @@ function ContactRow({
 }) {
   if (items.length === 0) return null;
   const showLinkIcons = c.toggles.linkIcons || c.linkStyle.includes("icon");
-  // react-pdf's <Link> carries its own hardcoded default style
-  // ({ color: 'blue', textDecoration: 'underline' }) that only the
-  // explicit `style` prop can override — this must always set both
-  // properties (even the "neither trait picked" case) or that default
-  // bleeds through as an unwanted blue underline in the exported PDF.
-  // linkStyle is a multi-select, so underline/color can both be active.
+
   const linkStyle = {
     textDecoration: c.linkStyle.includes("underline")
       ? ("underline" as const)
@@ -459,10 +466,6 @@ function ContactRow({
   };
 
   const rowStacked = variant === "row" && c.contactArrangement === "stacked";
-  // a bullet/bar separator replaces each item's icon with a divider drawn
-  // between items, mirroring withContactSeparators in ResumePreview.tsx —
-  // only meaningful on the true inline row (the sidebar's "column" variant
-  // and the stacked row both keep their icons untouched)
   const useSeparator =
     variant === "row" && !rowStacked && c.contactSeparator !== "icon";
   const separatorGlyph = c.contactSeparator === "bullet" ? "•" : "|";
@@ -474,7 +477,8 @@ function ContactRow({
               flexDirection: "column",
               rowGap: 3,
               marginTop: 6,
-              alignItems: c.headerAlignment === "left" ? "flex-start" : "center",
+              alignItems:
+                c.headerAlignment === "left" ? "flex-start" : "center",
             }
           : variant === "row"
             ? {
@@ -496,7 +500,8 @@ function ContactRow({
     >
       {items.map((item, i) => {
         const showIcon =
-          !useSeparator && (item.isHeader ? c.toggles.headerIcons : showLinkIcons);
+          !useSeparator &&
+          (item.isHeader ? c.toggles.headerIcons : showLinkIcons);
         return (
           <Fragment key={item.key}>
             {useSeparator && i > 0 && (
@@ -504,7 +509,13 @@ function ContactRow({
                 {separatorGlyph}
               </Text>
             )}
-            <View style={{ flexDirection: "row", alignItems: "center", columnGap: 3 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                columnGap: 3,
+              }}
+            >
               {showIcon && (
                 <StyledPdfIcon
                   icon={item.icon}
@@ -534,9 +545,6 @@ function ContactRow({
     </View>
   );
 }
-
-/** Real A4/Letter page via @react-pdf/renderer. Entries use `wrap={false}`
- *  so a page break never lands mid-entry. */
 export function ResumeDocument({ resume }: { resume: Resume }) {
   const {
     personal,
@@ -550,20 +558,24 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     customization: c,
   } = resume;
   const accent = c.accentColor;
-  const base = BASE_SIZE[c.fontSize];
+  const base = c.fontSize * PDF_FONT_SIZE_RATIO;
   const fontFamily = pdfFontFamily(c.fontFamily);
   const variants = pdfFontVariants(fontFamily);
 
   const gapSection = c.elementSpacing * (14 / 12);
   const gapEntry = c.elementSpacing * (8 / 12);
 
-  const marginVerticalPct = marginPercentPdf(c.topBottomMargin, "vertical", c.pageFormat);
-  const marginHorizontalPct = marginPercentPdf(c.leftRightMargin, "horizontal", c.pageFormat);
+  const marginVerticalPct = marginPercentPdf(
+    c.topBottomMargin,
+    "vertical",
+    c.pageFormat,
+  );
+  const marginHorizontalPct = marginPercentPdf(
+    c.leftRightMargin,
+    "horizontal",
+    c.pageFormat,
+  );
 
-  // ---------- sidebar layout derived from `columns` + `headerPosition` ----------
-  // the sidebar only exists in two-column mode, so toggling `columns` always
-  // has a visible effect; `headerPosition` then picks where within it (or
-  // whether at all, for "top") the header sits.
   const hasSidebar = c.columns === "two";
   const headerInSidebar = hasSidebar && c.headerPosition !== "top";
   const listsInSidebar = hasSidebar;
@@ -571,25 +583,12 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     ? (c.headerPosition as "left" | "right")
     : "left";
 
-  // the accent is only ever applied as ink (text/icons/lines) via the
-  // "Apply accent to" toggles below — it never paints a background, so
-  // there's no contrast-safe stand-in to compute here (mirrors useTheme()
-  // in ResumePreview.tsx)
   const bodyTextColorEff = c.bodyTextColor;
   const bodyAccentColorEff = c.accentColor;
   const accentText = accent;
-
-  // unchecking these in the Colors panel un-applies the accent color from
-  // that element without deleting it, so each falls back to a plain body
-  // color instead of being conditionally rendered (mirrors the matching
-  // fix in ResumePreview.tsx's useTheme/Section/ExperienceHeader etc.)
   const headingsInk = c.toggles.headings ? accentText : bodyTextColorEff;
   const headingsFill = c.toggles.headings ? accent : bodyTextColorEff;
   const datesAccent = c.toggles.dates ? bodyAccentColorEff : bodyTextColorEff;
-
-  // sidebar content (skills/languages/references/its own header) sits on
-  // `c.sidebarBgColor` instead of the page background, so its ink needs an
-  // independent contrast-safe color — mirrors ResumePreview.tsx's sidebarTheme
   const sidebarInk = c.sidebarBgColor
     ? idealTextColor(c.sidebarBgColor)
     : bodyTextColorEff;
@@ -624,6 +623,16 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       fontFamily: variants.regular,
       color: bodyTextColorEff,
       backgroundColor: pageBackgroundColor,
+    },
+    pageBorderFrame: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderWidth: c.pageBorder ? c.pageBorderWidth * PDF_PX_TO_PT : 0,
+      borderColor: accent,
+      borderStyle: "solid",
     },
     sidebarBand: {
       position: "absolute",
@@ -682,6 +691,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       borderRadius: photoRadius(c.photoShape, c.photoSize * 0.8),
       marginBottom: 8,
       objectFit: "cover",
+      borderWidth: c.photoBorder ? 1.5 : 0,
+      borderColor: accent,
+      borderStyle: "solid",
     },
     photoRow: {
       width: c.photoSize * 0.8,
@@ -689,6 +701,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       borderRadius: photoRadius(c.photoShape, c.photoSize * 0.8),
       marginRight: 14,
       objectFit: "cover",
+      borderWidth: c.photoBorder ? 1.5 : 0,
+      borderColor: accent,
+      borderStyle: "solid",
     },
     name: {
       fontSize: c.fullNameSize,
@@ -708,7 +723,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       fontSize: c.headingsSize,
       fontFamily: variants.bold,
       textTransform: c.capitalization,
-      letterSpacing: 1.5,
+      letterSpacing: 1.5 + c.headingsLetterSpacing,
       paddingBottom: isOutline || isFilled ? 0 : 3,
       marginBottom: 6,
       alignSelf: "flex-start",
@@ -716,7 +731,11 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       backgroundColor: isFilled ? headingsFill : undefined,
       borderColor: headingsInk,
       borderBottomWidth:
-        !isOutline && !isFilled && !isLongLine && !isLongUnderline && c.toggles.headingsLine
+        !isOutline &&
+        !isFilled &&
+        !isLongLine &&
+        !isLongUnderline &&
+        c.toggles.headingsLine
           ? 1
           : 0,
       borderWidth: isOutline ? 1 : 0,
@@ -753,25 +772,18 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   const contactItems = buildContactItems(personal);
 
-  const richTextOpts = { fontFamily, lineHeight: c.lineHeight };
+  const richTextOpts = {
+    fontFamily,
+    lineHeight: c.lineHeight,
+    bulletStyle: c.bulletStyle,
+  };
   const showPhoto = c.showPhoto && !!personal.photoUrl;
   const showFullBleedPhoto = headerInSidebar && c.sidebarPhotoFill && showPhoto;
-
-  // "line" and "underline" heading styles need the title text plus a rule
-  // that spans the rest of the row (or the full width below it), which a
-  // plain <Text> can't do — every section heading goes through here so
-  // those variants stay in sync everywhere
-  // narrowed to its one actual caller-supplied shape (sidebar heading
-  // alignment) rather than a generic Record, which react-pdf's own Style
-  // type can't structurally satisfy inside a style array
   const renderSectionTitle = (
     title: string,
     extraStyle?: { alignSelf?: "flex-start" },
     inkOverride?: string,
   ) => {
-    // sidebar sections pass `sidebarHeadingsInk` here so their heading ink
-    // stays readable against `c.sidebarBgColor` independently of the main
-    // column's `headingsInk`
     const ink = inkOverride ?? headingsInk;
     const iconKey = SECTION_ICON_KEYS[title];
     const showIcon = c.sectionIcon !== "none" && !!iconKey;
@@ -806,14 +818,23 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     if (isLongUnderline) {
       return (
         <View style={{ marginBottom: 6 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", columnGap: 4 }}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", columnGap: 4 }}
+          >
             {icon}
-            <Text style={[styles.sectionTitle, { marginBottom: 0, color: ink }]}>
+            <Text
+              style={[styles.sectionTitle, { marginBottom: 0, color: ink }]}
+            >
               {title}
             </Text>
           </View>
           <View
-            style={{ marginTop: 3, borderTopWidth: 1, borderTopColor: ink, width: "100%" }}
+            style={{
+              marginTop: 3,
+              borderTopWidth: 1,
+              borderTopColor: ink,
+              width: "100%",
+            }}
           />
         </View>
       );
@@ -823,7 +844,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         <Text
           style={[
             styles.sectionTitle,
-            { color: isFilled ? styles.sectionTitle.color : ink, borderColor: ink },
+            {
+              color: isFilled ? styles.sectionTitle.color : ink,
+              borderColor: ink,
+            },
             ...(extraStyle ? [extraStyle] : []),
           ]}
         >
@@ -898,7 +922,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     backgroundColor: accent,
                   }}
                 />
-                <Text style={{ fontSize: base * 0.85, color: ink }}>{i.name}</Text>
+                <Text style={{ fontSize: base * 0.85, color: ink }}>
+                  {i.name}
+                </Text>
               </View>
             ))}
         </View>
@@ -917,7 +943,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 marginTop: 2,
               }}
             >
-              <Text style={{ fontSize: base * 0.85, color: ink }}>{i.name}</Text>
+              <Text style={{ fontSize: base * 0.85, color: ink }}>
+                {i.name}
+              </Text>
               <View style={styles.dotRow}>
                 {Array.from({ length: 5 }).map((_, d) => (
                   <View
@@ -994,11 +1022,15 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     {exp.jobTitle || "Job title"}
                     {(exp.company || exp.location) && (
                       <Text style={styles.entryMeta}>
-                        {" "}— {[exp.company, exp.location].filter(Boolean).join(", ")}
+                        {" "}
+                        —{" "}
+                        {[exp.company, exp.location].filter(Boolean).join(", ")}
                       </Text>
                     )}
                   </Text>
-                  <Text style={styles.entryDates}>{dateRange(exp)}</Text>
+                  <Text style={styles.entryDates}>
+                    {dateRange(exp, c.dateFormat)}
+                  </Text>
                 </View>,
               )}
               {hasVisibleText(exp.description) &&
@@ -1032,7 +1064,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                               style={{
                                 // see the comment on ContactRow's linkStyle for
                                 // why this must always set both properties
-                                textDecoration: c.linkStyle.includes("underline")
+                                textDecoration: c.linkStyle.includes(
+                                  "underline",
+                                )
                                   ? ("underline" as const)
                                   : ("none" as const),
                                 color: c.linkStyle.includes("color")
@@ -1050,7 +1084,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                       </Text>
                     )}
                   </Text>
-                  <Text style={styles.entryDates}>{dateRange(exp)}</Text>
+                  <Text style={styles.entryDates}>
+                    {dateRange(exp, c.dateFormat)}
+                  </Text>
                 </View>,
               )}
               {hasVisibleText(exp.description) &&
@@ -1081,7 +1117,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                       .join(" · ")}
                   </Text>
                 </View>
-                <Text style={styles.entryDates}>{dateRange(edu)}</Text>
+                <Text style={styles.entryDates}>
+                  {dateRange(edu, c.dateFormat)}
+                </Text>
               </View>
               {hasVisibleText(edu.description) &&
                 richTextToPdf(edu.description, {
@@ -1121,11 +1159,23 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         {renderSectionTitle("References")}
         <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 8 }}>
           {references.map((r) => (
-            <View key={r.id} style={{ width: "50%", paddingRight: 8 }} wrap={false}>
-              <Text style={{ fontSize: base * 0.95, fontFamily: variants.bold, color: bodyTextColorEff }}>
+            <View
+              key={r.id}
+              style={{ width: "50%", paddingRight: 8 }}
+              wrap={false}
+            >
+              <Text
+                style={{
+                  fontSize: base * 0.95,
+                  fontFamily: variants.bold,
+                  color: bodyTextColorEff,
+                }}
+              >
                 {r.name || "Reference name"}
               </Text>
-              <Text style={{ fontSize: base * 0.85, color: bodyAccentColorEff }}>
+              <Text
+                style={{ fontSize: base * 0.85, color: bodyAccentColorEff }}
+              >
                 {[r.jobTitle, r.company].filter(Boolean).join(", ")}
               </Text>
               <Text style={{ fontSize: base * 0.8, color: bodyAccentColorEff }}>
@@ -1137,7 +1187,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       </View>
     );
 
-  const mainGroups: Record<"experience" | "skillsLanguage" | "references", React.ReactNode> = {
+  const mainGroups: Record<
+    "experience" | "skillsLanguage" | "references",
+    React.ReactNode
+  > = {
     experience: expEduNode,
     skillsLanguage: skillsLanguageNode,
     references: referencesNode,
@@ -1145,7 +1198,11 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   return (
     <Document>
-      <Page size={c.pageFormat === "letter" ? "LETTER" : "A4"} style={styles.page} wrap>
+      <Page
+        size={c.pageFormat === "letter" ? "LETTER" : "A4"}
+        style={styles.page}
+        wrap
+      >
         {c.topAccentBar && <View style={styles.topAccentBar} fixed />}
         {hasSidebar && <View style={styles.sidebarBand} fixed />}
         {showFullBleedPhoto && (
@@ -1203,7 +1260,11 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                         { alignSelf: "flex-start" },
                         sidebarHeadingsInk,
                       )}
-                      {renderLevels(languages, LANGUAGE_LEVEL_LABELS, sidebarInk)}
+                      {renderLevels(
+                        languages,
+                        LANGUAGE_LEVEL_LABELS,
+                        sidebarInk,
+                      )}
                     </View>
                   );
                 }
@@ -1221,13 +1282,29 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                       )}
                       {references.map((r) => (
                         <View key={r.id} style={{ marginTop: 6 }}>
-                          <Text style={{ fontSize: base * 0.95, fontFamily: variants.bold, color: sidebarInk }}>
+                          <Text
+                            style={{
+                              fontSize: base * 0.95,
+                              fontFamily: variants.bold,
+                              color: sidebarInk,
+                            }}
+                          >
                             {r.name || "Reference name"}
                           </Text>
-                          <Text style={{ fontSize: base * 0.85, color: bodyAccentColorEff }}>
+                          <Text
+                            style={{
+                              fontSize: base * 0.85,
+                              color: bodyAccentColorEff,
+                            }}
+                          >
                             {[r.jobTitle, r.company].filter(Boolean).join(", ")}
                           </Text>
-                          <Text style={{ fontSize: base * 0.8, color: bodyAccentColorEff }}>
+                          <Text
+                            style={{
+                              fontSize: base * 0.8,
+                              color: bodyAccentColorEff,
+                            }}
+                          >
                             {[r.email, r.phone].filter(Boolean).join("  ·  ")}
                           </Text>
                         </View>
@@ -1244,8 +1321,12 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
           <View style={styles.headerRow}>
             <Image src={personal.photoUrl} style={styles.photoRow} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{personal.fullName || "Your Name"}</Text>
-              <Text style={styles.jobTitle}>{personal.jobTitle || "Job Title"}</Text>
+              <Text style={styles.name}>
+                {personal.fullName || "Your Name"}
+              </Text>
+              <Text style={styles.jobTitle}>
+                {personal.jobTitle || "Job Title"}
+              </Text>
               <ContactRow
                 items={contactItems}
                 c={c}
@@ -1260,9 +1341,15 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         ) : (
           !headerInSidebar && (
             <View style={styles.header}>
-              {showPhoto && <Image src={personal.photoUrl} style={styles.photo} />}
-              <Text style={styles.name}>{personal.fullName || "Your Name"}</Text>
-              <Text style={styles.jobTitle}>{personal.jobTitle || "Job Title"}</Text>
+              {showPhoto && (
+                <Image src={personal.photoUrl} style={styles.photo} />
+              )}
+              <Text style={styles.name}>
+                {personal.fullName || "Your Name"}
+              </Text>
+              <Text style={styles.jobTitle}>
+                {personal.jobTitle || "Job Title"}
+              </Text>
               <ContactRow
                 items={contactItems}
                 c={c}
@@ -1291,6 +1378,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
           <Fragment key={group}>{mainGroups[group]}</Fragment>
         ))}
         {c.footerBar && <View style={styles.footerBar} fixed />}
+        {c.pageBorder && <View style={styles.pageBorderFrame} fixed />}
       </Page>
     </Document>
   );
