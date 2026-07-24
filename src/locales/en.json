@@ -1182,10 +1182,17 @@
     "subtitle": "Manage your subscription and payment method.",
     "currentPlan": {
       "label": "Current plan",
+      "freeName": "Free",
+      "monthlyName": "Monthly",
       "perMonth": "/month",
       "usageLabel": "AI writing used this month",
       "usageCount": "{{used}} of {{total}} uses",
-      "upgradeCta": "Upgrade plan"
+      "upgradeCta": "Upgrade plan",
+      "upgradeConfirm": "Switch to the Monthly plan for ${{price}}/month and unlock full customization on every template.",
+      "upgradeConfirmYes": "Confirm upgrade",
+      "upgradeConfirmCancel": "Not now",
+      "comparePlans": "Compare plans",
+      "subscribedNote": "You're on the Monthly plan full customization unlocked."
     },
     "paymentMethod": {
       "label": "Payment method",
