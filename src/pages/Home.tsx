@@ -7,11 +7,9 @@ import Footer from "../components/layout/Footer";
 import Testimonials from "../components/home/Testimonials";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
-import tpl1 from "../assets/templates/template-1.png";
-import tpl2 from "../assets/templates/template-2.png";
-import tpl3 from "../assets/templates/template-3.png";
-import tpl4 from "../assets/templates/template-4.png";
-import tpl5 from "../assets/templates/template-5.png";
+import ResumePreview from "../components/resume/ResumePreview";
+import { DEMO_RESUME } from "../data/demoResume";
+import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
 import { useEffect } from "react";
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -19,6 +17,22 @@ const fadeUp = {
   viewport: { once: true, margin: "-80px" },
   transition: { duration: 0.5 },
 };
+
+const HERO_TEMPLATE_IDS = [
+  "banking-classic",
+  "tech-sidebar",
+  "designer-sidebar",
+  "hospitality-classic",
+];
+const HERO_TEMPLATES = HERO_TEMPLATE_IDS.map((id) =>
+  TEMPLATE_PRESETS.find((p) => p.id === id),
+).filter((p): p is TemplatePreset => !!p);
+// computed once at module load, not per render — keeps ResumePreview's
+// resume prop referentially stable so it never re-measures unnecessarily
+const HERO_CARDS = HERO_TEMPLATES.map((preset) => ({
+  preset,
+  resume: { ...DEMO_RESUME, customization: preset.customization },
+}));
 
 export default function Home() {
   const location = useLocation();
@@ -58,8 +72,6 @@ export default function Home() {
     cta: string;
     popular?: boolean;
   }[];
-
-  const templates = [tpl1, tpl2, tpl3, tpl4, tpl5];
 
   return (
     <div className="min-h-screen bg-bg text-text overflow-x-clip">
@@ -114,33 +126,28 @@ export default function Home() {
           )}
         </motion.div>
 
-        {/* template fan */}
-        <motion.div
+        {/* live resume preview fan */}
+        <div
           id="templates"
-          {...fadeUp}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-14 flex justify-center items-end -space-x-10 sm:-space-x-16 lg:-space-x-20"
+          className="flex justify-center items-end -space-x-14 sm:-space-x-20 lg:-space-x-24"
         >
-          {templates.map((src, i) => {
-            const middle = Math.floor(templates.length / 2);
-            const offset = i - middle; // -2..2
+          {HERO_CARDS.map(({ preset, resume }, i) => {
+            const middle = (HERO_CARDS.length - 1) / 2;
+            const offset = i - middle; // -1.5..1.5
             return (
-              <img
-                key={i}
-                src={src}
-                alt={`Resume template ${i + 1}`}
-                loading="lazy"
+              <div
+                key={preset.id}
                 style={{
-                  transform: `rotate(${offset * 2}deg) translateY(${Math.abs(offset) * 14}px)`,
+                  transform: `rotate(${offset * 4}deg) translateY(${Math.abs(offset) * 18}px)`,
                   zIndex: 10 - Math.abs(offset),
                 }}
-                className={`w-24 sm:w-40 lg:w-64 rounded-lg border border-line shadow-xl bg-white ${
-                  offset === 0 ? "relative" : ""
-                }`}
-              />
+                className="w-28 sm:w-44 lg:w-60 shrink-0 rounded-lg shadow-xl"
+              >
+                <ResumePreview singlePage resume={resume} />
+              </div>
             );
           })}
-        </motion.div>
+        </div>
       </section>
 
       {/* ================= INDUSTRIES ================= */}
