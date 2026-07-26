@@ -9,12 +9,14 @@ import { PasswordInput } from "../components/ui/PasswordInput";
 import { Button } from "../components/ui/button";
 import logo from "../assets/logo/resumate.png";
 import logoMobile from "../assets/logo/logo.png";
+import { getPendingPlan, clearPendingPlan } from "../lib/pendingPlan";
 
 export default function Login() {
   const { user, loading, signInWithGoogle, signInWithPassword } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
+  const from =
+    (location.state as { from?: string } | null)?.from ?? "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,7 +50,16 @@ export default function Login() {
   }
 
   // Already signed in → skip the login page
-  if (user) return <Navigate to={from} replace />;
+  if (user) {
+    const pendingPlan = getPendingPlan();
+    if (pendingPlan) {
+      clearPendingPlan();
+      return (
+        <Navigate to="/billing/payment" state={{ plan: pendingPlan }} replace />
+      );
+    }
+    return <Navigate to={from} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4 lg:p-10">

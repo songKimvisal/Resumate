@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
 import { CircleCheck, Leaf, Crown, Zap } from "lucide-react";
@@ -12,6 +12,8 @@ import ResumePreview from "../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
 import { useEffect } from "react";
+import { setPendingPlan } from "../lib/pendingPlan"; // adjust path if different
+import type { PlanId } from "../types/billing"; // adjust path if different
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -28,8 +30,6 @@ const HERO_TEMPLATE_IDS = [
 const HERO_TEMPLATES = HERO_TEMPLATE_IDS.map((id) =>
   TEMPLATE_PRESETS.find((p) => p.id === id),
 ).filter((p): p is TemplatePreset => !!p);
-// computed once at module load, not per render — keeps ResumePreview's
-// resume prop referentially stable so it never re-measures unnecessarily
 const HERO_CARDS = HERO_TEMPLATES.map((preset) => ({
   preset,
   resume: { ...DEMO_RESUME, customization: preset.customization },
@@ -41,16 +41,29 @@ export default function Home() {
   useEffect(() => {
     const id = (location.state as { scrollTo?: string } | null)?.scrollTo;
     if (id) {
-      // wait one frame so the sections are rendered, then scroll
       setTimeout(() => {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-        // clear the state so refresh/back doesn't re-scroll
         window.history.replaceState({}, "");
       }, 100);
     }
   }, [location.state]);
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePlanClick = (planId: PlanId) => {
+    if (loading) return;
+    if (planId === "free") {
+      navigate(user ? "/dashboard" : "/login");
+      return;
+    }
+    if (user) {
+      navigate("/billing/payment", { state: { plan: planId } }); 
+    } else {
+      setPendingPlan(planId as Exclude<PlanId, "free">);
+      navigate("/login");
+    }
+  };
   const industries = t("home.industries", { returnObjects: true }) as string[];
   const features = t("home.features.items", { returnObjects: true }) as {
     title: string;
@@ -342,15 +355,15 @@ export default function Home() {
                 </ul>
               </div>
 
-              <Link to="/login" className="block mt-auto">
-                <Button
-                  size="default"
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
+              <Button
+                size="default"
+                className="w-full mt-auto"
+                variant={plan.popular ? "default" : "outline"}
+                onClick={() => handlePlanClick(plan.id)}
+                disabled={loading}
+              >
+                {plan.cta}
+              </Button>
             </motion.div>
           ))}
         </div>
