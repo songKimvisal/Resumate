@@ -1177,22 +1177,48 @@
     }
   },
   "billing": {
-    "title": "Billing &",
-    "titleAccent": "Timeline",
-    "subtitle": "Manage your subscription and payment method.",
+    "title": "ការគិតប្រាក់ &",
+    "titleAccent": "កាលប្បវត្តិ",
+    "subtitle": "គ្រប់គ្រងការជាវ និងវិធីសាស្ត្រទូទាត់ប្រាក់របស់អ្នក។",
     "currentPlan": {
-      "label": "Current plan",
-      "freeName": "Free",
-      "monthlyName": "Monthly",
-      "perMonth": "/month",
-      "usageLabel": "AI writing used this month",
-      "usageCount": "{{used}} of {{total}} uses",
-      "upgradeCta": "Upgrade plan",
-      "upgradeConfirm": "Switch to the Monthly plan for ${{price}}/month and unlock full customization on every template.",
-      "upgradeConfirmYes": "Confirm upgrade",
-      "upgradeConfirmCancel": "Not now",
-      "comparePlans": "Compare plans",
-      "subscribedNote": "You're on the Monthly plan full customization unlocked."
+      "label": "គម្រោងបច្ចុប្បន្ន",
+      "freeName": "ឥតគិតថ្លៃ",
+      "monthlyName": "ប្រចាំខែ",
+      "perMonth": "/ខែ",
+      "usageLabel": "ការប្រើប្រាស់ AI សរសេរក្នុងខែនេះ",
+      "usageCount": "{{used}} នៃ {{total}} ដង",
+      "upgradeCta": "ដំឡើងគម្រោង",
+      "subscribedNote": "អ្នកកំពុងប្រើប្រាស់គម្រោង Pro ដែលអាចកែច្នៃបានពេញលេញ។"
+    },
+    "upgradeModal": {
+      "title": "ដំឡើងគម្រោងរបស់អ្នក",
+      "subtitle": "ទូទាត់ប្រាក់តាមរយៈ Stripe ឬ KHQR។ គ្មានតម្លៃលាក់បាំង។ អាចបោះបង់បានគ្រប់ពេល។",
+      "close": "បិទ",
+      "currentPlanCta": "គម្រោងបច្ចុប្បន្ន"
+    },
+    "payment": {
+      "back": "ត្រឡប់ក្រោយ",
+      "title": "ការជាវគម្រោង {{plan}} ប្រចាំខែ",
+      "titleAccent": "",
+      "orderSummary": {
+        "title": "សេចក្តីសង្ខេបនៃការបញ្ជាទិញ",
+        "subtotal": "សរុបរង",
+        "tax": "ពន្ធ",
+        "dueToday": "ចំនួនត្រូវទូទាត់ថ្ងៃនេះ",
+        "finePrint": "គ្មានតម្លៃលាក់បាំង អាចបោះបង់បានគ្រប់ពេលនៅក្នុង «ការកំណត់»។"
+      },
+      "khqr": {
+        "merchantLabel": "ResuMate",
+        "expiresIn": "កូដ QR នឹងផុតកំណត់ក្នុងរយៈពេល",
+        "waitingForPayment": "កំពុងរង់ចាំការទូទាត់ប្រាក់…",
+        "poweredBy": "គាំទ្រដោយ ប្រព័ន្ធបាគង (Bakong) ធនាគារជាតិនៃកម្ពុជា"
+      },
+      "success": {
+        "title": "ការទូទាត់ប្រាក់",
+        "titleAccent": "ជោគជ័យ។",
+        "description": "សូមអរគុណសម្រាប់ការដំឡើងទៅកាន់គម្រោង {{plan}}។ គណនីរបស់អ្នកត្រូវបានបើកដំណើរការហើយ ហើយអ្នកអាចចាប់ផ្តើមប្រើប្រាស់បាន។",
+        "cta": "ទៅកាន់ Dashboard"
+      }
     },
     "paymentMethod": {
       "label": "Payment method",
@@ -1230,6 +1256,24 @@
       "confirmCancel": "Keep subscription",
       "cancelling": "Cancelling…",
       "cancelled": "Your subscription has been cancelled."
+    }
+  },
+  "aiUsage": {
+    "title": "AI usage",
+    "subtitle": "How much of your plan's monthly allowance you've used.",
+    "planCard": {
+      "planSuffix": "Plan",
+      "resetIn": "Reset in {{days}} days"
+    },
+    "usageCard": {
+      "title": "This month's AI usage",
+      "subtitle": "How much of your plan's monthly allowance you've used."
+    },
+    "metrics": {
+      "aiCredits": "AI writing credits",
+      "resumesSaved": "Resumes saved",
+      "left": "{{count}} left",
+      "limitReached": "Limit reached"
     }
   },
   "billingHistory": {
