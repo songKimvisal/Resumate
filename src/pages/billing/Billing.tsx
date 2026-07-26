@@ -6,46 +6,29 @@ import { QrCode, CreditCard, Loader2, CheckCircle2, Lock } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
+import { formatCardNumber, formatExpiry, detectCardBrand } from "../../lib/cardFormat";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { usePricingPlans } from "../../hooks/usePricingPlans";
+import UpgradePlanModal from "./UpgradePlanModal";
 import mascot from "../../assets/logo/mascot.png";
 
 type PaymentMethod = "khqr" | "stripe";
 
-const MONTHLY_PRICE = "9.99";
 const USAGE = { used: 3, total: 5 };
 const NEXT_BILLING_DATE = "19 Jul 2026";
-
-const formatCardNumber = (value: string) =>
-  value
-    .replace(/\D/g, "")
-    .slice(0, 16)
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
-
-const formatExpiry = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 4);
-  return digits.length >= 3 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
-};
-
-const detectCardBrand = (digits: string) => {
-  if (/^4/.test(digits)) return "Visa";
-  if (/^(5[1-5]|2[2-7])/.test(digits)) return "Mastercard";
-  if (/^62/.test(digits)) return "UnionPay";
-  return "Card";
-};
 
 export default function Billing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const plan = useSubscriptionStore((s) => s.plan);
   const isSubscribed = useSubscriptionStore((s) => s.isSubscribed);
-  const subscribe = useSubscriptionStore((s) => s.subscribe);
   const unsubscribe = useSubscriptionStore((s) => s.unsubscribe);
-  const [confirmingUpgrade, setConfirmingUpgrade] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
-  const CURRENT_PLAN = isSubscribed
-    ? { name: t("billing.currentPlan.monthlyName"), price: MONTHLY_PRICE }
-    : { name: t("billing.currentPlan.freeName"), price: "0" };
+  const pricingPlans = usePricingPlans();
+  const CURRENT_PLAN =
+    pricingPlans.find((p) => p.id === plan) ?? pricingPlans[0];
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("khqr");
   const [editingMethod, setEditingMethod] = useState(false);
@@ -150,67 +133,18 @@ export default function Billing() {
             })}
           </p>
 
-          {isSubscribed ? (
+          {plan === "pro" ? (
             <p className="mt-5 flex items-center gap-1.5 text-sm text-success">
               <CheckCircle2 size={15} strokeWidth={2} className="shrink-0" />
               {t("billing.currentPlan.subscribedNote")}
             </p>
           ) : (
-            <>
-              <Button
-                className="mt-5 w-full"
-                onClick={() => setConfirmingUpgrade((v) => !v)}
-              >
-                {t("billing.currentPlan.upgradeCta")}
-              </Button>
-              <AnimatePresence initial={false}>
-                {confirmingUpgrade && (
-                  <motion.div
-                    key="upgrade-confirm"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-3 rounded-xl border border-line p-4 space-y-3">
-                      <p className="text-sm text-text">
-                        {t("billing.currentPlan.upgradeConfirm", {
-                          price: MONTHLY_PRICE,
-                        })}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="compact"
-                          onClick={() => {
-                            subscribe();
-                            setConfirmingUpgrade(false);
-                          }}
-                        >
-                          {t("billing.currentPlan.upgradeConfirmYes")}
-                        </Button>
-                        <Button
-                          size="compact"
-                          variant="outline"
-                          onClick={() => setConfirmingUpgrade(false)}
-                        >
-                          {t("billing.currentPlan.upgradeConfirmCancel")}
-                        </Button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate("/", { state: { scrollTo: "pricing" } })
-                        }
-                        className="text-xs text-text-secondary hover:text-text hover:underline"
-                      >
-                        {t("billing.currentPlan.comparePlans")}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
+            <Button
+              className="mt-5 w-full"
+              onClick={() => setUpgradeModalOpen(true)}
+            >
+              {t("billing.currentPlan.upgradeCta")}
+            </Button>
           )}
         </div>
 
@@ -483,6 +417,16 @@ export default function Billing() {
           </div>
         )}
       </div>
+
+      <UpgradePlanModal
+        open={upgradeModalOpen}
+        currentPlan={plan}
+        onClose={() => setUpgradeModalOpen(false)}
+        onSelectPlan={(selected) => {
+          setUpgradeModalOpen(false);
+          navigate("/billing/payment", { state: { plan: selected } });
+        }}
+      />
     </div>
   );
 }

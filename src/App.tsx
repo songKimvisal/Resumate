@@ -20,6 +20,7 @@ import MyResumes from "./pages/dashboard/MyResumes";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
 import Billing from "./pages/billing/Billing";
 import BillingHistory from "./pages/billing/BillingHistory";
+import Payment from "./pages/billing/Payment";
 import AiUsage from "./pages/aiUsage/AiUsage";
 import BuilderLayout from "./pages/builder/BuilderLayout";
 import Marketplace from "./pages/marketplace/Marketplace";
@@ -56,6 +57,7 @@ export default function App() {
           </Route>
           <Route path="/builder" element={<BuilderLayout />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/billing/payment" element={<Payment />} />
         </Route>
 
         {/* Fallback */}

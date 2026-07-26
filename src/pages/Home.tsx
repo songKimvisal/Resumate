@@ -7,6 +7,7 @@ import Footer from "../components/layout/Footer";
 import Testimonials from "../components/home/Testimonials";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
+import { usePricingPlans } from "../hooks/usePricingPlans";
 import ResumePreview from "../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
@@ -63,15 +64,7 @@ export default function Home() {
     title: string;
     desc: string;
   }[];
-  const plans = t("home.pricing.plans", { returnObjects: true }) as {
-    name: string;
-    price: string;
-    tagline: string;
-    includesLabel: string;
-    features: string[];
-    cta: string;
-    popular?: boolean;
-  }[];
+  const plans = usePricingPlans();
 
   return (
     <div className="min-h-screen bg-bg text-text overflow-x-clip">
@@ -129,7 +122,7 @@ export default function Home() {
         {/* live resume preview fan */}
         <div
           id="templates"
-          className="flex justify-center items-end -space-x-14 sm:-space-x-20 lg:-space-x-24"
+          className="mt-16 flex justify-center items-end -space-x-14 sm:-space-x-20 lg:-space-x-24"
         >
           {HERO_CARDS.map(({ preset, resume }, i) => {
             const middle = (HERO_CARDS.length - 1) / 2;
@@ -141,7 +134,7 @@ export default function Home() {
                   transform: `rotate(${offset * 4}deg) translateY(${Math.abs(offset) * 18}px)`,
                   zIndex: 10 - Math.abs(offset),
                 }}
-                className="w-28 sm:w-44 lg:w-60 shrink-0 rounded-lg shadow-xl"
+                className="w-28 sm:w-44 lg:w-60 shrink-0 overflow-hidden rounded-lg shadow-xl"
               >
                 <ResumePreview singlePage resume={resume} />
               </div>
@@ -314,8 +307,8 @@ export default function Home() {
                     </span>
                   ) : (
                     <>
-                      {plan.name === "Free" && <Leaf size={22} />}
-                      {plan.name === "Pro" && <Crown size={22} />}
+                      {plan.id === "free" && <Leaf size={22} />}
+                      {plan.id === "pro" && <Crown size={22} />}
                     </>
                   )}
                 </div>
