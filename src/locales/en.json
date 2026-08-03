@@ -158,6 +158,56 @@
     "upgrade": "Upgrade to Starter",
     "welcomeBack": "Welcome back"
   },
+  "dashboard": {
+    "welcomeTitle": "Welcome back, {{name}}",
+    "subtitle": "Select a resume, paste a job ad, and let Smart assistant check if you're ready to apply.",
+    "currentResumeLabel": "Your current resume",
+    "currentResumeHeadingExcellent": "Your resume is exceptional.",
+    "currentResumeHeadingTopTen": "You're almost in the top 10%",
+    "currentResumeHeadingStrong": "Your resume is strong.",
+    "currentResumeHeadingNeedsWork": "Build a stronger resume.",
+    "currentResumeBodyStrong": "Great work. Your resume is strong! Add one more element for the perfect score.",
+    "currentResumeBodyHealthy": "Keep going. A few improvements will help you submit with confidence.",
+    "currentResumeBodyNeedsWork": "Start with the essential sections and the Smart assistant will guide you to a stronger score.",
+    "fixMissing": "Fix missing items",
+    "changeResume": "Change resume",
+    "continue": "Continue",
+    "createResume": "Create resume",
+    "scoreLabel": "Score",
+    "scoreSuffix": "completeness",
+    "scoreCaption": "{{count}} missing items to improve",
+    "missingLabel": "Missing items",
+    "missingNone": "All done! Your resume is complete.",
+    "resumePreviewLabel": "Resume preview",
+    "previewBadge": "Preview",
+    "previewSummary": "Live score",
+    "previewHint": "This is your latest saved resume preview.",
+    "noResumeTitle": "No resumes yet",
+    "noResumeBody": "Create your first resume and start your job readiness journey.",
+    "loadError": "Unable to load your resumes right now.",
+    "retry": "Try again",
+    "untitledResume": "Untitled resume",
+    "previewJobTitle": "Job title",
+    "steps": {
+      "selectResume": "Select Resume",
+      "resumeOptimization": "Smart Resume Optimization",
+      "interviewPrep": "Interview Prep",
+      "jobReadinessReport": "Job Readiness Report"
+    }
+  },
+  "selectResume": {
+    "back": "Back",
+    "title": "Select your resume",
+    "subtitle": "Choose the resume you'd like to work on, or start a new one.",
+    "newResume": "New resume",
+    "loadError": "We couldn't load your resumes.",
+    "retry": "Retry",
+    "untitled": "Untitled resume",
+    "empty": {
+      "title": "No resumes yet",
+      "subtitle": "Create your first resume to get started."
+    }
+  },
   "footer": {
     "product": "Product",
     "company": "Company",
@@ -1115,12 +1165,7 @@
       "layoutSidebar": "Sidebar"
     }
   },
-  "dashboard": {
-    "welcomeTitle": "Welcome back, {{name}}",
-    "comingSoonTitle": "Your dashboard is coming soon",
-    "comingSoonSubtitle": "We're building AI resume scoring, interview prep, and job-readiness reports. In the meantime, manage your resumes below.",
-    "goToMyResumes": "Go to My Resumes"
-  },
+
   "myResumes": {
     "title": "My",
     "titleAccent": "Resumes",
@@ -1185,7 +1230,7 @@
       "freeName": "Free",
       "monthlyName": "Monthly",
       "perMonth": "/month",
-      "usageLabel": "AI writing used this month",
+      "usageLabel": "Smart writing used this month",
       "usageCount": "{{used}} of {{total}} uses",
       "upgradeCta": "Upgrade plan",
       "subscribedNote": "You're on the Pro plan full customization unlocked."
@@ -1259,18 +1304,18 @@
     }
   },
   "aiUsage": {
-    "title": "AI usage",
+    "title": "Smart assistant usage ",
     "subtitle": "How much of your plan's monthly allowance you've used.",
     "planCard": {
       "planSuffix": "Plan",
       "resetIn": "Reset in {{days}} days"
     },
     "usageCard": {
-      "title": "This month's AI usage",
+      "title": "This month's Smart assistant usage",
       "subtitle": "How much of your plan's monthly allowance you've used."
     },
     "metrics": {
-      "aiCredits": "AI writing credits",
+      "aiCredits": "Smart writing assistant credits",
       "resumesSaved": "Resumes saved",
       "left": "{{count}} left",
       "limitReached": "Limit reached"
