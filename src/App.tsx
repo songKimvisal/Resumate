@@ -16,6 +16,7 @@ import ScrollToTop from "./components/ScrollToTop";
 // Protected pages
 import DashboardShell from "./components/layout/DashboardShell";
 import Dashboard from "./pages/dashboard/Dashboard";
+import SelectResume from "./pages/dashboard/SelectResume";
 import MyResumes from "./pages/dashboard/MyResumes";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
 import Billing from "./pages/billing/Billing";
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/builder" element={<BuilderLayout />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/billing/payment" element={<Payment />} />
+          <Route path="/select-resume" element={<SelectResume />} />
         </Route>
 
         {/* Fallback */}
