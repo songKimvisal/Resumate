@@ -19,6 +19,7 @@ import {
   type Customization,
   type EducationItem,
   type ExperienceItem,
+  type LayoutVariant,
   type LinkItem,
   type PersonalInfo,
   type Resume,
@@ -31,6 +32,11 @@ import {
   orderedMainGroups,
   orderedSidebarKeys,
 } from "../../../lib/sectionOrder";
+import { SpecialPdfDocument } from "./SpecialPdfLayouts";
+
+function isSpecialLayout(variant: LayoutVariant | undefined) {
+  return !!variant && variant !== "default";
+}
 
 // PDF points render smaller than browser px for the same visual size on the
 // page; this ratio keeps the exported PDF matching the live preview (it's
@@ -546,6 +552,10 @@ function ContactRow({
   );
 }
 export function ResumeDocument({ resume }: { resume: Resume }) {
+  if (isSpecialLayout(resume.customization.layoutVariant)) {
+    return <SpecialPdfDocument resume={resume} />;
+  }
+
   const {
     personal,
     experience,

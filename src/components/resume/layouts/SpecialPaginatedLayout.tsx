@@ -1,0 +1,585 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import type {
+  EducationItem,
+  ExperienceItem,
+  NoExperienceItem,
+  Resume,
+} from "../../../types/resume";
+import { cn } from "../../../lib/utils";
+import { cssFontStack } from "../../../lib/fonts";
+import { hasText, normalizeJobs, personalContactLines } from "./shared";
+import { SpecialLayout } from "./index";
+
+type JobSlice = {
+  id: string;
+  description: string;
+  showMeta: boolean;
+};
+
+type PagePlan = {
+  showSummary: boolean;
+  educationIds: string[];
+  jobs: JobSlice[];
+  showSkills: boolean;
+  showLanguages: boolean;
+  showReferences: boolean;
+  showContact: boolean;
+};
+
+type ContentUnit = {
+  key: string;
+  kind: "summary" | "education" | "job" | "references" | "contact";
+  id?: string;
+  description?: string;
+  showMeta?: boolean;
+};
+
+/** Flatten rich HTML into discrete block chunks (no overlapping wrappers). */
+function splitRichHtml(html: string): string[] {
+  if (!html || !hasText(html)) return [];
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  const blockTags = new Set([
+    "P",
+    "UL",
+    "OL",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "BLOCKQUOTE",
+    "PRE",
+    "TABLE",
+    "HR",
+    "DIV",
+  ]);
+
+  const flatten = (el: Element): string[] => {
+    const children = Array.from(el.children);
+    if (children.length === 0) {
+      return hasText(el.innerHTML) ? [el.outerHTML] : [];
+    }
+
+    // Unwrap single nesting wrappers so we paginate real paragraphs.
+    if (
+      (el.tagName === "DIV" || el.tagName === "SECTION") &&
+      children.every((c) => blockTags.has(c.tagName))
+    ) {
+      return children.flatMap((c) => flatten(c));
+    }
+
+    if (el.tagName === "UL" || el.tagName === "OL") {
+      return Array.from(el.children).map((li) => {
+        const wrapper = document.createElement(el.tagName);
+        wrapper.appendChild(li.cloneNode(true));
+        return wrapper.outerHTML;
+      });
+    }
+
+    return [el.outerHTML];
+  };
+
+  const parts: string[] = [];
+  Array.from(container.childNodes).forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      parts.push(...flatten(node as Element));
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim();
+      if (text) parts.push(`<p>${text}</p>`);
+    }
+  });
+
+  // Deduplicate identical consecutive chunks (guards against wrapper quirks).
+  const deduped: string[] = [];
+  for (const part of parts) {
+    if (deduped[deduped.length - 1] !== part) deduped.push(part);
+  }
+  return deduped.length > 0 ? deduped : [html];
+}
+
+function buildUnits(resume: Resume): ContentUnit[] {
+  const units: ContentUnit[] = [];
+  if (hasText(resume.personal.summary)) {
+    units.push({ key: "summary", kind: "summary" });
+  }
+  resume.education.forEach((edu) => {
+    units.push({ key: `edu-${edu.id}`, kind: "education", id: edu.id });
+  });
+
+  const jobs = normalizeJobs(resume.experience, resume.noExperience);
+  jobs.forEach((job) => {
+    const parts = splitRichHtml(job.description);
+    if (parts.length <= 1) {
+      units.push({
+        key: `job-${job.id}`,
+        kind: "job",
+        id: job.id,
+        description: parts[0] || job.description || "",
+        showMeta: true,
+      });
+    } else {
+      parts.forEach((part, i) => {
+        units.push({
+          key: `job-${job.id}-p${i}`,
+          kind: "job",
+          id: job.id,
+          description: part,
+          showMeta: i === 0,
+        });
+      });
+    }
+  });
+
+  if (resume.includeReferences && resume.references.length > 0) {
+    units.push({ key: "references", kind: "references" });
+  }
+  if (personalContactLines(resume.personal).length > 0) {
+    units.push({ key: "contact", kind: "contact" });
+  }
+  return units;
+}
+
+function packUnits(
+  units: ContentUnit[],
+  heights: Record<string, number>,
+  pageHeightPx: number,
+): PagePlan[] {
+  // Main column sits beside the sidebar, so most of the page height is usable.
+  // (Old 0.42 budget left page 1 half-empty.)
+  const firstBudget = pageHeightPx * 0.86;
+  const nextBudget = pageHeightPx * 0.92;
+  const gap = 8;
+
+  if (units.length === 0) {
+    return [
+      {
+        showSummary: false,
+        educationIds: [],
+        jobs: [],
+        showSkills: true,
+        showLanguages: true,
+        showReferences: false,
+        showContact: false,
+      },
+    ];
+  }
+
+  const pages: ContentUnit[][] = [[]];
+  let used = 0;
+
+  const unitHeight = (unit: ContentUnit) =>
+    // Slightly discount measured height so we don't leave large empty gaps
+    // when the probe column wraps more aggressively than the real layout.
+    Math.max(18, Math.ceil((heights[unit.key] ?? 36) * 0.92));
+
+  for (const unit of units) {
+    const h = unitHeight(unit);
+    const page = pages[pages.length - 1];
+    const isFirst = page.length === 0;
+    const needed = (isFirst ? 0 : gap) + h;
+    const limit = pages.length === 1 ? firstBudget : nextBudget;
+
+    if (!isFirst && used + needed > limit) {
+      pages.push([unit]);
+      used = h;
+    } else {
+      page.push(unit);
+      used += needed;
+    }
+  }
+
+  // Pull content back onto earlier pages while space remains.
+  for (let i = 0; i < pages.length - 1; i++) {
+    const limit = i === 0 ? firstBudget : nextBudget;
+    let usedNow = pages[i].reduce(
+      (sum, u, idx) => sum + (idx === 0 ? 0 : gap) + unitHeight(u),
+      0,
+    );
+    while (pages[i + 1] && pages[i + 1].length > 0) {
+      const nextUnit = pages[i + 1][0];
+      const needed = (pages[i].length === 0 ? 0 : gap) + unitHeight(nextUnit);
+      if (usedNow + needed > limit) break;
+      pages[i].push(pages[i + 1].shift()!);
+      usedNow += needed;
+      if (pages[i + 1].length === 0) pages.splice(i + 1, 1);
+    }
+  }
+
+  return pages.map((pageUnits, pageIndex) => {
+    const seenKeys = new Set<string>();
+    const jobs: JobSlice[] = [];
+    for (const u of pageUnits) {
+      if (u.kind !== "job" || !u.id) continue;
+      if (seenKeys.has(u.key)) continue;
+      seenKeys.add(u.key);
+      jobs.push({
+        id: u.id,
+        description: u.description || "",
+        showMeta: u.showMeta !== false,
+      });
+    }
+
+    return {
+      showSummary: pageUnits.some((u) => u.kind === "summary"),
+      educationIds: pageUnits
+        .filter((u) => u.kind === "education" && u.id)
+        .map((u) => u.id as string),
+      jobs,
+      showSkills: pageIndex === 0,
+      showLanguages: pageIndex === 0,
+      showReferences: pageUnits.some((u) => u.kind === "references"),
+      showContact: pageUnits.some((u) => u.kind === "contact"),
+    };
+  });
+}
+
+function applyPagePlan(
+  resume: Resume,
+  plan: PagePlan,
+  pageIndex: number,
+): Resume {
+  const useExperience = resume.experience.length > 0;
+  const filterEdu = (items: EducationItem[]) =>
+    items.filter((e) => plan.educationIds.includes(e.id));
+
+  // Merge consecutive slices of the same job on this page only.
+  const mergedJobs: JobSlice[] = [];
+  for (const slice of plan.jobs) {
+    const prev = mergedJobs[mergedJobs.length - 1];
+    if (prev && prev.id === slice.id) {
+      // Avoid concatenating an identical chunk twice.
+      if (!prev.description.includes(slice.description)) {
+        prev.description = `${prev.description}${slice.description}`;
+      }
+      prev.showMeta = prev.showMeta || slice.showMeta;
+    } else {
+      mergedJobs.push({ ...slice });
+    }
+  }
+
+  const mapJob = <T extends ExperienceItem | NoExperienceItem>(
+    source: T[],
+    mapFields: (item: T, slice: JobSlice) => T,
+  ): T[] => {
+    const out: T[] = [];
+    const usedIds = new Set<string>();
+    for (const slice of mergedJobs) {
+      // One entry per job id per page (merged description).
+      if (usedIds.has(slice.id)) continue;
+      usedIds.add(slice.id);
+      // Re-merge all slices for this id in order (in case non-adjacent — shouldn't happen).
+      const combined = mergedJobs
+        .filter((s) => s.id === slice.id)
+        .reduce(
+          (acc, s) => {
+            if (!acc.description.includes(s.description)) {
+              acc.description += s.description;
+            }
+            acc.showMeta = acc.showMeta || s.showMeta;
+            return acc;
+          },
+          { id: slice.id, description: "", showMeta: false } as JobSlice,
+        );
+      const item = source.find((j) => j.id === slice.id);
+      if (!item) continue;
+      out.push(mapFields(item, combined));
+    }
+    return out;
+  };
+
+  const isFirst = pageIndex === 0;
+
+  return {
+    ...resume,
+    personal: {
+      ...resume.personal,
+      summary: plan.showSummary ? resume.personal.summary : "",
+      photoUrl: isFirst ? resume.personal.photoUrl : "",
+      fullName: isFirst ? resume.personal.fullName : "",
+      jobTitle: isFirst ? resume.personal.jobTitle : "",
+      email: plan.showContact ? resume.personal.email : "",
+      phone: plan.showContact ? resume.personal.phone : "",
+      location: plan.showContact ? resume.personal.location : "",
+      nationality: plan.showContact ? resume.personal.nationality : "",
+      passportId: plan.showContact ? resume.personal.passportId : "",
+      website: plan.showContact ? resume.personal.website : [],
+      linkedin: plan.showContact ? resume.personal.linkedin : [],
+      portfolio: plan.showContact ? resume.personal.portfolio : [],
+      github: plan.showContact ? resume.personal.github : [],
+      gitlab: plan.showContact ? resume.personal.gitlab : [],
+      stackoverflow: plan.showContact ? resume.personal.stackoverflow : [],
+      telegram: plan.showContact ? resume.personal.telegram : [],
+    },
+    experience: useExperience
+      ? mapJob(resume.experience, (item, slice) => ({
+          ...item,
+          description: slice.description,
+          jobTitle: slice.showMeta
+            ? item.jobTitle
+            : item.jobTitle
+              ? `${item.jobTitle} (continued)`
+              : "Continued",
+          company: slice.showMeta ? item.company : "",
+          location: slice.showMeta ? item.location : "",
+          startDate: slice.showMeta ? item.startDate : "",
+          endDate: slice.showMeta ? item.endDate : "",
+          current: slice.showMeta ? item.current : false,
+        }))
+      : [],
+    noExperience: useExperience
+      ? []
+      : mapJob(resume.noExperience, (item, slice) => ({
+          ...item,
+          description: slice.description,
+          title: slice.showMeta
+            ? item.title
+            : item.title
+              ? `${item.title} (continued)`
+              : "Continued",
+          subtitle: slice.showMeta ? item.subtitle : "",
+          startDate: slice.showMeta ? item.startDate : "",
+          endDate: slice.showMeta ? item.endDate : "",
+          current: slice.showMeta ? item.current : false,
+        })),
+    education: filterEdu(resume.education),
+    skills: isFirst && plan.showSkills ? resume.skills : [],
+    languages: isFirst && plan.showLanguages ? resume.languages : [],
+    references: plan.showReferences ? resume.references : [],
+    includeReferences: plan.showReferences && resume.includeReferences,
+  };
+}
+
+function MeasureBlock({
+  resume,
+  unit,
+}: {
+  resume: Resume;
+  unit: ContentUnit;
+}) {
+  const {
+    personal,
+    education,
+    experience,
+    noExperience,
+    references,
+    customization,
+  } = resume;
+  const fontSize = customization.fontSize || 14;
+  const jobs = normalizeJobs(experience, noExperience);
+
+  if (unit.kind === "contact") {
+    const lines = personalContactLines(personal);
+    return (
+      <div style={{ fontSize }} className="space-y-2 py-2">
+        <p className="font-bold">CONTACT</p>
+        {lines.map((l) => (
+          <p key={l.id}>{l.text}</p>
+        ))}
+      </div>
+    );
+  }
+  if (unit.kind === "summary") {
+    return (
+      <div
+        className="rte-content"
+        style={{ fontSize }}
+        dangerouslySetInnerHTML={{ __html: personal.summary }}
+      />
+    );
+  }
+  if (unit.kind === "education") {
+    const edu = education.find((e) => e.id === unit.id);
+    if (!edu) return null;
+    return (
+      <div style={{ fontSize }}>
+        <p className="font-bold">{edu.school}</p>
+        <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+        {edu.gpa && <p>GPA: {edu.gpa}</p>}
+        {hasText(edu.description) && (
+          <div
+            className="rte-content"
+            dangerouslySetInnerHTML={{ __html: edu.description }}
+          />
+        )}
+      </div>
+    );
+  }
+  if (unit.kind === "job") {
+    const job = jobs.find((j) => j.id === unit.id);
+    if (!job) return null;
+    return (
+      <div style={{ fontSize }}>
+        {unit.showMeta !== false && (
+          <>
+            <p className="font-bold">{job.jobTitle}</p>
+            <p>{[job.company, job.location].filter(Boolean).join(" · ")}</p>
+          </>
+        )}
+        {unit.description && hasText(unit.description) && (
+          <div
+            className="rte-content"
+            dangerouslySetInnerHTML={{ __html: unit.description }}
+          />
+        )}
+      </div>
+    );
+  }
+  return (
+    <div style={{ fontSize }} className="space-y-2">
+      {references.map((r) => (
+        <div key={r.id}>
+          <p className="font-bold">{r.name}</p>
+          <p>{[r.jobTitle, r.company].filter(Boolean).join(" · ")}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Packs resume sections across pages. Content that doesn't fit is pushed
+ * to the next page (same template shell, no duplicated identity chrome).
+ */
+export function SpecialPaginatedLayout({
+  resume,
+  pageWidthPx,
+  pageHeightPx,
+  scaleFactor,
+  singlePage = false,
+  pageLabelClassName = "text-text-secondary",
+  pageFormat,
+  pageBorder,
+  pageBorderWidth,
+  accent,
+}: {
+  resume: Resume;
+  pageWidthPx: number;
+  pageHeightPx: number;
+  scaleFactor: number;
+  singlePage?: boolean;
+  pageLabelClassName?: string;
+  pageFormat: "a4" | "letter";
+  pageBorder?: boolean;
+  pageBorderWidth?: number;
+  accent?: string;
+}) {
+  const measureRef = useRef<HTMLDivElement>(null);
+  const units = useMemo(() => buildUnits(resume), [resume]);
+  const [heights, setHeights] = useState<Record<string, number>>({});
+  const [measured, setMeasured] = useState(false);
+
+  useLayoutEffect(() => {
+    const root = measureRef.current;
+    if (!root) return;
+
+    const next: Record<string, number> = {};
+    root.querySelectorAll<HTMLElement>("[data-unit-key]").forEach((el) => {
+      const key = el.dataset.unitKey;
+      if (key) next[key] = Math.ceil(el.getBoundingClientRect().height);
+    });
+    setHeights(next);
+    setMeasured(true);
+  }, [resume, pageWidthPx, pageHeightPx, units]);
+
+  const plans = useMemo(() => {
+    if (!measured) {
+      const jobs = normalizeJobs(resume.experience, resume.noExperience);
+      return [
+        {
+          showSummary: hasText(resume.personal.summary),
+          educationIds: resume.education.map((e) => e.id),
+          jobs: jobs.map((j) => ({
+            id: j.id,
+            description: j.description,
+            showMeta: true,
+          })),
+          showSkills: true,
+          showLanguages: true,
+          showReferences:
+            resume.includeReferences && resume.references.length > 0,
+          showContact: personalContactLines(resume.personal).length > 0,
+        } satisfies PagePlan,
+      ];
+    }
+    return packUnits(units, heights, pageHeightPx);
+  }, [measured, units, heights, pageHeightPx, resume]);
+
+  const pageResumes = useMemo(
+    () => plans.map((plan, pageIndex) => applyPagePlan(resume, plan, pageIndex)),
+    [plans, resume],
+  );
+
+  const visible = singlePage ? pageResumes.slice(0, 1) : pageResumes;
+  const aspect = pageFormat === "letter" ? "8.5/11" : "210/297";
+  const measureWidth = Math.round(pageWidthPx * 0.66);
+
+  return (
+    <div className="space-y-4">
+      <div
+        aria-hidden
+        ref={measureRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: -99999,
+          visibility: "hidden",
+          pointerEvents: "none",
+          width: measureWidth,
+          fontFamily: cssFontStack(resume.customization.fontFamily),
+          fontSize: resume.customization.fontSize,
+          lineHeight: resume.customization.lineHeight || 1.45,
+        }}
+      >
+        {units.map((unit) => (
+          <div key={unit.key} data-unit-key={unit.key} className="pb-1">
+            <MeasureBlock resume={resume} unit={unit} />
+          </div>
+        ))}
+      </div>
+
+      {visible.map((pageResume, pageIndex) => (
+        <div key={pageIndex}>
+          {!singlePage && pageResumes.length > 1 && (
+            <p className={cn("mb-1.5 text-center text-xs", pageLabelClassName)}>
+              Page {pageIndex + 1} of {pageResumes.length}
+            </p>
+          )}
+          <div
+            className="relative w-full rounded-sm border border-line shadow-xl"
+            style={{
+              maxWidth: pageWidthPx,
+              aspectRatio: aspect,
+              outline: pageBorder
+                ? `${pageBorderWidth}px solid ${accent}`
+                : undefined,
+              outlineOffset: pageBorder ? -(pageBorderWidth || 0) : undefined,
+            }}
+          >
+            <div className="absolute inset-0 overflow-hidden rounded-sm">
+              <div
+                style={{
+                  width: pageWidthPx,
+                  height: pageHeightPx,
+                  transform: `scale(${scaleFactor})`,
+                  transformOrigin: "top left",
+                }}
+              >
+                <SpecialLayout
+                  resume={pageResume}
+                  pageWidthPx={pageWidthPx}
+                  pageHeightPx={pageHeightPx}
+                  expandHeight={false}
+                  pageIndex={pageIndex}
+                  totalPages={pageResumes.length}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -46,6 +46,8 @@ import {
   partitionSectionOrder,
 } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
+import { hasSpecialLayout } from "./layouts";
+import { SpecialPaginatedLayout } from "./layouts/SpecialPaginatedLayout";
 
 function fmtDate(value: string, format: Customization["dateFormat"] = "monthYear") {
   if (!value) return "";
@@ -640,6 +642,27 @@ export default function ResumePreview({
   const pageHeightPx = realPageWidthPx * pageAspect;
   const scaleFactor =
     containerWidth > 0 ? Math.min(1, containerWidth / realPageWidthPx) : 1;
+
+  const useSpecial = hasSpecialLayout(customization.layoutVariant);
+
+  if (useSpecial) {
+    return (
+      <div ref={wrapperRef}>
+        <SpecialPaginatedLayout
+          resume={resume}
+          pageWidthPx={realPageWidthPx}
+          pageHeightPx={pageHeightPx}
+          scaleFactor={scaleFactor}
+          singlePage={singlePage}
+          pageLabelClassName={pageLabelClassName}
+          pageFormat={customization.pageFormat}
+          pageBorder={customization.pageBorder}
+          pageBorderWidth={customization.pageBorderWidth}
+          accent={accent}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="space-y-4">

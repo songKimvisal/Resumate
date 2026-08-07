@@ -127,8 +127,32 @@ export type SectionOrderKey =
   | "references"
   | "language";
 
+/** Named full-page layouts that opt out of the generic column engine and
+ *  render a fixed composition matching a premium mockup. `"default"` keeps
+ *  the existing customization-driven renderer. */
+export type LayoutVariant =
+  | "default"
+  | "designerBlock"
+  | "techSplit"
+  | "bankingClean"
+  | "freshSidebar"
+  | "navyAnalyst"
+  | "ribbonFold"
+  | "graphicPro"
+  | "executiveCard"
+  | "monoTimeline"
+  | "editorialClassic"
+  | "compactTech"
+  | "graduateFocus"
+  | "corporateBand"
+  | "warmColumns"
+  | "monoPill"
+  | "cleanHeaderSplit";
+
 export interface Customization {
   template: string;
+  /** when not "default", ResumePreview/PDF use a dedicated layout component */
+  layoutVariant: LayoutVariant;
   accentColor: string;
   /** fills the sidebar column edge-to-edge in two-column layouts; "" means
    *  no fill (sidebar just sits on the page background, the old behavior) */
@@ -242,6 +266,7 @@ export const emptyResume: Resume = {
   includeReferences: true,
   customization: {
     template: "classic",
+    layoutVariant: "default",
     accentColor: "#C1121F",
     sidebarBgColor: "",
     columns: "one",
