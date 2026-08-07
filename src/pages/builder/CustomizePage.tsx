@@ -38,6 +38,12 @@ import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
 import { cn } from "../../lib/utils";
+import {
+  isSpecialLayoutVariant,
+  usesPhotoControls,
+  usesPhotoSlot,
+  usesSidebarBg,
+} from "../../components/resume/layouts/shared";
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../../data/demoResume";
@@ -185,6 +191,14 @@ export default function CustomizePage() {
   const navigate = useNavigate();
   const customization = useResumeStore((s) => s.resume.customization);
   const updateCustomization = useResumeStore((s) => s.updateCustomization);
+  const isSpecialLayout = isSpecialLayoutVariant(customization.layoutVariant);
+  const showSidebarColor =
+    customization.columns === "two" ||
+    usesSidebarBg(customization.layoutVariant);
+  const showPhotoToggle =
+    !isSpecialLayout || usesPhotoSlot(customization.layoutVariant);
+  const showPhotoStyleControls =
+    !isSpecialLayout || usesPhotoControls(customization.layoutVariant);
 
   // a premium template applied from the marketplace/AI picker leaves its
   // preset id in customization.template; while it's not unlocked, Customize
@@ -385,7 +399,9 @@ export default function CustomizePage() {
     { key: "font", label: t("builder.customizePage.nav.font") },
     { key: "fontSize", label: t("builder.customizePage.nav.fontSize") },
     { key: "layout", label: t("builder.customizePage.nav.layout") },
-    { key: "header", label: t("builder.customizePage.nav.header") },
+    ...(!isSpecialLayout
+      ? [{ key: "header" as const, label: t("builder.customizePage.nav.header") }]
+      : []),
     {
       key: "sectionHeadings",
       label: t("builder.customizePage.nav.sectionHeadings"),
@@ -399,7 +415,9 @@ export default function CustomizePage() {
       customization.sidebarKeys,
     );
   const headerIsBanner =
-    customization.columns === "one" || customization.headerPosition === "top";
+    !isSpecialLayout &&
+    (customization.columns === "one" ||
+      customization.headerPosition === "top");
 
   const activeHeadingPreset = HEADING_PRESETS.findIndex(
     (p) =>
@@ -591,7 +609,7 @@ export default function CustomizePage() {
                 value={customization.bodyBgColor}
                 onChange={(c) => updateCustomization({ bodyBgColor: c })}
               />
-              {customization.columns === "two" && (
+              {showSidebarColor && (
                 <SidebarColorPicker
                   color={customization.sidebarBgColor}
                   onChange={(c) => updateCustomization({ sidebarBgColor: c })}
@@ -752,92 +770,208 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.layout")}
             </p>
 
-            <div className="space-y-2.5">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.layout.columns")}
+            {isSpecialLayout ? (
+              <p className="text-xs text-text-secondary -mt-1">
+                {t("builder.customizePage.layout.specialLayoutHint")}
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                <OptionCard
-                  label={t("builder.customizePage.layout.columnsOne")}
-                  selected={customization.columns === "one"}
-                  onClick={() => updateCustomization({ columns: "one" })}
-                >
-                  <ColumnsPreview columns="one" />
-                </OptionCard>
-                <OptionCard
-                  label={t("builder.customizePage.layout.columnsTwo")}
-                  selected={customization.columns === "two"}
-                  onClick={() => updateCustomization({ columns: "two" })}
-                  premiumLocked={!hasFullCustomizationAccess}
-                >
-                  <ColumnsPreview columns="two" />
-                </OptionCard>
-              </div>
-              {!hasFullCustomizationAccess && (
-                <p className="text-xs text-text-secondary">
-                  {t("builder.customizePage.layout.columnsTwoPremiumHint")}
-                </p>
-              )}
-            </div>
-
-            {customization.columns === "two" && (
-              <div className="space-y-2.5">
-                <p className="text-sm font-medium text-text">
-                  {t("builder.customizePage.layout.headerPosition")}
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  <OptionCard
-                    label={t("builder.customizePage.layout.headerLeft")}
-                    selected={customization.headerPosition === "left"}
-                    onClick={() =>
-                      updateCustomization({ headerPosition: "left" })
-                    }
-                  >
-                    <HeaderPositionPreview position="left" />
-                  </OptionCard>
-                  <OptionCard
-                    label={t("builder.customizePage.layout.headerTop")}
-                    selected={customization.headerPosition === "top"}
-                    onClick={() =>
-                      updateCustomization({ headerPosition: "top" })
-                    }
-                  >
-                    <HeaderPositionPreview position="top" />
-                  </OptionCard>
-                  <OptionCard
-                    label={t("builder.customizePage.layout.headerRight")}
-                    selected={customization.headerPosition === "right"}
-                    onClick={() =>
-                      updateCustomization({ headerPosition: "right" })
-                    }
-                  >
-                    <HeaderPositionPreview position="right" />
-                  </OptionCard>
+            ) : (
+              <>
+                <div className="space-y-2.5">
+                  <p className="text-sm font-medium text-text">
+                    {t("builder.customizePage.layout.columns")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <OptionCard
+                      label={t("builder.customizePage.layout.columnsOne")}
+                      selected={customization.columns === "one"}
+                      onClick={() => updateCustomization({ columns: "one" })}
+                    >
+                      <ColumnsPreview columns="one" />
+                    </OptionCard>
+                    <OptionCard
+                      label={t("builder.customizePage.layout.columnsTwo")}
+                      selected={customization.columns === "two"}
+                      onClick={() => updateCustomization({ columns: "two" })}
+                      premiumLocked={!hasFullCustomizationAccess}
+                    >
+                      <ColumnsPreview columns="two" />
+                    </OptionCard>
+                  </div>
+                  {!hasFullCustomizationAccess && (
+                    <p className="text-xs text-text-secondary">
+                      {t("builder.customizePage.layout.columnsTwoPremiumHint")}
+                    </p>
+                  )}
                 </div>
-              </div>
+
+                {customization.columns === "two" && (
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-text">
+                      {t("builder.customizePage.layout.headerPosition")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <OptionCard
+                        label={t("builder.customizePage.layout.headerLeft")}
+                        selected={customization.headerPosition === "left"}
+                        onClick={() =>
+                          updateCustomization({ headerPosition: "left" })
+                        }
+                      >
+                        <HeaderPositionPreview position="left" />
+                      </OptionCard>
+                      <OptionCard
+                        label={t("builder.customizePage.layout.headerTop")}
+                        selected={customization.headerPosition === "top"}
+                        onClick={() =>
+                          updateCustomization({ headerPosition: "top" })
+                        }
+                      >
+                        <HeaderPositionPreview position="top" />
+                      </OptionCard>
+                      <OptionCard
+                        label={t("builder.customizePage.layout.headerRight")}
+                        selected={customization.headerPosition === "right"}
+                        onClick={() =>
+                          updateCustomization({ headerPosition: "right" })
+                        }
+                      >
+                        <HeaderPositionPreview position="right" />
+                      </OptionCard>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+                  <p className="min-w-0 truncate text-sm font-medium text-text">
+                    {t("builder.customizePage.layout.topAccentBar")}
+                  </p>
+                  <Switch
+                    checked={customization.topAccentBar}
+                    onCheckedChange={(v) =>
+                      updateCustomization({ topAccentBar: v })
+                    }
+                    ariaLabel={t("builder.customizePage.layout.topAccentBar")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
+                  <p className="min-w-0 truncate text-sm font-medium text-text">
+                    {t("builder.customizePage.layout.footerBar")}
+                  </p>
+                  <Switch
+                    checked={customization.footerBar}
+                    onCheckedChange={(v) =>
+                      updateCustomization({ footerBar: v })
+                    }
+                    ariaLabel={t("builder.customizePage.layout.footerBar")}
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <p className="text-sm font-medium text-text">
+                    {t("builder.customizePage.layout.sectionLayout")}
+                  </p>
+                  {customization.columns === "two" ? (
+                    <div className="space-y-2.5">
+                      {customization.headerPosition === "top" && (
+                        <DragRow
+                          label={t(
+                            "builder.customizePage.layout.personalDetails",
+                          )}
+                          pinned
+                        />
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div
+                          className="space-y-2 min-h-8"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (dragSectionKey)
+                              dropSectionInColumn(dragSectionKey, false);
+                            setDragSectionKey(null);
+                          }}
+                        >
+                          {customization.headerPosition !== "top" && (
+                            <DragRow
+                              label={t(
+                                "builder.customizePage.layout.personalDetails",
+                              )}
+                              pinned
+                            />
+                          )}
+                          {mainSectionKeys
+                            .filter((key) => sectionHasContent[key])
+                            .map((key) => (
+                              <DragRow
+                                key={key}
+                                label={t(`builder.customizePage.layout.${key}`)}
+                                draggable
+                                onDragStart={() => setDragSectionKey(key)}
+                                onDropOn={() => {
+                                  if (dragSectionKey)
+                                    dropSectionOnRow(dragSectionKey, key);
+                                  setDragSectionKey(null);
+                                }}
+                              />
+                            ))}
+                        </div>
+                        <div
+                          className="space-y-2 min-h-8"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (dragSectionKey)
+                              dropSectionInColumn(dragSectionKey, true);
+                            setDragSectionKey(null);
+                          }}
+                        >
+                          {sidebarSectionKeys
+                            .filter((key) => sectionHasContent[key])
+                            .map((key) => (
+                              <DragRow
+                                key={key}
+                                label={t(`builder.customizePage.layout.${key}`)}
+                                draggable
+                                onDragStart={() => setDragSectionKey(key)}
+                                onDropOn={() => {
+                                  if (dragSectionKey)
+                                    dropSectionOnRow(dragSectionKey, key);
+                                  setDragSectionKey(null);
+                                }}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <DragRow
+                        label={t(
+                          "builder.customizePage.layout.personalDetails",
+                        )}
+                        pinned
+                      />
+                      {customization.sectionOrder
+                        .filter((key) => sectionHasContent[key])
+                        .map((key) => (
+                          <DragRow
+                            key={key}
+                            label={t(`builder.customizePage.layout.${key}`)}
+                            draggable
+                            onDragStart={() => setDragSectionKey(key)}
+                            onDropOn={() => {
+                              if (dragSectionKey)
+                                moveSectionOrder(dragSectionKey, key);
+                              setDragSectionKey(null);
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
-              <p className="min-w-0 truncate text-sm font-medium text-text">
-                {t("builder.customizePage.layout.topAccentBar")}
-              </p>
-              <Switch
-                checked={customization.topAccentBar}
-                onCheckedChange={(v) => updateCustomization({ topAccentBar: v })}
-                ariaLabel={t("builder.customizePage.layout.topAccentBar")}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
-              <p className="min-w-0 truncate text-sm font-medium text-text">
-                {t("builder.customizePage.layout.footerBar")}
-              </p>
-              <Switch
-                checked={customization.footerBar}
-                onCheckedChange={(v) => updateCustomization({ footerBar: v })}
-                ariaLabel={t("builder.customizePage.layout.footerBar")}
-              />
-            </div>
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -847,116 +981,21 @@ export default function CustomizePage() {
                 <OptionCard
                   label={t("builder.customizePage.layout.skillsMeter")}
                   selected={customization.skillsDisplay === "meter"}
-                  onClick={() => updateCustomization({ skillsDisplay: "meter" })}
+                  onClick={() =>
+                    updateCustomization({ skillsDisplay: "meter" })
+                  }
                 />
                 <OptionCard
                   label={t("builder.customizePage.layout.skillsList")}
                   selected={customization.skillsDisplay === "list"}
-                  onClick={() => updateCustomization({ skillsDisplay: "list" })}
+                  onClick={() =>
+                    updateCustomization({ skillsDisplay: "list" })
+                  }
                 />
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              <p className="text-sm font-medium text-text">
-                {t("builder.customizePage.layout.sectionLayout")}
-              </p>
-              {customization.columns === "two" ? (
-                <div className="space-y-2.5">
-                  {customization.headerPosition === "top" && (
-                    <DragRow
-                      label={t("builder.customizePage.layout.personalDetails")}
-                      pinned
-                    />
-                  )}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      className="space-y-2 min-h-8"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (dragSectionKey)
-                          dropSectionInColumn(dragSectionKey, false);
-                        setDragSectionKey(null);
-                      }}
-                    >
-                      {customization.headerPosition !== "top" && (
-                        <DragRow
-                          label={t(
-                            "builder.customizePage.layout.personalDetails",
-                          )}
-                          pinned
-                        />
-                      )}
-                      {mainSectionKeys
-                        .filter((key) => sectionHasContent[key])
-                        .map((key) => (
-                          <DragRow
-                            key={key}
-                            label={t(`builder.customizePage.layout.${key}`)}
-                            draggable
-                            onDragStart={() => setDragSectionKey(key)}
-                            onDropOn={() => {
-                              if (dragSectionKey)
-                                dropSectionOnRow(dragSectionKey, key);
-                              setDragSectionKey(null);
-                            }}
-                          />
-                        ))}
-                    </div>
-                    <div
-                      className="space-y-2 min-h-8"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (dragSectionKey)
-                          dropSectionInColumn(dragSectionKey, true);
-                        setDragSectionKey(null);
-                      }}
-                    >
-                      {sidebarSectionKeys
-                        .filter((key) => sectionHasContent[key])
-                        .map((key) => (
-                          <DragRow
-                            key={key}
-                            label={t(`builder.customizePage.layout.${key}`)}
-                            draggable
-                            onDragStart={() => setDragSectionKey(key)}
-                            onDropOn={() => {
-                              if (dragSectionKey)
-                                dropSectionOnRow(dragSectionKey, key);
-                              setDragSectionKey(null);
-                            }}
-                          />
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  <DragRow
-                    label={t("builder.customizePage.layout.personalDetails")}
-                    pinned
-                  />
-                  {customization.sectionOrder
-                    .filter((key) => sectionHasContent[key])
-                    .map((key) => (
-                      <DragRow
-                        key={key}
-                        label={t(`builder.customizePage.layout.${key}`)}
-                        draggable
-                        onDragStart={() => setDragSectionKey(key)}
-                        onDropOn={() => {
-                          if (dragSectionKey)
-                            moveSectionOrder(dragSectionKey, key);
-                          setDragSectionKey(null);
-                        }}
-                      />
-                    ))}
-                </div>
-              )}
-            </div>
-
+            {showPhotoToggle && (
             <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
               <p className="min-w-0 truncate text-sm font-medium text-text">
                 {t("builder.customizePage.layout.showPhoto")}
@@ -967,8 +1006,12 @@ export default function CustomizePage() {
                 ariaLabel={t("builder.customizePage.layout.showPhoto")}
               />
             </div>
+            )}
 
-            {customization.showPhoto && customization.columns === "two" && (
+            {showPhotoToggle &&
+              customization.showPhoto &&
+              !isSpecialLayout &&
+              customization.columns === "two" && (
               <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
                 <p className="min-w-0 truncate text-sm font-medium text-text">
                   {t("builder.customizePage.layout.sidebarPhotoFill")}
@@ -983,7 +1026,9 @@ export default function CustomizePage() {
               </div>
             )}
 
-            {customization.showPhoto && (
+            {showPhotoToggle &&
+              customization.showPhoto &&
+              showPhotoStyleControls && (
               <PremiumGate
                 locked={!hasFullCustomizationAccess}
                 onUpgrade={openUpgrade}
@@ -1090,6 +1135,7 @@ export default function CustomizePage() {
           </div>
 
           {/* ================= header ================= */}
+          {!isSpecialLayout && (
           <div ref={headerRef} data-section="header" className={SECTION_CARD}>
             <p className={SECTION_TITLE}>
               {t("builder.customizePage.nav.header")}
@@ -1243,6 +1289,7 @@ export default function CustomizePage() {
             </div>
             </PremiumGate>
           </div>
+          )}
 
           {/* ================= section headings ================= */}
           <div
@@ -1259,6 +1306,7 @@ export default function CustomizePage() {
               onUpgrade={openUpgrade}
             >
             <div className="space-y-6">
+            {!isSpecialLayout && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {HEADING_PRESETS.map((preset, i) => (
                 <button
@@ -1283,6 +1331,7 @@ export default function CustomizePage() {
                 </button>
               ))}
             </div>
+            )}
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -1306,6 +1355,8 @@ export default function CustomizePage() {
               </div>
             </div>
 
+            {!isSpecialLayout && (
+            <>
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.sectionIcon")}
@@ -1373,6 +1424,8 @@ export default function CustomizePage() {
                 ))}
               </div>
             </div>
+            </>
+            )}
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -1426,6 +1479,8 @@ export default function CustomizePage() {
                   step={0.05}
                   onChange={(v) => updateCustomization({ lineHeight: v })}
                 />
+                {!isSpecialLayout && (
+                <>
                 <SliderRow
                   label={t("builder.customizePage.spacing.elementSpacing")}
                   value={customization.elementSpacing}
@@ -1477,6 +1532,8 @@ export default function CustomizePage() {
                       updateCustomization({ pageBorderWidth: v })
                     }
                   />
+                )}
+                </>
                 )}
               </div>
             </PremiumGate>
