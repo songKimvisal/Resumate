@@ -241,6 +241,15 @@
     animation-name: marquee;
     animation-timing-function: linear;
     animation-iteration-count: infinite;
+    will-change: transform;
+  }
+
+  .animate-marquee-reverse {
+    animation-name: marquee;
+    animation-direction: reverse;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
   }
 }
 
