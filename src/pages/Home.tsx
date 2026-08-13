@@ -58,7 +58,7 @@ export default function Home() {
       return;
     }
     if (user) {
-      navigate("/billing/payment", { state: { plan: planId } }); 
+      navigate("/billing/payment", { state: { plan: planId } });
     } else {
       setPendingPlan(planId as Exclude<PlanId, "free">);
       navigate("/login");

@@ -42,7 +42,7 @@
     "sections": [
       {
         "title": "1. Information we collect",
-        "body": "We collect the information you give us directly: your name, email, phone number, and the content of any resume you build with ResuMate (work history, education, skills, and similar details).",
+        "body": "We collect the information you give us directly: your name, email, phone number, and the content of any resume you build with Resumate (work history, education, skills, and similar details).",
         "list": [
           "Account info you provide when you sign in with Google",
           "Resume content you type or paste, including job advertisements you analyze",
@@ -51,7 +51,7 @@
       },
       {
         "title": "2. How we use your information",
-        "body": "We use your information to build and store your resumes, run smart features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve ResuMate. We do not sell your personal data to third parties."
+        "body": "We use your information to build and store your resumes, run smart features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve Resumate. We do not sell your personal data to third parties."
       },
       {
         "title": "3. Smart processing",
@@ -59,7 +59,7 @@
       },
       {
         "title": "4. Data sharing",
-        "body": "We share data only with service providers who help us run ResuMate, such as payment processors (Stripe, Bakong/KHQR) and cloud hosting, under confidentiality obligations. We may disclose information if required by law."
+        "body": "We share data only with service providers who help us run Resumate, such as payment processors (Stripe, Bakong/KHQR) and cloud hosting, under confidentiality obligations. We may disclose information if required by law."
       },
       {
         "title": "5. Data retention & control",
@@ -71,7 +71,7 @@
       },
       {
         "title": "7. Contact us",
-        "body": "Questions about this policy? Reach us at privacy@resumate.app or visit our Contact page."
+        "body": "Questions about this policy? Reach us at privacy@Resumate.app or visit our Contact page."
       }
     ]
   },
@@ -82,13 +82,13 @@
     "sections": [
       {
         "title": "1. Acceptance of terms",
-        "body": "By creating an account or using ResuMate, you agree to these Terms of Service and our Privacy Policy. If you do not agree, please do not use the platform."
+        "body": "By creating an account or using Resumate, you agree to these Terms of Service and our Privacy Policy. If you do not agree, please do not use the platform."
       },
       {
         "title": "2. Your account",
         "list": [
           "You sign in with Google; you are responsible for keeping that account secure",
-          "You must be at least 16 years old to use ResuMate",
+          "You must be at least 16 years old to use Resumate",
           "One account per person; accounts created to abuse free templates or trials may be suspended"
         ]
       },
@@ -106,7 +106,7 @@
       },
       {
         "title": "5. Service availability & disclaimer",
-        "body": "ResuMate is provided \"as is.\" We work to keep the platform reliable but do not guarantee uninterrupted access, and we are not liable for job outcomes, interview results, or decisions made by employers."
+        "body": "Resumate is provided \"as is.\" We work to keep the platform reliable but do not guarantee uninterrupted access, and we are not liable for job outcomes, interview results, or decisions made by employers."
       },
       {
         "title": "6. Changes & contact",
@@ -308,7 +308,7 @@
       "title": "Build your resume in",
       "titleAccent": "minutes",
       "titleEnd": ", not days.",
-      "subtitle": "ResuMate is Cambodia's smart career readiness platform. Build a professional resume, analyze any job ad, match your skills to the role, and prepare for your interview all in one place.",
+      "subtitle": "Resumate is Cambodia's smart career readiness platform. Build a professional resume, analyze any job ad, match your skills to the role, and prepare for your interview all in one place.",
       "ctaPrimary": "Get started it's free",
       "ctaSecondary": "Browse templates",
       "ctaDashboard": "Go to Dashboard"
@@ -421,8 +421,8 @@
       "eyebrow": "Testimonials",
       "title": "What our",
       "titleAccent": "users say.",
-      "subtitle": "Real feedback from job seekers who built their resume with ResuMate.",
-      "userLabel": "ResuMate user"
+      "subtitle": "Real feedback from job seekers who built their resume with Resumate.",
+      "userLabel": "Resumate user"
     },
     "pricing": {
       "title": "Simple,",
@@ -482,7 +482,7 @@
     "cta": {
       "title": "Your next job",
       "titleAccent": "starts here.",
-      "subtitle": "Join Cambodian graduates who stopped guessing and started preparing with ResuMate.",
+      "subtitle": "Join Cambodian graduates who stopped guessing and started preparing with Resumate.",
       "primary": "Build my resume now",
       "secondary": "See how it works"
     }
@@ -491,7 +491,7 @@
     "hero": {
       "title": "Built in Cambodia,",
       "titleAccent": "for Cambodia.",
-      "subtitle": "ResuMate started with a simple frustration: too many talented students were paying strangers on Facebook just to get a resume that they couldn't even edit afterward."
+      "subtitle": "Resumate started with a simple frustration: too many talented students were paying strangers on Facebook just to get a resume that they couldn't even edit afterward."
     },
     "story": {
       "label": "Why we started",
@@ -500,7 +500,7 @@
       "p1": "Every year, thousands of students graduate from universities across Cambodia ready to start their careers. But there is a quiet barrier between them and their first job application: the resume.",
       "p2": "Without an affordable, locally built tool, most job seekers turn to informal resume writers on Facebook and Telegram paying two to six dollars each time, waiting days for a draft, and ending up with a file they cannot edit themselves when something needs to change.",
       "quote": "\"We didn't want to build another resume tool. We wanted to build the tool we wished existed when we were applying for our first jobs.\"",
-      "p3": "That's why ResuMate exists free to start, bilingual, smart-assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
+      "p3": "That's why Resumate exists free to start, bilingual, smart-assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
     },
     "stats": {
       "free": "To get started always free",
@@ -524,7 +524,7 @@
         },
         {
           "title": "Beyond the resume",
-          "desc": "Most platforms stop once the resume is done. ResuMate continues analyzing job ads, matching your skills, and preparing you for the interview."
+          "desc": "Most platforms stop once the resume is done. Resumate continues analyzing job ads, matching your skills, and preparing you for the interview."
         }
       ]
     },
@@ -557,7 +557,7 @@
       "titleAccent": "built with care.",
       "name": "Song Kimvisal",
       "role": "Founder & Developer",
-      "bio": "A Bachelor of Software Engineering student in Multimedia at Limkokwing University Cambodia, building ResuMate as a final year project rooted in a real problem seen across Cambodian university campuses and a belief that good design, smart assistance, and career readiness tools should not be reserved for expensive Western platforms."
+      "bio": "A Bachelor of Software Engineering student in Multimedia at Limkokwing University Cambodia, building Resumate as a final year project rooted in a real problem seen across Cambodian university campuses and a belief that good design, smart assistance, and career readiness tools should not be reserved for expensive Western platforms."
     },
     "cta": {
       "title": "Ready to build your",
@@ -1243,7 +1243,7 @@
         "finePrint": "No hidden fees, cancel anytime in Settings."
       },
       "khqr": {
-        "merchantLabel": "ResuMate",
+        "merchantLabel": "Resumate",
         "expiresIn": "QR code expires in",
         "waitingForPayment": "Waiting for payment…",
         "poweredBy": "Powered by Bakong, National Bank of Cambodia"
