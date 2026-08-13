@@ -223,7 +223,7 @@ export default function Dashboard() {
                   "leading-tight sm:whitespace-nowrap",
                   index === 0
                     ? "border-brand bg-brand/10 text-brand"
-                    : "border-line bg-white text-text-secondary",
+                    : "border-line bg-surface-2 text-text-secondary",
                 )}
               >
                 {t(step)}
@@ -384,7 +384,7 @@ export default function Dashboard() {
                   "min-[375px]:rounded-[24px]",
                   "sm:rounded-[32px]",
                   "border border-brand/15",
-                  "bg-white",
+                  "bg-bg",
                   "p-4",
                   "min-[375px]:p-5",
                   "sm:p-6",
@@ -543,7 +543,7 @@ export default function Dashboard() {
                     <div
                       className={cn(
                         "absolute -right-3 -top-3 z-10 lg:hidden",
-                        "rounded-full border border-line bg-white p-1.5 shadow-md",
+                        "rounded-full border border-line bg-bg p-1.5 shadow-md",
                       )}
                     >
                       <div className="relative size-14">

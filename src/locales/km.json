@@ -156,7 +156,9 @@
     "settings": "ការកំណត់",
     "logout": "ចាកចេញ",
     "upgrade": "អាប់ក្រេតទៅផែនការ Starter",
-    "welcomeBack": "សូមស្វាគមន៍មកវិញ"
+    "welcomeBack": "សូមស្វាគមន៍មកវិញ",
+    "darkMode": "ម៉ូដងងឹត",
+  "lightMode": "ម៉ូដភ្លឺ"
   },
   "footer": {
     "product": "ផលិតផល",

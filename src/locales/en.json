@@ -156,7 +156,9 @@
     "settings": "Setting",
     "logout": "Logout",
     "upgrade": "Upgrade to Starter",
-    "welcomeBack": "Welcome back"
+    "welcomeBack": "Welcome back",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode"
   },
   "dashboard": {
     "welcomeTitle": "Welcome back, {{name}}",

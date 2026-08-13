@@ -8,12 +8,15 @@ import {
   PieChart,
   Settings as SettingsIcon,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import logo from "../../assets/logo/logo.png";
 import logoMark from "../../assets/logo/webpageIcon.png";
 import UserMenu from "./UserMenu";
+import { useTheme } from "../../hooks/UseTheme";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutGrid, key: "dashboard" },
@@ -33,6 +36,7 @@ export default function Sidebar({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="h-full flex flex-col px-3 py-6">
@@ -72,6 +76,23 @@ export default function Sidebar({
       </nav>
 
       <div className="space-y-3 pt-4 mt-4 border-t border-line">
+        <button
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          title={collapsed ? t(theme === "dark" ? "nav.lightMode" : "nav.darkMode") : undefined}
+          className={cn(
+            "flex items-center gap-3 py-2.5 rounded-full text-sm font-medium text-text-secondary hover:bg-surface-2 hover:text-text transition-colors",
+            collapsed ? "justify-center px-0 w-full" : "px-4 w-full",
+          )}
+        >
+          {theme === "dark" ? (
+            <Sun size={18} strokeWidth={2} className="shrink-0" />
+          ) : (
+            <Moon size={18} strokeWidth={2} className="shrink-0" />
+          )}
+          {!collapsed &&
+            t(theme === "dark" ? "nav.lightMode" : "nav.darkMode")}
+        </button>
         <Button
           size={collapsed ? "icon" : "default"}
           className={collapsed ? "mx-auto" : "w-full"}

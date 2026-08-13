@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronLeft, ChevronRight, Sun, Moon } from "lucide-react";
 import Sidebar from "./Sidebar";
 import logo from "../../assets/logo/logo.png";
 import { cn } from "../../lib/utils";
+import { useTheme } from "../../hooks/UseTheme";
 
 export default function DashboardShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -45,13 +47,26 @@ export default function DashboardShell() {
         <Link to="/">
           <img src={logo} alt="ResuMate" className="h-8 w-auto" />
         </Link>
-        <button
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open menu"
-          className="size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
-        >
-          <Menu size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+          >
+            {theme === "dark" ? (
+              <Sun size={17} strokeWidth={2} />
+            ) : (
+              <Moon size={17} strokeWidth={2} />
+            )}
+          </button>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+            className="size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
       </div>
 
       {/* ---------- mobile slide-over drawer ---------- */}
