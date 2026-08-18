@@ -6,6 +6,8 @@ import { motion, AnimatePresence, type Variants } from "motion/react";
 
 import { Button } from "../../components/ui/button";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
+import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
+import DashboardSteps from "../../components/dashboard/DashboardSteps";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { getResumesByUser, type DashboardResume } from "../../lib/api";
@@ -13,13 +15,6 @@ import { computeCompleteness } from "../../lib/resumeCompleteness";
 import type { ScoreBand } from "../../lib/resumeCompleteness";
 import { cn } from "../../lib/utils";
 import logo from "../../assets/logo/resume2.png";
-
-const STEPS = [
-  "dashboard.steps.selectResume",
-  "dashboard.steps.resumeOptimization",
-  "dashboard.steps.interviewPrep",
-  "dashboard.steps.jobReadinessReport",
-] as const;
 
 const BAND_RING_CLASS: Record<ScoreBand, string> = {
   excellent: "text-success",
@@ -62,6 +57,7 @@ export default function Dashboard() {
 
   const [resumes, setResumes] = useState<DashboardResume[] | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const loadResumes = useCallback(async () => {
     if (!user) return;
@@ -160,6 +156,16 @@ export default function Dashboard() {
     navigate("/builder");
   };
 
+  const handleContinue = () => {
+    if (!currentResume) {
+      navigate("/marketplace");
+      return;
+    }
+
+    setResume(currentResume);
+    navigate("/job-match");
+  };
+
   const handleChangeResume = () => {
     navigate("/select-resume");
   };
@@ -205,46 +211,7 @@ export default function Dashboard() {
         variants={fadeUpVariants}
         className={cn("mt-5 sm:mt-8", "sm:-mx-0")}
       >
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:w-max sm:items-center sm:gap-0">
-          {STEPS.map((step, index) => (
-            <div
-              key={step}
-              className="min-w-0 sm:flex sm:shrink-0 sm:items-center"
-            >
-              <span
-                className={cn(
-                  "flex min-h-10 w-full items-center justify-center rounded-xl border px-2 py-1.5 text-center",
-                  "sm:inline-flex sm:min-h-0 sm:w-auto sm:rounded-full sm:px-3 sm:py-1.5",
-                  "px-3 py-1.5",
-                  "min-[375px]:px-3.5 min-[375px]:py-2",
-                  "sm:px-5 sm:py-2.5",
-                  "text-[11px] min-[375px]:text-xs sm:text-sm",
-                  "font-semibold",
-                  "leading-tight sm:whitespace-nowrap",
-                  index === 0
-                    ? "border-brand bg-brand/10 text-brand"
-                    : "border-line bg-surface-2 text-text-secondary",
-                )}
-              >
-                {t(step)}
-              </span>
-
-              {index < STEPS.length - 1 && (
-                <span
-                  className={cn(
-                    "hidden sm:block sm:mx-2",
-                    "h-px",
-                    "w-5 min-[375px]:w-6 sm:w-10 lg:w-16",
-                    "shrink-0",
-                    index === 0
-                      ? "bg-gradient-to-r from-brand to-line"
-                      : "bg-line",
-                  )}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+        <DashboardSteps activeIndex={0} />
       </motion.div>
 
       {/* ============================================================
@@ -519,7 +486,17 @@ export default function Dashboard() {
                   ================================================== */}
                   <div className="relative mx-auto w-full max-w-[240px] min-[375px]:max-w-[250px] sm:max-w-[220px]">
                     {currentResume ? (
-                      <ScaledResumePreview resume={currentResume} />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewOpen(true)}
+                        className="group w-full text-left cursor-zoom-in"
+                        aria-label={t("dashboard.viewPreview")}
+                      >
+                        <ScaledResumePreview resume={currentResume} />
+                        <p className="mt-2 text-center text-[11px] font-medium text-text-secondary group-hover:text-brand">
+                          {t("dashboard.viewPreview")}
+                        </p>
+                      </button>
                     ) : (
                       <div
                         className={cn(
@@ -705,7 +682,7 @@ export default function Dashboard() {
                 <Button
                   size="compact"
                   className="w-full sm:w-auto rounded-full"
-                  onClick={handleFixMissing}
+                  onClick={handleContinue}
                 >
                   {t("dashboard.continue")}
                 </Button>
@@ -714,6 +691,13 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ResumePreviewOverlay
+        resume={currentResume}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        closeLabel={t("dashboard.closePreview")}
+      />
     </motion.div>
   );
 }

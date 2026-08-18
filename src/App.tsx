@@ -17,6 +17,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import DashboardShell from "./components/layout/DashboardShell";
 import Dashboard from "./pages/dashboard/Dashboard";
 import SelectResume from "./pages/dashboard/SelectResume";
+import JobMatch from "./pages/dashboard/JobMatch";
 import MyResumes from "./pages/dashboard/MyResumes";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
 import Billing from "./pages/billing/Billing";
@@ -49,6 +50,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardShell />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/job-match" element={<JobMatch />} />
             <Route path="/my-resumes" element={<MyResumes />} />
             <Route path="/interview-prep" element={<InterviewPrep />} />
             <Route path="/billing" element={<Billing />} />
