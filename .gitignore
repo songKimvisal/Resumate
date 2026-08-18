@@ -1,0 +1,36 @@
+﻿# ---------- Frontend (Vite/Node) ----------
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---------- Backend (Python/FastAPI) ----------
+backend/venv
+backend/__pycache__
+backend/**/__pycache__
+*.pyc
+
+# ---------- Env files (both sides) ----------
+.env
+frontend/.env
+backend/.env
+
+# ---------- Editor / OS ----------
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
