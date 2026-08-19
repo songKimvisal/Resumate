@@ -1193,7 +1193,10 @@
         "elegantRefined": "Elegant & refined"
       },
       "cancel": "Cancel",
-      "generate": "Generate my design"
+      "generate": "Generate my design",
+      "loadingStep1": "Looking at your industry...",
+      "loadingStep2": "Matching your style...",
+      "loadingStep3": "Almost ready..."
     },
     "aiResult": {
       "eyebrow": "Smart design picker",
