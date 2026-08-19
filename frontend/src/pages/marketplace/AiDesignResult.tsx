@@ -26,11 +26,13 @@ import type { Customization, Resume } from "../../types/resume";
 export default function AiDesignResult({
   recommendation,
   answers,
+  reasoning,
   onChangeAnswers,
   onContinue,
 }: {
   recommendation: AiRecommendation;
   answers: AiAnswers;
+  reasoning?: string | null;
   onChangeAnswers: () => void;
   onContinue: (
     preset: TemplatePreset,
@@ -125,6 +127,13 @@ export default function AiDesignResult({
             <AnswerBadge key={label} label={label} />
           ))}
         </div>
+
+        {reasoning && (
+          <div className="flex items-start gap-2.5 rounded-lg bg-brand/5 border border-brand/20 px-4 py-3 text-sm text-text">
+            <Sparkles size={15} strokeWidth={2.5} className="mt-0.5 shrink-0 text-brand" />
+            <p>{reasoning}</p>
+          </div>
+        )}
 
         <div className="rounded-xl border border-line p-4 space-y-3">
           <p className="text-xs font-semibold tracking-wide uppercase text-text-secondary">

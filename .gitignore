@@ -1,3 +1,9 @@
+﻿# ---------- Frontend (Vite/Node) ----------
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+*.local
+
 # Logs
 logs
 *.log
@@ -7,12 +13,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ---------- Backend (Python/FastAPI) ----------
+backend/venv
+backend/__pycache__
+backend/**/__pycache__
+*.pyc
 
-# Editor directories and files
+# ---------- Env files (both sides) ----------
+.env
+frontend/.env
+backend/.env
+
+# ---------- Editor / OS ----------
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,4 +34,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.env
