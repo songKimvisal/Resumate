@@ -7,38 +7,41 @@
   "refund": {
     "label": "Legal",
     "title": "Refund Policy",
-    "lastUpdated": "Last updated: July 1, 2026",
+    "lastUpdated": "Last updated: August 20, 2026",
     "sections": [
       {
-        "title": "1. Free plan",
-        "body": "The Free plan costs nothing and never requires payment there is nothing to refund."
+        "title": "1. Free",
+        "body": "Free costs nothing. You get 3 templates and 1 PDF. There is nothing to refund."
       },
       {
-        "title": "2. Monthly plans",
-        "body": "Starter ($2.99/month) and Pro ($7.99/month) renew automatically each month. You can cancel anytime in Settings → Billing & History, you keep access until the end of the current billing period, and you will not be charged again."
+        "title": "2. One-time purchases",
+        "body": "Paid options are one-time. You can buy nicer templates, smart writing credits, or both. There is no monthly subscription and nothing renews automatically. Payments are processed via KHQR or Stripe."
       },
       {
-        "title": "3. Refund eligibility",
+        "title": "3. When we refund",
         "list": [
-          "Within 7 days of your first payment on a new plan, you can request a full refund if you have not used more than 20% of that month's smart allowance",
-          "Accidental duplicate charges are refunded in full",
-          "Refunds are not provided for partial months after the 7-day window, or for normal use of smart features"
+          "Within 7 days of a purchase, you can request a full refund if you have not used the credits and have not unlocked or downloaded a paid template PDF",
+          "Accidental duplicate charges are refunded in full"
         ]
       },
       {
-        "title": "4. Annual plans",
-        "body": "Annual plans can be refunded on a prorated basis for unused full months remaining, minus any smart usage beyond the free-plan allowance."
+        "title": "4. When we do not refund",
+        "list": [
+          "Credits, job analyses, or interview sets you have already used",
+          "A paid template you have already unlocked, or a paid PDF you have already downloaded",
+          "Requests made more than 7 days after the charge, except for duplicate charges"
+        ]
       },
       {
         "title": "5. How to request a refund",
-        "body": "Contact us with your account email and the date of the charge see the Contact page. We aim to respond within 2 business days and process approved refunds to your original payment method (KHQR or Stripe) within 5–10 business days."
+        "body": "Contact us with your account email and the date of the charge. See the Contact page. We aim to respond within 2 business days and send approved refunds to your original payment method (KHQR or Stripe) within 5 to 10 business days."
       }
     ]
   },
   "privacy": {
     "label": "Legal",
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: July 1, 2026",
+    "lastUpdated": "Last updated: August 20, 2026",
     "sections": [
       {
         "title": "1. Information we collect",
@@ -46,16 +49,16 @@
         "list": [
           "Account info you provide when you sign in with Google",
           "Resume content you type or paste, including job advertisements you analyze",
-          "Usage data such as pages visited and features used, to improve the product"
+          "Usage data such as pages visited, features used, and purchases, to improve the product"
         ]
       },
       {
         "title": "2. How we use your information",
-        "body": "We use your information to build and store your resumes, run smart features (job analysis, match scoring, interview questions, readiness reports), process payments, and improve Resumate. We do not sell your personal data to third parties."
+        "body": "We use your information to build and store your resumes, run smart features you choose to use (job analysis, match scoring, interview questions, readiness reports), process one-time payments, and improve Resumate. We do not sell your personal data to third parties."
       },
       {
         "title": "3. Smart processing",
-        "body": "Resume content and pasted job advertisements may be sent to our smart providers to generate suggestions, scores, and questions. This content is used only to serve your request and is not used to train shared models without your consent."
+        "body": "If you use smart writing, job analysis, or interview prep, resume content and pasted job advertisements may be sent to our smart providers to generate suggestions, scores, and questions. This content is used only to serve your request and is not used to train shared models without your consent."
       },
       {
         "title": "4. Data sharing",
@@ -78,7 +81,7 @@
   "terms": {
     "label": "Legal",
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: July 1, 2026",
+    "lastUpdated": "Last updated: August 20, 2026",
     "sections": [
       {
         "title": "1. Acceptance of terms",
@@ -89,12 +92,17 @@
         "list": [
           "You sign in with Google; you are responsible for keeping that account secure",
           "You must be at least 16 years old to use Resumate",
-          "One account per person; accounts created to abuse free templates or trials may be suspended"
+          "One account per person; accounts created to abuse free templates may be suspended"
         ]
       },
       {
-        "title": "3. Subscriptions & billing",
-        "body": "Starter and Pro plans are billed monthly or annually and renew automatically until cancelled in Settings → Billing & History. Payments are processed via KHQR or Stripe. See our Refund Policy for cancellation and refund terms."
+        "title": "3. Payments",
+        "body": "Paid features are one-time purchases, not subscriptions. They do not renew. Payments are processed via KHQR or Stripe. See our Refund Policy for refund terms.",
+        "list": [
+          "Free includes 3 templates and 1 PDF",
+          "You can pay once for templates, smart writing credits, or both",
+          "Unlocked templates stay on your account. Unused credits stay until you use them. Used credits are not restored except as described in the Refund Policy"
+        ]
       },
       {
         "title": "4. Your content & acceptable use",
@@ -487,9 +495,109 @@
     "pricing": {
       "title": "Simple,",
       "titleAccent": "honest pricing.",
-      "subtitle": "Pay with Stripe Payment or KHQR. No hidden fees. Cancel any time.",
+      "eyebrow": "Pricing",
+      "headline": "Pay for what you actually need",
+      "subtitle": "One-time. No monthly bill.",
+      "needLabel": "What do you need?",
+      "needs": {
+        "design": {
+          "title": "Templates"
+        },
+        "ai": {
+          "title": "Writing help"
+        },
+        "both": {
+          "title": "Both"
+        }
+      },
+      "freeNote": "Or start free with 3 templates and 1 PDF.",
+      "freeCta": "Start free",
       "month": "month",
       "mostPopular": "Most popular",
+      "bestValue": "Best value",
+      "design": {
+        "label": "Design only. No smart credits.",
+        "name": "1 template, fully unlocked",
+        "price": "1.99",
+        "period": "one-time",
+        "desc": "Pick any template and unlock colors, fonts, and layout.",
+        "cta": "Get Design Only"
+      },
+      "ai": {
+        "label": "Smart credits only. Keep your free template.",
+        "packs": [
+          {
+            "name": "Basic",
+            "price": "1.49",
+            "period": "one-time",
+            "features": ["8 smart writing credits"],
+            "cta": "Get Basic"
+          },
+          {
+            "name": "Plus",
+            "price": "3.99",
+            "period": "one-time",
+            "features": [
+              "25 smart writing credits",
+              "2 job analyses",
+              "1 interview question set"
+            ],
+            "cta": "Get Plus",
+            "popular": true
+          },
+          {
+            "name": "Pro",
+            "price": "6.99",
+            "period": "one-time",
+            "features": [
+              "60 smart writing credits",
+              "5 job analyses",
+              "3 interview sets and a skill gap report"
+            ],
+            "cta": "Get Pro"
+          }
+        ]
+      },
+      "both": {
+        "label": "Templates + smart credits, bundled",
+        "packs": [
+          {
+            "name": "Starter",
+            "price": "2.99",
+            "period": "one-time",
+            "features": [
+              "1 template you pick",
+              "8 smart writing credits",
+              "Save or download 1 PDF"
+            ],
+            "cta": "Get Starter"
+          },
+          {
+            "name": "Standard",
+            "price": "5.99",
+            "period": "one-time",
+            "features": [
+              "3 templates you pick",
+              "25 smart writing credits",
+              "Save or download 2 PDFs"
+            ],
+            "cta": "Get Standard"
+          },
+          {
+            "name": "Everything",
+            "price": "9.99",
+            "period": "one-time",
+            "features": [
+              "All templates, unlocked",
+              "60 smart writing credits",
+              "Save or download 5 PDFs",
+              "5 job analyses and interview prep"
+            ],
+            "cta": "Get Everything",
+            "popular": true
+          }
+        ]
+      },
       "plans": [
         {
           "name": "Free",
@@ -560,10 +668,10 @@
       "p1": "Every year, thousands of students graduate from universities across Cambodia ready to start their careers. But there is a quiet barrier between them and their first job application: the resume.",
       "p2": "Without an affordable, locally built tool, most job seekers turn to informal resume writers on Facebook and Telegram paying two to six dollars each time, waiting days for a draft, and ending up with a file they cannot edit themselves when something needs to change.",
       "quote": "\"We didn't want to build another resume tool. We wanted to build the tool we wished existed when we were applying for our first jobs.\"",
-      "p3": "That's why Resumate exists free to start, bilingual, smart-assisted, and always yours to keep, edit, and reuse. And now it goes further: not just building a resume, but helping you understand exactly how ready you are for any specific job you apply to."
+      "p3": "That's why Resumate exists. Start free with a real resume you can edit and download. If you want nicer templates or smart writing help, you pay once. No monthly bill. And it goes further than the PDF: job match, skill gaps, and interview prep when you're ready."
     },
     "stats": {
-      "free": "To get started always free",
+      "free": "To start. Always free",
       "features": "Smart features",
       "templates": "Templates across 5 industries",
       "bilingual": "Bilingual from day one"
@@ -575,8 +683,8 @@
       "subtitle": "We believe where you went to university or how confident your English is shouldn't decide whether you get a fair shot at a job interview.",
       "cards": [
         {
-          "title": "Affordable for everyone",
-          "desc": "A generous free plan and Pro pricing built around what a Cambodian student can actually afford not US software pricing."
+          "title": "Pay for what you need",
+          "desc": "Templates, smart writing, or both. One-time prices a Cambodian student can actually afford, not a monthly US software bill."
         },
         {
           "title": "Built for two languages",
@@ -595,11 +703,11 @@
       "items": [
         {
           "title": "Free should mean free",
-          "desc": "No surprise paywall before downloading. Our free plan gives a real, usable resume not a teaser that locks the PDF until you pay."
+          "desc": "Start with 3 templates and 1 PDF. You can download it. No locked file waiting behind a paywall. Want more templates or smart writing? Pay once."
         },
         {
           "title": "Built for Cambodia first",
-          "desc": "Every template, price, and payment method (KHQR, Stripe Payment) is designed around how Cambodians actually work and pay not adapted from a US product."
+          "desc": "Every template, price, and payment method (KHQR, Stripe Payment) is built around how Cambodians actually work and pay. One-time. No subscription to remember."
         },
         {
           "title": "Guidance over judgment",
@@ -622,7 +730,7 @@
     "cta": {
       "title": "Ready to build your",
       "titleAccent": "own resume?",
-      "subtitle": "Join Cambodian graduates who stopped paying for resumes and started building their own free, fast, and actually editable.",
+      "subtitle": "Join Cambodian graduates who stopped paying Facebook writers and started building their own. Start free. Pay once if you need more.",
       "primary": "Get started free",
       "secondary": "Browse templates"
     }
