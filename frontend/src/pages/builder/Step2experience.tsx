@@ -11,7 +11,6 @@ import {
   ChevronRight,
   GripVertical,
   Link as LinkIcon,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
@@ -33,6 +32,9 @@ import {
 } from "../../components/ui/select";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/tip_mascot.png";
+import { AiRewriteButton } from "./AiRewriteButton";
+import { SmartRewriteSuggestions } from "./SmartRewriteSuggestions";
+import { useSmartRewrite } from "./useSmartRewrite";
 
 const isValidLink = (value: string) =>
   /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}([/?#].*)?$/i.test(value.trim());
@@ -344,6 +346,7 @@ function ExperienceCard({
     }, 300);
     return () => clearTimeout(timeout);
   }, []);
+  const achievementsRewrite = useSmartRewrite("experience");
 
   return (
     <motion.div
@@ -481,10 +484,11 @@ function ExperienceCard({
               <label className="text-sm font-medium text-text">
                 {t("builder.experience.achievements")}
               </label>
-              <Button size="sm" title={t("builder.comingSoon")}>
-                <Sparkles size={14} />
-                {t("builder.personal.aiRewrite")}
-              </Button>
+              <AiRewriteButton
+                loading={achievementsRewrite.loading}
+                disabled={!exp.description.replace(/<[^>]*>/g, "").trim()}
+                onClick={() => achievementsRewrite.generate(exp.description)}
+              />
             </div>
             <RichTextEditor
               value={exp.description}
@@ -494,6 +498,16 @@ function ExperienceCard({
             <p className="text-xs text-text-placeholder">
               {t("builder.experience.achievementsHint")}
             </p>
+            {achievementsRewrite.variations && (
+              <SmartRewriteSuggestions
+                variations={achievementsRewrite.variations}
+                onSelect={(chosen) => {
+                  onChange({ description: chosen });
+                  achievementsRewrite.dismiss();
+                }}
+                onDismiss={achievementsRewrite.dismiss}
+              />
+            )}
           </div>
         </div>
       </motion.div>
@@ -547,6 +561,7 @@ function NoExperienceCard({
   const hasUrl = NO_EXPERIENCE_HAS_URL[exp.type];
   const [urlPopoverOpen, setUrlPopoverOpen] = useState(false);
   const invalidUrl = exp.url.trim() !== "" && !isValidLink(exp.url);
+  const descriptionRewrite = useSmartRewrite("experience");
   const dates =
     exp.startDate || exp.endDate || exp.current
       ? `${fmtDate(exp.startDate)} – ${exp.current ? t("builder.experience.present") : fmtDate(exp.endDate)}`
@@ -757,10 +772,11 @@ function NoExperienceCard({
                   `builder.experience.noExperienceFields.${exp.type}.description`,
                 )}
               </label>
-              <Button size="sm" title={t("builder.comingSoon")}>
-                <Sparkles size={14} />
-                {t("builder.personal.aiRewrite")}
-              </Button>
+              <AiRewriteButton
+                loading={descriptionRewrite.loading}
+                disabled={!exp.description.replace(/<[^>]*>/g, "").trim()}
+                onClick={() => descriptionRewrite.generate(exp.description)}
+              />
             </div>
             <RichTextEditor
               value={exp.description}
@@ -769,6 +785,16 @@ function NoExperienceCard({
                 `builder.experience.noExperienceFields.${exp.type}.descriptionPlaceholder`,
               )}
             />
+            {descriptionRewrite.variations && (
+              <SmartRewriteSuggestions
+                variations={descriptionRewrite.variations}
+                onSelect={(chosen) => {
+                  onChange({ description: chosen });
+                  descriptionRewrite.dismiss();
+                }}
+                onDismiss={descriptionRewrite.dismiss}
+              />
+            )}
           </div>
         </div>
       </motion.div>

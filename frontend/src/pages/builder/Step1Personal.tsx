@@ -14,7 +14,6 @@ import {
   Link as LinkIcon,
   MessageCircle,
   Send,
-  Sparkles,
   SquareCode,
   Trash2,
   type LucideIcon,
@@ -26,6 +25,9 @@ import { Button } from "../../components/ui/button";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { cn } from "../../lib/utils";
 import { photoImgStyle } from "../../lib/photoFit";
+import { AiRewriteButton } from "./AiRewriteButton";
+import { SmartRewriteSuggestions } from "./SmartRewriteSuggestions";
+import { useSmartRewrite } from "./useSmartRewrite";
 
 const PHOTO_FIT_MODES = ["fill", "fit", "crop"] as const;
 const clamp = (v: number, min: number, max: number) =>
@@ -136,6 +138,7 @@ export default function Step1Personal() {
   } | null>(null);
   // in-progress drag for reordering a link field's entries
   const [dragId, setDragId] = useState<string | null>(null);
+  const summaryRewrite = useSmartRewrite("summary");
 
   const hasValue = (key: keyof PersonalInfo) => {
     const v = personal[key];
@@ -434,10 +437,12 @@ export default function Step1Personal() {
           >
             {t("builder.personal.summary")}
           </label>
-          <Button size="xs" variant="default" title={t("builder.comingSoon")}>
-            <Sparkles size={14} strokeWidth={2} />
-            {t("builder.personal.aiRewrite")}
-          </Button>
+          <AiRewriteButton
+            loading={summaryRewrite.loading}
+            disabled={!personal.summary.replace(/<[^>]*>/g, "").trim()}
+            onClick={() => summaryRewrite.generate(personal.summary)}
+            size="xs"
+          />
         </div>
         <RichTextEditor
           value={personal.summary}
@@ -447,6 +452,16 @@ export default function Step1Personal() {
         <p className="mt-1.5 text-xs text-text-placeholder">
           {t("builder.personal.summaryHint")}
         </p>
+        {summaryRewrite.variations && (
+          <SmartRewriteSuggestions
+            variations={summaryRewrite.variations}
+            onSelect={(chosen) => {
+              updatePersonal({ summary: chosen });
+              summaryRewrite.dismiss();
+            }}
+            onDismiss={summaryRewrite.dismiss}
+          />
+        )}
       </div>
 
       {/* optional detail fields currently visible: short text fields pair up

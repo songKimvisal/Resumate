@@ -1,12 +1,27 @@
+"""
+AI Design feature: picks the best-fit resume template(s) for a user's
+answers, constrained to the template list the frontend sends us.
+
+Gemini is asked to return ONLY a template id it was given plus a short
+reasoning string, in strict JSON - we validate that id actually exists
+before trusting it. If the Gemini call fails, times out, or returns
+something we can't validate, we fall back to a simple local scoring
+heuristic so the feature still works (just without AI-generated reasoning).
+"""
+
 import json
 import logging
 
-from google.genai import types
-
 from app.schemas.ai_design import AiAnswers, AiDesignResponse, TemplateMeta
-from app.services.gemini_client import client, MODEL
+from app.services.ai_provider import generate_text
 
 logger = logging.getLogger(__name__)
+
+# Simple in-memory cache so re-testing the same answers doesn't burn extra
+# Gemini quota - handy while developing/free-tier testing. Resets whenever
+# the server restarts. Capped at 100 entries so it can't grow forever.
+_recommendation_cache: dict[str, AiDesignResponse] = {}
+_CACHE_MAX_SIZE = 100
 
 _EXPERIENCE_VIBE_HINTS: dict[str, list[str]] = {
     "fresh": ["friendly", "cleanMinimal"],
@@ -70,23 +85,37 @@ Respond with ONLY strict JSON, no markdown fences, in this exact shape:
 """
 
 
+def _cache_key(answers: AiAnswers, templates: list[TemplateMeta]) -> str:
+    template_ids = sorted(t.id for t in templates)
+    return json.dumps(
+        {
+            "industry": answers.industry,
+            "experience": answers.experience,
+            "vibe": sorted(answers.vibe),
+            "template_ids": template_ids,
+        },
+        sort_keys=True,
+    )
+
+
 def get_ai_design_recommendation(
     answers: AiAnswers, templates: list[TemplateMeta]
 ) -> AiDesignResponse:
+    cache_key = _cache_key(answers, templates)
+    if cache_key in _recommendation_cache:
+        return _recommendation_cache[cache_key]
+
     valid_ids = {t.id for t in templates}
 
     try:
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=_build_prompt(answers, templates),
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.4,
-                max_output_tokens=200,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
+        raw_text = generate_text(
+            _build_prompt(answers, templates),
+            json_mode=True,
+            temperature=0.4,
+            max_output_tokens=200,
+            thinking_budget=0,
         )
-        data = json.loads(response.text)
+        data = json.loads(raw_text)
 
         primary_id = data["primary_template_id"]
         sibling_id = data["sibling_template_id"]
@@ -94,16 +123,21 @@ def get_ai_design_recommendation(
 
         if primary_id not in valid_ids or sibling_id not in valid_ids:
             raise ValueError(
-                f"Gemini returned ids outside the provided template list: "
+                f"AI returned ids outside the provided template list: "
                 f"{primary_id=}, {sibling_id=}"
             )
 
-        return AiDesignResponse(
+        result = AiDesignResponse(
             primary_template_id=primary_id,
             sibling_template_id=sibling_id,
             reasoning=reasoning,
             source="gemini",
         )
     except Exception:
-        logger.exception("Gemini AI Design call failed, using fallback scorer")
-        return _fallback_recommendation(answers, templates)
+        logger.exception("AI Design call failed, using fallback scorer")
+        result = _fallback_recommendation(answers, templates)
+
+    if len(_recommendation_cache) >= _CACHE_MAX_SIZE:
+        _recommendation_cache.pop(next(iter(_recommendation_cache)))
+    _recommendation_cache[cache_key] = result
+    return result

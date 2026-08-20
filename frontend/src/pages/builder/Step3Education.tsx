@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
-import { Eye, EyeOff, GripVertical, Sparkles, Trash2 } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Trash2 } from "lucide-react";
 import { useResumeStore } from "../../store/resumeStore";
 import type { EducationItem } from "../../types/resume";
 import { Button } from "../../components/ui/button";
@@ -9,6 +9,9 @@ import { Input } from "../../components/ui/Input";
 import { MonthPicker } from "../../components/ui/MonthPicker";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { cn } from "../../lib/utils";
+import { AiRewriteButton } from "./AiRewriteButton";
+import { SmartRewriteSuggestions } from "./SmartRewriteSuggestions";
+import { useSmartRewrite } from "./useSmartRewrite";
 
 function fmtDate(value: string) {
   if (!value) return "";
@@ -146,6 +149,7 @@ function EducationCard({
     }, 300);
     return () => clearTimeout(timeout);
   }, []);
+  const descriptionRewrite = useSmartRewrite("education");
 
   return (
     <motion.div
@@ -285,10 +289,11 @@ function EducationCard({
               <label className="text-sm font-medium text-text">
                 {t("builder.education.achievements")}
               </label>
-              <Button size="sm" title={t("builder.comingSoon")}>
-                <Sparkles size={14} />
-                {t("builder.personal.aiRewrite")}
-              </Button>
+              <AiRewriteButton
+                loading={descriptionRewrite.loading}
+                disabled={!edu.description.replace(/<[^>]*>/g, "").trim()}
+                onClick={() => descriptionRewrite.generate(edu.description)}
+              />
             </div>
             <RichTextEditor
               value={edu.description}
@@ -298,6 +303,16 @@ function EducationCard({
             <p className="text-xs text-text-placeholder">
               {t("builder.education.achievementsHint")}
             </p>
+            {descriptionRewrite.variations && (
+              <SmartRewriteSuggestions
+                variations={descriptionRewrite.variations}
+                onSelect={(chosen) => {
+                  onChange({ description: chosen });
+                  descriptionRewrite.dismiss();
+                }}
+                onDismiss={descriptionRewrite.dismiss}
+              />
+            )}
           </div>
         </div>
       </motion.div>
