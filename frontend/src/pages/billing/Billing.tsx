@@ -110,15 +110,17 @@ export default function Billing() {
           <p className="mt-3 flex items-baseline gap-2">
             <span className="font-bold text-text">{CURRENT_PLAN.name}</span>
             <span className="text-3xl font-extrabold text-brand">
-              ${CURRENT_PLAN.price}
-              <span className="text-base font-semibold">
-                {t("billing.currentPlan.perMonth")}
+              {CURRENT_PLAN.price === "0"
+                ? t("billing.currentPlan.freePrice")
+                : `$${CURRENT_PLAN.price}`}
+              <span className="ml-1 text-base font-semibold">
+                {t("billing.currentPlan.paidOnce")}
               </span>
             </span>
           </p>
 
           <p className="mt-5 text-sm text-text">
-            {t("billing.currentPlan.usageLabel")}
+            {t("billing.currentPlan.creditsLabel")}
           </p>
           <div className="mt-2 h-2.5 rounded-full bg-surface-2 overflow-hidden">
             <div

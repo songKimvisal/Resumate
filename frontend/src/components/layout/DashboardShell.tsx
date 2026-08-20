@@ -17,8 +17,13 @@ export default function DashboardShell() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setDrawerOpen(false);
     };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [drawerOpen]);
 
   return (
@@ -27,7 +32,7 @@ export default function DashboardShell() {
       <div
         className={cn(
           "hidden lg:block shrink-0 border-r border-line transition-[width] duration-200",
-          collapsed ? "w-20" : "w-64",
+          collapsed ? "w-16" : "w-52",
         )}
       >
         <div className="sticky top-0 h-screen relative">
@@ -81,20 +86,20 @@ export default function DashboardShell() {
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
-              className="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-bg shadow-xl"
+              className="lg:hidden fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(17.5rem,86vw)] min-w-0 flex-col bg-bg shadow-xl"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
             >
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Close menu"
-                className="absolute top-3 right-3 size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+                className="absolute top-3 right-3 z-10 size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
-              <Sidebar onNavigate={() => setDrawerOpen(false)} />
+              <Sidebar compact onNavigate={() => setDrawerOpen(false)} />
             </motion.div>
           </>
         )}

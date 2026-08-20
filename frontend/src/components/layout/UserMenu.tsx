@@ -7,9 +7,11 @@ import { cn } from "../../lib/utils";
 
 export default function UserMenu({
   collapsed = false,
+  compact = false,
   onNavigate,
 }: {
   collapsed?: boolean;
+  compact?: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
@@ -72,7 +74,8 @@ export default function UserMenu({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex items-center gap-3 rounded-xl py-2 hover:bg-surface-2 transition-colors",
+          "flex items-center rounded-xl hover:bg-surface-2 transition-colors",
+          compact ? "gap-2 py-1.5" : "gap-3 py-2",
           collapsed ? "justify-center px-0" : "w-full px-2",
         )}
         aria-expanded={open}
@@ -84,10 +87,18 @@ export default function UserMenu({
             src={avatarUrl}
             alt={fullName}
             referrerPolicy="no-referrer"
-            className="size-9 rounded-full object-cover shrink-0"
+            className={cn(
+              "rounded-full object-cover shrink-0",
+              compact ? "size-8" : "size-9",
+            )}
           />
         ) : (
-          <span className="size-9 rounded-full bg-brand text-white inline-flex items-center justify-center text-sm font-semibold shrink-0">
+          <span
+            className={cn(
+              "rounded-full bg-brand text-white inline-flex items-center justify-center text-sm font-semibold shrink-0",
+              compact ? "size-8" : "size-9",
+            )}
+          >
             {fullName.charAt(0).toUpperCase()}
           </span>
         )}

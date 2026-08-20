@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
-import { motion, AnimatePresence, type Variants } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  animate,
+  useMotionValue,
+  useTransform,
+  type Variants,
+} from "motion/react";
 
 import { Button } from "../../components/ui/button";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
@@ -22,6 +29,116 @@ const BAND_RING_CLASS: Record<ScoreBand, string> = {
   good: "text-amber-500",
   needsWork: "text-destructive",
 };
+
+const BAND_FILL_CLASS: Record<ScoreBand, string> = {
+  excellent: "bg-success/10",
+  strong: "bg-success/10",
+  good: "bg-amber-500/10",
+  needsWork: "bg-destructive/10",
+};
+
+function ScoreRing({
+  score,
+  band,
+  size,
+  showLabel,
+}: {
+  score: number;
+  band: ScoreBand;
+  size: "sm" | "lg";
+  showLabel?: boolean;
+}) {
+  const { t } = useTranslation();
+  const large = size === "lg";
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+
+  return (
+    <div
+      className={cn(
+        "relative shrink-0 rounded-full",
+        large ? "size-28" : "size-12",
+        large && BAND_FILL_CLASS[band],
+      )}
+    >
+      <svg
+        viewBox="0 0 96 96"
+        className={cn(
+          "absolute -rotate-90",
+          large ? "inset-1.5 size-[calc(100%-0.75rem)]" : "inset-0 size-full",
+        )}
+        aria-hidden
+      >
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={large ? 7 : 10}
+          className="text-line/80"
+        />
+        <motion.circle
+          cx="48"
+          cy="48"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={large ? 7 : 10}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{
+            strokeDashoffset: circumference * (1 - score / 100),
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 60,
+            damping: 14,
+          }}
+          className={BAND_RING_CLASS[band]}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <AnimatedPercent
+          score={score}
+          className={cn(
+            "font-bold leading-none tabular-nums whitespace-nowrap",
+            large ? "text-2xl" : "text-[11px]",
+            BAND_RING_CLASS[band],
+          )}
+        />
+        {showLabel && (
+          <span className="mt-1 text-[11px] font-medium text-text-secondary">
+            {t("dashboard.scoreLabel")}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AnimatedPercent({
+  score,
+  className,
+}: {
+  score: number;
+  className?: string;
+}) {
+  const value = useMotionValue(0);
+  const label = useTransform(value, (latest) => `${Math.round(latest)}%`);
+
+  useEffect(() => {
+    const controls = animate(value, score, {
+      type: "spring",
+      stiffness: 60,
+      damping: 14,
+    });
+    return () => controls.stop();
+  }, [score, value]);
+
+  return <motion.span className={className}>{label}</motion.span>;
+}
 
 const containerVariants: Variants = {
   hidden: {},
@@ -106,6 +223,8 @@ export default function Dashboard() {
 
   const score = completion?.score ?? 0;
   const band = completion?.band ?? "needsWork";
+  const missingCount = completion?.missing.length ?? 0;
+  const isComplete = !!currentResume && missingCount === 0;
 
   const fullName =
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
@@ -115,7 +234,7 @@ export default function Dashboard() {
       return t("dashboard.noResumeTitle");
     }
 
-    if (score >= 90) {
+    if (isComplete || score >= 90) {
       return t("dashboard.currentResumeHeadingExcellent");
     }
 
@@ -128,11 +247,15 @@ export default function Dashboard() {
     }
 
     return t("dashboard.currentResumeHeadingNeedsWork");
-  }, [currentResume, score, t]);
+  }, [currentResume, isComplete, score, t]);
 
   const bodyText = useMemo(() => {
     if (!currentResume) {
       return t("dashboard.noResumeBody");
+    }
+
+    if (isComplete) {
+      return t("dashboard.currentResumeBodyExcellent");
     }
 
     if (score >= 80) {
@@ -144,7 +267,7 @@ export default function Dashboard() {
     }
 
     return t("dashboard.currentResumeBodyNeedsWork");
-  }, [currentResume, score, t]);
+  }, [currentResume, isComplete, score, t]);
 
   const handleFixMissing = () => {
     if (!currentResume) {
@@ -170,17 +293,13 @@ export default function Dashboard() {
     navigate("/select-resume");
   };
 
-  // Circle math kept identical to Step5Review.tsx.
-  const gaugeRadius = 42;
-  const circumference = 2 * Math.PI * gaugeRadius;
-
   return (
     <motion.div
       className={cn(
         "w-full max-w-6xl mx-auto",
         "px-3 min-[375px]:px-4 sm:px-6",
         "py-5 sm:py-10",
-        "overflow-hidden",
+        "overflow-x-clip",
       )}
       variants={containerVariants}
       initial="hidden"
@@ -454,7 +573,9 @@ export default function Dashboard() {
                           size={"compact"}
                         >
                           {currentResume
-                            ? t("dashboard.fixMissing")
+                            ? isComplete
+                              ? t("dashboard.editResume")
+                              : t("dashboard.fixMissing")
                             : t("dashboard.createResume")}
                         </Button>
                       </motion.div>
@@ -484,7 +605,7 @@ export default function Dashboard() {
                   {/* ==================================================
                       RESUME PREVIEW
                   ================================================== */}
-                  <div className="relative mx-auto w-full max-w-[240px] min-[375px]:max-w-[250px] sm:max-w-[220px]">
+                  <div className="relative mx-auto w-full max-w-[240px] min-[375px]:max-w-[250px] sm:max-w-[220px] overflow-visible">
                     {currentResume ? (
                       <button
                         type="button"
@@ -519,47 +640,11 @@ export default function Dashboard() {
                     {/* Keep the score with the preview on small screens. */}
                     <div
                       className={cn(
-                        "absolute -right-3 -top-3 z-10 lg:hidden",
-                        "rounded-full border border-line bg-bg p-1.5 shadow-md",
+                        "pointer-events-none absolute right-1 top-1 z-10 lg:hidden",
+                        "rounded-full border border-line bg-bg p-1 shadow-md",
                       )}
                     >
-                      <div className="relative size-14">
-                        <svg viewBox="0 0 96 96" className="size-14 -rotate-90">
-                          <circle
-                            cx="48"
-                            cy="48"
-                            r={gaugeRadius}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            className="text-line"
-                          />
-                          <motion.circle
-                            cx="48"
-                            cy="48"
-                            r={gaugeRadius}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            initial={{ strokeDashoffset: circumference }}
-                            animate={{
-                              strokeDashoffset:
-                                circumference * (1 - score / 100),
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 60,
-                              damping: 14,
-                            }}
-                            className={BAND_RING_CLASS[band]}
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
-                          {score}%
-                        </span>
-                      </div>
+                      <ScoreRing score={score} band={band} size="sm" />
                     </div>
                   </div>
 
@@ -571,91 +656,34 @@ export default function Dashboard() {
                       "hidden lg:flex flex-col",
                       "items-center",
                       "justify-self-center",
-                      "gap-2",
+                      "gap-3",
+                      "min-w-[7.5rem]",
                     )}
                   >
-                    <div
-                      className={cn(
-                        "relative",
-                        "size-[76px]",
-                        "min-[375px]:size-20",
-                        "sm:size-24",
-                      )}
-                    >
-                      <svg
-                        viewBox="0 0 96 96"
+                    <ScoreRing
+                      score={score}
+                      band={band}
+                      size="lg"
+                      showLabel
+                    />
+
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-text">
+                        {t("dashboard.completenessLabel")}
+                      </p>
+                      <p
                         className={cn(
-                          "size-[76px]",
-                          "min-[375px]:size-20",
-                          "sm:size-24",
-                          "-rotate-90",
+                          "mt-0.5 text-xs font-medium",
+                          isComplete ? "text-success" : "text-text-secondary",
                         )}
                       >
-                        {/* Background ring */}
-                        <circle
-                          cx="48"
-                          cy="48"
-                          r={gaugeRadius}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="8"
-                          className="text-line"
-                        />
-
-                        {/* Progress ring */}
-                        <motion.circle
-                          cx="48"
-                          cy="48"
-                          r={gaugeRadius}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          strokeDasharray={circumference}
-                          initial={{
-                            strokeDashoffset: circumference,
-                          }}
-                          animate={{
-                            strokeDashoffset: circumference * (1 - score / 100),
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 60,
-                            damping: 14,
-                          }}
-                          className={BAND_RING_CLASS[band]}
-                        />
-                      </svg>
-
-                      {/* Gauge text */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span
-                          className={cn(
-                            "text-lg",
-                            "min-[375px]:text-xl",
-                            "sm:text-2xl",
-                            "font-bold",
-                          )}
-                        >
-                          {score}%
-                        </span>
-
-                        <span
-                          className={cn(
-                            "text-[9px]",
-                            "min-[375px]:text-[10px]",
-                            "sm:text-[11px]",
-                            "text-text-secondary",
-                          )}
-                        >
-                          {t("dashboard.scoreLabel")}
-                        </span>
-                      </div>
+                        {isComplete
+                          ? t("dashboard.scoreComplete")
+                          : t("dashboard.scoreCaption", {
+                              count: missingCount,
+                            })}
+                      </p>
                     </div>
-
-                    <p className="text-sm font-semibold text-text text-center">
-                      {t("dashboard.completenessLabel", "Completeness")}
-                    </p>
                   </div>
                 </div>
               </div>

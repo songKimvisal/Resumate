@@ -163,7 +163,7 @@
     "aiUsage": "AI Usage",
     "settings": "Setting",
     "logout": "Logout",
-    "upgrade": "Upgrade to Starter",
+    "upgrade": "Buy more",
     "welcomeBack": "Welcome back",
     "darkMode": "Dark mode",
     "lightMode": "Light mode"
@@ -176,18 +176,23 @@
     "currentResumeHeadingTopTen": "You're almost in the top 10%",
     "currentResumeHeadingStrong": "Your resume is strong.",
     "currentResumeHeadingNeedsWork": "Build a stronger resume.",
-    "currentResumeBodyStrong": "Great work. Your resume is strong! Add one more element for the perfect score.",
+    "currentResumeBodyExcellent": "Every required section is filled. You're ready to match a job and apply.",
+    "currentResumeBodyStrong": "Great work. Your resume is strong. Add the last missing piece for a perfect score.",
     "currentResumeBodyHealthy": "Keep going. A few improvements will help you submit with confidence.",
     "currentResumeBodyNeedsWork": "Start with the essential sections and the Smart assistant will guide you to a stronger score.",
     "fixMissing": "Fix missing items",
+    "editResume": "Edit resume",
     "changeResume": "Change resume",
     "continue": "Continue",
     "createResume": "Create resume",
     "scoreLabel": "Score",
     "scoreSuffix": "completeness",
-    "scoreCaption": "{{count}} missing items to improve",
+    "completenessLabel": "Completeness",
+    "scoreComplete": "Complete",
+    "scoreCaption": "{{count}} missing",
+    "scoreCaption_one": "{{count}} missing",
     "missingLabel": "Missing items",
-    "missingNone": "All done! Your resume is complete.",
+    "missingNone": "All done. Your resume is complete.",
     "resumePreviewLabel": "Resume preview",
     "previewBadge": "Preview",
     "previewSummary": "Live score",
@@ -602,48 +607,40 @@
         {
           "name": "Free",
           "price": "0",
-          "tagline": "Start your career journey with essential resume building tools.",
+          "tagline": "Start with 3 templates and 1 PDF. No monthly bill.",
           "includesLabel": "Includes",
           "features": [
             "3 resume templates",
-            "1 resume saved",
-            "PDF download (A4)",
-            "Smart writing 5 uses / month"
+            "1 PDF save",
+            "Edit and download as A4 PDF"
           ],
-          "cta": "Get started free"
+          "cta": "Start free"
         },
         {
           "name": "Starter",
           "price": "2.99",
-          "tagline": "Build stronger applications and prepare confidently for your next opportunity.",
-          "includesLabel": "Everything in Free, plus",
+          "tagline": "Templates plus smart writing. Pay once.",
+          "includesLabel": "Includes",
           "features": [
-            "All standard templates",
-            "Up to 2 resumes saved",
-            "30 smart writing credits / month",
-            "1 job analysis / month",
-            "1 interview question set / month",
-            "Full job readiness reports",
-            "Resume improvement suggestions"
+            "1 paid template unlocked",
+            "8 smart writing credits",
+            "Save or download 1 PDF"
           ],
-          "cta": "Upgrade to Starter",
+          "cta": "Get Starter",
           "popular": true
         },
         {
-          "name": "Pro",
-          "price": "7.99",
-          "tagline": "Advance your career with deeper insights and personalized guidance.",
-          "includesLabel": "Everything in Starter, plus",
+          "name": "Everything",
+          "price": "9.99",
+          "tagline": "The full pack. Pay once. Nothing renews.",
+          "includesLabel": "Includes",
           "features": [
-            "All standard + premium templates",
-            "Up to 6 resumes",
-            "60 smart writing credits / month",
-            "3 job & match analyses / month",
-            "Detailed skill gap analysis",
-            "3 interview question sets / month",
-            "Priority support & early access"
+            "All templates unlocked",
+            "60 smart writing credits",
+            "Save or download 5 PDFs",
+            "Job analyses and interview prep"
           ],
-          "cta": "Upgrade to Pro"
+          "cta": "Get Everything"
         }
       ]
     },
@@ -1390,34 +1387,39 @@
   },
   "billing": {
     "title": "Billing &",
-    "titleAccent": "Timeline",
-    "subtitle": "Manage your subscription and payment method.",
+    "titleAccent": "purchases",
+    "subtitle": "One-time. No monthly bill. Pay only when you need more.",
     "currentPlan": {
-      "label": "Current plan",
+      "label": "Your pack",
       "freeName": "Free",
-      "monthlyName": "Monthly",
-      "perMonth": "/month",
-      "usageLabel": "Smart writing used this month",
-      "usageCount": "{{used}} of {{total}} uses",
-      "upgradeCta": "Upgrade plan",
-      "subscribedNote": "You're on the Pro plan full customization unlocked."
+      "freePrice": "Free",
+      "paidOnce": "paid once",
+      "perMonth": "paid once",
+      "creditsLabel": "Smart writing credits",
+      "usageLabel": "Smart writing credits",
+      "pdfsLabel": "PDF saves",
+      "noCredits": "No smart credits yet. Buy some when you need writing help.",
+      "noPdfs": "No PDF saves left.",
+      "usageCount": "{{used}} of {{total}} used",
+      "upgradeCta": "Buy more",
+      "subscribedNote": "Everything is unlocked on this pack."
     },
     "upgradeModal": {
-      "title": "Upgrade your plan",
-      "subtitle": "Pay with Stripe Payment or KHQR. No hidden fees. Cancel any time.",
+      "title": "Buy more",
+      "subtitle": "Pay once with KHQR or Stripe. Nothing renews.",
       "close": "Close",
-      "currentPlanCta": "Current plan"
+      "currentPlanCta": "Current pack"
     },
     "payment": {
       "back": "Back",
-      "title": "{{plan}} plan monthly",
-      "titleAccent": "subscription",
+      "title": "{{plan}} pack",
+      "titleAccent": "one-time",
       "orderSummary": {
         "title": "Order Summary",
         "subtotal": "SubTotal",
         "tax": "Tax",
         "dueToday": "Due Today",
-        "finePrint": "No hidden fees, cancel anytime in Settings."
+        "finePrint": "One-time purchase. Nothing renews automatically."
       },
       "khqr": {
         "merchantLabel": "Resumate",
@@ -1428,13 +1430,13 @@
       "success": {
         "title": "Payment",
         "titleAccent": "Successful.",
-        "description": "Thank you for upgrading to the {{plan}} Plan. Your account has been activated and you're ready to get started.",
+        "description": "Thank you for buying the {{plan}} pack. It's on your account and ready to use.",
         "cta": "Go to Dashboard"
       }
     },
     "paymentMethod": {
       "label": "Payment method",
-      "nextBilling": "Next billing on {{date}}",
+      "nextBilling": "Saved for your next purchase",
       "chooseSubtitle": "Scan with KHQR, or pay by card via Stripe instant activation.",
       "khqr": {
         "name": "Bakong KHQR",

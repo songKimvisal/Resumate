@@ -29,9 +29,11 @@ const NAV_ITEMS = [
 
 export default function Sidebar({
   collapsed = false,
+  compact = false,
   onNavigate,
 }: {
   collapsed?: boolean;
+  compact?: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
@@ -39,20 +41,35 @@ export default function Sidebar({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="h-full flex flex-col px-3 py-6">
+    <div
+      className={cn(
+        "flex min-w-0 flex-col",
+        compact ? "h-full px-3 py-4" : "h-full px-2 py-5",
+      )}
+    >
       <Link
         to="/"
         onClick={onNavigate}
-        className={cn("mb-8 inline-flex", collapsed ? "justify-center px-0" : "px-2")}
+        className={cn(
+          "inline-flex",
+          compact ? "mb-4 pr-8" : "mb-8",
+          collapsed ? "justify-center px-0" : "px-2",
+        )}
       >
         <img
           src={collapsed ? logoMark : logo}
           alt="ResuMate"
-          className={collapsed ? "h-8 w-8 object-contain" : "h-9 w-auto"}
+          className={
+            collapsed
+              ? "h-8 w-8 object-contain"
+              : compact
+                ? "h-7 w-auto"
+                : "h-9 w-auto"
+          }
         />
       </Link>
 
-      <nav className="flex-1 space-y-1">
+      <nav className={cn("flex-1 space-y-0.5 overflow-y-auto", !compact && "space-y-1")}>
         {NAV_ITEMS.map(({ to, icon: Icon, key }) => (
           <NavLink
             key={to}
@@ -61,28 +78,36 @@ export default function Sidebar({
             title={collapsed ? t(`nav.${key}`) : undefined}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 py-2.5 rounded-full text-sm font-medium transition-colors",
-                collapsed ? "justify-center px-0" : "px-4",
+                "flex items-center gap-2.5 py-2 rounded-full text-sm font-medium transition-colors",
+                collapsed ? "justify-center px-0" : "px-3",
                 isActive
                   ? "bg-brand text-white"
                   : "text-text-secondary hover:bg-surface-2 hover:text-text",
               )
             }
           >
-            <Icon size={18} strokeWidth={2} className="shrink-0" />
-            {!collapsed && t(`nav.${key}`)}
+            <Icon size={compact ? 16 : 18} strokeWidth={2} className="shrink-0" />
+            {!collapsed && (
+              <span className="truncate">{t(`nav.${key}`)}</span>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="space-y-3 pt-4 mt-4 border-t border-line">
+      <div
+        className={cn(
+          "border-t border-line",
+          compact ? "space-y-2 pt-3 mt-auto" : "space-y-3 pt-4 mt-4",
+        )}
+      >
+        {!compact && (
         <button
           onClick={toggleTheme}
           aria-label="Toggle theme"
           title={collapsed ? t(theme === "dark" ? "nav.lightMode" : "nav.darkMode") : undefined}
           className={cn(
-            "flex items-center gap-3 py-2.5 rounded-full text-sm font-medium text-text-secondary hover:bg-surface-2 hover:text-text transition-colors",
-            collapsed ? "justify-center px-0 w-full" : "px-4 w-full",
+            "flex items-center gap-2.5 py-2 rounded-full text-sm font-medium text-text-secondary hover:bg-surface-2 hover:text-text transition-colors",
+            collapsed ? "justify-center px-0 w-full" : "px-3 w-full",
           )}
         >
           {theme === "dark" ? (
@@ -93,9 +118,12 @@ export default function Sidebar({
           {!collapsed &&
             t(theme === "dark" ? "nav.lightMode" : "nav.darkMode")}
         </button>
+        )}
         <Button
-          size={collapsed ? "icon" : "default"}
-          className={collapsed ? "mx-auto" : "w-full"}
+          size={collapsed ? "icon" : "compact"}
+          className={cn(
+            collapsed ? "mx-auto" : "w-full h-auto min-h-9 whitespace-normal px-3 leading-snug",
+          )}
           title={collapsed ? t("nav.upgrade") : undefined}
           onClick={() => {
             onNavigate?.();
@@ -104,7 +132,11 @@ export default function Sidebar({
         >
           {collapsed ? <Sparkles size={16} /> : t("nav.upgrade")}
         </Button>
-        <UserMenu collapsed={collapsed} onNavigate={onNavigate} />
+        <UserMenu
+          collapsed={collapsed}
+          compact={compact}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );
