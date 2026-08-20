@@ -1,19 +1,16 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
-import { CircleCheck, Leaf, Crown, Zap } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Testimonials from "../components/home/Testimonials";
+import Pricing from "../components/home/Pricing";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
-import { usePricingPlans } from "../hooks/usePricingPlans";
 import ResumePreview from "../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
 import { useEffect } from "react";
-import { setPendingPlan } from "../lib/pendingPlan"; // adjust path if different
-import type { PlanId } from "../types/billing"; // adjust path if different
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -48,22 +45,7 @@ export default function Home() {
     }
   }, [location.state]);
   const { t } = useTranslation();
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  const handlePlanClick = (planId: PlanId) => {
-    if (loading) return;
-    if (planId === "free") {
-      navigate(user ? "/dashboard" : "/login");
-      return;
-    }
-    if (user) {
-      navigate("/billing/payment", { state: { plan: planId } });
-    } else {
-      setPendingPlan(planId as Exclude<PlanId, "free">);
-      navigate("/login");
-    }
-  };
+  const { user } = useAuth();
   const industries = t("home.industries", { returnObjects: true }) as string[];
   const features = t("home.features.items", { returnObjects: true }) as {
     title: string;
@@ -77,8 +59,6 @@ export default function Home() {
     title: string;
     desc: string;
   }[];
-  const plans = usePricingPlans();
-
   return (
     <div className="min-h-screen bg-bg text-text overflow-x-clip">
       <Navbar />
@@ -285,89 +265,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ================= PRICING ================= */}
-      <section id="pricing" className="max-w-6xl mx-auto px-4 py-24">
-        <motion.h2
-          {...fadeUp}
-          className="text-3xl md:text-4xl font-bold text-center"
-        >
-          {t("home.pricing.title")}{" "}
-          <span className="text-brand italic">
-            {t("home.pricing.titleAccent")}
-          </span>
-        </motion.h2>
-        <motion.p {...fadeUp} className="mt-4 text-text-secondary text-center">
-          {t("home.pricing.subtitle")}
-        </motion.p>
-
-        <div className="mt-14 grid md:grid-cols-3 gap-6 items-stretch">
-          {plans.map((plan) => (
-            <motion.div
-              key={plan.name}
-              {...fadeUp}
-              className={`flex flex-col rounded-2xl bg-bg p-8 space-y-6 ${
-                plan.popular
-                  ? "border-2 border-brand shadow-lg"
-                  : "border border-line"
-              }`}
-            >
-              <div className="space-y-2">
-                <div className="h-7 flex items-center">
-                  {plan.popular ? (
-                    <span className="inline-flex items-center gap-1.5 bg-brand text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
-                      {t("home.pricing.mostPopular")}
-                      <Zap size={14} fill="white" />
-                    </span>
-                  ) : (
-                    <>
-                      {plan.id === "free" && <Leaf size={22} />}
-                      {plan.id === "pro" && <Crown size={22} />}
-                    </>
-                  )}
-                </div>
-                <p className="text-sm font-bold tracking-wide uppercase">
-                  {plan.name}
-                </p>
-                <p>
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-text-secondary text-sm">
-                    /{t("home.pricing.month")}
-                  </span>
-                </p>
-                <p className="text-sm text-text-secondary">{plan.tagline}</p>
-              </div>
-
-              <div className="flex-1 space-y-3">
-                <p className="text-xs font-semibold tracking-widest uppercase text-text-secondary">
-                  {plan.includesLabel}
-                </p>
-                <ul className="space-y-2.5">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex gap-2.5 text-sm">
-                      <CircleCheck
-                        className="text-brand shrink-0 mt-0.5"
-                        size={16}
-                        strokeWidth={2.5}
-                      />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Button
-                size="default"
-                className="w-full mt-auto"
-                variant={plan.popular ? "default" : "outline"}
-                onClick={() => handlePlanClick(plan.id)}
-                disabled={loading}
-              >
-                {plan.cta}
-              </Button>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      <Pricing />
 
       {/* ================= TESTIMONIALS ================= */}
       <Testimonials />
