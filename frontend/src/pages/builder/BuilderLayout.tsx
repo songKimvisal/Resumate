@@ -12,7 +12,9 @@ import {
   X,
 } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
+import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
+import { saveResumeToDashboard } from "../../lib/api";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
 import Step1Personal from "./Step1Personal";
@@ -27,22 +29,93 @@ import { cn } from "../../lib/utils";
 
 const TOTAL_STEPS = 5;
 const A4_WIDTH_PX = 210 * (96 / 25.4);
+const AUTOSAVE_MS = 800;
+
+function clampBuilderStep(n: unknown) {
+  if (typeof n !== "number" || !Number.isFinite(n)) return 1;
+  return Math.min(TOTAL_STEPS, Math.max(1, Math.round(n)));
+}
 
 export default function BuilderLayout() {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const toggleLanguage = () =>
     i18n.changeLanguage(i18n.language === "en" ? "km" : "en");
-  const [step, setStep] = useState(1);
+  const resumeId = useResumeStore((s) => s.resume.id);
+  const resume = useResumeStore((s) => s.resume);
+  const dirty = useResumeStore((s) => s.dirty);
+  const setBuilderStep = useResumeStore((s) => s.setBuilderStep);
+  const markSaved = useResumeStore((s) => s.markSaved);
+  const [step, setStep] = useState(() =>
+    clampBuilderStep(useResumeStore.getState().resume.builderStep),
+  );
+  const persistTimerRef = useRef<number | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const tipRef = useRef<HTMLDivElement>(null);
 
-  const dirty = useResumeStore((s) => s.dirty);
-
   const stepLabels = t("builder.steps", { returnObjects: true }) as string[];
   const tips = t("builder.tips", { returnObjects: true }) as string[];
+
+  useEffect(() => {
+    setStep(clampBuilderStep(useResumeStore.getState().resume.builderStep));
+  }, [resumeId]);
+
+  useEffect(() => {
+    setBuilderStep(step);
+  }, [step, setBuilderStep]);
+
+  useEffect(() => {
+    if (!user || !dirty) return;
+
+    if (persistTimerRef.current != null) {
+      window.clearTimeout(persistTimerRef.current);
+    }
+    persistTimerRef.current = window.setTimeout(async () => {
+      const resume = useResumeStore.getState().resume;
+      try {
+        const id = await saveResumeToDashboard(resume, user.id);
+        markSaved(id);
+      } catch {
+        // Keep dirty so the next change or page hide can retry.
+      }
+    }, AUTOSAVE_MS);
+
+    return () => {
+      if (persistTimerRef.current != null) {
+        window.clearTimeout(persistTimerRef.current);
+      }
+    };
+  }, [user, dirty, resume, markSaved]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const flush = () => {
+      if (persistTimerRef.current != null) {
+        window.clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+      const { resume, dirty: isDirty } = useResumeStore.getState();
+      if (!isDirty) return;
+      void saveResumeToDashboard(resume, user.id)
+        .then((id) => markSaved(id))
+        .catch(() => undefined);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [user, markSaved]);
 
   // close the mascot tip when clicking outside of it
   useEffect(() => {

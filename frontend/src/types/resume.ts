@@ -219,6 +219,8 @@ export interface Customization {
 export interface Resume {
   id: string | null;
   title: string;
+  /** Last builder wizard step (1-5). Used to resume an unfinished draft. */
+  builderStep?: number;
   /** Step 2 entry choice: has experience, none (fresh graduate), or not asked yet */
   experienceChoice: "has" | "none" | null;
   personal: PersonalInfo;

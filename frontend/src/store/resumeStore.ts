@@ -37,6 +37,7 @@ interface ResumeState {
   resetResume: () => void;
   setTitle: (title: string) => void;
   markSaved: (id?: string) => void;
+  setBuilderStep: (step: number) => void;
 
   updatePersonal: (patch: Partial<PersonalInfo>) => void;
   updateCustomization: (patch: Partial<Customization>) => void;
@@ -96,6 +97,12 @@ export const useResumeStore = create<ResumeState>((set) => ({
   resetResume: () => set({ resume: emptyResume, dirty: false }),
   setTitle: (title) =>
     set((s) => ({ resume: { ...s.resume, title }, dirty: true })),
+  setBuilderStep: (step) =>
+    set((s) =>
+      s.resume.builderStep === step
+        ? s
+        : { resume: { ...s.resume, builderStep: step }, dirty: true },
+    ),
   markSaved: (id) =>
     set((s) => ({
       resume: id ? { ...s.resume, id } : s.resume,
