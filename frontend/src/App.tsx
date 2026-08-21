@@ -18,8 +18,10 @@ import DashboardShell from "./components/layout/DashboardShell";
 import Dashboard from "./pages/dashboard/Dashboard";
 import SelectResume from "./pages/dashboard/SelectResume";
 import JobMatch from "./pages/dashboard/JobMatch";
+import JobReadiness from "./pages/dashboard/JobReadiness";
 import MyResumes from "./pages/dashboard/MyResumes";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
+import ProcessInterviewPrep from "./pages/dashboard/ProcessInterviewPrep";
 import Billing from "./pages/billing/Billing";
 import BillingHistory from "./pages/billing/BillingHistory";
 import Payment from "./pages/billing/Payment";
@@ -50,7 +52,13 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardShell />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/select-resume" element={<SelectResume />} />
             <Route path="/job-match" element={<JobMatch />} />
+            <Route
+              path="/job-match/interview-prep"
+              element={<ProcessInterviewPrep />}
+            />
+            <Route path="/job-readiness" element={<JobReadiness />} />
             <Route path="/my-resumes" element={<MyResumes />} />
             <Route path="/interview-prep" element={<InterviewPrep />} />
             <Route path="/billing" element={<Billing />} />
@@ -61,7 +69,6 @@ export default function App() {
           <Route path="/builder" element={<BuilderLayout />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/billing/payment" element={<Payment />} />
-          <Route path="/select-resume" element={<SelectResume />} />
         </Route>
 
         {/* Fallback */}
