@@ -9,7 +9,7 @@ import { PasswordInput } from "../components/ui/PasswordInput";
 import { Button } from "../components/ui/button";
 import logo from "../assets/logo/resumate.png";
 import logoMobile from "../assets/logo/logo.png";
-import { getPendingPlan, clearPendingPlan } from "../lib/pendingPlan";
+import { getPendingPlan, clearPendingPlan } from "../lib/session";
 
 export default function Login() {
   const { user, loading, signInWithGoogle, signInWithPassword } = useAuth();

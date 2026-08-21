@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AuthError } from "@supabase/supabase-js";
 import { Loader2, MailCheck } from "lucide-react";
@@ -9,10 +9,12 @@ import { PasswordInput } from "../components/ui/PasswordInput";
 import { Button } from "../components/ui/button";
 import logo from "../assets/logo/resumate.png";
 import logoMobile from "../assets/logo/logo.png";
+import { markStayOnHome, shouldStayOnHome, clearStayOnHome } from "../lib/session";
 
 export default function Signup() {
   const { user, loading, signInWithGoogle, signUpWithPassword } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +31,10 @@ export default function Signup() {
     );
   }
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    if (shouldStayOnHome()) return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,11 +50,17 @@ export default function Signup() {
     }
 
     setSubmitting(true);
+    markStayOnHome();
     try {
-      const { error } = await signUpWithPassword(email, password);
+      const { data, error } = await signUpWithPassword(email, password);
       if (error) throw error;
+      if (data.session) {
+        navigate("/", { replace: true });
+        return;
+      }
       setSubmitted(true);
     } catch (err) {
+      clearStayOnHome();
       setError(
         err instanceof AuthError ? err.message : t("signup.errorGeneric"),
       );
@@ -141,7 +152,10 @@ export default function Signup() {
                 </div>
 
                 <button
-                  onClick={() => signInWithGoogle()}
+                  onClick={() => {
+                    markStayOnHome();
+                    void signInWithGoogle("/");
+                  }}
                   className="w-full flex items-center justify-center gap-3 bg-bg border border-line text-text font-medium px-4 py-3.5 rounded-xl hover:bg-surface-2 transition-colors"
                 >
                   <svg

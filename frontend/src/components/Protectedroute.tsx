@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/UseAuth";
+import { markAppEntered } from "../lib/session";
 
 export default function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -12,6 +13,8 @@ export default function ProtectedRoute() {
       </div>
     );
   }
+
+  if (user) markAppEntered();
 
   return user ? (
     <Outlet />

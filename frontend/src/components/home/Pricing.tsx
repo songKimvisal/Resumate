@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/UseAuth";
-import { setPendingPlan } from "../../lib/pendingPlan";
+import { setPendingPlan } from "../../lib/session";
 import type { PlanId } from "../../types/billing";
 
 type NeedId = "design" | "ai" | "both";
