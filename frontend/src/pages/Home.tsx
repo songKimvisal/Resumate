@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Fragment, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
@@ -8,6 +8,11 @@ import Testimonials from "../components/home/Testimonials";
 import Pricing from "../components/home/Pricing";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
+import {
+  consumeStayOnHome,
+  hasAppEntered,
+  markAppEntered,
+} from "../lib/session";
 import ScaledResumePreview from "../components/resume/ScaledResumePreview";
 import { DEMO_RESUME } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
@@ -34,6 +39,19 @@ const HERO_CARDS = HERO_TEMPLATES.map((preset) => ({
 
 export default function Home() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (hasAppEntered()) return;
+
+    const stayOnHome = consumeStayOnHome();
+    markAppEntered();
+    if (user && !stayOnHome) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   useEffect(() => {
     const id = (location.state as { scrollTo?: string } | null)?.scrollTo;
@@ -45,7 +63,6 @@ export default function Home() {
     }
   }, [location.state]);
   const { t } = useTranslation();
-  const { user } = useAuth();
   const industries = t("home.industries", { returnObjects: true }) as string[];
   const features = t("home.features.items", { returnObjects: true }) as {
     title: string;

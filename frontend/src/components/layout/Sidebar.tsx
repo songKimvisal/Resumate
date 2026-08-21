@@ -7,6 +7,7 @@ import {
   useJourneyStore,
 } from "../../store/journeyStore";
 import {
+  House,
   LayoutGrid,
   FileText,
   MessagesSquare,
@@ -25,6 +26,7 @@ import UserMenu from "./UserMenu";
 import { useTheme } from "../../hooks/UseTheme";
 
 const NAV_ITEMS = [
+  { to: "/", icon: House, key: "home" },
   { to: "/dashboard", icon: LayoutGrid, key: "dashboard" },
   { to: "/my-resumes", icon: FileText, key: "myResumes" },
   { to: "/interview-prep", icon: MessagesSquare, key: "interviewPrep" },
@@ -82,9 +84,12 @@ export default function Sidebar({
         {NAV_ITEMS.map(({ to, icon: Icon, key }) => {
           const href = key === "dashboard" ? dashboardTo : to;
           const isActive =
-            key === "dashboard"
-              ? isJourneyNavPath(location.pathname)
-              : location.pathname === to || location.pathname.startsWith(`${to}/`);
+            key === "home"
+              ? location.pathname === "/"
+              : key === "dashboard"
+                ? isJourneyNavPath(location.pathname)
+                : location.pathname === to ||
+                  location.pathname.startsWith(`${to}/`);
 
           return (
           <NavLink
