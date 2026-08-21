@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { Fragment, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
 import Navbar from "../components/layout/Navbar";
@@ -7,10 +8,9 @@ import Testimonials from "../components/home/Testimonials";
 import Pricing from "../components/home/Pricing";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
-import ResumePreview from "../components/resume/ResumePreview";
+import ScaledResumePreview from "../components/resume/ScaledResumePreview";
 import { DEMO_RESUME } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
-import { useEffect } from "react";
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -64,10 +64,10 @@ export default function Home() {
       <Navbar />
 
       {/* ================= HERO ================= */}
-      <section className="max-w-6xl mx-auto px-4 pt-20 pb-10 text-center">
+      <section className="mx-auto max-w-6xl px-4 pt-14 pb-8 text-center sm:pt-20 sm:pb-10">
         <motion.h1
           {...fadeUp}
-          className="text-4xl md:text-6xl font-bold leading-tight max-w-3xl mx-auto"
+          className="mx-auto max-w-3xl text-balance text-4xl font-bold leading-tight md:text-5xl"
         >
           {t("home.hero.title")}{" "}
           <span className="text-brand italic">
@@ -79,57 +79,53 @@ export default function Home() {
         <motion.p
           {...fadeUp}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mt-6 text-text-secondary max-w-xl mx-auto"
+          className="mx-auto mt-6 max-w-xl text-pretty text-text-secondary"
         >
           {t("home.hero.subtitle")}
         </motion.p>
 
-        <motion.div className="mt-8 flex flex-wrap justify-center gap-3">
+        <motion.div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           {user ? (
-            // ---------- logged IN ----------
             <>
               <Link to="/dashboard">
-                <Button size="default">{t("home.hero.ctaDashboard")}</Button>
+                <Button>{t("home.hero.ctaDashboard")}</Button>
               </Link>
               <Link to="/marketplace">
-                <Button size="default" variant="outline">
-                  {t("home.hero.ctaSecondary")}
-                </Button>
+                <Button variant="outline">{t("home.hero.ctaSecondary")}</Button>
               </Link>
             </>
           ) : (
-            // ---------- logged OUT: the original two ----------
             <>
               <Link to="/login">
-                <Button size="default">{t("home.hero.ctaPrimary")}</Button>
+                <Button>{t("home.hero.ctaPrimary")}</Button>
               </Link>
               <Link to="/marketplace">
-                <Button size="default" variant="outline">
-                  {t("home.hero.ctaSecondary")}
-                </Button>
+                <Button variant="outline">{t("home.hero.ctaSecondary")}</Button>
               </Link>
             </>
           )}
         </motion.div>
 
-        {/* live resume preview fan */}
         <div
           id="templates"
-          className="mt-16 flex justify-center items-end -space-x-14 sm:-space-x-20 lg:-space-x-24"
+          className="mt-14 flex items-end justify-center -space-x-10 pb-6 sm:mt-16 sm:-space-x-16 lg:-space-x-20"
         >
           {HERO_CARDS.map(({ preset, resume }, i) => {
             const middle = (HERO_CARDS.length - 1) / 2;
-            const offset = i - middle; // -1.5..1.5
+            const offset = i - middle;
             return (
               <div
                 key={preset.id}
                 style={{
-                  transform: `rotate(${offset * 4}deg) translateY(${Math.abs(offset) * 18}px)`,
+                  transform: `rotate(${offset * 4}deg) translateY(${Math.abs(offset) * 16}px)`,
                   zIndex: 10 - Math.abs(offset),
                 }}
-                className="w-28 sm:w-44 lg:w-60 shrink-0 overflow-hidden rounded-lg shadow-xl"
+                className="w-[6.75rem] shrink-0 sm:w-44 lg:w-56"
               >
-                <ResumePreview singlePage resume={resume} />
+                <ScaledResumePreview
+                  resume={resume}
+                  className="shadow-lg ring-1 ring-black/5"
+                />
               </div>
             );
           })}
@@ -137,22 +133,19 @@ export default function Home() {
       </section>
 
       {/* ================= INDUSTRIES ================= */}
-      <section className="border-y border-line py-10">
-        <div className="max-w-6xl mx-auto px-4 text-center space-y-6">
-          <p className="text-sm font-semibold tracking-widest uppercase text-text-secondary">
+      <section className="border-y border-line py-8 sm:py-10">
+        <div className="mx-auto max-w-6xl px-4 text-center">
+          <p className="text-xs font-semibold tracking-[0.18em] text-text-secondary uppercase sm:text-sm sm:tracking-widest">
             {t("home.industriesTitle")}
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-3">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-x-4">
             {industries.map((name, i) => (
-              <span
-                key={name}
-                className="flex items-center gap-8 text-sm font-medium text-text"
-              >
+              <Fragment key={name}>
                 {i > 0 && (
-                  <span className="size-1.5 rounded-full bg-brand/40" />
+                  <span className="size-1 rounded-full bg-brand/50" />
                 )}
-                {name}
-              </span>
+                <span className="text-sm font-medium text-text">{name}</span>
+              </Fragment>
             ))}
           </div>
         </div>
@@ -285,15 +278,13 @@ export default function Home() {
         </motion.p>
         <motion.div
           {...fadeUp}
-          className="mt-8 flex flex-wrap justify-center gap-3"
+          className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
         >
           <Link to="/marketplace">
-            <Button size="default">{t("home.cta.primary")}</Button>
+            <Button>{t("home.cta.primary")}</Button>
           </Link>
           <a href="#features">
-            <Button size="default" variant="outline">
-              {t("home.cta.secondary")}
-            </Button>
+            <Button variant="outline">{t("home.cta.secondary")}</Button>
           </a>
         </motion.div>
       </section>
