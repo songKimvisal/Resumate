@@ -207,7 +207,7 @@
     "previewJobTitle": "Job title",
     "steps": {
       "selectResume": "Select Resume",
-      "resumeOptimization": "Smart Resume Optimization",
+      "resumeOptimization": "AI Resume Optimization",
       "interviewPrep": "Interview Prep",
       "jobReadinessReport": "Job Readiness Report"
     }
@@ -216,7 +216,7 @@
     "stepBadge": "Step 1 · Job advertisement",
     "title": "Paste a job advertisement",
     "description": "Drop in the full posting or its link. We'll read the requirements and line them up against your resume.",
-    "placeholder": "Paste the full job description here…\n\nExample:\nWe are looking for a Senior Business Analyst with strong SQL, stakeholder communication, and experience delivering dashboards…",
+    "placeholder": "Paste the full job description here…",
     "charCount": "{{count}} characters",
     "minChars": "(need at least {{count}})",
     "comparingAgainst": "Comparing against",
@@ -240,7 +240,7 @@
     "missing": "Missing from resume",
     "subSteps": {
       "paste": "Paste job ad",
-      "analysis": "Analyze & Improve"
+      "analysis": "Resume match analysis"
     },
     "results": {
       "stepBadge": "Step 2 · Analyze & Improve",

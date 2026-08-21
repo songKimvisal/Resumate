@@ -1,5 +1,11 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../hooks/UseAuth";
+import {
+  continuePathForUser,
+  isJourneyNavPath,
+  useJourneyStore,
+} from "../../store/journeyStore";
 import {
   LayoutGrid,
   FileText,
@@ -38,7 +44,10 @@ export default function Sidebar({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const dashboardTo = useJourneyStore((s) => continuePathForUser(s, user?.id));
 
   return (
     <div
@@ -70,28 +79,34 @@ export default function Sidebar({
       </Link>
 
       <nav className={cn("flex-1 space-y-0.5 overflow-y-auto", !compact && "space-y-1")}>
-        {NAV_ITEMS.map(({ to, icon: Icon, key }) => (
+        {NAV_ITEMS.map(({ to, icon: Icon, key }) => {
+          const href = key === "dashboard" ? dashboardTo : to;
+          const isActive =
+            key === "dashboard"
+              ? isJourneyNavPath(location.pathname)
+              : location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+          return (
           <NavLink
             key={to}
-            to={to}
+            to={href}
             onClick={onNavigate}
             title={collapsed ? t(`nav.${key}`) : undefined}
-            className={({ isActive }) =>
-              cn(
+            className={cn(
                 "flex items-center gap-2.5 py-2 rounded-full text-sm font-medium transition-colors",
                 collapsed ? "justify-center px-0" : "px-3",
                 isActive
                   ? "bg-brand text-white"
                   : "text-text-secondary hover:bg-surface-2 hover:text-text",
-              )
-            }
+            )}
           >
             <Icon size={compact ? 16 : 18} strokeWidth={2} className="shrink-0" />
             {!collapsed && (
               <span className="truncate">{t(`nav.${key}`)}</span>
             )}
           </NavLink>
-        ))}
+          );
+        })}
       </nav>
 
       <div
