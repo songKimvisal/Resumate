@@ -151,6 +151,7 @@
     }
   },
   "nav": {
+    "home": "Home",
     "templates": "Templates",
     "features": "Features",
     "pricing": "Pricing",
