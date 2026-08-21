@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, FileText, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
 import { Button } from "../../components/ui/button";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { getResumesByUser, type DashboardResume } from "../../lib/api";
+import { useJourneyStore } from "../../store/journeyStore";
 import { cn } from "../../lib/utils";
 
 const containerVariants: Variants = {
@@ -33,6 +34,7 @@ export default function SelectResume() {
   const { user } = useAuth();
   const setResume = useResumeStore((s) => s.setResume);
   const resetResume = useResumeStore((s) => s.resetResume);
+  const rememberResume = useJourneyStore((s) => s.rememberResume);
 
   const [resumes, setResumes] = useState<DashboardResume[] | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -61,7 +63,7 @@ export default function SelectResume() {
     fetchResumes(user.id);
   };
 
-  const handleBack = () => navigate(-1);
+  const handleBack = () => navigate("/dashboard");
 
   const handleNewResume = () => {
     resetResume();
@@ -70,6 +72,7 @@ export default function SelectResume() {
 
   const handleSelect = (item: DashboardResume) => {
     setResume(item.resume);
+    if (user && item.resume.id) rememberResume(user.id, item.resume.id);
     navigate("/dashboard");
   };
 
@@ -77,25 +80,28 @@ export default function SelectResume() {
 
   return (
     <motion.div
-      className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10"
+      className="mx-auto max-w-6xl px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7"
       variants={containerVariants}
       initial="hidden"
       animate="show"
     >
-      <motion.div variants={fadeUpVariants}>
-        <Button variant="default" className="rounded-full" onClick={handleBack}>
-          <ChevronLeft size={18} strokeWidth={2.5} />
+      <motion.div variants={fadeUpVariants} className="space-y-3 sm:space-y-4">
+        <Button
+          size="compact"
+          className="h-9 rounded-full"
+          onClick={handleBack}
+        >
+          <ArrowLeft size={16} />
           {t("selectResume.back")}
         </Button>
-      </motion.div>
-
-      <motion.div variants={fadeUpVariants} className="mt-8 sm:mt-10 space-y-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-secondary">
-          {t("selectResume.title")}
-        </h1>
-        <p className="max-w-xl text-sm text-text-secondary/80 sm:text-base">
-          {t("selectResume.subtitle")}
-        </p>
+        <div className="space-y-1.5 sm:space-y-2">
+          <h1 className="text-xl font-bold text-text min-[375px]:text-2xl sm:text-3xl">
+            {t("selectResume.title")}
+          </h1>
+          <p className="max-w-xl text-sm text-text-secondary sm:text-base">
+            {t("selectResume.subtitle")}
+          </p>
+        </div>
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -105,7 +111,7 @@ export default function SelectResume() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="mt-8 flex items-center justify-center rounded-3xl border border-line bg-surface p-16 text-text-secondary"
+            className="mt-8 flex items-center justify-center rounded-2xl border border-line bg-surface p-10 text-text-secondary"
           >
             <Loader2 size={20} className="animate-spin" />
             <span className="ml-3">{t("common.loading")}</span>
@@ -118,7 +124,7 @@ export default function SelectResume() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 rounded-3xl border border-line bg-surface p-16 text-center text-text-secondary"
+            className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-line bg-surface p-10 text-center text-text-secondary"
           >
             <p>{t("selectResume.loadError")}</p>
             <Button
@@ -137,20 +143,20 @@ export default function SelectResume() {
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6"
+            className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-8 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5"
           >
             <motion.button
               variants={cardVariants}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleNewResume}
-              className="aspect-[210/297] rounded-lg border-2 border-dashed border-line flex flex-col items-center justify-center gap-2 sm:gap-3 text-text-secondary hover:text-brand hover:border-brand/50 transition-colors"
+              className="flex aspect-[210/297] flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-line text-text-secondary transition-colors hover:border-brand/50 hover:text-brand sm:gap-3"
             >
-              <span className="font-semibold text-sm sm:text-base text-text text-center px-2">
+              <span className="px-1.5 text-center text-xs font-semibold text-text sm:px-2 sm:text-base">
                 {t("selectResume.newResume")}
               </span>
-              <span className="size-8 sm:size-9 rounded-full border-2 border-current inline-flex items-center justify-center">
-                <Plus size={18} strokeWidth={2} />
+              <span className="inline-flex size-7 items-center justify-center rounded-full border-2 border-current sm:size-9">
+                <Plus size={16} strokeWidth={2} />
               </span>
             </motion.button>
 
@@ -162,11 +168,11 @@ export default function SelectResume() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSelect(item)}
                 aria-label={item.resume.title || t("selectResume.untitled")}
-                className="flex flex-col gap-2 text-left"
+                className="flex flex-col gap-1.5 text-left sm:gap-2"
               >
                 <div
                   className={cn(
-                    "rounded-lg overflow-hidden transition-shadow",
+                    "overflow-hidden rounded-xl transition-shadow",
                     "ring-1 ring-line hover:ring-2 hover:ring-brand/40",
                     "shadow-sm hover:shadow-md",
                   )}

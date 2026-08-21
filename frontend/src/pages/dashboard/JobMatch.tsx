@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, Check, Loader2, Plus } from "lucide-react";
+import { Check, Loader2, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "../../components/ui/button";
 import { DotRating } from "../../components/ui/DotRating";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
 import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
 import DashboardSteps from "../../components/dashboard/DashboardSteps";
+import StepActions from "../../components/dashboard/StepActions";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
+import { useJourneyStore, useJourneyHydrated } from "../../store/journeyStore";
 import { getResumesByUser, saveResumeToDashboard } from "../../lib/api";
 import {
   computeJobMatch,
@@ -55,9 +57,18 @@ export default function JobMatch() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const persistTimerRef = useRef<number | null>(null);
+  const restoredForRef = useRef<string | null>(null);
+  const journeyHydrated = useJourneyHydrated();
+  const lastResumeId = useJourneyStore((s) =>
+    s.lastUserId === user?.id ? s.lastResumeId : null,
+  );
+  const reachStep = useJourneyStore((s) => s.reachStep);
+  const saveDraft = useJourneyStore((s) => s.saveDraft);
+  const getDraft = useJourneyStore((s) => s.getDraft);
 
   useEffect(() => {
     if (!user) return;
+    if (!journeyHydrated) return;
     if (selectedResume?.id) {
       setLoadingResume(false);
       return;
@@ -68,7 +79,10 @@ export default function JobMatch() {
     getResumesByUser(user.id)
       .then((data) => {
         if (cancelled) return;
-        if (data[0]?.resume) setResume(data[0].resume);
+        const preferred =
+          data.find((item) => item.resume.id === lastResumeId)?.resume ??
+          data[0]?.resume;
+        if (preferred) setResume(preferred);
         else navigate("/select-resume");
       })
       .catch(() => {
@@ -81,7 +95,33 @@ export default function JobMatch() {
     return () => {
       cancelled = true;
     };
-  }, [user, selectedResume?.id, setResume, navigate]);
+  }, [user, selectedResume?.id, setResume, navigate, journeyHydrated, lastResumeId]);
+
+  useEffect(() => {
+    if (!journeyHydrated || !user || !selectedResume?.id) return;
+    if (restoredForRef.current === selectedResume.id) return;
+    restoredForRef.current = selectedResume.id;
+
+    const draft = getDraft(user.id, selectedResume.id);
+    if (draft.jobText) {
+      setJobText(draft.jobText);
+      if (draft.hasResults) {
+        const match = computeJobMatch(draft.jobText, selectedResume);
+        setKeywordCandidates(match.missing);
+        setHasResults(true);
+      }
+    }
+    reachStep(user.id, selectedResume.id, 1);
+  }, [journeyHydrated, user, selectedResume, getDraft, reachStep]);
+
+  useEffect(() => {
+    if (!user || !selectedResume?.id) return;
+    if (restoredForRef.current !== selectedResume.id) return;
+    saveDraft(user.id, selectedResume.id, {
+      jobText,
+      hasResults,
+    });
+  }, [user, selectedResume?.id, jobText, hasResults, saveDraft]);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -203,7 +243,10 @@ export default function JobMatch() {
       applyKeywords(remaining);
       return;
     }
-    navigate("/interview-prep");
+    if (user && selectedResume.id) {
+      reachStep(user.id, selectedResume.id, 2);
+    }
+    navigate("/job-match/interview-prep");
   };
 
   const handleAnalyze = async () => {
@@ -242,30 +285,45 @@ export default function JobMatch() {
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
 
   return (
-    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-5 min-[375px]:px-4 sm:px-6 sm:py-10">
-      <div className="space-y-2 sm:space-y-3">
-        <h1 className="break-words text-xl font-bold leading-tight min-[375px]:text-2xl sm:text-3xl">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7">
+      <div className="space-y-1.5 sm:space-y-2">
+        <h1 className="break-words text-xl font-bold leading-tight min-[375px]:text-[1.65rem] sm:text-2xl">
           <span className="text-text">
             {t("dashboard.welcomeTitle", { name: "" })}
           </span>{" "}
           <span className="break-words italic text-brand">{fullName}</span>
         </h1>
-        <p className="max-w-2xl text-sm leading-6 text-text-secondary sm:text-base">
+        <p className="max-w-2xl text-sm leading-5 text-text-secondary sm:leading-6">
           {t("dashboard.subtitle")}
         </p>
       </div>
 
-      <div className="mt-5 sm:mt-8">
+      <div className="mt-4 min-w-0 sm:mt-5">
         <DashboardSteps activeIndex={1} />
       </div>
 
-      <div className="mt-6 grid min-w-0 gap-4 sm:mt-8 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-start lg:gap-6">
-        <section
-          className={cn(
-            "order-2 min-w-0 rounded-[20px] border bg-bg p-4 shadow-sm min-[375px]:rounded-[24px] min-[375px]:p-5 sm:rounded-[32px] sm:p-6 lg:p-8",
-            result && !analyzing ? "border-brand/40" : "border-brand/15",
-          )}
-        >
+      <div className="mt-4 flex items-center gap-4 rounded-xl border border-line bg-surface-2/30 px-3 py-2.5 sm:mt-5 sm:px-4">
+        <ProgressStrip
+          subStep={subStep}
+          pasteLabel={t("jobMatch.subSteps.paste")}
+          analysisLabel={t("jobMatch.subSteps.analysis")}
+          nowLabel={t("jobMatch.now")}
+          doneLabel={t("jobMatch.done")}
+        />
+        <MatchChip
+          score={matchScore}
+          analyzing={analyzing}
+          ready={!!result && !analyzing}
+          label={t("jobMatch.matchLabel")}
+        />
+      </div>
+
+      <section
+        className={cn(
+          "mt-3 min-w-0 rounded-2xl border bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:mt-4 sm:rounded-[20px] sm:p-5 lg:p-6",
+          result && !analyzing ? "border-brand/40" : "border-brand/15",
+        )}
+      >
           <AnimatePresence mode="wait">
             {analyzing ? (
               <motion.div
@@ -307,19 +365,31 @@ export default function JobMatch() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <span className="inline-flex max-w-full rounded-full bg-brand/10 px-3.5 py-1.5 text-[11px] font-semibold text-brand min-[375px]:px-4 min-[375px]:text-xs">
+                <span className="inline-flex max-w-full rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-semibold text-brand min-[375px]:px-3 min-[375px]:text-[11px]">
                   {t("jobMatch.stepBadge")}
                 </span>
 
-                <h2 className="mt-4 break-words text-xl font-extrabold tracking-tight leading-tight text-text min-[375px]:text-2xl sm:text-3xl">
+                <h2 className="mt-2.5 text-base font-extrabold tracking-tight text-text min-[375px]:text-lg sm:text-xl">
                   {t("jobMatch.title")}
                 </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-text-secondary">
+                <p className="mt-1 max-w-lg text-[13px] leading-5 text-text-secondary sm:text-sm sm:leading-6">
                   {t("jobMatch.description")}
                 </p>
 
-                <div className="mt-5 grid min-w-0 gap-5 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_148px] lg:items-start">
-                  <div className="relative min-w-0">
+                <div className="mt-3.5 space-y-3 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start lg:gap-x-5 lg:gap-y-1.5 lg:space-y-0">
+                  <p
+                    className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary lg:block"
+                    aria-hidden
+                  >
+                    <span className="invisible">
+                      {t("jobMatch.comparingAgainst")}
+                    </span>
+                  </p>
+                  <p className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary lg:block">
+                    {t("jobMatch.comparingAgainst")}
+                  </p>
+
+                  <div className="relative min-w-0 h-40 min-[375px]:h-44 sm:h-52 lg:h-[calc(12rem*297/210)]">
                     <textarea
                       value={jobText}
                       onChange={(e) => {
@@ -331,12 +401,12 @@ export default function JobMatch() {
                           setAppliedSkills({});
                         }
                       }}
-                      rows={10}
+                      rows={8}
                       placeholder={t("jobMatch.placeholder")}
                       className={cn(
-                        "w-full min-h-[220px] resize-y rounded-2xl border bg-surface-2/60 p-3.5 pb-9",
-                        "sm:min-h-[300px] sm:p-4 sm:pb-10",
-                        "text-sm leading-relaxed text-text",
+                        "absolute inset-0 size-full resize-none rounded-2xl border bg-white p-3 pb-8",
+                        "text-[16px] leading-relaxed text-text sm:p-4 sm:pb-10 sm:text-sm",
+                        "dark:bg-surface-2/60",
                         "placeholder:text-text-placeholder",
                         "focus:outline-none focus:ring-2 focus:ring-ring/50",
                         "transition-colors",
@@ -345,192 +415,61 @@ export default function JobMatch() {
                           : "border-line focus:border-ring",
                       )}
                     />
-                    <div className="pointer-events-none absolute inset-x-3 bottom-2.5 flex items-center justify-between gap-2 text-[11px] text-text-secondary sm:inset-x-4">
-                      <span>
-                        {t("jobMatch.charCount", { count: charCount })}
-                        {charCount > 0 && charCount < MIN_CHARS && (
-                          <span className="ml-1.5 text-text-placeholder">
-                            {t("jobMatch.minChars", { count: MIN_CHARS })}
-                          </span>
-                        )}
-                      </span>
+                    <div className="pointer-events-none absolute inset-x-3 bottom-2 text-[11px] text-text-secondary sm:inset-x-4 sm:bottom-2.5">
+                      {t("jobMatch.charCount", { count: charCount })}
+                      {charCount > 0 && charCount < MIN_CHARS && (
+                        <span className="ml-1.5 text-text-placeholder">
+                          {t("jobMatch.minChars", { count: MIN_CHARS })}
+                        </span>
+                      )}
                     </div>
-                    {error && (
-                      <p className="mt-2 text-xs text-destructive">{error}</p>
-                    )}
                   </div>
 
-                  <div className="hidden min-w-0 lg:block">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary">
-                      {t("jobMatch.comparingAgainst")}
-                    </p>
+                  <div className="min-w-0">
                     <button
                       type="button"
                       onClick={() => setPreviewOpen(true)}
-                      className="group w-full overflow-hidden rounded-xl border border-line bg-surface-2 p-2 text-left shadow-sm transition-colors hover:border-brand/40 cursor-zoom-in"
+                    className="group flex w-full cursor-zoom-in items-center gap-3 rounded-2xl border border-line bg-surface-2/40 p-3 text-left transition-colors hover:border-brand/40 lg:block lg:border-0 lg:bg-transparent lg:p-0"
+                      aria-label={t("jobMatch.results.viewPreview")}
                     >
-                      <ScaledResumePreview resume={selectedResume} />
-                      <p className="mt-2 truncate px-0.5 text-center text-[11px] font-medium text-text">
-                        {resumeLabel}
-                      </p>
-                      <p className="mt-0.5 text-center text-[10px] text-text-secondary group-hover:text-brand">
-                        {t("jobMatch.results.viewPreview")}
-                      </p>
+                      <div className="w-14 shrink-0 overflow-hidden rounded-lg border border-line bg-bg shadow-sm min-[375px]:w-[4.25rem] lg:w-full lg:rounded-2xl lg:shadow-sm lg:transition-colors lg:group-hover:border-brand/40">
+                        <ScaledResumePreview
+                          resume={selectedResume}
+                          className="rounded-none border-0 shadow-none"
+                        />
+                      </div>
+                      <div className="min-w-0 lg:hidden">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary">
+                          {t("jobMatch.comparingAgainst")}
+                        </p>
+                        <p className="mt-0.5 truncate text-sm font-medium text-text">
+                          {resumeLabel}
+                        </p>
+                        <p className="mt-0.5 text-xs text-brand">
+                          {t("jobMatch.results.viewPreview")}
+                        </p>
+                      </div>
                     </button>
                   </div>
+
+                  {error && (
+                    <p className="text-xs text-destructive lg:col-start-1">
+                      {error}
+                    </p>
+                  )}
                 </div>
 
-                <div className="mt-4 lg:hidden">
-                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary">
-                    {t("jobMatch.comparingAgainst")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewOpen(true)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-3 text-left transition-colors hover:border-brand/40 cursor-zoom-in"
-                  >
-                    <div className="w-14 shrink-0 overflow-hidden rounded-lg shadow-sm min-[375px]:w-[4.25rem]">
-                      <ScaledResumePreview resume={selectedResume} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-text">
-                        {resumeLabel}
-                      </p>
-                      <p className="mt-0.5 text-xs text-brand">
-                        {t("jobMatch.results.viewPreview")}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-
-                <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                  <Button
-                    variant="outline"
-                    size="compact"
-                    className="h-11 w-full whitespace-normal rounded-full sm:h-auto sm:w-auto"
-                    onClick={() => navigate("/dashboard")}
-                  >
-                    <ArrowLeft size={16} className="shrink-0" />
-                    {t("jobMatch.back")}
-                  </Button>
-
-                  <Button
-                    size="compact"
-                    className="h-11 w-full whitespace-normal rounded-full sm:h-auto sm:w-auto"
-                    disabled={!canAnalyze}
-                    onClick={handleAnalyze}
-                  >
-                    {t("jobMatch.analyze")}
-                    <ArrowRight size={16} className="shrink-0" />
-                  </Button>
-                </div>
+                <StepActions
+                  backLabel={t("jobMatch.back")}
+                  nextLabel={t("jobMatch.analyze")}
+                  onBack={() => navigate("/dashboard")}
+                  onNext={handleAnalyze}
+                  nextDisabled={!canAnalyze}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </section>
-
-        <aside className="order-1 min-w-0 space-y-3 sm:space-y-4">
-          <div className="grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-2xl border border-line bg-bg p-3 sm:rounded-[20px] sm:p-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-                {t("jobMatch.progressLabel")}
-              </p>
-              <SubStepRow
-                index={1}
-                label={t("jobMatch.subSteps.paste")}
-                active={subStep === 0}
-                done={subStep > 0}
-                nowLabel={t("jobMatch.now")}
-                doneLabel={t("jobMatch.done")}
-                connected
-              />
-              <SubStepRow
-                index={2}
-                label={t("jobMatch.subSteps.analysis")}
-                active={subStep === 1}
-                done={false}
-                nowLabel={t("jobMatch.now")}
-                doneLabel={t("jobMatch.done")}
-                showBar={subStep === 1}
-                barAnimated={analyzing}
-              />
-            </div>
-
-            <div
-              className={cn(
-                "flex flex-col rounded-2xl border border-line bg-bg p-4 sm:rounded-[20px] sm:p-5",
-                result && !analyzing ? "items-stretch text-left" : "items-center text-center",
-              )}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-                {t("jobMatch.matchLabel")}
-              </p>
-              {result && !analyzing ? (
-                <>
-                  <p className="mt-3 text-4xl font-extrabold tabular-nums tracking-tight text-text sm:text-5xl">
-                    {matchScore}%
-                  </p>
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-                    <motion.div
-                      className="h-full rounded-full bg-brand"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${matchScore}%` }}
-                      transition={{ type: "spring", stiffness: 60, damping: 16 }}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="relative mt-3 size-[84px] sm:size-[96px]">
-                    <svg
-                      viewBox="0 0 96 96"
-                      className="size-full -rotate-90"
-                      aria-hidden
-                    >
-                      <circle
-                        cx="48"
-                        cy="48"
-                        r={GAUGE_RADIUS}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        className="text-line"
-                      />
-                      <motion.circle
-                        cx="48"
-                        cy="48"
-                        r={GAUGE_RADIUS}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={GAUGE_CIRCUMFERENCE}
-                        initial={{ strokeDashoffset: GAUGE_CIRCUMFERENCE }}
-                        animate={{
-                          strokeDashoffset: GAUGE_CIRCUMFERENCE,
-                        }}
-                        className="text-line"
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-xl font-bold tabular-nums sm:text-2xl">
-                      {analyzing ? (
-                        <Loader2 size={22} className="animate-spin text-brand" />
-                      ) : (
-                        "—"
-                      )}
-                    </span>
-                  </div>
-                  <p className="mt-3 max-w-[16rem] text-xs leading-5 text-text-secondary">
-                    {analyzing
-                      ? t("jobMatch.analyzingTitle")
-                      : t("jobMatch.matchHint")}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </aside>
-      </div>
 
       <ResumePreviewOverlay
         resume={selectedResume}
@@ -592,8 +531,8 @@ function ResultsPanel({
         {t("jobMatch.results.description", { name: resumeLabel })}
       </p>
 
-      <div className="mt-5 grid min-w-0 gap-3 sm:mt-6 sm:grid-cols-3">
-        <div className="flex flex-col items-center rounded-2xl border border-line bg-surface-2/40 p-4 text-center">
+      <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:mt-6 sm:grid-cols-3">
+        <div className="flex flex-col items-center rounded-2xl border border-line bg-surface-2/40 p-4 text-center min-[400px]:col-span-2 sm:col-span-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
             {t("jobMatch.results.currentMatch")}
           </p>
@@ -819,26 +758,12 @@ function ResultsPanel({
         </button>
       </div>
 
-      <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <Button
-          variant="ghost"
-          size="compact"
-          className="h-11 w-full whitespace-normal rounded-full text-text-secondary sm:h-auto sm:w-auto"
-          onClick={onBack}
-        >
-          <ArrowLeft size={16} className="shrink-0" />
-          {t("jobMatch.results.backToJob")}
-        </Button>
-
-        <Button
-          size="compact"
-          className="h-11 w-full whitespace-normal rounded-full sm:h-auto sm:w-auto"
-          onClick={onGetSuggestions}
-        >
-          {t("jobMatch.results.getSuggestions")}
-          <ArrowRight size={16} className="shrink-0" />
-        </Button>
-      </div>
+      <StepActions
+        backLabel={t("jobMatch.results.backToJob")}
+        nextLabel={t("jobMatch.results.getSuggestions")}
+        onBack={onBack}
+        onNext={onGetSuggestions}
+      />
     </div>
   );
 }
@@ -908,7 +833,7 @@ function AnalyzingPanel({ activePhase }: { activePhase: number }) {
             <span className="absolute inset-0 rounded-full border-2 border-brand/15" />
             <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-brand border-r-brand/40" />
           </span>
-          <h2 className="text-base font-bold tracking-tight text-text sm:text-lg">
+          <h2 className="text-base font-bold tracking-tight text-text min-[375px]:text-lg">
             {t("jobMatch.analyzingTitle")}
           </h2>
         </div>
@@ -1142,97 +1067,103 @@ function DocCard({
   );
 }
 
-function SubStepRow({
-  index,
-  label,
-  active,
-  done,
+function ProgressStrip({
+  subStep,
+  pasteLabel,
+  analysisLabel,
   nowLabel,
   doneLabel,
-  connected = false,
-  showBar = false,
-  barAnimated = false,
 }: {
-  index: number;
-  label: string;
-  active: boolean;
-  done: boolean;
+  subStep: number;
+  pasteLabel: string;
+  analysisLabel: string;
   nowLabel: string;
   doneLabel: string;
-  connected?: boolean;
-  showBar?: boolean;
-  barAnimated?: boolean;
 }) {
+  const steps = [
+    { index: 1, label: pasteLabel, active: subStep === 0, done: subStep > 0 },
+    {
+      index: 2,
+      label: analysisLabel,
+      active: subStep === 1,
+      done: false,
+    },
+  ];
+
   return (
-    <div className={cn("flex gap-2.5 min-[375px]:gap-3", connected && "mb-1")}>
-      <div className="flex flex-col items-center">
-        <span
-          className={cn(
-            "flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-            done
-              ? "bg-success text-white"
-              : active
-                ? "bg-brand text-white"
-                : "border border-line text-text-secondary",
-          )}
-        >
-          {index}
-        </span>
-        {connected && (
-          <span
-            className={cn(
-              "mt-1 w-0.5 flex-1 min-h-4 rounded-full",
-              done ? "bg-success/60" : "bg-line",
-            )}
-          />
-        )}
-      </div>
-      <div className="mb-1 min-w-0 flex-1">
-        <div
-          className={cn(
-            "flex items-center gap-2 rounded-xl px-2.5 py-2",
-            active && "bg-brand/10",
-          )}
-        >
-          <span
-            className={cn(
-              "min-w-0 flex-1 text-xs font-medium leading-snug min-[375px]:text-sm",
-              done ? "text-text" : active ? "text-brand" : "text-text-secondary",
-            )}
-          >
-            {label}
-          </span>
-          {done && (
-            <span className="hidden shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success min-[400px]:inline">
-              {doneLabel}
+    <ol className="flex min-w-0 flex-1 items-center gap-2.5">
+      {steps.map((step, i) => (
+        <li key={step.index} className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                step.done
+                  ? "bg-success text-white"
+                  : step.active
+                    ? "bg-brand text-white"
+                    : "border border-line bg-bg text-text-secondary",
+              )}
+            >
+              {step.done ? <Check size={11} strokeWidth={3} /> : step.index}
             </span>
-          )}
-          {active && (
-            <span className="hidden shrink-0 rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white min-[400px]:inline">
-              {nowLabel}
+            <span
+              className={cn(
+                "truncate text-xs font-medium",
+                step.active || step.done ? "text-text" : "text-text-secondary",
+              )}
+            >
+              {step.label}
             </span>
-          )}
-        </div>
-        {showBar && (
-          <div className="mx-2.5 mt-1 h-0.5 overflow-hidden rounded-full bg-brand/15">
-            <motion.div
-              className="h-full rounded-full bg-brand"
-              initial={{ width: "18%" }}
-              animate={
-                barAnimated
-                  ? { width: ["22%", "78%", "48%"] }
-                  : { width: "72%" }
-              }
-              transition={
-                barAnimated
-                  ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-                  : { type: "spring", stiffness: 70, damping: 18 }
-              }
-            />
+            {step.active && (
+              <span className="hidden shrink-0 rounded-full bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand sm:inline">
+                {nowLabel}
+              </span>
+            )}
+            {step.done && (
+              <span className="hidden shrink-0 rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-success sm:inline">
+                {doneLabel}
+              </span>
+            )}
           </div>
-        )}
-      </div>
+          {i < steps.length - 1 && (
+            <span
+              className={cn(
+                "h-px w-4 shrink-0 sm:w-6",
+                steps[i].done ? "bg-success/60" : "bg-line",
+              )}
+            />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function MatchChip({
+  score,
+  analyzing,
+  ready,
+  label,
+}: {
+  score: number;
+  analyzing: boolean;
+  ready: boolean;
+  label: string;
+}) {
+  const shown = ready ? score : 0;
+
+  return (
+    <div className="shrink-0 border-l border-line pl-3 leading-none">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+        {label}
+      </p>
+      <p className="mt-0.5 text-2xl font-extrabold tabular-nums tracking-tight text-brand">
+        {analyzing ? "…" : `${shown}%`}
+      </p>
     </div>
   );
 }
+
+
 

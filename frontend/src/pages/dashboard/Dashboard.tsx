@@ -17,6 +17,7 @@ import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
 import DashboardSteps from "../../components/dashboard/DashboardSteps";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
+import { useJourneyStore, journeyContinuePath } from "../../store/journeyStore";
 import { getResumesByUser, type DashboardResume } from "../../lib/api";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
 import type { ScoreBand } from "../../lib/resumeCompleteness";
@@ -172,6 +173,11 @@ export default function Dashboard() {
   const setResume = useResumeStore((s) => s.setResume);
   const selectedResume = useResumeStore((s) => s.resume);
 
+  const lastResumeId = useJourneyStore((s) =>
+    s.lastUserId === user?.id ? s.lastResumeId : null,
+  );
+  const rememberResume = useJourneyStore((s) => s.rememberResume);
+
   const [resumes, setResumes] = useState<DashboardResume[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -203,18 +209,18 @@ export default function Dashboard() {
   }, [user, loadResumes]);
 
   const isLoading = resumes === null && !loadError;
-
-  // Prefer whichever resume the user explicitly picked in /select-resume
-  // (held in the shared resume store — the same field the builder handoff
-  // and MyResumes' "continue" already use), but only if it's still present
-  // in the freshly-fetched list. This guards against showing a stale
-  // selection for a resume that's since been deleted or renamed.
   const currentResume =
     (selectedResume &&
       resumes?.some((r) => r.resume.id === selectedResume.id) &&
       selectedResume) ||
+    (lastResumeId &&
+      resumes?.find((r) => r.resume.id === lastResumeId)?.resume) ||
     resumes?.[0]?.resume ||
     null;
+
+  useEffect(() => {
+    if (user && currentResume?.id) rememberResume(user.id, currentResume.id);
+  }, [user, currentResume?.id, rememberResume]);
 
   const completion = useMemo(
     () => (currentResume ? computeCompleteness(currentResume) : null),
@@ -269,6 +275,11 @@ export default function Dashboard() {
     return t("dashboard.currentResumeBodyNeedsWork");
   }, [currentResume, isComplete, score, t]);
 
+  const journeyStep = useJourneyStore((s) => {
+    if (!user?.id || !currentResume?.id) return 0;
+    return s.byKey[`${user.id}:${currentResume.id}`]?.step ?? 0;
+  });
+
   const handleFixMissing = () => {
     if (!currentResume) {
       navigate("/marketplace");
@@ -286,7 +297,16 @@ export default function Dashboard() {
     }
 
     setResume(currentResume);
-    navigate("/job-match");
+
+    const go = () => {
+      const step = useJourneyStore
+        .getState()
+        .getDraft(user?.id, currentResume.id).step;
+      navigate(journeyContinuePath(step));
+    };
+
+    if (useJourneyStore.persist.hasHydrated()) go();
+    else useJourneyStore.persist.onFinishHydration(go);
   };
 
   const handleChangeResume = () => {
@@ -309,7 +329,7 @@ export default function Dashboard() {
           HEADER
       ============================================================ */}
       <motion.div variants={fadeUpVariants} className="space-y-2 sm:space-y-3">
-        <h1 className="text-2xl min-[375px]:text-3xl font-bold leading-tight">
+        <h1 className="text-2xl font-bold leading-tight min-[375px]:text-[1.65rem] sm:text-3xl">
           <span className="text-text">
             {t("dashboard.welcomeTitle", {
               name: "",
@@ -328,9 +348,9 @@ export default function Dashboard() {
       ============================================================ */}
       <motion.div
         variants={fadeUpVariants}
-        className={cn("mt-5 sm:mt-8", "sm:-mx-0")}
+        className={cn("mt-5 min-w-0 sm:mt-8")}
       >
-        <DashboardSteps activeIndex={0} />
+        <DashboardSteps activeIndex={currentResume ? journeyStep : 0} />
       </motion.div>
 
       {/* ============================================================
@@ -466,22 +486,17 @@ export default function Dashboard() {
               <div
                 className={cn(
                   "w-full min-w-0 flex-1",
-                  "rounded-[20px]",
-                  "min-[375px]:rounded-[24px]",
-                  "sm:rounded-[32px]",
+                  "rounded-2xl sm:rounded-[28px] lg:rounded-[32px]",
                   "border border-brand/15",
                   "bg-bg",
-                  "p-4",
-                  "min-[375px]:p-5",
-                  "sm:p-6",
-                  "lg:p-8",
+                  "p-3.5 min-[375px]:p-4 sm:p-6 lg:p-8",
                   "shadow-sm",
                 )}
               >
                 <div
                   className={cn(
                     "grid min-w-0",
-                    "gap-7 min-[375px]:gap-8",
+                    "gap-4 min-[375px]:gap-5 sm:gap-8",
                     "lg:grid-cols-[1.3fr_1fr_auto]",
                     "lg:items-center",
                   )}
@@ -492,7 +507,7 @@ export default function Dashboard() {
                   <div
                     className={cn(
                       "min-w-0",
-                      "space-y-4 sm:space-y-5",
+                      "space-y-3 sm:space-y-5",
                       "text-center lg:text-left",
                     )}
                   >
@@ -503,8 +518,8 @@ export default function Dashboard() {
                         "max-w-full",
                         "rounded-full",
                         "bg-brand/10",
-                        "px-3.5 py-1.5",
-                        "min-[375px]:px-4",
+                        "px-3 py-1",
+                        "min-[375px]:px-3.5 min-[375px]:py-1.5",
                         "text-[11px] min-[375px]:text-xs",
                         "font-semibold",
                         "text-brand",
@@ -517,8 +532,8 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <h2
                         className={cn(
-                          "text-xl",
-                          "min-[375px]:text-2xl",
+                          "text-lg",
+                          "min-[375px]:text-xl",
                           "sm:text-3xl",
                           "font-extrabold",
                           "tracking-tight",
@@ -534,8 +549,9 @@ export default function Dashboard() {
                         className={cn(
                           "mx-auto lg:mx-0",
                           "max-w-sm",
-                          "text-sm",
-                          "leading-6",
+                          "text-[13px]",
+                          "leading-5",
+                          "sm:text-sm sm:leading-6",
                           "text-text-secondary",
                           "break-words",
                         )}
@@ -547,65 +563,33 @@ export default function Dashboard() {
                     {/* ==================================================
                         ACTION BUTTONS
                     ================================================== */}
-                    <div
-                      className={cn(
-                        "flex flex-col",
-                        "min-[400px]:flex-row",
-                        "items-stretch min-[400px]:items-center",
-                        "justify-center lg:justify-start",
-                        "gap-2.5",
-                        "pt-1",
-                      )}
-                    >
-                      {/* Fix / Create Resume */}
-                      <motion.div
-                        whileHover={{
-                          scale: 1.03,
-                        }}
-                        whileTap={{
-                          scale: 0.97,
-                        }}
-                        className="w-full min-[400px]:w-auto"
+                    <div className="grid grid-cols-2 gap-2 pt-0.5 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-2.5 lg:justify-start">
+                      <Button
+                        className="h-9 w-full rounded-full px-3 text-[13px] sm:w-auto sm:px-4"
+                        onClick={handleFixMissing}
+                        size="compact"
                       >
-                        <Button
-                          className="w-full min-[400px]:w-auto rounded-full "
-                          onClick={handleFixMissing}
-                          size={"compact"}
-                        >
-                          {currentResume
-                            ? isComplete
-                              ? t("dashboard.editResume")
-                              : t("dashboard.fixMissing")
-                            : t("dashboard.createResume")}
-                        </Button>
-                      </motion.div>
-
-                      {/* Change Resume */}
-                      <motion.div
-                        whileHover={{
-                          scale: 1.03,
-                        }}
-                        whileTap={{
-                          scale: 0.97,
-                        }}
-                        className="w-full min-[400px]:w-auto"
+                        {currentResume
+                          ? isComplete
+                            ? t("dashboard.editResume")
+                            : t("dashboard.fixMissing")
+                          : t("dashboard.createResume")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="compact"
+                        className="h-9 w-full rounded-full px-3 text-[13px] sm:w-auto sm:px-4"
+                        onClick={handleChangeResume}
                       >
-                        <Button
-                          variant="outline"
-                          size={"compact"}
-                          className="w-full min-[400px]:w-auto rounded-full"
-                          onClick={handleChangeResume}
-                        >
-                          {t("dashboard.changeResume")}
-                        </Button>
-                      </motion.div>
+                        {t("dashboard.changeResume")}
+                      </Button>
                     </div>
                   </div>
 
                   {/* ==================================================
                       RESUME PREVIEW
                   ================================================== */}
-                  <div className="relative mx-auto w-full max-w-[240px] min-[375px]:max-w-[250px] sm:max-w-[220px] overflow-visible">
+                  <div className="relative mx-auto w-full max-w-[11.5rem] min-[375px]:max-w-[13rem] sm:max-w-[220px] overflow-visible">
                     {currentResume ? (
                       <button
                         type="button"
@@ -692,29 +676,14 @@ export default function Dashboard() {
             {/* ========================================================
                 CONTINUE BUTTON
             ======================================================== */}
-            <div
-              className={cn(
-                "mt-5 sm:mt-6",
-                "flex justify-center lg:justify-end",
-              )}
-            >
-              <motion.div
-                whileHover={{
-                  scale: 1.03,
-                }}
-                whileTap={{
-                  scale: 0.97,
-                }}
-                className="w-full sm:w-auto"
+            <div className="mt-4 flex justify-center sm:mt-6 lg:justify-end">
+              <Button
+                size="compact"
+                className="h-9 w-full max-w-[16rem] rounded-full sm:w-auto sm:px-6"
+                onClick={handleContinue}
               >
-                <Button
-                  size="compact"
-                  className="w-full sm:w-auto rounded-full"
-                  onClick={handleContinue}
-                >
-                  {t("dashboard.continue")}
-                </Button>
-              </motion.div>
+                {t("dashboard.continue")}
+              </Button>
             </div>
           </motion.div>
         )}
