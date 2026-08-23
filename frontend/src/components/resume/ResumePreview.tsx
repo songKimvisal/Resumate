@@ -70,24 +70,72 @@ interface RichTextFragment {
   tag: string;
 }
 
+function splitBrParagraph(el: Element): RichTextFragment[] | null {
+  if (el.tagName !== "P" || !el.querySelector("br")) return null;
+  const lines: RichTextFragment[] = [];
+  let buf = "";
+  const flush = () => {
+    const text = buf.replace(/<br\s*\/?>/gi, "").trim();
+    if (text) lines.push({ html: `<p>${text}</p>`, tag: "P" });
+    buf = "";
+  };
+  Array.from(el.childNodes).forEach((child) => {
+    if (
+      child.nodeType === Node.ELEMENT_NODE &&
+      (child as Element).tagName === "BR"
+    ) {
+      flush();
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      buf += (child as Element).outerHTML;
+    } else {
+      buf += child.textContent || "";
+    }
+  });
+  flush();
+  return lines.length > 1 ? lines : null;
+}
+
 function splitRichText(html: string): RichTextFragment[] {
   const container = document.createElement("div");
   container.innerHTML = html;
   const fragments: RichTextFragment[] = [];
-  Array.from(container.children).forEach((el) => {
+
+  const consume = (el: Element) => {
     if (
-      (el.tagName === "UL" || el.tagName === "OL") &&
-      el.children.length > 1
+      (el.tagName === "DIV" || el.tagName === "SECTION") &&
+      el.children.length > 0
     ) {
+      Array.from(el.children).forEach(consume);
+      return;
+    }
+    if (el.tagName === "UL" || el.tagName === "OL") {
       Array.from(el.children).forEach((li) => {
         const wrapper = document.createElement(el.tagName);
         wrapper.appendChild(li.cloneNode(true));
         fragments.push({ html: wrapper.outerHTML, tag: el.tagName });
       });
-    } else {
-      fragments.push({ html: el.outerHTML, tag: el.tagName });
+      return;
     }
-  });
+    const brLines = splitBrParagraph(el);
+    if (brLines) {
+      fragments.push(...brLines);
+      return;
+    }
+    fragments.push({ html: el.outerHTML, tag: el.tagName });
+  };
+
+  if (container.children.length === 0) {
+    const lines = (container.textContent || "")
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (lines.length > 1) {
+      return lines.map((line) => ({ html: `<p>${line}</p>`, tag: "P" }));
+    }
+    return [{ html, tag: "" }];
+  }
+
+  Array.from(container.children).forEach(consume);
   return fragments.length > 0 ? fragments : [{ html, tag: "" }];
 }
 
@@ -95,6 +143,8 @@ interface Block {
   key: string;
   gapBefore: number;
   node: React.ReactNode;
+  /** Skills/languages share a two-column row and paginate independently. */
+  lane?: "skills" | "languages";
 }
 const SIDEBAR_WIDTH_FRACTION = 0.34;
 interface Theme {
@@ -416,30 +466,26 @@ export default function ResumePreview({
 
     if (!showSidebar) {
       const skillsLanguageBlocks: Block[] = [];
-      if (skills.length > 0 || languages.length > 0) {
-        skillsLanguageBlocks.push({
-          key: "skills-languages",
-          gapBefore: gapSection,
-          node: (
-            <div className="grid grid-cols-2 gap-6">
-              {skills.length > 0 && (
-                <Section title="Skills" theme={theme}>
-                  <SkillsBody skills={skills} theme={theme} accent={accent} />
-                </Section>
-              )}
-              {languages.length > 0 && (
-                <Section title="Languages" theme={theme}>
-                  <LanguagesBody
-                    languages={languages}
-                    theme={theme}
-                    accent={accent}
-                  />
-                </Section>
-              )}
-            </div>
-          ),
+      skills
+        .filter((s) => s.name)
+        .forEach((s, i) => {
+          skillsLanguageBlocks.push({
+            key: `skill-${s.id}`,
+            gapBefore: i === 0 ? gapSection : 4,
+            lane: "skills",
+            node: <SkillLine skill={s} theme={theme} accent={accent} />,
+          });
         });
-      }
+      languages
+        .filter((l) => l.name)
+        .forEach((l, i) => {
+          skillsLanguageBlocks.push({
+            key: `lang-${l.id}`,
+            gapBefore: i === 0 ? gapSection : 4,
+            lane: "languages",
+            node: <LanguageLine language={l} theme={theme} accent={accent} />,
+          });
+        });
 
       const referencesBlocks: Block[] = [];
       if (includeReferences && references.length > 0) {
@@ -474,34 +520,44 @@ export default function ResumePreview({
       // placed, so only the ones the user left in the main column land here
       // — whatever's in `sidebarSectionKeys` renders inside SidebarColumn
       const skillsBlocks: Block[] = [];
-      if (skills.length > 0) {
-        skillsBlocks.push({
-          key: "skills",
-          gapBefore: gapSection,
-          node: (
-            <Section title="Skills" theme={theme}>
-              <SkillsBody skills={skills} theme={theme} accent={accent} />
-            </Section>
-          ),
+      skills
+        .filter((s) => s.name)
+        .forEach((s, i) => {
+          const line = <SkillLine skill={s} theme={theme} accent={accent} />;
+          skillsBlocks.push({
+            key: `skill-${s.id}`,
+            gapBefore: i === 0 ? gapSection : 4,
+            node:
+              i === 0 ? (
+                <Section title="Skills" theme={theme}>
+                  {line}
+                </Section>
+              ) : (
+                line
+              ),
+          });
         });
-      }
 
       const languageBlocks: Block[] = [];
-      if (languages.length > 0) {
-        languageBlocks.push({
-          key: "language",
-          gapBefore: gapSection,
-          node: (
-            <Section title="Languages" theme={theme}>
-              <LanguagesBody
-                languages={languages}
-                theme={theme}
-                accent={accent}
-              />
-            </Section>
-          ),
+      languages
+        .filter((l) => l.name)
+        .forEach((l, i) => {
+          const line = (
+            <LanguageLine language={l} theme={theme} accent={accent} />
+          );
+          languageBlocks.push({
+            key: `lang-${l.id}`,
+            gapBefore: i === 0 ? gapSection : 4,
+            node:
+              i === 0 ? (
+                <Section title="Languages" theme={theme}>
+                  {line}
+                </Section>
+              ) : (
+                line
+              ),
+          });
         });
-      }
 
       const referencesBlocks: Block[] = [];
       if (includeReferences && references.length > 0) {
@@ -605,25 +661,12 @@ export default function ResumePreview({
     const firstPageContentHeightPx = topHeaderBanner
       ? contentHeightPx - bannerHeightPx
       : contentHeightPx;
-
-    const result: Block[][] = [[]];
-    let used = 0;
-    for (const b of blocks) {
-      const h = heights[b.key] ?? 0;
-      const currentPage = result[result.length - 1];
-      const isFirstOnPage = currentPage.length === 0;
-      const needed = (isFirstOnPage ? 0 : b.gapBefore) + h;
-      const limit =
-        result.length === 1 ? firstPageContentHeightPx : contentHeightPx;
-      if (!isFirstOnPage && used + needed > limit) {
-        result.push([b]);
-        used = h;
-      } else {
-        currentPage.push(b);
-        used += needed;
-      }
-    }
-    return result;
+    return packPreviewPages(
+      blocks,
+      heights,
+      firstPageContentHeightPx,
+      contentHeightPx,
+    );
   }, [
     blocks,
     heights,
@@ -647,7 +690,7 @@ export default function ResumePreview({
 
   if (useSpecial) {
     return (
-      <div ref={wrapperRef}>
+      <div ref={wrapperRef} className="w-full min-w-0">
         <SpecialPaginatedLayout
           resume={resume}
           pageWidthPx={realPageWidthPx}
@@ -665,16 +708,17 @@ export default function ResumePreview({
   }
 
   return (
-    <div ref={wrapperRef} className="space-y-4">
+    <div ref={wrapperRef} className="w-full min-w-0 space-y-4">
       <div
         ref={measureContainerRef}
         aria-hidden
         style={{
           position: "fixed",
           top: 0,
-          left: -99999,
+          left: 0,
           visibility: "hidden",
           pointerEvents: "none",
+          zIndex: -1,
           width: mainColumnWidthPx - paddingLeftRightPx * 2,
           fontSize,
           fontFamily: theme.fontFamily,
@@ -802,14 +846,7 @@ export default function ResumePreview({
                           : undefined
                       }
                     >
-                      {pageBlocks.map((b, i) => (
-                        <div
-                          key={b.key}
-                          style={{ marginTop: i === 0 ? 0 : b.gapBefore }}
-                        >
-                          {b.node}
-                        </div>
-                      ))}
+                      {renderPreviewPageBlocks(pageBlocks, theme)}
                     </div>
                     {sidebarColumnVisible && sidebarSide === "right" && (
                       <SidebarColumn
@@ -849,6 +886,239 @@ export default function ResumePreview({
         </div>
       ))}
     </div>
+  );
+}
+
+const TWO_COL_HEADING_PX = 28;
+
+function packPreviewPages(
+  blocks: Block[],
+  heights: Record<string, number>,
+  firstLimit: number,
+  nextLimit: number,
+): Block[][] {
+  const pages: Block[][] = [[]];
+  let used = 0;
+  const hOf = (b: Block) => heights[b.key] ?? 0;
+  const limitOf = (index: number) => (index === 0 ? firstLimit : nextLimit);
+
+  const startPage = () => {
+    pages.push([]);
+    used = 0;
+  };
+
+  const takeColumn = (items: Block[], space: number, emptyPage: boolean) => {
+    const taken: Block[] = [];
+    let colUsed = 0;
+    for (const item of items) {
+      const heading = taken.length === 0 ? TWO_COL_HEADING_PX : 0;
+      const gap = taken.length === 0 ? 0 : item.gapBefore;
+      const need = heading + gap + hOf(item);
+      if (taken.length > 0 && colUsed + need > space) break;
+      if (taken.length === 0 && need > space && !emptyPage) break;
+      taken.push(item);
+      colUsed += need;
+    }
+    return { taken, colUsed };
+  };
+
+  let i = 0;
+  while (i < blocks.length) {
+    const block = blocks[i];
+    if (block.lane) {
+      const group: Block[] = [];
+      while (i < blocks.length && blocks[i].lane) {
+        group.push(blocks[i]);
+        i++;
+      }
+      let queue = group;
+      while (queue.length > 0) {
+        const page = pages[pages.length - 1];
+        const empty = page.length === 0;
+        const limit = limitOf(pages.length - 1);
+        const space = empty ? limit : limit - used;
+        if (!empty && space < TWO_COL_HEADING_PX + 16) {
+          startPage();
+          continue;
+        }
+        const skillsQ = queue.filter((b) => b.lane === "skills");
+        const langsQ = queue.filter((b) => b.lane === "languages");
+        const left = takeColumn(skillsQ, space, empty);
+        const right = takeColumn(langsQ, space, empty);
+        if (left.taken.length === 0 && right.taken.length === 0) {
+          if (empty) {
+            page.push(queue[0]);
+            used = hOf(queue[0]);
+            queue = queue.slice(1);
+          } else {
+            startPage();
+          }
+          continue;
+        }
+        const taken = new Set([...left.taken, ...right.taken]);
+        queue.forEach((item) => {
+          if (taken.has(item)) page.push(item);
+        });
+        queue = queue.filter((item) => !taken.has(item));
+        used +=
+          Math.max(left.colUsed, right.colUsed) +
+          (empty ? 0 : (skillsQ[0] || langsQ[0]).gapBefore);
+        if (queue.length > 0) startPage();
+      }
+      continue;
+    }
+
+    const h = hOf(block);
+    const page = pages[pages.length - 1];
+    const first = page.length === 0;
+    const needed = (first ? 0 : block.gapBefore) + h;
+    const limit = limitOf(pages.length - 1);
+    if (!first && used + needed > limit) {
+      startPage();
+      pages[pages.length - 1].push(block);
+      used = h;
+    } else {
+      page.push(block);
+      used += needed;
+    }
+    i += 1;
+  }
+
+  return pages;
+}
+
+function renderPreviewPageBlocks(pageBlocks: Block[], theme: Theme) {
+  const nodes: React.ReactNode[] = [];
+  let i = 0;
+  while (i < pageBlocks.length) {
+    const block = pageBlocks[i];
+    if (block.lane) {
+      const skills: Block[] = [];
+      const langs: Block[] = [];
+      const groupGap = block.gapBefore;
+      while (i < pageBlocks.length && pageBlocks[i].lane) {
+        if (pageBlocks[i].lane === "skills") skills.push(pageBlocks[i]);
+        else langs.push(pageBlocks[i]);
+        i += 1;
+      }
+      nodes.push(
+        <div
+          key={`twocol-${skills[0]?.key ?? ""}-${langs[0]?.key ?? ""}`}
+          className="grid grid-cols-2 gap-6"
+          style={{ marginTop: nodes.length === 0 ? 0 : groupGap }}
+        >
+          <div className="min-w-0 space-y-1">
+            {skills.length > 0 && (
+              <Section title="Skills" theme={theme}>
+                {skills.map((s) => (
+                  <div key={s.key}>{s.node}</div>
+                ))}
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0 space-y-1">
+            {langs.length > 0 && (
+              <Section title="Languages" theme={theme}>
+                {langs.map((s) => (
+                  <div key={s.key}>{s.node}</div>
+                ))}
+              </Section>
+            )}
+          </div>
+        </div>,
+      );
+      continue;
+    }
+    nodes.push(
+      <div
+        key={block.key}
+        style={{ marginTop: nodes.length === 0 ? 0 : block.gapBefore }}
+      >
+        {block.node}
+      </div>,
+    );
+    i += 1;
+  }
+  return nodes;
+}
+
+function SkillLine({
+  skill,
+  theme,
+  accent,
+}: {
+  skill: SkillItem;
+  theme: Theme;
+  accent: string;
+}) {
+  if (theme.skillsListMode) {
+    return (
+      <div
+        className="flex items-center gap-1.5 text-[0.85em]"
+        style={{ color: theme.bodyTextColor }}
+      >
+        <span
+          className="size-1 shrink-0 rounded-full"
+          style={{ backgroundColor: accent }}
+        />
+        {skill.name}
+      </div>
+    );
+  }
+  if (theme.showDots) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+          {skill.name}
+        </p>
+        <DotRow level={skill.level} accent={accent} theme={theme} />
+      </div>
+    );
+  }
+  return (
+    <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+      {skill.name} ({SKILL_LEVEL_LABELS[skill.level - 1]})
+    </p>
+  );
+}
+
+function LanguageLine({
+  language,
+  theme,
+  accent,
+}: {
+  language: LanguageItem;
+  theme: Theme;
+  accent: string;
+}) {
+  if (theme.skillsListMode) {
+    return (
+      <div
+        className="flex items-center gap-1.5 text-[0.85em]"
+        style={{ color: theme.bodyTextColor }}
+      >
+        <span
+          className="size-1 shrink-0 rounded-full"
+          style={{ backgroundColor: accent }}
+        />
+        {language.name}
+      </div>
+    );
+  }
+  if (theme.showDots) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+          {language.name}
+        </p>
+        <DotRow level={language.level} accent={accent} theme={theme} />
+      </div>
+    );
+  }
+  return (
+    <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+      {language.name} ({LANGUAGE_LEVEL_LABELS[language.level - 1]})
+    </p>
   );
 }
 

@@ -58,17 +58,17 @@ function DesignerPdf({ resume }: { resume: Resume }) {
     id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
   }));
   const s = StyleSheet.create({
-    page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#1A1A1A" },
-    left: { width: "38%", backgroundColor: sidebar, color: "#fff" },
+    page: { fontFamily: font, fontSize: 10, color: "#1A1A1A" },
+    left: { position: "absolute", left: 0, top: 0, bottom: 0, width: "38%", backgroundColor: sidebar, color: "#fff" },
     photo: { width: "100%", height: 180, objectFit: "cover" },
     nameBlock: { backgroundColor: "#000", padding: 14 },
     name: { fontSize: 18, fontWeight: 700 },
     title: { fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 4 },
     sidePad: { padding: 14, gap: 10 },
     sideH: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 },
-    right: { flex: 1, backgroundColor: "#F5F5F5" },
+    right: { marginLeft: "38%", backgroundColor: "#F5F5F5" },
     white: { backgroundColor: "#fff", padding: 16, gap: 10 },
-    gray: { backgroundColor: "#E8E8E8", padding: 16, flex: 1 },
+    gray: { backgroundColor: "#E8E8E8", padding: 16 },
     contact: { backgroundColor: accent, padding: 14, color: "#fff" },
     h: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
     row: { flexDirection: "row", gap: 8 },
@@ -76,8 +76,8 @@ function DesignerPdf({ resume }: { resume: Resume }) {
   });
   return (
     <Document>
-      <Page size={c.pageFormat === "letter" ? "LETTER" : "A4"} style={s.page}>
-        <View style={s.left}>
+      <Page size={c.pageFormat === "letter" ? "LETTER" : "A4"} style={s.page} wrap>
+        <View style={s.left} fixed>
           {c.showPhoto && personal.photoUrl ? (
             <Image src={personal.photoUrl} style={s.photo} />
           ) : (

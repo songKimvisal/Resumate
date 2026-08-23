@@ -116,6 +116,7 @@ export function richTextToPdf(
         blocks.push(
           <View
             key={`${i}-${j}`}
+            wrap={false}
             style={{
               flexDirection: "row",
               marginTop: i === 0 && j === 0 ? 0 : 2,

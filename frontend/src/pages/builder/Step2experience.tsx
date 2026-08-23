@@ -351,7 +351,7 @@ function ExperienceCard({
   return (
     <motion.div
       ref={cardRef}
-      style={{ scrollMarginTop: "100px" }}
+      style={{ scrollMarginTop: "16px" }}
       layout="position"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -578,7 +578,7 @@ function NoExperienceCard({
   return (
     <motion.div
       ref={cardRef}
-      style={{ scrollMarginTop: "100px" }}
+      style={{ scrollMarginTop: "16px" }}
       layout="position"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}

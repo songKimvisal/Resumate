@@ -25,7 +25,6 @@ import Step5Review from "./Step5Review";
 import CustomizePage from "./CustomizePage";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
-import { cn } from "../../lib/utils";
 
 const TOTAL_STEPS = 5;
 const A4_WIDTH_PX = 210 * (96 / 25.4);
@@ -127,17 +126,19 @@ export default function BuilderLayout() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-  const stepBarRef = useRef<HTMLDivElement>(null);
-  const [stepBarHeight, setStepBarHeight] = useState(80);
+  const formPaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = stepBarRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(([entry]) =>
-      setStepBarHeight(entry.contentRect.height),
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
   }, []);
 
   useEffect(() => {
@@ -148,71 +149,32 @@ export default function BuilderLayout() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [previewOpen]);
-  const previewWrapperRef = useRef<HTMLDivElement>(null);
-  const previewPanelRef = useRef<HTMLDivElement>(null);
-  const previewHeaderRef = useRef<HTMLDivElement>(null);
-  const previewContentRef = useRef<HTMLButtonElement>(null);
-  const [previewPanelHeight, setPreviewPanelHeight] = useState(0);
-  const [previewHeaderHeight, setPreviewHeaderHeight] = useState(0);
-  const [previewFixedRect, setPreviewFixedRect] = useState<{
-    left: number;
-    width: number;
-  } | null>(null);
 
-  useEffect(() => {
-    const header = previewHeaderRef.current;
-    const content = previewContentRef.current;
-    if (!header || !content) return;
-    const update = () => {
-      setPreviewHeaderHeight(header.offsetHeight);
-      setPreviewPanelHeight(header.offsetHeight + content.offsetHeight);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(header);
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, []);
+  const scrollFormToTop = () => {
+    formPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  useEffect(() => {
-    const wrapper = previewWrapperRef.current;
-    if (!wrapper) return;
-    const update = () => {
-      const rect = wrapper.getBoundingClientRect();
-      setPreviewFixedRect(
-        rect.top <= stepBarHeight
-          ? { left: rect.left, width: rect.width }
-          : null,
-      );
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [stepBarHeight]);
-
-  const next = () => setStep((s) => Math.min(TOTAL_STEPS, s + 1));
+  const next = () => {
+    setStep((s) => Math.min(TOTAL_STEPS, s + 1));
+    scrollFormToTop();
+  };
   const back = () => {
     setStep((s) => Math.max(1, s - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollFormToTop();
   };
   const goToStep = (n: number) => {
     setStep(n);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollFormToTop();
+  };
+  const openCustomize = (open: boolean) => {
+    setCustomizeOpen(open);
+    scrollFormToTop();
   };
 
   return (
-    <div
-      className="min-h-screen bg-bg text-text flex flex-col"
-      style={
-        { "--step-bar-height": `${stepBarHeight}px` } as React.CSSProperties
-      }
-    >
+    <div className="h-dvh overflow-hidden bg-bg text-text flex flex-col">
       {/* ================= header ================= */}
-      <header className="max-w-7xl w-full mx-auto flex items-center justify-between px-4 h-16">
+      <header className="shrink-0 max-w-7xl w-full mx-auto flex items-center justify-between px-4 h-16">
         <Link to="/my-resumes">
           <img src={logo} alt="ResuMate" className="h-9 w-auto" />
         </Link>
@@ -249,13 +211,10 @@ export default function BuilderLayout() {
       </header>
 
       {/* ================= step indicator ================= */}
-      <div
-        ref={stepBarRef}
-        className="sticky top-0 z-30 bg-bg will-change-transform"
-      >
+      <div className="shrink-0 z-30 bg-bg">
         {customizeOpen ? (
           <div className="max-w-7xl w-full mx-auto px-4 lg:px-1.5 py-3">
-            <Button size="sm" onClick={() => setCustomizeOpen(false)}>
+            <Button size="sm" onClick={() => openCustomize(false)}>
               <ArrowLeft size={15} strokeWidth={2} />
               {t("builder.back")}
             </Button>
@@ -269,7 +228,7 @@ export default function BuilderLayout() {
               return (
                 <button
                   key={i}
-                  onClick={() => setStep(n)}
+                  onClick={() => goToStep(n)}
                   className={`flex flex-col items-center gap-2 pb-3 border-b-2 transition-colors ${
                     active ? "border-brand" : "border-line"
                   }`}
@@ -300,10 +259,13 @@ export default function BuilderLayout() {
       </div>
 
       {/* ================= form + preview ================= */}
-
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-0 py-10 pb-28 grid lg:grid-cols-[45fr_auto_55fr] gap-10 lg:gap-0 items-start">
+      <div className="flex-1 min-h-0 min-w-0 max-w-7xl mx-auto w-full px-4 lg:px-0 grid lg:grid-cols-[minmax(0,45fr)_auto_minmax(0,55fr)]">
         {/* ---------- left: current step / customize ---------- */}
-        <div>
+        <div
+          ref={formPaneRef}
+          data-builder-form-pane
+          className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pt-8 lg:pt-10 pb-28 pr-1"
+        >
           <AnimatePresence mode="popLayout">
             {customizeOpen ? (
               <motion.div
@@ -332,79 +294,44 @@ export default function BuilderLayout() {
             )}
           </AnimatePresence>
         </div>
-        <div className="hidden lg:flex h-full justify-center self-stretch px-8">
-          <div className="w-px bg-line" />
+        <div className="hidden lg:flex min-h-0 justify-center self-stretch px-8">
+          <div className="w-px h-full bg-line" />
         </div>
 
         {/* ---------- right: live preview ---------- */}
-        <div
-          ref={previewWrapperRef}
-          className="hidden lg:block"
-          style={{ minHeight: previewPanelHeight || undefined }}
-        >
-          <div
-            ref={previewPanelRef}
-            style={
-              previewFixedRect
-                ? {
-                    position: "fixed",
-                    top: stepBarHeight,
-                    left: previewFixedRect.left,
-                    width: previewFixedRect.width,
-                  }
-                : undefined
-            }
-          >
-            <div
-              ref={previewHeaderRef}
-              className="flex items-center justify-between mb-5"
+        <div className="hidden lg:flex min-h-0 min-w-0 flex-col overflow-hidden pt-8 lg:pt-10 pb-20">
+          <div className="flex items-center justify-between mb-5 shrink-0">
+            <Button
+              size="compact"
+              onClick={() => openCustomize(!customizeOpen)}
             >
-              {/* customize / content toggle */}
-              <Button
-                size="compact"
-                onClick={() => setCustomizeOpen((o) => !o)}
-              >
-                {customizeOpen ? (
-                  <>
-                    <FileText size={15} strokeWidth={2} />
-                    {t("builder.customizePage.contentButton")}
-                  </>
-                ) : (
-                  <>
-                    <LayoutGrid size={15} strokeWidth={2} />
-                    {t("builder.customize")}
-                  </>
-                )}
-              </Button>
-
-              <span className="flex items-center gap-2 text-sm text-brand font-medium">
-                <span className="size-2 rounded-full bg-brand animate-pulse" />
-                {t("builder.livePreview")}
-              </span>
-            </div>
-
-            <div
-              className={cn(
-                previewFixedRect && "scrollbar-thin overflow-y-auto",
+              {customizeOpen ? (
+                <>
+                  <FileText size={15} strokeWidth={2} />
+                  {t("builder.customizePage.contentButton")}
+                </>
+              ) : (
+                <>
+                  <LayoutGrid size={15} strokeWidth={2} />
+                  {t("builder.customize")}
+                </>
               )}
-              style={{
-                maxWidth: A4_WIDTH_PX,
-                ...(previewFixedRect && {
-                  // leave room for the floating bottom bar so the pinned
-                  // preview never hides its own controls behind it
-                  maxHeight: `calc(100vh - ${stepBarHeight}px - 4.5rem - ${previewHeaderHeight}px)`,
-                }),
-              }}
+            </Button>
+
+            <span className="flex items-center gap-2 text-sm text-brand font-medium">
+              <span className="size-2 rounded-full bg-brand animate-pulse" />
+              {t("builder.livePreview")}
+            </span>
+          </div>
+
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="block w-full min-w-0 text-left cursor-zoom-in"
             >
-              <button
-                ref={previewContentRef}
-                type="button"
-                onClick={() => setPreviewOpen(true)}
-                className="block w-full text-left cursor-zoom-in"
-              >
-                <ResumePreview />
-              </button>
-            </div>
+              <ResumePreview />
+            </button>
           </div>
         </div>
       </div>
@@ -489,7 +416,7 @@ export default function BuilderLayout() {
         {!customizeOpen && (
           <motion.button
             type="button"
-            onClick={() => setCustomizeOpen(true)}
+            onClick={() => openCustomize(true)}
             aria-label={t("builder.customize")}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
