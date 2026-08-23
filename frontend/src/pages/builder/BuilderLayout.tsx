@@ -9,6 +9,7 @@ import {
   FileText,
   ArrowLeft,
   Eye,
+  Lightbulb,
   X,
 } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
@@ -38,6 +39,30 @@ function clampBuilderStep(n: unknown) {
   return Math.min(TOTAL_STEPS, Math.max(1, Math.round(n)));
 }
 
+type TipCard = { lead: string; points: string[] };
+
+function normalizeTip(raw: unknown): TipCard {
+  if (raw && typeof raw === "object" && !Array.isArray(raw) && "lead" in raw) {
+    const tip = raw as { lead?: unknown; points?: unknown };
+    return {
+      lead: typeof tip.lead === "string" ? tip.lead : "",
+      points: Array.isArray(tip.points)
+        ? tip.points.filter((point): point is string => typeof point === "string")
+        : [],
+    };
+  }
+  if (typeof raw === "string") {
+    return { lead: raw, points: [] };
+  }
+  return { lead: "", points: [] };
+}
+
+function experienceTipKey(choice: "has" | "none" | null) {
+  if (choice === "none") return "builder.tipFreshExperience";
+  if (choice === "has") return "builder.tipHasExperience";
+  return "builder.tipExperienceChoice";
+}
+
 export default function BuilderLayout() {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
@@ -47,6 +72,7 @@ export default function BuilderLayout() {
   const resumeHydrated = useResumeStoreHydrated();
   const resumeId = useResumeStore((s) => s.resume.id);
   const resume = useResumeStore((s) => s.resume);
+  const experienceChoice = useResumeStore((s) => s.resume.experienceChoice);
   const dirty = useResumeStore((s) => s.dirty);
   const setBuilderStep = useResumeStore((s) => s.setBuilderStep);
   const markSaved = useResumeStore((s) => s.markSaved);
@@ -60,7 +86,18 @@ export default function BuilderLayout() {
   const tipRef = useRef<HTMLDivElement>(null);
 
   const stepLabels = t("builder.steps", { returnObjects: true }) as string[];
-  const tips = t("builder.tips", { returnObjects: true }) as string[];
+  const tips = t("builder.tips", { returnObjects: true }) as unknown[];
+  const stepTip = normalizeTip(
+    step === 2
+      ? t(experienceTipKey(experienceChoice), { returnObjects: true })
+      : tips[step - 1],
+  );
+  const tipHeading =
+    step === 2 && experienceChoice === "none"
+      ? t("builder.experience.noExperienceTitle")
+      : step === 2 && experienceChoice === "has"
+        ? t("builder.experience.title")
+        : stepLabels[step - 1];
 
   useEffect(() => {
     if (!resumeHydrated) return;
@@ -132,6 +169,7 @@ export default function BuilderLayout() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
   const formPaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -387,24 +425,59 @@ export default function BuilderLayout() {
       {/* ================= floating mascot tip ================= */}
       <div
         ref={tipRef}
-        className="hidden lg:block fixed bottom-20 right-6 z-40"
+        className="fixed bottom-20 left-3 lg:left-auto lg:right-6 z-40"
       >
         <AnimatePresence>
           {tipOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.18 }}
-              className="absolute bottom-full right-0 mb-3 w-64 rounded-xl border border-line bg-bg shadow-lg p-4"
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-full left-0 lg:left-auto lg:right-0 mb-3 w-[min(22rem,calc(100vw-1.5rem))] sm:w-[26rem] rounded-2xl border border-line bg-bg shadow-xl"
             >
-              <p className="text-xs font-semibold tracking-widest uppercase text-brand">
-                {t("builder.tipsTitle")}
-              </p>
-              <p className="mt-1.5 text-sm text-text leading-relaxed">
-                {tips[step - 1]}
-              </p>
-              <span className="absolute top-full right-6 -mt-px size-3 rotate-45 border-b border-r border-line bg-bg" />
+              <div className="flex items-start gap-2.5 px-4 pt-3.5 pb-2">
+                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+                  <Lightbulb size={16} strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold tracking-wider uppercase text-brand">
+                    {t("builder.tipsTitle")}
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-text">
+                    {tipHeading}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTipOpen(false)}
+                  aria-label={t("builder.tipClose")}
+                  className="size-7 shrink-0 rounded-full text-text-secondary hover:bg-surface-2 hover:text-text inline-flex items-center justify-center transition-colors"
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </div>
+              <div className="px-4 pb-4 max-h-[min(28rem,calc(100dvh-11rem))] overflow-y-auto scrollbar-thin">
+                {stepTip.lead ? (
+                  <p className="text-sm text-text leading-relaxed">
+                    {stepTip.lead}
+                  </p>
+                ) : null}
+                {stepTip.points.length > 0 ? (
+                  <ul className="mt-2.5 space-y-2">
+                    {stepTip.points.map((point) => (
+                      <li
+                        key={point}
+                        className="flex gap-2.5 text-sm text-text-secondary leading-relaxed"
+                      >
+                        <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-brand" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+              <span className="absolute top-full left-6 lg:left-auto lg:right-7 -mt-px size-3 rotate-45 border-b border-r border-line bg-bg" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -413,11 +486,21 @@ export default function BuilderLayout() {
           type="button"
           onClick={() => setTipOpen((o) => !o)}
           aria-label={t("builder.tipsTitle")}
-          className="block"
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          aria-expanded={tipOpen}
+          className="block text-center"
+          animate={tipOpen ? { y: 0 } : { y: [0, -6, 0] }}
+          transition={
+            tipOpen
+              ? { duration: 0.2 }
+              : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+          }
         >
-          <img src={mascot} alt="" className="w-16 drop-shadow-lg" />
+          <img src={mascot} alt="" className="w-14 lg:w-16 drop-shadow-lg mx-auto" />
+          {!tipOpen && (
+            <span className="mt-0.5 block text-[11px] font-medium text-brand">
+              {t("builder.tipHint")}
+            </span>
+          )}
         </motion.button>
       </div>
 

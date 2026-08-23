@@ -382,7 +382,7 @@
       "title": "Build your resume in",
       "titleAccent": "minutes",
       "titleEnd": ", not days.",
-  "subtitle": "Cambodia's smart career readiness platform. Analyze job ads, match your skills, and prep for interviews all in one place.",
+      "subtitle": "Cambodia's smart career readiness platform. Analyze job ads, match your skills, and prep for interviews all in one place.",
       "ctaPrimary": "Get started it's free",
       "ctaSecondary": "Browse templates",
       "ctaDashboard": "Go to Dashboard"
@@ -757,14 +757,86 @@
     "downloadPdfError": "Could not save the PDF. Please try again.",
     "accentColor": "Accent color",
     "fontSize": "Font size",
-    "tipsTitle": "Quick tip",
+    "tipsTitle": "Tip for this page",
+    "tipHint": "Tap for a tip",
+    "tipClose": "Close tip",
     "tips": [
-      "Use an email and phone number you actually check recruiters reach out here first.",
-      "Start each bullet with an action verb and add a number where you can, e.g. \"increased sales by 20%\".",
-      "List your most recent degree first, and only include your GPA if it's strong.",
-      "Pick skills that match the job description quality beats a long list.",
-      "Read your resume out loud once before saving. It's the fastest way to catch typos."
+      {
+        "lead": "Header & Contact Details Your first impression on employers.",
+          "points": [
+            "Use the full English name you intend to use on official job applications.",
+            "Specify your target job role (e.g., Junior Accountant or Marketing Assistant) rather than 'Student'.",
+            "Provide an active email address and phone number that you monitor daily.",
+            "Include a 2 to 3 sentence summary highlighting your academic background, key strength, and career objective no extensive work history required."
+          ]
+        },
+        {
+          "lead": "Work & Practical Experience Showcasing your career story.",
+          "points": [
+            "List roles in reverse chronological order (most recent first).",
+            "Include job title, company, location, and dates.",
+            "Start each bullet with a strong action verb (e.g. Built, Organized, Coordinated).",
+            "Quantify results where you can (e.g. Collaborated with 3 teammates, Served 20+ clients daily).",
+            "Keep 3 to 5 bullets per role focused on impact, not daily duties."
+          ]
+        },
+        {
+          "lead": "Education & Honors Highlighting your academic background.",
+          "points": [
+            "List your most recent educational institution first.",
+            "State the full degree name and university title.",
+            "Include your GPA if it is 3.5 or higher, or if you graduated with honors.",
+            "Under 'Achievements', highlight scholarship awards, Dean’s List honors, or relevant coursework."
+          ]
+        },
+        {
+          "lead": "Skills & Languages Demonstrating your core capabilities.",
+          "points": [
+            "List 6 to 10 tools or technologies you are proficient in (e.g., Excel, Figma, Python).",
+            "Prioritize accuracy over length be realistic about your proficiency level.",
+            "Include language proficiencies (e.g., Khmer, English), as bilingual ability is highly valued in Cambodia.",
+            "References are optional; you may omit them or state 'Available upon request'."
+          ]
+        },
+        {
+          "lead": "Review & Export Final quality checks before applying.",
+          "points": [
+            "Review your optimization score and address any outstanding checklist items.",
+            "Proofread the live preview carefully to eliminate spelling or grammatical errors.",
+            "Keep your resume to a clean, well-formatted single page.",
+            "Export as a PDF formatted as 'FirstName_LastName_Resume.pdf'."
+          ]
+        }
     ],
+    "tipHasExperience": {
+      "lead": "Work & Practical Experience Showcasing your career story.",
+      "points": [
+        "List roles in reverse chronological order (most recent first).",
+        "Include job title, company, location, and dates.",
+        "Start each bullet with a strong action verb (e.g. Built, Organized, Coordinated).",
+        "Quantify results where you can (e.g. Collaborated with 3 teammates, Served 20+ clients daily).",
+        "Keep 3 to 5 bullets per role focused on impact, not daily duties."
+      ]
+    },
+    "tipFreshExperience": {
+      "lead": "No formal job yet internships, projects, volunteering, and part-time work still count.",
+      "points": [
+        "Pick a type from the list: internship, university project, volunteer work, competition, or part-time job.",
+        "Write what you did, who you helped, and one small result if you have it.",
+        "Even “supported a 5-person team” is useful.",
+        "List the most recent activity first.",
+        "Start each description with an action verb (e.g. Built, Organized, Coordinated)."
+      ]
+    },
+    "tipExperienceChoice": {
+      "lead": "Choose the path that matches you both can make a strong resume.",
+      "points": [
+        "Pick “I have work experience” if you have held a job at a company.",
+        "Pick “Fresh graduate” if you are a student or first-time job seeker with no formal office role.",
+        "Internships, university projects, volunteering, competitions, and part-time jobs belong on the Fresh graduate path.",
+        "You can add more than one entry after you choose."
+      ]
+    },
     "fontSizes": {
       "small": "Small",
       "medium": "Medium",
@@ -772,7 +844,7 @@
     },
     "review": {
       "title": "Review & score",
-      "subtitle": "Check your score and fix any missing items before downloading.",
+      "subtitle": "Check the score, fill any gaps, then download. A clear one-page resume is enough for most graduate jobs.",
       "scoreLabel": "Score",
       "band": {
         "excellent": {
@@ -1003,7 +1075,7 @@
     },
     "personal": {
       "title": "Personal information",
-      "subtitle": "Start with the basics this appears at the top of your resume.",
+      "subtitle": "Employers read this first. Add your English name, target job, and a quick summary of your skills.",
       "fullName": "Full name (English)",
       "jobTitle": "Job title",
       "email": "Email",
@@ -1019,7 +1091,7 @@
       },
       "dragToReposition": "Drag to reposition",
       "summary": "Summary",
-      "summaryHint": "2–3 sentences about who you are and what you bring.",
+      "summaryHint": "2 3 sentences: what you studied, one strength, and the role you want. No need for years of experience.",
       "summaryPlaceholder": "Motivated accounting graduate with internship experience at a microfinance institution...",
       "aiRewrite": "Smart rewrite",
       "aiRewriting": "Rewriting...",
@@ -1048,7 +1120,7 @@
     },
     "experience": {
       "title": "Work experience",
-      "subtitle": "Start with your most recent role.",
+      "subtitle": "No full-time job yet? Internships, projects, volunteering, and part-time work all count. Start with the most recent.",
       "modalTitle": "Work experience",
       "modalSubtitle": "No formal experience? No problem we have options for everyone.",
       "hasTitle": "Yes, I have work experience",
@@ -1134,7 +1206,7 @@
     },
     "education": {
       "title": "Education",
-      "subtitle": "Add your education history, most recent first. You can add multiple degrees, diplomas, or certificates.",
+      "subtitle": "As a fresh graduate, this is your strongest section. Put your latest school first, then add awards or key coursework.",
       "addAnother": "Add another education",
       "degree": "Degree / qualification",
       "degreePlaceholder": "Bachelor of Software Engineering",
@@ -1157,7 +1229,7 @@
     },
     "skillsMore": {
       "title": "Skills & more",
-      "subtitle": "Add your skills, languages, and optional references all in one place.",
+      "subtitle": "Add tools you can use, Khmer and English, and optional references. Quality beats a long list.",
       "tabs": {
         "skills": "Skills",
         "languages": "Languages",

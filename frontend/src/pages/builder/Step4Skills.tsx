@@ -38,20 +38,22 @@ export default function Step4Skills() {
         </p>
       </div>
 
-      <div className="inline-flex w-full rounded-full border border-line p-1">
+      <div className="inline-flex w-full items-center rounded-full border border-line p-1">
         {tabs.map((tb) => (
-          <button
+          <Button
             key={tb.key}
+            type="button"
+            size="compact"
+            variant={tab === tb.key ? "default" : "ghost"}
             onClick={() => setTab(tb.key)}
             className={cn(
-              "flex-1 rounded-full py-2.5 text-sm font-medium transition-colors",
-              tab === tb.key
-                ? "bg-brand text-white"
-                : "text-text-secondary hover:text-text",
+              "flex-1",
+              tab !== tb.key &&
+                "text-text-secondary hover:bg-transparent hover:text-text",
             )}
           >
             {tb.label}
-          </button>
+          </Button>
         ))}
       </div>
 

@@ -2,13 +2,6 @@ import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
-/**
- * Purely a trigger button - loading/suggestions state lives in the
- * useSmartRewrite hook, owned by whichever Step component uses this, so
- * that component can place the SmartRewriteSuggestions panel wherever
- * makes sense in its own layout (below the whole field, not next to the
- * button).
- */
 export function AiRewriteButton({
   loading,
   disabled,
