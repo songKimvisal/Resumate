@@ -16,9 +16,15 @@ type JobSlice = {
   showMeta: boolean;
 };
 
+type EduSlice = {
+  id: string;
+  description: string;
+  showMeta: boolean;
+};
+
 type PagePlan = {
-  showSummary: boolean;
-  educationIds: string[];
+  summaryHtml: string;
+  education: EduSlice[];
   jobs: JobSlice[];
   showSkills: boolean;
   showLanguages: boolean;
@@ -79,6 +85,31 @@ function splitRichHtml(html: string): string[] {
       });
     }
 
+    // A single <p> with <br> lines should paginate like separate bullets.
+    if (el.tagName === "P" && el.querySelector("br")) {
+      const lines: string[] = [];
+      let buf = "";
+      const flush = () => {
+        const text = buf.replace(/<br\s*\/?>/gi, "").trim();
+        if (text) lines.push(`<p>${text}</p>`);
+        buf = "";
+      };
+      Array.from(el.childNodes).forEach((child) => {
+        if (
+          child.nodeType === Node.ELEMENT_NODE &&
+          (child as Element).tagName === "BR"
+        ) {
+          flush();
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          buf += (child as Element).outerHTML;
+        } else {
+          buf += child.textContent || "";
+        }
+      });
+      flush();
+      if (lines.length > 1) return lines;
+    }
+
     return [el.outerHTML];
   };
 
@@ -100,37 +131,47 @@ function splitRichHtml(html: string): string[] {
   return deduped.length > 0 ? deduped : [html];
 }
 
+function pushSlicedUnits(
+  units: ContentUnit[],
+  kind: "summary" | "education" | "job",
+  id: string | undefined,
+  html: string,
+) {
+  const prefix = kind === "job" ? `job-${id}` : kind === "education" ? `edu-${id}` : "summary";
+  const parts = hasText(html) ? splitRichHtml(html) : [""];
+  if (parts.length <= 1) {
+    units.push({
+      key: prefix,
+      kind,
+      id,
+      description: parts[0] || html || "",
+      showMeta: true,
+    });
+    return;
+  }
+  parts.forEach((part, i) => {
+    units.push({
+      key: `${prefix}-p${i}`,
+      kind,
+      id,
+      description: part,
+      showMeta: i === 0,
+    });
+  });
+}
+
 function buildUnits(resume: Resume): ContentUnit[] {
   const units: ContentUnit[] = [];
   if (hasText(resume.personal.summary)) {
-    units.push({ key: "summary", kind: "summary" });
+    pushSlicedUnits(units, "summary", undefined, resume.personal.summary);
   }
   resume.education.forEach((edu) => {
-    units.push({ key: `edu-${edu.id}`, kind: "education", id: edu.id });
+    pushSlicedUnits(units, "education", edu.id, edu.description);
   });
 
   const jobs = normalizeJobs(resume.experience, resume.noExperience);
   jobs.forEach((job) => {
-    const parts = splitRichHtml(job.description);
-    if (parts.length <= 1) {
-      units.push({
-        key: `job-${job.id}`,
-        kind: "job",
-        id: job.id,
-        description: parts[0] || job.description || "",
-        showMeta: true,
-      });
-    } else {
-      parts.forEach((part, i) => {
-        units.push({
-          key: `job-${job.id}-p${i}`,
-          kind: "job",
-          id: job.id,
-          description: part,
-          showMeta: i === 0,
-        });
-      });
-    }
+    pushSlicedUnits(units, "job", job.id, job.description);
   });
 
   if (resume.includeReferences && resume.references.length > 0) {
@@ -156,8 +197,8 @@ function packUnits(
   if (units.length === 0) {
     return [
       {
-        showSummary: false,
-        educationIds: [],
+        summaryHtml: "",
+        education: [],
         jobs: [],
         showSkills: true,
         showLanguages: true,
@@ -209,24 +250,34 @@ function packUnits(
   }
 
   return pages.map((pageUnits, pageIndex) => {
-    const seenKeys = new Set<string>();
     const jobs: JobSlice[] = [];
+    const education: EduSlice[] = [];
+    const summaryParts: string[] = [];
     for (const u of pageUnits) {
-      if (u.kind !== "job" || !u.id) continue;
-      if (seenKeys.has(u.key)) continue;
-      seenKeys.add(u.key);
-      jobs.push({
-        id: u.id,
-        description: u.description || "",
-        showMeta: u.showMeta !== false,
-      });
+      if (u.kind === "summary") {
+        if (u.description) summaryParts.push(u.description);
+        continue;
+      }
+      if (u.kind === "job" && u.id) {
+        jobs.push({
+          id: u.id,
+          description: u.description || "",
+          showMeta: u.showMeta !== false,
+        });
+        continue;
+      }
+      if (u.kind === "education" && u.id) {
+        education.push({
+          id: u.id,
+          description: u.description || "",
+          showMeta: u.showMeta !== false,
+        });
+      }
     }
 
     return {
-      showSummary: pageUnits.some((u) => u.kind === "summary"),
-      educationIds: pageUnits
-        .filter((u) => u.kind === "education" && u.id)
-        .map((u) => u.id as string),
+      summaryHtml: summaryParts.join(""),
+      education,
       jobs,
       showSkills: pageIndex === 0,
       showLanguages: pageIndex === 0,
@@ -236,29 +287,32 @@ function packUnits(
   });
 }
 
+function mergeSlices<T extends { id: string; description: string; showMeta: boolean }>(
+  slices: T[],
+): T[] {
+  const merged: T[] = [];
+  for (const slice of slices) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.id === slice.id) {
+      if (!prev.description.includes(slice.description)) {
+        prev.description = `${prev.description}${slice.description}`;
+      }
+      prev.showMeta = prev.showMeta || slice.showMeta;
+    } else {
+      merged.push({ ...slice });
+    }
+  }
+  return merged;
+}
+
 function applyPagePlan(
   resume: Resume,
   plan: PagePlan,
   pageIndex: number,
 ): Resume {
   const useExperience = resume.experience.length > 0;
-  const filterEdu = (items: EducationItem[]) =>
-    items.filter((e) => plan.educationIds.includes(e.id));
-
-  // Merge consecutive slices of the same job on this page only.
-  const mergedJobs: JobSlice[] = [];
-  for (const slice of plan.jobs) {
-    const prev = mergedJobs[mergedJobs.length - 1];
-    if (prev && prev.id === slice.id) {
-      // Avoid concatenating an identical chunk twice.
-      if (!prev.description.includes(slice.description)) {
-        prev.description = `${prev.description}${slice.description}`;
-      }
-      prev.showMeta = prev.showMeta || slice.showMeta;
-    } else {
-      mergedJobs.push({ ...slice });
-    }
-  }
+  const mergedJobs = mergeSlices(plan.jobs);
+  const mergedEdu = mergeSlices(plan.education);
 
   const mapJob = <T extends ExperienceItem | NoExperienceItem>(
     source: T[],
@@ -296,7 +350,7 @@ function applyPagePlan(
     ...resume,
     personal: {
       ...resume.personal,
-      summary: plan.showSummary ? resume.personal.summary : "",
+      summary: plan.summaryHtml,
       photoUrl: isFirst ? resume.personal.photoUrl : "",
       fullName: isFirst ? resume.personal.fullName : "",
       jobTitle: isFirst ? resume.personal.jobTitle : "",
@@ -344,7 +398,27 @@ function applyPagePlan(
           endDate: slice.showMeta ? item.endDate : "",
           current: slice.showMeta ? item.current : false,
         })),
-    education: filterEdu(resume.education),
+    education: mergedEdu
+      .map((slice) => {
+        const item = resume.education.find((e) => e.id === slice.id);
+        if (!item) return null;
+        return {
+          ...item,
+          description: slice.description,
+          degree: slice.showMeta
+            ? item.degree
+            : item.degree
+              ? `${item.degree} (continued)`
+              : "Continued",
+          school: slice.showMeta ? item.school : "",
+          field: slice.showMeta ? item.field : "",
+          gpa: slice.showMeta ? item.gpa : "",
+          startDate: slice.showMeta ? item.startDate : "",
+          endDate: slice.showMeta ? item.endDate : "",
+          current: slice.showMeta ? item.current : false,
+        };
+      })
+      .filter((e): e is EducationItem => e != null),
     skills: isFirst && plan.showSkills ? resume.skills : [],
     languages: isFirst && plan.showLanguages ? resume.languages : [],
     references: plan.showReferences ? resume.references : [],
@@ -386,7 +460,9 @@ function MeasureBlock({
       <div
         className="rte-content"
         style={{ fontSize }}
-        dangerouslySetInnerHTML={{ __html: personal.summary }}
+        dangerouslySetInnerHTML={{
+          __html: unit.description || personal.summary,
+        }}
       />
     );
   }
@@ -395,13 +471,17 @@ function MeasureBlock({
     if (!edu) return null;
     return (
       <div style={{ fontSize }}>
-        <p className="font-bold">{edu.school}</p>
-        <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
-        {edu.gpa && <p>GPA: {edu.gpa}</p>}
-        {hasText(edu.description) && (
+        {unit.showMeta !== false && (
+          <>
+            <p className="font-bold">{edu.school}</p>
+            <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+            {edu.gpa && <p>GPA: {edu.gpa}</p>}
+          </>
+        )}
+        {unit.description && hasText(unit.description) && (
           <div
             className="rte-content"
-            dangerouslySetInnerHTML={{ __html: edu.description }}
+            dangerouslySetInnerHTML={{ __html: unit.description }}
           />
         )}
       </div>
@@ -489,8 +569,12 @@ export function SpecialPaginatedLayout({
       const jobs = normalizeJobs(resume.experience, resume.noExperience);
       return [
         {
-          showSummary: hasText(resume.personal.summary),
-          educationIds: resume.education.map((e) => e.id),
+          summaryHtml: resume.personal.summary,
+          education: resume.education.map((e) => ({
+            id: e.id,
+            description: e.description,
+            showMeta: true,
+          })),
           jobs: jobs.map((j) => ({
             id: j.id,
             description: j.description,
@@ -524,9 +608,10 @@ export function SpecialPaginatedLayout({
         style={{
           position: "fixed",
           top: 0,
-          left: -99999,
+          left: 0,
           visibility: "hidden",
           pointerEvents: "none",
+          zIndex: -1,
           width: measureWidth,
           fontFamily: cssFontStack(resume.customization.fontFamily),
           fontSize: resume.customization.fontSize,

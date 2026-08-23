@@ -154,7 +154,7 @@ function EducationCard({
   return (
     <motion.div
       ref={cardRef}
-      style={{ scrollMarginTop: "100px" }}
+      style={{ scrollMarginTop: "16px" }}
       layout="position"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -162,7 +162,7 @@ function EducationCard({
       transition={{ type: "tween", duration: 0.28, ease: "easeOut" }}
       onAnimationComplete={() => isNew && onEntranceComplete?.()}
       className={cn(
-        "rounded-xl border transition-colors duration-500",
+        "rounded-xl border overflow-hidden transition-colors duration-500",
         isNew ? "border-brand ring-2 ring-brand/30" : "border-line",
       )}
     >
@@ -173,10 +173,8 @@ function EducationCard({
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDropOn}
         className={cn(
-          "flex items-center gap-1 px-2 sm:px-3 py-2 bg-surface-2 rounded-t-xl",
+          "flex items-center gap-1 px-2 sm:px-3 py-2 bg-surface-2",
           draggable && "cursor-grab active:cursor-grabbing",
-          !expanded && "rounded-b-xl",
-          expanded && "sticky top-(--step-bar-height) z-20 shadow-sm",
         )}
       >
         {draggable && (
@@ -221,7 +219,7 @@ function EducationCard({
         initial={false}
         animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="overflow-hidden rounded-b-xl"
+        className="overflow-hidden"
       >
         <div className="p-4 md:p-5 space-y-4 bg-bg" inert={!expanded}>
           <Input
@@ -238,50 +236,50 @@ function EducationCard({
             onChange={(e) => onChange({ school: e.target.value })}
           />
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Input
-              label={t("builder.education.gpa")}
-              placeholder={t("builder.education.gpaPlaceholder")}
-              value={edu.gpa}
-              onChange={(e) => onChange({ gpa: e.target.value })}
-            />
-            <div className="min-w-0 space-y-1.5">
-              <label className="text-sm font-medium text-text">
-                {t("builder.education.duration")}
-              </label>
+          <Input
+            label={t("builder.education.gpa")}
+            placeholder={t("builder.education.gpaPlaceholder")}
+            value={edu.gpa}
+            onChange={(e) => onChange({ gpa: e.target.value })}
+            className="sm:max-w-xs"
+          />
 
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <MonthPicker
-                    value={edu.startDate}
-                    max={edu.endDate || undefined}
-                    onChange={(startDate) => onChange({ startDate })}
-                    placeholder={t("builder.education.startDate")}
-                  />
-                </div>
-                <span className="text-text-placeholder shrink-0">-</span>
-                <div className="flex-1 min-w-0">
-                  <MonthPicker
-                    value={edu.endDate}
-                    min={edu.startDate || undefined}
-                    disabled={edu.current}
-                    onChange={(endDate) => onChange({ endDate })}
-                    placeholder={t("builder.education.endDate")}
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={edu.current}
-                  onChange={(e) =>
-                    onChange({ current: e.target.checked, endDate: "" })
-                  }
-                  className="accent-brand"
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-sm font-medium text-text">
+              {t("builder.education.duration")}
+            </label>
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <MonthPicker
+                  value={edu.startDate}
+                  max={edu.endDate || undefined}
+                  onChange={(startDate) => onChange({ startDate })}
+                  placeholder={t("builder.education.startDate")}
                 />
-                {t("builder.education.current")}
-              </label>
+              </div>
+              <span className="text-text-placeholder shrink-0">–</span>
+              <div className="flex-1 min-w-0">
+                <MonthPicker
+                  value={edu.endDate}
+                  min={edu.startDate || undefined}
+                  disabled={edu.current}
+                  onChange={(endDate) => onChange({ endDate })}
+                  placeholder={t("builder.education.endDate")}
+                />
+              </div>
             </div>
+            <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={edu.current}
+                onChange={(e) =>
+                  onChange({ current: e.target.checked, endDate: "" })
+                }
+                className="accent-brand"
+              />
+              {t("builder.education.current")}
+            </label>
           </div>
 
           <div className="space-y-1.5">

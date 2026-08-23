@@ -81,7 +81,7 @@ type SectionKey =
   | "spacing";
 
 const SECTION_CARD =
-  "rounded-xl border border-line bg-bg p-4 sm:p-5 md:p-6 space-y-6 scroll-mt-24";
+  "rounded-xl border border-line bg-bg p-4 sm:p-5 md:p-6 space-y-6 scroll-mt-16 md:scroll-mt-4";
 const SECTION_TITLE = "text-sm font-semibold text-brand";
 const COLOR_LABEL =
   "text-xs font-semibold tracking-wide text-text-secondary uppercase";
@@ -369,6 +369,9 @@ export default function CustomizePage() {
   const [activeSection, setActiveSection] = useState<SectionKey>("layout");
 
   useEffect(() => {
+    const first = Object.values(sectionRefs).find((ref) => ref.current)?.current;
+    const root =
+      first?.closest("[data-builder-form-pane]") ?? null;
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -377,7 +380,7 @@ export default function CustomizePage() {
         const top = visible[0]?.target.getAttribute("data-section");
         if (top) setActiveSection(top as SectionKey);
       },
-      { rootMargin: "-15% 0px -70% 0px", threshold: 0 },
+      { root, rootMargin: "-15% 0px -70% 0px", threshold: 0 },
     );
     Object.values(sectionRefs).forEach((ref) => {
       if (ref.current) observer.observe(ref.current);
@@ -517,7 +520,7 @@ export default function CustomizePage() {
         </p>
       </div>
 
-      <div className="md:hidden sticky top-(--step-bar-height) z-20 -mx-4 mt-4 overflow-x-auto bg-bg will-change-transform">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 mt-4 overflow-x-auto bg-bg will-change-transform">
         <div className="flex gap-2 px-4 py-2 w-max">
           {navItems.map((item) => (
             <button
@@ -539,7 +542,7 @@ export default function CustomizePage() {
 
       <div className="flex gap-8 items-start mt-5 md:mt-8">
         {/* ---------- section nav (desktop) ---------- */}
-        <div className="hidden md:block w-32 km:w-36 shrink-0 sticky top-(--step-bar-height) self-start">
+        <div className="hidden md:block w-32 km:w-36 shrink-0 sticky top-4 self-start">
           <div className="relative flex flex-col gap-1 border-l border-line">
             {navItems.map((item) => (
               <button

@@ -1025,9 +1025,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         <View style={styles.section} minPresenceAhead={40}>
           {renderSectionTitle("Experience")}
           {experience.map((exp) => (
-            <View key={exp.id} style={styles.entry} wrap={false}>
+            <View key={exp.id} style={styles.entry} minPresenceAhead={28}>
               {timelineWrap(
-                <View style={styles.entryHeaderRow}>
+                <View style={styles.entryHeaderRow} wrap={false}>
                   <Text style={styles.entryTitle}>
                     {exp.jobTitle || "Job title"}
                     {(exp.company || exp.location) && (
@@ -1058,9 +1058,9 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         <View style={styles.section} minPresenceAhead={40}>
           {renderSectionTitle("Experience")}
           {noExperience.map((exp) => (
-            <View key={exp.id} style={styles.entry} wrap={false}>
+            <View key={exp.id} style={styles.entry} minPresenceAhead={28}>
               {timelineWrap(
-                <View style={styles.entryHeaderRow}>
+                <View style={styles.entryHeaderRow} wrap={false}>
                   <Text style={styles.entryTitle}>
                     {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
                     {(exp.title || exp.subtitle) && (
@@ -1114,8 +1114,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         <View style={styles.section} minPresenceAhead={40}>
           {renderSectionTitle("Education")}
           {education.map((edu) => (
-            <View key={edu.id} style={styles.entry} wrap={false}>
-              <View style={styles.entryHeaderRow}>
+            <View key={edu.id} style={styles.entry} minPresenceAhead={28}>
+              <View style={styles.entryHeaderRow} wrap={false}>
                 <View>
                   <Text style={styles.entryTitle}>
                     {[edu.degree, edu.field].filter(Boolean).join(" in ") ||
@@ -1146,7 +1146,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   const skillsLanguageNode = !listsInSidebar &&
     (skills.length > 0 || languages.length > 0) && (
-      <View style={styles.twoCol} wrap={false}>
+      <View style={styles.twoCol}>
         {skills.length > 0 && (
           <View style={styles.col}>
             {renderSectionTitle("Skills")}
