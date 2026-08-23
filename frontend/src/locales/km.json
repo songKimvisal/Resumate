@@ -652,6 +652,7 @@
     "customize": "កែសម្រួលតាមចិត្ត",
     "downloadPdf": "ទាញយក PDF",
     "downloadingPdf": "កំពុងរៀបចំ...",
+    "downloadPdfError": "មិនអាចរក្សាទុក PDF បានទេ។ សូមព្យាយាមម្តងទៀត។",
     "accentColor": "ពណ៌ចម្បង",
     "fontSize": "ទំហំអក្សរ",
     "tipsTitle": "គន្លឹះរហ័ស",

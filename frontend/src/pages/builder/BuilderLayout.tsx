@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
 import { useAuth } from "../../hooks/UseAuth";
-import { useResumeStore } from "../../store/resumeStore";
+import {
+  useResumeStore,
+  useResumeStoreHydrated,
+} from "../../store/resumeStore";
 import { saveResumeToDashboard } from "../../lib/api";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
@@ -41,6 +44,7 @@ export default function BuilderLayout() {
   const { user } = useAuth();
   const toggleLanguage = () =>
     i18n.changeLanguage(i18n.language === "en" ? "km" : "en");
+  const resumeHydrated = useResumeStoreHydrated();
   const resumeId = useResumeStore((s) => s.resume.id);
   const resume = useResumeStore((s) => s.resume);
   const dirty = useResumeStore((s) => s.dirty);
@@ -59,12 +63,14 @@ export default function BuilderLayout() {
   const tips = t("builder.tips", { returnObjects: true }) as string[];
 
   useEffect(() => {
+    if (!resumeHydrated) return;
     setStep(clampBuilderStep(useResumeStore.getState().resume.builderStep));
-  }, [resumeId]);
+  }, [resumeHydrated, resumeId]);
 
   useEffect(() => {
+    if (!resumeHydrated) return;
     setBuilderStep(step);
-  }, [step, setBuilderStep]);
+  }, [step, setBuilderStep, resumeHydrated]);
 
   useEffect(() => {
     if (!user || !dirty) return;
@@ -170,6 +176,10 @@ export default function BuilderLayout() {
     setCustomizeOpen(open);
     scrollFormToTop();
   };
+
+  if (!resumeHydrated) {
+    return <div className="h-dvh bg-bg" />;
+  }
 
   return (
     <div className="h-dvh overflow-hidden bg-bg text-text flex flex-col">

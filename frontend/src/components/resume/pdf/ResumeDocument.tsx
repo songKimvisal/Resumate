@@ -775,7 +775,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       lineHeight: c.lineHeight,
     },
     twoCol: { flexDirection: "row", marginTop: gapSection, gap: 24 },
-    col: { flex: 1 },
+    twoColRow: { flexDirection: "row", gap: 24, marginTop: 2 },
+    col: { flex: 1, minWidth: 0 },
     dotRow: { flexDirection: "row", gap: 3, alignItems: "center" },
     dot: { width: 5, height: 5, borderRadius: 2.5 },
   });
@@ -917,6 +918,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             .map((i) => (
               <View
                 key={i.id}
+                wrap={false}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -945,14 +947,15 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         {items
           .filter((i) => i.name)
           .map((i) => (
-            <View
-              key={i.id}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 2,
-              }}
-            >
+              <View
+                key={i.id}
+                wrap={false}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 2,
+                }}
+              >
               <Text style={{ fontSize: base * 0.85, color: ink }}>
                 {i.name}
               </Text>
@@ -1144,23 +1147,102 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     </>
   );
 
-  const skillsLanguageNode = !listsInSidebar &&
-    (skills.length > 0 || languages.length > 0) && (
-      <View style={styles.twoCol}>
-        {skills.length > 0 && (
-          <View style={styles.col}>
-            {renderSectionTitle("Skills")}
-            {renderLevels(skills, SKILL_LEVEL_LABELS)}
+  const namedSkills = skills.filter((s) => s.name);
+  const namedLangs = languages.filter((l) => l.name);
+  const twoColRows = Math.max(namedSkills.length, namedLangs.length);
+  const renderPairedLevel = (
+    item: { id: string; name: string; level: number } | undefined,
+    labels: readonly string[],
+  ) => {
+    if (!item) return <View style={styles.col} />;
+    if (c.skillsDisplay === "list") {
+      return (
+        <View
+          style={[
+            styles.col,
+            { flexDirection: "row", alignItems: "center", columnGap: 4 },
+          ]}
+        >
+          <View
+            style={{
+              width: 3,
+              height: 3,
+              borderRadius: 1.5,
+              backgroundColor: accent,
+            }}
+          />
+          <Text style={{ flex: 1, fontSize: base * 0.85, color: bodyTextColorEff }}>
+            {item.name}
+          </Text>
+        </View>
+      );
+    }
+    if (c.toggles.dots) {
+      return (
+        <View
+          style={[
+            styles.col,
+            { flexDirection: "row", justifyContent: "space-between" },
+          ]}
+        >
+          <Text
+            style={{
+              flex: 1,
+              fontSize: base * 0.85,
+              color: bodyTextColorEff,
+              paddingRight: 6,
+            }}
+          >
+            {item.name}
+          </Text>
+          <View style={styles.dotRow} wrap={false}>
+            {Array.from({ length: 5 }).map((_, d) => (
+              <View
+                key={d}
+                style={[
+                  styles.dot,
+                  d < item.level
+                    ? { backgroundColor: accent }
+                    : { backgroundColor: bodyTextColorEff, opacity: 0.2 },
+                ]}
+              />
+            ))}
           </View>
-        )}
-        {languages.length > 0 && (
-          <View style={styles.col}>
-            {renderSectionTitle("Languages")}
-            {renderLevels(languages, LANGUAGE_LEVEL_LABELS)}
-          </View>
-        )}
+        </View>
+      );
+    }
+    return (
+      <View style={styles.col}>
+        <Text style={{ fontSize: base * 0.85, color: bodyTextColorEff }}>
+          {item.name} ({labels[item.level - 1]})
+        </Text>
       </View>
     );
+  };
+
+  const skillsLanguageNode = !listsInSidebar && twoColRows > 0 && (
+    <View style={styles.section}>
+      <View wrap={false} minPresenceAhead={32} style={styles.twoColRow}>
+        <View style={styles.col}>
+          {namedSkills.length > 0 && renderSectionTitle("Skills")}
+        </View>
+        <View style={styles.col}>
+          {namedLangs.length > 0 && renderSectionTitle("Languages")}
+        </View>
+      </View>
+      {Array.from({ length: twoColRows }, (_, i) => (
+        <View
+          key={`skill-lang-${namedSkills[i]?.id ?? "x"}-${namedLangs[i]?.id ?? i}`}
+          wrap={false}
+          minPresenceAhead={12}
+          style={styles.twoColRow}
+        >
+          {renderPairedLevel(namedSkills[i], SKILL_LEVEL_LABELS)}
+          {renderPairedLevel(namedLangs[i], LANGUAGE_LEVEL_LABELS)}
+        </View>
+      ))}
+    </View>
+  );
 
   const referencesNode = !listsInSidebar &&
     includeReferences &&

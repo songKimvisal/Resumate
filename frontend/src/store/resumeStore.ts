@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   Resume,
   PersonalInfo,
@@ -73,7 +75,9 @@ interface ResumeState {
   setIncludeReferences: (value: boolean) => void;
 }
 
-export const useResumeStore = create<ResumeState>((set) => ({
+export const useResumeStore = create<ResumeState>()(
+  persist(
+    (set) => ({
   resume: emptyResume,
   dirty: false,
 
@@ -382,4 +386,45 @@ export const useResumeStore = create<ResumeState>((set) => ({
       resume: { ...s.resume, includeReferences: value },
       dirty: true,
     })),
-}));
+    }),
+    {
+      name: "resumate-active-resume",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ resume: s.resume, dirty: s.dirty }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<ResumeState> | undefined;
+        if (!saved?.resume) return current;
+        return {
+          ...current,
+          ...saved,
+          resume: {
+            ...saved.resume,
+            customization: {
+              ...emptyResume.customization,
+              ...saved.resume.customization,
+              fontSize:
+                normalizeFontSize(saved.resume.customization?.fontSize) ??
+                emptyResume.customization.fontSize,
+            },
+          },
+        };
+      },
+    },
+  ),
+);
+
+export function useResumeStoreHydrated() {
+  const [hydrated, setHydrated] = useState(() =>
+    useResumeStore.persist.hasHydrated(),
+  );
+
+  useEffect(() => {
+    if (useResumeStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useResumeStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  return hydrated;
+}

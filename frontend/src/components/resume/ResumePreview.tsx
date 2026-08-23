@@ -656,8 +656,10 @@ export default function ResumePreview({
   const pages = useMemo(() => {
     if (measuredWidth !== realPageWidthPx) return [blocks];
     const verticalPaddingPx = realPageWidthPx * (paddingTopBottomPct / 100);
-    const contentHeightPx =
-      realPageWidthPx * pageAspect - verticalPaddingPx * 2;
+    const pageHeightPx = realPageWidthPx * pageAspect;
+    let contentHeightPx = pageHeightPx - verticalPaddingPx * 2;
+    if (customization.footerBar) contentHeightPx -= pageHeightPx * 0.02;
+    if (customization.topAccentBar) contentHeightPx -= pageHeightPx * 0.025;
     const firstPageContentHeightPx = topHeaderBanner
       ? contentHeightPx - bannerHeightPx
       : contentHeightPx;
@@ -676,6 +678,8 @@ export default function ResumePreview({
     measuredWidth,
     pageAspect,
     paddingTopBottomPct,
+    customization.footerBar,
+    customization.topAccentBar,
   ]);
   const paddingTopBottomPx = realPageWidthPx * (paddingTopBottomPct / 100);
   const paddingLeftRightPx = realPageWidthPx * (paddingLeftRightPct / 100);
@@ -726,7 +730,9 @@ export default function ResumePreview({
         }}
       >
         {blocks.map((b) => (
-          <div key={b.key}>{b.node}</div>
+          <div key={b.key} style={b.lane ? { width: "50%" } : undefined}>
+            {b.node}
+          </div>
         ))}
       </div>
 
@@ -1067,8 +1073,11 @@ function SkillLine({
   }
   if (theme.showDots) {
     return (
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="min-w-0 flex-1 break-words text-[0.85em]"
+          style={{ color: theme.bodyTextColor }}
+        >
           {skill.name}
         </p>
         <DotRow level={skill.level} accent={accent} theme={theme} />
@@ -1107,8 +1116,11 @@ function LanguageLine({
   }
   if (theme.showDots) {
     return (
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="min-w-0 flex-1 break-words text-[0.85em]"
+          style={{ color: theme.bodyTextColor }}
+        >
           {language.name}
         </p>
         <DotRow level={language.level} accent={accent} theme={theme} />

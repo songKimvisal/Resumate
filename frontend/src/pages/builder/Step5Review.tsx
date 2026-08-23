@@ -14,7 +14,10 @@ import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
-import { downloadResumePdf } from "../../lib/downloadResumePdf";
+import {
+  downloadResumePdf,
+  isDownloadAbort,
+} from "../../lib/downloadResumePdf";
 import { saveResumeToDashboard } from "../../lib/api";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
@@ -62,6 +65,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const { score, band, missing } = computeCompleteness(resume);
   const circumference = 2 * Math.PI * 42;
@@ -73,8 +77,13 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
       return;
     }
     setDownloading(true);
+    setDownloadError(null);
     try {
       await downloadResumePdf(resume);
+    } catch (err) {
+      if (!isDownloadAbort(err)) {
+        setDownloadError(t("builder.downloadPdfError"));
+      }
     } finally {
       setDownloading(false);
     }
@@ -269,8 +278,10 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
                   : t("builder.review.saveToDashboard")}
             </Button>
           </div>
-          {saveError && (
-            <p className="text-sm text-destructive mt-3">{saveError}</p>
+          {(saveError || downloadError) && (
+            <p className="text-sm text-destructive mt-3">
+              {downloadError ?? saveError}
+            </p>
           )}
         </div>
 

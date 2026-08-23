@@ -754,6 +754,7 @@
     "customize": "Customize",
     "downloadPdf": "Download PDF",
     "downloadingPdf": "Preparing…",
+    "downloadPdfError": "Could not save the PDF. Please try again.",
     "accentColor": "Accent color",
     "fontSize": "Font size",
     "tipsTitle": "Quick tip",
