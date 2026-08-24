@@ -13,15 +13,10 @@ const isValidEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
 function buildChecklist(resume: Resume): ChecklistItem[] {
-  const { personal, experienceChoice, experience, noExperience, education, skills } =
+  const { personal, experience, noExperience, education, skills } =
     resume;
 
-  const hasExperience =
-    experienceChoice === "has"
-      ? experience.length > 0
-      : experienceChoice === "none"
-        ? noExperience.length > 0
-        : false;
+  const hasExperience = experience.length > 0 || noExperience.length > 0;
 
   const items: ChecklistItem[] = [
     { id: "fullName", step: 1, weight: 10, done: !!personal.fullName.trim() },
