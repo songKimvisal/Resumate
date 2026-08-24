@@ -8,7 +8,6 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/** Parses a "YYYY-MM" value into its numeric parts, or null if empty/invalid */
 function parse(value: string | undefined) {
   if (!value) return null;
   const [y, m] = value.split("-").map(Number);
@@ -24,10 +23,6 @@ function format(value: string) {
     year: "numeric",
   });
 }
-
-/** Compact month+year picker matching the "YYYY-MM" strings the resume
- *  model stores — a full day-grid calendar would let users pick a day this
- *  data has no room for, so this is a 12-month grid with a year stepper. */
 export function MonthPicker({
   value,
   onChange,
@@ -40,9 +35,7 @@ export function MonthPicker({
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  /** "YYYY-MM" lower bound (inclusive) */
   min?: string;
-  /** "YYYY-MM" upper bound (inclusive) */
   max?: string;
   disabled?: boolean;
   className?: string;
@@ -75,10 +68,7 @@ export function MonthPicker({
         type="button"
         disabled={disabled}
         className={cn(
-          // min-w-0 is load-bearing: an inline-flex element won't shrink
-          // below its content's intrinsic width otherwise, no matter what
-          // its ancestors or its own w-full say — the exact same class of
-          // bug the native month input had, just self-inflicted this time
+          
           "w-full min-w-0 h-10 px-3 rounded-lg border border-line bg-bg text-sm text-left inline-flex items-center gap-2",
           "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors",
           "disabled:opacity-50 disabled:cursor-not-allowed",
