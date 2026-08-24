@@ -815,13 +815,14 @@
         "Include job title, company, location, and dates.",
         "Start each bullet with a strong action verb (e.g. Built, Organized, Coordinated).",
         "Quantify results where you can (e.g. Collaborated with 3 teammates, Served 20+ clients daily).",
-        "Keep 3 to 5 bullets per role focused on impact, not daily duties."
+        "Keep 3 to 5 bullets per role focused on impact, not daily duties.",
+        "Need an internship or project too? Tap Add experience and pick that type."
       ]
     },
     "tipFreshExperience": {
       "lead": "No formal job yet internships, projects, volunteering, and part-time work still count.",
       "points": [
-        "Pick a type from the list: internship, university project, volunteer work, competition, or part-time job.",
+        "Tap Add experience and pick Internship, School project, Volunteer, or Part-time.",
         "Write what you did, who you helped, and one small result if you have it.",
         "Even “supported a 5-person team” is useful.",
         "List the most recent activity first.",
@@ -829,12 +830,12 @@
       ]
     },
     "tipExperienceChoice": {
-      "lead": "Choose the path that matches you both can make a strong resume.",
+      "lead": "Jobs, internships, and school projects all belong on this page.",
       "points": [
-        "Pick “I have work experience” if you have held a job at a company.",
-        "Pick “Fresh graduate” if you are a student or first-time job seeker with no formal office role.",
-        "Internships, university projects, volunteering, competitions, and part-time jobs belong on the Fresh graduate path.",
-        "You can add more than one entry after you choose."
+        "Tap Add experience and pick the type that matches what you did.",
+        "A company job, an internship, and a school project can sit in the same list.",
+        "Start with the most recent.",
+        "Write what you did, and one result if you have it."
       ]
     },
     "fontSizes": {
@@ -1120,9 +1121,11 @@
     },
     "experience": {
       "title": "Work experience",
-      "subtitle": "No full-time job yet? Internships, projects, volunteering, and part-time work all count. Start with the most recent.",
+      "subtitle": "Jobs, internships, and school projects all belong here.",
+      "emptyTitle": "Nothing here yet",
+      "emptyHint": "Tap Add experience and pick a type. Internships and projects count too.",
       "modalTitle": "Work experience",
-      "modalSubtitle": "No formal experience? No problem we have options for everyone.",
+      "modalSubtitle": "Pick a starting point. You can add jobs, internships, and projects after.",
       "hasTitle": "Yes, I have work experience",
       "hasDesc": "Full-time employment at a company",
       "noneTitle": "No experience fresh graduate",
@@ -1130,7 +1133,21 @@
       "freshTitle": "No formal experience? You still have plenty to show.",
       "freshBody": "Internships, volunteering, university projects, and part-time work all count as experience. You can add them here, or continue to Education.",
       "addAnyway": "Add one anyway",
-      "addAnother": "Add another experience",
+      "addAnother": "Add experience",
+      "pickTypeTitle": "What do you want to add?",
+      "pickTypeCancel": "Cancel",
+      "addTypes": {
+        "job": "Job",
+        "jobDesc": "Full-time or contract role at a company",
+        "internshipDesc": "Internship at a company or organization",
+        "universityDesc": "Coursework or school project",
+        "volunteerDesc": "Volunteer role or community work",
+        "competitionDesc": "Contest, hackathon, or competition",
+        "partTimeDesc": "Part-time or freelance work"
+      },
+      "activitiesTitle": "Internships, projects & other experience",
+      "activitiesSubtitle": "Add internships, university projects, volunteering, competitions, or part-time work alongside your jobs.",
+      "addActivity": "Add internship or project",
       "jobTitle": "Job title",
       "company": "Company",
       "location": "Location",
@@ -1151,7 +1168,7 @@
       "moveDown": "Move down",
       "noExperienceTitle": "What have you been part of ?",
       "noExperienceSubtitle": "Pick anything from the dropdown that applies these all count as real experience on a resume.",
-      "noExperienceTypeLabel": "Type of the no experience",
+      "noExperienceTypeLabel": "Type",
       "noExperienceTypes": {
         "university": "University project",
         "volunteer": "Volunteer work",
