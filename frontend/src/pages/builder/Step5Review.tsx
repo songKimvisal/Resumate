@@ -212,7 +212,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="shrink-0 sm:ml-3"
+                  className="shrink-0 sm:ml-3 hover:bg-primary hover:text-primary-foreground"
                   onClick={() => onGoToStep(item.step)}
                 >
                   {t("builder.review.fixInStep", { step: item.step })}
@@ -263,6 +263,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
             <Button
               size="compact"
               variant="outline"
+              className="hover:bg-primary hover:text-primary-foreground"
               onClick={saved ? () => navigate("/my-resumes") : handleSave}
               disabled={saving}
             >

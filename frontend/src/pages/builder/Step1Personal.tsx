@@ -353,7 +353,7 @@ export default function Step1Personal() {
                       "px-2.5 py-1 rounded-md text-xs font-medium border transition-colors",
                       personal.photoFit === mode
                         ? "border-brand text-brand"
-                        : "border-line text-text-secondary hover:bg-surface-2",
+                        : "border-line text-text-secondary hover:bg-primary hover:text-primary-foreground",
                     )}
                   >
                     {t(`builder.personal.photoFit.${mode}`)}
@@ -483,7 +483,7 @@ export default function Step1Personal() {
                 />
                 <button
                   onClick={() => closeField(f.key)}
-                  className="size-10 shrink-0 rounded-md text-destructive hover:bg-surface-2 inline-flex items-center justify-center"
+                  className="size-10 shrink-0 rounded-md text-destructive hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center"
                   aria-label={t("builder.personal.removeField")}
                 >
                   <Trash2 size={16} />
@@ -574,7 +574,7 @@ export default function Step1Personal() {
                                 )
                               }
                               className={cn(
-                                "absolute right-2 top-1/2 -translate-y-1/2 size-6 rounded-md inline-flex items-center justify-center hover:bg-surface-2",
+                                "absolute right-2 top-1/2 -translate-y-1/2 size-6 rounded-md inline-flex items-center justify-center hover:bg-primary hover:text-primary-foreground",
                                 entry.url
                                   ? "text-brand"
                                   : "text-text-placeholder",
@@ -632,7 +632,7 @@ export default function Step1Personal() {
                           </div>
                           <button
                             onClick={() => removeLinkEntry(f.key, entry.id)}
-                            className="size-10 shrink-0 rounded-md text-destructive hover:bg-surface-2 inline-flex items-center justify-center"
+                            className="size-10 shrink-0 rounded-md text-destructive hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center"
                             aria-label={t("builder.personal.removeField")}
                           >
                             <Trash2 size={16} />
@@ -665,7 +665,7 @@ export default function Step1Personal() {
               <button
                 key={f.key}
                 onClick={() => openField(f.key, f.labelKey)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-text hover:border-brand hover:text-brand transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-text hover:border-primary hover:bg-primary hover:text-primary-foreground transition-colors"
               >
                 <f.icon size={15} strokeWidth={1.8} />
                 {t(`builder.personal.details.${f.labelKey}`)}

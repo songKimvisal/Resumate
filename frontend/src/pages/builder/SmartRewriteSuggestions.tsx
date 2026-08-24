@@ -37,7 +37,7 @@ export function SmartRewriteSuggestions({
             </h4>
             <button
               onClick={onDismiss}
-              className="rounded-full p-1 text-text-secondary hover:bg-surface-2"
+              className="rounded-full p-1 text-text-secondary hover:bg-primary hover:text-primary-foreground"
               aria-label={t("builder.personal.close")}
             >
               <X size={15} />

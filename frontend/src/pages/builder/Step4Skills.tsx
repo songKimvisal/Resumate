@@ -49,7 +49,7 @@ export default function Step4Skills() {
             className={cn(
               "flex-1",
               tab !== tb.key &&
-                "text-text-secondary hover:bg-transparent hover:text-text",
+                "text-text-secondary hover:bg-transparent hover:text-text-secondary",
             )}
           >
             {tb.label}
@@ -165,14 +165,14 @@ function SkillCard({
 
         <button
           onClick={onRemove}
-          className="size-9 shrink-0 rounded-md text-destructive hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-destructive inline-flex items-center justify-center"
           aria-label={t("builder.skillsMore.skills.deleteEntry")}
         >
           <Trash2 size={16} />
         </button>
         <button
           onClick={onToggle}
-          className="size-9 shrink-0 rounded-md text-brand hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-brand inline-flex items-center justify-center"
           aria-label={
             expanded
               ? t("builder.skillsMore.skills.collapse")
@@ -295,7 +295,7 @@ function LanguageRow({
       </div>
       <button
         onClick={onRemove}
-        className="size-9 shrink-0 rounded-md text-destructive hover:bg-surface-2 inline-flex items-center justify-center"
+        className="size-9 shrink-0 rounded-md text-destructive inline-flex items-center justify-center"
         aria-label={t("builder.skillsMore.languages.deleteEntry")}
       >
         <Trash2 size={16} />
@@ -422,14 +422,14 @@ function ReferenceCard({
 
         <button
           onClick={onRemove}
-          className="size-9 shrink-0 rounded-md text-destructive hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-destructive inline-flex items-center justify-center"
           aria-label={t("builder.skillsMore.references.deleteEntry")}
         >
           <Trash2 size={16} />
         </button>
         <button
           onClick={onToggle}
-          className="size-9 shrink-0 rounded-md text-brand hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-brand inline-flex items-center justify-center"
           aria-label={
             expanded
               ? t("builder.skillsMore.references.collapse")

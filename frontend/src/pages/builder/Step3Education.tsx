@@ -196,14 +196,14 @@ function EducationCard({
 
         <button
           onClick={onRemove}
-          className="size-9 shrink-0 rounded-md text-destructive hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-destructive hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center"
           aria-label={t("builder.education.deleteEntry")}
         >
           <Trash2 size={16} />
         </button>
         <button
           onClick={onToggle}
-          className="size-9 shrink-0 rounded-md text-brand hover:bg-surface inline-flex items-center justify-center"
+          className="size-9 shrink-0 rounded-md text-brand hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center"
           aria-label={
             expanded
               ? t("builder.education.collapse")

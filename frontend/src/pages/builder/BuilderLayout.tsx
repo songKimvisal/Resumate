@@ -57,9 +57,9 @@ function normalizeTip(raw: unknown): TipCard {
   return { lead: "", points: [] };
 }
 
-function experienceTipKey(choice: "has" | "none" | null) {
-  if (choice === "none") return "builder.tipFreshExperience";
-  if (choice === "has") return "builder.tipHasExperience";
+function experienceTipKey(hasJobs: boolean, hasOther: boolean) {
+  if (hasJobs) return "builder.tipHasExperience";
+  if (hasOther) return "builder.tipFreshExperience";
   return "builder.tipExperienceChoice";
 }
 
@@ -72,7 +72,8 @@ export default function BuilderLayout() {
   const resumeHydrated = useResumeStoreHydrated();
   const resumeId = useResumeStore((s) => s.resume.id);
   const resume = useResumeStore((s) => s.resume);
-  const experienceChoice = useResumeStore((s) => s.resume.experienceChoice);
+  const hasJobs = useResumeStore((s) => s.resume.experience.length > 0);
+  const hasOtherExperience = useResumeStore((s) => s.resume.noExperience.length > 0);
   const dirty = useResumeStore((s) => s.dirty);
   const setBuilderStep = useResumeStore((s) => s.setBuilderStep);
   const markSaved = useResumeStore((s) => s.markSaved);
@@ -89,15 +90,13 @@ export default function BuilderLayout() {
   const tips = t("builder.tips", { returnObjects: true }) as unknown[];
   const stepTip = normalizeTip(
     step === 2
-      ? t(experienceTipKey(experienceChoice), { returnObjects: true })
+      ? t(experienceTipKey(hasJobs, hasOtherExperience), { returnObjects: true })
       : tips[step - 1],
   );
   const tipHeading =
-    step === 2 && experienceChoice === "none"
-      ? t("builder.experience.noExperienceTitle")
-      : step === 2 && experienceChoice === "has"
-        ? t("builder.experience.title")
-        : stepLabels[step - 1];
+    step === 2
+      ? t("builder.experience.title")
+      : stepLabels[step - 1];
 
   useEffect(() => {
     if (!resumeHydrated) return;
@@ -229,7 +228,7 @@ export default function BuilderLayout() {
         <div className="flex items-center gap-3">
           <button
             onClick={toggleLanguage}
-            className="size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors text-sm font-medium"
+            className="size-9 rounded-lg text-text-secondary hover:bg-primary hover:text-primary-foreground transition-colors text-sm font-medium"
             aria-label="Switch language"
           >
             {i18n.language === "en" ? "ខ្មែរ" : "EN"}
@@ -237,7 +236,7 @@ export default function BuilderLayout() {
 
           <button
             onClick={toggleTheme}
-            className="size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+            className="size-9 rounded-lg text-text-secondary hover:bg-primary hover:text-primary-foreground transition-colors inline-flex items-center justify-center"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? (
@@ -452,7 +451,7 @@ export default function BuilderLayout() {
                   type="button"
                   onClick={() => setTipOpen(false)}
                   aria-label={t("builder.tipClose")}
-                  className="size-7 shrink-0 rounded-full text-text-secondary hover:bg-surface-2 hover:text-text inline-flex items-center justify-center transition-colors"
+                  className="size-7 shrink-0 rounded-full text-text-secondary hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center transition-colors"
                 >
                   <X size={14} strokeWidth={2} />
                 </button>
@@ -535,12 +534,21 @@ export default function BuilderLayout() {
         <div className="fixed bottom-0 inset-x-0 bg-bg/90 backdrop-blur border-t border-line">
           <div className="max-w-7xl mx-auto px-4 lg:px-1.5 h-14 flex items-center justify-between">
             {step > 1 ? (
-              <Button size="sm" variant="outline" onClick={back}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hover:bg-primary hover:text-primary-foreground"
+                onClick={back}
+              >
                 ← {t("builder.back")}
               </Button>
             ) : (
               <Link to="/my-resumes">
-                <Button size="sm" variant="outline">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hover:bg-primary hover:text-primary-foreground"
+                >
                   ← {t("builder.back")}
                 </Button>
               </Link>
