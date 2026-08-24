@@ -6,6 +6,7 @@ import type {
   PersonalInfo,
   ExperienceItem,
   NoExperienceItem,
+  NoExperienceType,
   EducationItem,
   SkillItem,
   LanguageItem,
@@ -13,6 +14,10 @@ import type {
   Customization,
 } from "../types/resume";
 import { emptyResume } from "../types/resume";
+import {
+  moveIdBefore,
+  resolveExperienceOrder,
+} from "../lib/experienceOrder";
 
 /** Generates ids for list items (experience entries, skills, ...) */
 export const uid = () => crypto.randomUUID();
@@ -49,9 +54,11 @@ interface ResumeState {
   removeExperience: (id: string) => void;
   /** Move the entry with dragId to the position of overId */
   reorderExperience: (dragId: string, overId: string) => void;
+  /** Reorder jobs and internships/projects as one list. */
+  reorderExperienceList: (dragId: string, overId: string) => void;
   setExperienceChoice: (choice: Resume["experienceChoice"]) => void;
 
-  addNoExperience: () => void;
+  addNoExperience: (type?: NoExperienceType) => void;
   updateNoExperience: (id: string, patch: Partial<NoExperienceItem>) => void;
   removeNoExperience: (id: string) => void;
   reorderNoExperience: (dragId: string, overId: string) => void;
@@ -73,6 +80,14 @@ interface ResumeState {
   updateReference: (id: string, patch: Partial<ReferenceItem>) => void;
   removeReference: (id: string) => void;
   setIncludeReferences: (value: boolean) => void;
+}
+
+function currentExperienceOrder(resume: Resume) {
+  return resolveExperienceOrder(
+    resume.experience.map((item) => item.id),
+    resume.noExperience.map((item) => item.id),
+    resume.experienceOrder,
+  );
 }
 
 export const useResumeStore = create<ResumeState>()(
@@ -130,25 +145,29 @@ export const useResumeStore = create<ResumeState>()(
 
   /* ---------- experience ---------- */
   addExperience: () =>
-    set((s) => ({
-      resume: {
-        ...s.resume,
-        experience: [
-          ...s.resume.experience,
-          {
-            id: uid(),
-            jobTitle: "",
-            company: "",
-            location: "",
-            startDate: "",
-            endDate: "",
-            current: false,
-            description: "",
-          },
-        ],
-      },
-      dirty: true,
-    })),
+    set((s) => {
+      const id = uid();
+      return {
+        resume: {
+          ...s.resume,
+          experience: [
+            ...s.resume.experience,
+            {
+              id,
+              jobTitle: "",
+              company: "",
+              location: "",
+              startDate: "",
+              endDate: "",
+              current: false,
+              description: "",
+            },
+          ],
+          experienceOrder: [...currentExperienceOrder(s.resume), id],
+        },
+        dirty: true,
+      };
+    }),
   updateExperience: (id, patch) =>
     set((s) => ({
       resume: {
@@ -164,6 +183,9 @@ export const useResumeStore = create<ResumeState>()(
       resume: {
         ...s.resume,
         experience: s.resume.experience.filter((e) => e.id !== id),
+        experienceOrder: currentExperienceOrder(s.resume).filter(
+          (entryId) => entryId !== id,
+        ),
       },
       dirty: true,
     })),
@@ -178,6 +200,18 @@ export const useResumeStore = create<ResumeState>()(
       list.splice(to, 0, moved);
       return { resume: { ...s.resume, experience: list }, dirty: true };
     }),
+  reorderExperienceList: (dragId, overId) =>
+    set((s) => ({
+      resume: {
+        ...s.resume,
+        experienceOrder: moveIdBefore(
+          currentExperienceOrder(s.resume),
+          dragId,
+          overId,
+        ),
+      },
+      dirty: true,
+    })),
   setExperienceChoice: (choice) =>
     set((s) => ({
       resume: { ...s.resume, experienceChoice: choice },
@@ -185,27 +219,31 @@ export const useResumeStore = create<ResumeState>()(
     })),
 
   /* ---------- no experience (fresh graduate) ---------- */
-  addNoExperience: () =>
-    set((s) => ({
-      resume: {
-        ...s.resume,
-        noExperience: [
-          ...s.resume.noExperience,
-          {
-            id: uid(),
-            type: "university",
-            title: "",
-            subtitle: "",
-            url: "",
-            startDate: "",
-            endDate: "",
-            current: false,
-            description: "",
-          },
-        ],
-      },
-      dirty: true,
-    })),
+  addNoExperience: (type: NoExperienceType = "university") =>
+    set((s) => {
+      const id = uid();
+      return {
+        resume: {
+          ...s.resume,
+          noExperience: [
+            ...s.resume.noExperience,
+            {
+              id,
+              type,
+              title: "",
+              subtitle: "",
+              url: "",
+              startDate: "",
+              endDate: "",
+              current: false,
+              description: "",
+            },
+          ],
+          experienceOrder: [...currentExperienceOrder(s.resume), id],
+        },
+        dirty: true,
+      };
+    }),
   updateNoExperience: (id, patch) =>
     set((s) => ({
       resume: {
@@ -221,6 +259,9 @@ export const useResumeStore = create<ResumeState>()(
       resume: {
         ...s.resume,
         noExperience: s.resume.noExperience.filter((e) => e.id !== id),
+        experienceOrder: currentExperienceOrder(s.resume).filter(
+          (entryId) => entryId !== id,
+        ),
       },
       dirty: true,
     })),

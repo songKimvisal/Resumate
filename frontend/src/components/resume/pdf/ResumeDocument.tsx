@@ -12,8 +12,9 @@ import {
   Circle,
   Rect,
 } from "@react-pdf/renderer";
+import { extraExperienceTitle } from "../../../lib/experienceDisplay";
+import { orderedExperienceEntries } from "../../../lib/experienceOrder";
 import {
-  NO_EXPERIENCE_TYPE_LABELS,
   LANGUAGE_LEVEL_LABELS,
   SKILL_LEVEL_LABELS,
   type Customization,
@@ -560,6 +561,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     personal,
     experience,
     noExperience,
+    experienceOrder,
     education,
     skills,
     languages,
@@ -567,6 +569,11 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     includeReferences,
     customization: c,
   } = resume;
+  const mixedExperience = orderedExperienceEntries({
+    experience,
+    noExperience,
+    experienceOrder,
+  });
   const accent = c.accentColor;
   const base = c.fontSize * PDF_FONT_SIZE_RATIO;
   const fontFamily = pdfFontFamily(c.fontFamily);
@@ -1024,92 +1031,81 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   // `sectionOrder` specifies (mirrors ResumePreview.tsx's block grouping)
   const expEduNode = (
     <>
-      {experience.length > 0 && (
+      {(experience.length > 0 || noExperience.length > 0) && (
         <View style={styles.section} minPresenceAhead={40}>
           {renderSectionTitle("Experience")}
-          {experience.map((exp) => (
-            <View key={exp.id} style={styles.entry} minPresenceAhead={28}>
+          {mixedExperience.map((entry) =>
+            entry.kind === "job" ? (
+            <View key={entry.item.id} style={styles.entry} minPresenceAhead={28}>
               {timelineWrap(
                 <View style={styles.entryHeaderRow} wrap={false}>
                   <Text style={styles.entryTitle}>
-                    {exp.jobTitle || "Job title"}
-                    {(exp.company || exp.location) && (
+                    {entry.item.jobTitle || "Job title"}
+                    {(entry.item.company || entry.item.location) && (
                       <Text style={styles.entryMeta}>
                         {" "}
-                        —{" "}
-                        {[exp.company, exp.location].filter(Boolean).join(", ")}
+                        -{" "}
+                        {[entry.item.company, entry.item.location]
+                          .filter(Boolean)
+                          .join(", ")}
                       </Text>
                     )}
                   </Text>
                   <Text style={styles.entryDates}>
-                    {dateRange(exp, c.dateFormat)}
+                    {dateRange(entry.item, c.dateFormat)}
                   </Text>
                 </View>,
               )}
-              {hasVisibleText(exp.description) &&
-                richTextToPdf(exp.description, {
+              {hasVisibleText(entry.item.description) &&
+                richTextToPdf(entry.item.description, {
                   fontSize: base * 0.85,
                   color: bodyTextColorEff,
                   ...richTextOpts,
                 })}
             </View>
-          ))}
-        </View>
-      )}
-
-      {experience.length === 0 && noExperience.length > 0 && (
-        <View style={styles.section} minPresenceAhead={40}>
-          {renderSectionTitle("Experience")}
-          {noExperience.map((exp) => (
-            <View key={exp.id} style={styles.entry} minPresenceAhead={28}>
+            ) : (
+            <View key={entry.item.id} style={styles.entry} minPresenceAhead={28}>
               {timelineWrap(
                 <View style={styles.entryHeaderRow} wrap={false}>
                   <Text style={styles.entryTitle}>
-                    {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
-                    {(exp.title || exp.subtitle) && (
+                    {entry.item.url.trim() ? (
+                      <Link
+                        src={entry.item.url}
+                        style={{
+                          textDecoration: c.linkStyle.includes("underline")
+                            ? ("underline" as const)
+                            : ("none" as const),
+                          color: c.linkStyle.includes("color")
+                            ? accentText
+                            : bodyAccentColorEff,
+                        }}
+                      >
+                        {extraExperienceTitle(entry.item)}
+                      </Link>
+                    ) : (
+                      extraExperienceTitle(entry.item)
+                    )}
+                    {entry.item.subtitle ? (
                       <Text style={styles.entryMeta}>
                         {" "}
-                        —{" "}
-                        {exp.title &&
-                          (exp.url.trim() ? (
-                            <Link
-                              src={exp.url}
-                              style={{
-                                // see the comment on ContactRow's linkStyle for
-                                // why this must always set both properties
-                                textDecoration: c.linkStyle.includes(
-                                  "underline",
-                                )
-                                  ? ("underline" as const)
-                                  : ("none" as const),
-                                color: c.linkStyle.includes("color")
-                                  ? accentText
-                                  : bodyAccentColorEff,
-                              }}
-                            >
-                              {exp.title}
-                            </Link>
-                          ) : (
-                            exp.title
-                          ))}
-                        {exp.title && exp.subtitle && ", "}
-                        {exp.subtitle}
+                        - {entry.item.subtitle}
                       </Text>
-                    )}
+                    ) : null}
                   </Text>
                   <Text style={styles.entryDates}>
-                    {dateRange(exp, c.dateFormat)}
+                    {dateRange(entry.item, c.dateFormat)}
                   </Text>
                 </View>,
               )}
-              {hasVisibleText(exp.description) &&
-                richTextToPdf(exp.description, {
+              {hasVisibleText(entry.item.description) &&
+                richTextToPdf(entry.item.description, {
                   fontSize: base * 0.85,
                   color: bodyTextColorEff,
                   ...richTextOpts,
                 })}
             </View>
-          ))}
+            ),
+          )}
         </View>
       )}
 

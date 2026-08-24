@@ -20,9 +20,10 @@ import {
   Link as LinkGlyph,
   type LucideIcon,
 } from "lucide-react";
+import { extraExperienceTitle } from "../../lib/experienceDisplay";
+import { orderedExperienceEntries } from "../../lib/experienceOrder";
 import { useResumeStore } from "../../store/resumeStore";
 import {
-  NO_EXPERIENCE_TYPE_LABELS,
   LANGUAGE_LEVEL_LABELS,
   SKILL_LEVEL_LABELS,
   type Resume,
@@ -240,6 +241,7 @@ export default function ResumePreview({
     personal,
     experience,
     noExperience,
+    experienceOrder,
     education,
     skills,
     languages,
@@ -353,11 +355,23 @@ export default function ResumePreview({
       });
     }
     const expEduBlocks: Block[] = [];
+    const mixedExperience = orderedExperienceEntries({
+      experience,
+      noExperience,
+      experienceOrder,
+    });
 
-    experience.forEach((exp, i) => {
-      const header = <ExperienceHeader exp={exp} theme={theme} />;
+    mixedExperience.forEach((entry, i) => {
+      const keyPrefix =
+        entry.kind === "job" ? `exp-${entry.item.id}` : `noexp-${entry.item.id}`;
+      const header =
+        entry.kind === "job" ? (
+          <ExperienceHeader exp={entry.item} theme={theme} />
+        ) : (
+          <NoExperienceHeader exp={entry.item} theme={theme} />
+        );
       expEduBlocks.push({
-        key: `exp-${exp.id}-header`,
+        key: `${keyPrefix}-header`,
         gapBefore: i === 0 ? gapSection : gapExpItem,
         node:
           i === 0 ? (
@@ -369,14 +383,14 @@ export default function ResumePreview({
           ),
       });
 
-      if (hasText(exp.description)) {
+      if (hasText(entry.item.description)) {
         const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
-        const fragments = splitRichText(exp.description);
+        const fragments = splitRichText(entry.item.description);
         fragments.forEach(({ html, tag }, j) => {
           const adjacentParagraphs =
             j > 0 && tag === "P" && fragments[j - 1].tag === "P";
           expEduBlocks.push({
-            key: `exp-${exp.id}-desc-${j}`,
+            key: `${keyPrefix}-desc-${j}`,
             gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
             node: (
               <div
@@ -389,44 +403,6 @@ export default function ResumePreview({
         });
       }
     });
-
-    if (experience.length === 0) {
-      noExperience.forEach((exp, i) => {
-        const header = <NoExperienceHeader exp={exp} theme={theme} />;
-        expEduBlocks.push({
-          key: `noexp-${exp.id}-header`,
-          gapBefore: i === 0 ? gapSection : gapExpItem,
-          node:
-            i === 0 ? (
-              <Section title="Experience" theme={theme}>
-                {header}
-              </Section>
-            ) : (
-              header
-            ),
-        });
-
-        if (hasText(exp.description)) {
-          const paraGap = parseFloat(fontSize) * 0.85 * 0.5;
-          const fragments = splitRichText(exp.description);
-          fragments.forEach(({ html, tag }, j) => {
-            const adjacentParagraphs =
-              j > 0 && tag === "P" && fragments[j - 1].tag === "P";
-            expEduBlocks.push({
-              key: `noexp-${exp.id}-desc-${j}`,
-              gapBefore: j === 0 ? 4 : adjacentParagraphs ? paraGap : 0,
-              node: (
-                <div
-                  className="rte-content text-[0.85em] leading-relaxed"
-                  style={{ color: theme.bodyTextColor }}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
-              ),
-            });
-          });
-        }
-      });
-    }
 
     education.forEach((edu, i) => {
       const header = <EducationEntry edu={edu} theme={theme} />;
@@ -590,6 +566,7 @@ export default function ResumePreview({
     personal,
     experience,
     noExperience,
+    experienceOrder,
     education,
     skills,
     languages,
@@ -825,6 +802,7 @@ export default function ResumePreview({
                         sidebarSectionKeys={sidebarSectionKeys}
                         experience={experience}
                         noExperience={noExperience}
+                        experienceOrder={experienceOrder}
                         education={education}
                         skills={skills}
                         languages={languages}
@@ -866,6 +844,7 @@ export default function ResumePreview({
                         sidebarSectionKeys={sidebarSectionKeys}
                         experience={experience}
                         noExperience={noExperience}
+                        experienceOrder={experienceOrder}
                         education={education}
                         skills={skills}
                         languages={languages}
@@ -1551,6 +1530,7 @@ function SidebarColumn({
   sidebarSectionKeys,
   experience,
   noExperience,
+  experienceOrder,
   education,
   skills,
   languages,
@@ -1570,6 +1550,7 @@ function SidebarColumn({
   sidebarSectionKeys: SectionOrderKey[];
   experience: ExperienceItem[];
   noExperience: NoExperienceItem[];
+  experienceOrder?: string[];
   education: EducationItem[];
   skills: SkillItem[];
   languages: LanguageItem[];
@@ -1659,6 +1640,7 @@ function SidebarColumn({
                   key="experience"
                   experience={experience}
                   noExperience={noExperience}
+                  experienceOrder={experienceOrder}
                   education={education}
                   theme={theme}
                 />
@@ -1680,47 +1662,43 @@ function SidebarColumn({
 function SidebarExperienceBody({
   experience,
   noExperience,
+  experienceOrder,
   education,
   theme,
 }: {
   experience: ExperienceItem[];
   noExperience: NoExperienceItem[];
+  experienceOrder?: string[];
   education: EducationItem[];
   theme: Theme;
 }) {
-  const showNoExperience = experience.length === 0;
+  const mixedExperience = orderedExperienceEntries({
+    experience,
+    noExperience,
+    experienceOrder,
+  });
 
   return (
     <>
-      {(experience.length > 0 ||
-        (showNoExperience && noExperience.length > 0)) && (
+      {mixedExperience.length > 0 && (
         <Section title="Experience" theme={theme}>
           <div className="space-y-3">
-            {experience.map((exp) => (
-              <div key={exp.id}>
-                <ExperienceHeader exp={exp} theme={theme} />
-                {hasText(exp.description) && (
+            {mixedExperience.map((entry) => (
+              <div key={entry.item.id}>
+                {entry.kind === "job" ? (
+                  <ExperienceHeader exp={entry.item} theme={theme} />
+                ) : (
+                  <NoExperienceHeader exp={entry.item} theme={theme} />
+                )}
+                {hasText(entry.item.description) && (
                   <div
                     className={cn("rte-content text-[0.85em] leading-relaxed mt-1", theme.bulletClass)}
                     style={{ color: theme.bodyTextColor }}
-                    dangerouslySetInnerHTML={{ __html: exp.description }}
+                    dangerouslySetInnerHTML={{ __html: entry.item.description }}
                   />
                 )}
               </div>
             ))}
-            {showNoExperience &&
-              noExperience.map((exp) => (
-                <div key={exp.id}>
-                  <NoExperienceHeader exp={exp} theme={theme} />
-                  {hasText(exp.description) && (
-                    <div
-                      className={cn("rte-content text-[0.85em] leading-relaxed mt-1", theme.bulletClass)}
-                      style={{ color: theme.bodyTextColor }}
-                      dangerouslySetInnerHTML={{ __html: exp.description }}
-                    />
-                  )}
-                </div>
-              ))}
           </div>
         </Section>
       )}
@@ -1830,47 +1808,39 @@ function NoExperienceHeader({
         className="font-semibold text-[0.95em]"
         style={{ color: theme.bodyTextColor }}
       >
-        {NO_EXPERIENCE_TYPE_LABELS[exp.type]}
-        {(exp.title || exp.subtitle) && (
+        {hasUrl ? (
+          <a
+            href={exp.url}
+            target="_blank"
+            rel="noreferrer"
+            className={
+              theme.linkStyle.includes("underline") ? "underline" : undefined
+            }
+            style={
+              theme.linkStyle.includes("color")
+                ? { color: theme.accentText }
+                : undefined
+            }
+          >
+            {extraExperienceTitle(exp)}
+          </a>
+        ) : (
+          extraExperienceTitle(exp)
+        )}
+        {hasUrl && theme.linkStyle.includes("icon") && (
+          <LinkGlyph
+            size="0.85em"
+            strokeWidth={2}
+            className="ml-1 inline-block shrink-0 align-middle"
+          />
+        )}
+        {exp.subtitle && (
           <span
             className="font-normal"
             style={{ color: theme.bodyAccentColor }}
           >
             {" "}
-            -{" "}
-            {exp.title &&
-              (hasUrl ? (
-                <>
-                  <a
-                    href={exp.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={
-                      theme.linkStyle.includes("underline")
-                        ? "underline"
-                        : undefined
-                    }
-                    style={
-                      theme.linkStyle.includes("color")
-                        ? { color: theme.accentText }
-                        : undefined
-                    }
-                  >
-                    {exp.title}
-                  </a>
-                  {theme.linkStyle.includes("icon") && (
-                    <LinkGlyph
-                      size="0.85em"
-                      strokeWidth={2}
-                      className="ml-1 inline-block shrink-0 align-middle"
-                    />
-                  )}
-                </>
-              ) : (
-                exp.title
-              ))}
-            {exp.title && exp.subtitle && ", "}
-            {exp.subtitle}
+            - {exp.subtitle}
           </span>
         )}
       </p>

@@ -1,5 +1,6 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { Resume } from "../../../types/resume";
+import { extraExperienceTitle } from "../../../lib/experienceDisplay";
 import { hasVisibleText, richTextToPdf } from "../../../lib/richTextToPdf";
 import { pdfFontFamily } from "../../../lib/fonts";
 
@@ -25,6 +26,31 @@ function websiteOf(resume: Resume) {
   return (
     p.website[0]?.url || p.portfolio[0]?.url || p.linkedin[0]?.url || ""
   );
+}
+
+function combinedJobs(
+  experience: Resume["experience"],
+  noExperience: Resume["noExperience"],
+  order?: string[],
+) {
+  const extras = noExperience.map((n) => ({
+    id: n.id,
+    jobTitle: extraExperienceTitle(n),
+    company: n.subtitle,
+    startDate: n.startDate,
+    endDate: n.endDate,
+    current: n.current,
+    description: n.description,
+    location: "",
+  }));
+  const all = [...experience, ...extras];
+  if (!order?.length) return all;
+  const byId = new Map(all.map((item) => [item.id, item]));
+  const ordered = order
+    .map((id) => byId.get(id))
+    .filter((item): item is (typeof all)[number] => !!item);
+  const used = new Set(ordered.map((item) => item.id));
+  return [...ordered, ...all.filter((item) => !used.has(item.id))];
 }
 
 /** PDF twins of the special DOM layouts — approximate composition for download fidelity. */
@@ -54,9 +80,7 @@ function DesignerPdf({ resume }: { resume: Resume }) {
   const accent = c.accentColor || "#EA580C";
   const sidebar = c.sidebarBgColor || "#2A2A2A";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { fontFamily: font, fontSize: 10, color: "#1A1A1A" },
     left: { position: "absolute", left: 0, top: 0, bottom: 0, width: "38%", backgroundColor: sidebar, color: "#fff" },
@@ -167,9 +191,7 @@ function TechPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#3C4452";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#3C4452" },
     main: { flex: 1 },
@@ -252,9 +274,7 @@ function BankingPdf({ resume }: { resume: Resume }) {
   const accent = c.accentColor || "#0891B2";
   const footer = c.sidebarBgColor || "#2C333A";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { fontFamily: font, fontSize: 10, color: "#2C333A", paddingTop: 28, paddingHorizontal: 28, paddingBottom: 20 },
     accent: { position: "absolute", top: 0, left: 0, width: 90, height: 10, backgroundColor: accent },
@@ -359,9 +379,7 @@ function FreshPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, references, includeReferences, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#2C3E50";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#1A1A1A", padding: 18, gap: 12 },
     main: { flex: 1, gap: 10 },
@@ -449,9 +467,7 @@ function NavyPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, references, includeReferences, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#1A2C4E";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#1F2937" },
     side: { width: "32%", backgroundColor: sidebar, color: "#fff", padding: 14, gap: 10 },
@@ -510,9 +526,7 @@ function RibbonPdf({ resume }: { resume: Resume }) {
   const sidebar = c.sidebarBgColor || "#5A5A5A";
   const ribbon = c.accentColor || "#3F3F3F";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10 },
     side: { width: "34%", backgroundColor: sidebar, color: "#fff", padding: 12, gap: 8 },
@@ -562,9 +576,7 @@ function GraphicPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#1B2838";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#111827" },
     side: { width: "34%", backgroundColor: sidebar, color: "#fff" },
@@ -619,9 +631,7 @@ function ExecutivePdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, references, includeReferences, customization: c } = resume;
   const navy = c.sidebarBgColor || "#1D2B45";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const parts = (personal.fullName || "").trim().split(/\s+/);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#111827", paddingTop: 20 },
@@ -670,9 +680,7 @@ function MonoPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, references, includeReferences, customization: c } = resume;
   const accent = c.accentColor || "#111827";
   const font = pdfFontFamily(c.fontFamily);
-  const jobs = experience.length > 0 ? experience : noExperience.map((n) => ({
-    id: n.id, jobTitle: n.title, company: n.subtitle, startDate: n.startDate, endDate: n.endDate, current: n.current, description: n.description, location: "",
-  }));
+  const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { fontFamily: font, fontSize: 10, color: "#111827", padding: 32, paddingLeft: 40 },
     accentBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 6, backgroundColor: accent },

@@ -226,6 +226,8 @@ export interface Resume {
   personal: PersonalInfo;
   experience: ExperienceItem[];
   noExperience: NoExperienceItem[];
+  /** Mixed display order of experience + noExperience ids. */
+  experienceOrder?: string[];
   education: EducationItem[];
   skills: SkillItem[];
   languages: LanguageItem[];
@@ -261,6 +263,7 @@ export const emptyResume: Resume = {
   },
   experience: [],
   noExperience: [],
+  experienceOrder: [],
   education: [],
   skills: [],
   languages: [],
