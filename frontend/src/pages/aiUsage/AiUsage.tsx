@@ -8,28 +8,35 @@ import { useAuth } from "../../hooks/UseAuth";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { getResumesByUser } from "../../lib/api";
-import type { PlanId } from "../../types/billing";
+import type { PackId, PlanId } from "../../types/billing";
+import { usePacks } from "../../hooks/usePacks";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 
-const PLAN_ID_ORDER: PlanId[] = ["free", "starter", "pro"];
-
-// Monthly allowances per plan, matching home.pricing.plans in the locale files.
 const PLAN_LIMITS: Record<PlanId, { aiCredits: number; resumesSaved: number }> =
   {
-    free: { aiCredits: 5, resumesSaved: 1 },
-    starter: { aiCredits: 30, resumesSaved: 2 },
-    pro: { aiCredits: 60, resumesSaved: 6 },
+    free: { aiCredits: 0, resumesSaved: 1 },
+    starter: { aiCredits: 8, resumesSaved: 1 },
+    pro: { aiCredits: 60, resumesSaved: 5 },
   };
 
-// AI writing credit usage isn't tracked server-side yet, so mock a used
-// count per plan; resumes saved below uses the real count from Supabase.
-const AI_CREDITS_USED: Record<PlanId, number> = {
-  free: 4,
-  starter: 12,
-  pro: 20,
+const PACK_LIMITS: Partial<
+  Record<PackId, { aiCredits: number; resumesSaved: number }>
+> = {
+  design: { aiCredits: 0, resumesSaved: 1 },
+  "ai-basic": { aiCredits: 8, resumesSaved: 1 },
+  "ai-plus": { aiCredits: 25, resumesSaved: 1 },
+  "ai-pro": { aiCredits: 60, resumesSaved: 1 },
+  "both-starter": { aiCredits: 8, resumesSaved: 1 },
+  "both-standard": { aiCredits: 25, resumesSaved: 2 },
+  "both-everything": { aiCredits: 60, resumesSaved: 5 },
 };
 
-const RESET_DAYS = 16;
+// Credit usage isn't tracked server-side yet, so mock a used count.
+const AI_CREDITS_USED: Record<PlanId, number> = {
+  free: 0,
+  starter: 3,
+  pro: 20,
+};
 
 export default function AiUsage() {
   const { t } = useTranslation();
@@ -37,10 +44,14 @@ export default function AiUsage() {
   const { user } = useAuth();
 
   const plan = useSubscriptionStore((s) => s.plan);
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const pricingPlans = usePricingPlans();
+  const { all: packs } = usePacks();
+  const currentPack = packs.find((p) => p.id === lastPackId);
   const currentPlan =
-    pricingPlans.find((p) => p.id === plan) ?? pricingPlans[0];
-  const nextPlan = pricingPlans[PLAN_ID_ORDER.indexOf(plan) + 1];
+    currentPack ??
+    pricingPlans.find((p) => p.id === plan) ??
+    pricingPlans[0];
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [resumesSavedCount, setResumesSavedCount] = useState(0);
@@ -52,7 +63,8 @@ export default function AiUsage() {
       .catch(() => setResumesSavedCount(0));
   }, [user]);
 
-  const limits = PLAN_LIMITS[plan];
+  const limits =
+    (lastPackId && PACK_LIMITS[lastPackId]) || PLAN_LIMITS[plan];
   const metrics = [
     {
       key: "aiCredits" as const,
@@ -87,15 +99,13 @@ export default function AiUsage() {
               {currentPlan.name} {t("aiUsage.planCard.planSuffix")}
             </p>
             <p className="text-sm text-text-secondary">
-              {t("aiUsage.planCard.resetIn", { days: RESET_DAYS })}
+              {t("aiUsage.planCard.creditsNote")}
             </p>
           </div>
         </div>
-        {nextPlan && (
-          <Button size="compact" onClick={() => setUpgradeModalOpen(true)}>
-            {nextPlan.cta}
-          </Button>
-        )}
+        <Button size="compact" onClick={() => setUpgradeModalOpen(true)}>
+          {t("billing.currentPlan.upgradeCta")}
+        </Button>
       </div>
 
       <div className="mt-4 w-full max-w-2xl rounded-2xl border border-line p-4 sm:p-5">
@@ -108,7 +118,7 @@ export default function AiUsage() {
           {metrics.map(({ key, icon: Icon, used, total }) => {
             const percent =
               total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
-            const limitReached = used >= total;
+            const limitReached = total === 0 || used >= total;
 
             return (
               <div key={key}>
@@ -152,11 +162,10 @@ export default function AiUsage() {
 
       <UpgradePlanModal
         open={upgradeModalOpen}
-        currentPlan={plan}
         onClose={() => setUpgradeModalOpen(false)}
-        onSelectPlan={(selected) => {
+        onSelectPack={(packId) => {
           setUpgradeModalOpen(false);
-          navigate("/billing/payment", { state: { plan: selected } });
+          navigate("/billing/payment", { state: { pack: packId } });
         }}
       />
     </div>

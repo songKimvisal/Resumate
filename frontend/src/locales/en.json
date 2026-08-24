@@ -939,7 +939,7 @@
         "unlockCta": "Unlock template"
       },
       "premiumGate": {
-        "description": "Go monthly or unlock this template to access advanced styling.",
+        "description": "Buy a design pack or unlock this template for advanced styling.",
         "cta": "Unlock full customization"
       },
       "layout": {
@@ -1565,14 +1565,14 @@
   },
   "aiUsage": {
     "title": "Smart assistant usage ",
-    "subtitle": "How much of your plan's monthly allowance you've used.",
+    "subtitle": "Credits you bought. They don't expire. Buy another pack when you need more.",
     "planCard": {
-      "planSuffix": "Plan",
-      "resetIn": "Reset in {{days}} days"
+      "planSuffix": "pack",
+      "creditsNote": "Credits stay until you use them."
     },
     "usageCard": {
-      "title": "This month's Smart assistant usage",
-      "subtitle": "How much of your plan's monthly allowance you've used."
+      "title": "Smart assistant credits",
+      "subtitle": "These don't reset each month. Buy more when you run out."
     },
     "metrics": {
       "aiCredits": "Smart writing assistant credits",
@@ -1592,7 +1592,7 @@
     },
     "filters": {
       "all": "All",
-      "plan": "Monthly plan",
+      "plan": "Packs",
       "template": "Templates"
     },
     "empty": "No transactions in this category yet.",

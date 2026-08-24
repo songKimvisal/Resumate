@@ -15,9 +15,15 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
 import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
-import { usePricingPlans } from "../../hooks/usePricingPlans";
+import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
-import type { PaymentProvider, PlanId } from "../../types/billing";
+import {
+  packToPlanId,
+  isPackId,
+  type PackId,
+  type PaymentProvider,
+  type PlanId,
+} from "../../types/billing";
 import PaymentSuccessModal from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
@@ -36,12 +42,19 @@ export default function Payment() {
   const location = useLocation();
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
 
-  const requestedPlan = (location.state as { plan?: PlanId } | null)?.plan;
-  const plans = usePricingPlans();
-  const planData = plans.find(
-    (p) =>
-      p.id === requestedPlan && (p.id === "starter" || p.id === "pro"),
-  );
+  const checkout = location.state as
+    | { pack?: PackId; plan?: PlanId }
+    | null;
+  const { all: packs } = usePacks();
+  const planData =
+    (isPackId(checkout?.pack)
+      ? packs.find((p) => p.id === checkout.pack)
+      : undefined) ??
+    (checkout?.plan === "pro"
+      ? packs.find((p) => p.id === "both-everything")
+      : checkout?.plan === "starter"
+        ? packs.find((p) => p.id === "both-starter")
+        : undefined);
 
   useEffect(() => {
     if (!planData) navigate("/billing", { replace: true });
@@ -73,7 +86,7 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     const successTimeout = setTimeout(() => {
-      subscribeToPlan(planData.id);
+      subscribeToPlan(packToPlanId(planData.id), planData.id);
       setShowSuccess(true);
     }, MOCK_KHQR_SUCCESS_DELAY_MS);
 
@@ -89,7 +102,7 @@ export default function Payment() {
     if (!isStripeFormValid || processing) return;
     setProcessing(true);
     setTimeout(() => {
-      subscribeToPlan(planData.id);
+      subscribeToPlan(packToPlanId(planData.id), planData.id);
       setProcessing(false);
       setShowSuccess(true);
     }, MOCK_STRIPE_PROCESSING_MS);

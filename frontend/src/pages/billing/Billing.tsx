@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
-import { QrCode, CreditCard, Loader2, CheckCircle2, Lock } from "lucide-react";
+import { QrCode, CreditCard, Lock } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
 import { formatCardNumber, formatExpiry, detectCardBrand } from "../../lib/cardFormat";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
+import { usePacks } from "../../hooks/usePacks";
 import UpgradePlanModal from "./UpgradePlanModal";
 import mascot from "../../assets/logo/mascot.png";
 
@@ -22,13 +23,16 @@ export default function Billing() {
   const navigate = useNavigate();
 
   const plan = useSubscriptionStore((s) => s.plan);
-  const isSubscribed = useSubscriptionStore((s) => s.isSubscribed);
-  const unsubscribe = useSubscriptionStore((s) => s.unsubscribe);
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   const pricingPlans = usePricingPlans();
+  const { all: packs } = usePacks();
+  const currentPack = packs.find((p) => p.id === lastPackId);
   const CURRENT_PLAN =
-    pricingPlans.find((p) => p.id === plan) ?? pricingPlans[0];
+    currentPack ??
+    pricingPlans.find((p) => p.id === plan) ??
+    pricingPlans[0];
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("khqr");
   const [editingMethod, setEditingMethod] = useState(false);
@@ -42,10 +46,6 @@ export default function Billing() {
     brand: string;
     last4: string;
   } | null>(null);
-
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelled, setCancelled] = useState(false);
 
   const usagePercent = Math.min(
     100,
@@ -81,15 +81,6 @@ export default function Billing() {
       : savedCard
         ? `${savedCard.brand} •••• ${savedCard.last4}`
         : t("billing.paymentMethod.stripe.name");
-
-  const handleCancelSubscription = async () => {
-    setCancelling(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    unsubscribe();
-    setCancelling(false);
-    setCancelled(true);
-    setConfirmingCancel(false);
-  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -135,19 +126,12 @@ export default function Billing() {
             })}
           </p>
 
-          {plan === "pro" ? (
-            <p className="mt-5 flex items-center gap-1.5 text-sm text-success">
-              <CheckCircle2 size={15} strokeWidth={2} className="shrink-0" />
-              {t("billing.currentPlan.subscribedNote")}
-            </p>
-          ) : (
-            <Button
-              className="mt-5 w-full"
-              onClick={() => setUpgradeModalOpen(true)}
-            >
-              {t("billing.currentPlan.upgradeCta")}
-            </Button>
-          )}
+          <Button
+            className="mt-5 w-full"
+            onClick={() => setUpgradeModalOpen(true)}
+          >
+            {t("billing.currentPlan.upgradeCta")}
+          </Button>
         </div>
 
         <img
@@ -333,100 +317,14 @@ export default function Billing() {
             {t("billing.billingHistory.viewInvoices")}
           </button>
         </div>
-
-        {(isSubscribed || cancelled) && (
-          <div className="border-t border-line p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-bold text-brand">
-                  {t("billing.cancelSubscription.label")}
-                </p>
-                <p className="text-sm text-text-secondary mt-0.5">
-                  {t("billing.cancelSubscription.description")}
-                </p>
-              </div>
-              {!confirmingCancel && !cancelled && (
-                <Button
-                  size="compact"
-                  variant="destructive"
-                  className="shrink-0"
-                  onClick={() => setConfirmingCancel(true)}
-                >
-                  {t("billing.cancelSubscription.cancel")}
-                </Button>
-              )}
-            </div>
-
-            <AnimatePresence initial={false}>
-              {cancelled && (
-                <motion.p
-                  key="cancelled"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="overflow-hidden mt-4 pt-4 border-t border-line flex items-center gap-1.5 text-sm text-success"
-                >
-                  <CheckCircle2
-                    size={15}
-                    strokeWidth={2}
-                    className="shrink-0"
-                  />
-                  {t("billing.cancelSubscription.cancelled")}
-                </motion.p>
-              )}
-
-              {confirmingCancel && (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 pt-4 border-t border-line space-y-3">
-                    <p className="text-sm text-text-secondary">
-                      {t("billing.cancelSubscription.confirm")}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="compact"
-                        variant="destructive"
-                        disabled={cancelling}
-                        onClick={handleCancelSubscription}
-                      >
-                        {cancelling && (
-                          <Loader2 size={15} className="animate-spin" />
-                        )}
-                        {cancelling
-                          ? t("billing.cancelSubscription.cancelling")
-                          : t("billing.cancelSubscription.confirmYes")}
-                      </Button>
-                      <Button
-                        size="compact"
-                        variant="outline"
-                        disabled={cancelling}
-                        onClick={() => setConfirmingCancel(false)}
-                      >
-                        {t("billing.cancelSubscription.confirmCancel")}
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
       </div>
 
       <UpgradePlanModal
         open={upgradeModalOpen}
-        currentPlan={plan}
         onClose={() => setUpgradeModalOpen(false)}
-        onSelectPlan={(selected) => {
+        onSelectPack={(packId) => {
           setUpgradeModalOpen(false);
-          navigate("/billing/payment", { state: { plan: selected } });
+          navigate("/billing/payment", { state: { pack: packId } });
         }}
       />
     </div>

@@ -1,16 +1,16 @@
-import type { PlanId } from "../types/billing";
-
-type PayablePlanId = Exclude<PlanId, "free">;
+import { isPackId, type PackId } from "../types/billing";
 
 const PENDING_PLAN_KEY = "resumate:pendingPlan";
 const ENTERED_KEY = "resumate-entered";
 const STAY_HOME_KEY = "resumate-stay-home";
 
-export const setPendingPlan = (plan: PayablePlanId) =>
+export const setPendingPlan = (plan: PackId) =>
   sessionStorage.setItem(PENDING_PLAN_KEY, plan);
 
-export const getPendingPlan = (): PayablePlanId | null =>
-  (sessionStorage.getItem(PENDING_PLAN_KEY) as PayablePlanId | null) ?? null;
+export const getPendingPlan = (): PackId | null => {
+  const value = sessionStorage.getItem(PENDING_PLAN_KEY);
+  return isPackId(value) ? value : null;
+};
 
 export const clearPendingPlan = () => sessionStorage.removeItem(PENDING_PLAN_KEY);
 

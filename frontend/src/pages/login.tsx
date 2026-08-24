@@ -55,7 +55,7 @@ export default function Login() {
     if (pendingPlan) {
       clearPendingPlan();
       return (
-        <Navigate to="/billing/payment" state={{ plan: pendingPlan }} replace />
+        <Navigate to="/billing/payment" state={{ pack: pendingPlan }} replace />
       );
     }
     return <Navigate to={from} replace />;

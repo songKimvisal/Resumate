@@ -14,9 +14,8 @@ export interface PricingPlan {
 
 type RawPricingPlan = Omit<PricingPlan, "id">;
 
-// home.pricing.plans is always ordered Free, Starter, Pro in every locale —
-// index-based mapping avoids relying on `name`, which is translated (e.g.
-// "Free" -> "ឥតគិតថ្លៃ" in km.json) while "Starter"/"Pro" are kept as-is.
+// home.pricing.plans is always ordered Free, Starter, Everything in every
+// locale. Those map to free / starter / pro for existing entitlement gates.
 const PLAN_ID_ORDER: PlanId[] = ["free", "starter", "pro"];
 
 export function usePricingPlans(): PricingPlan[] {
