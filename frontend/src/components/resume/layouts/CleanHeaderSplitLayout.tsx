@@ -40,7 +40,7 @@ export default function CleanHeaderSplitLayout({
   const accent = customization.accentColor || ATS.navy;
   const muted = "#6B6B6B";
   const line = "#D4D4D4";
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const contacts = personalContactLines(personal);
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;

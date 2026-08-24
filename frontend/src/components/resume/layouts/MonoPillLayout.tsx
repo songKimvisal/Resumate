@@ -52,7 +52,7 @@ export default function MonoPillLayout({
   const ink = customization.bodyTextColor || "#1A1A1A";
   const muted = "#5A5A5A";
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;

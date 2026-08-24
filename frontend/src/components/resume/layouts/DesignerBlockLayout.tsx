@@ -41,7 +41,7 @@ export default function DesignerBlockLayout({
   const sidebar = customization.sidebarBgColor || "#2B2B2B";
   const ink = customization.bodyTextColor || "#1A1A1A";
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat || "yearOnly";
   const nameColor = customization.toggles.fullName ? accent : undefined;
   const titleColor = customization.toggles.jobTitle ? accent : undefined;

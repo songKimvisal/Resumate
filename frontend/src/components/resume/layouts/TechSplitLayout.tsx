@@ -43,7 +43,7 @@ export default function TechSplitLayout({
   const ink = customization.bodyTextColor || "#3C4452";
   const muted = "#6B7280";
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;

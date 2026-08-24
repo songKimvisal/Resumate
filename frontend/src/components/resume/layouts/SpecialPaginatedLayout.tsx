@@ -169,7 +169,7 @@ function buildUnits(resume: Resume): ContentUnit[] {
     pushSlicedUnits(units, "education", edu.id, edu.description);
   });
 
-  const jobs = normalizeJobs(resume.experience, resume.noExperience);
+  const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder);
   jobs.forEach((job) => {
     pushSlicedUnits(units, "job", job.id, job.description);
   });
@@ -442,7 +442,7 @@ function MeasureBlock({
     customization,
   } = resume;
   const fontSize = customization.fontSize || 14;
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
 
   if (unit.kind === "contact") {
     const lines = personalContactLines(personal);
@@ -566,7 +566,7 @@ export function SpecialPaginatedLayout({
 
   const plans = useMemo(() => {
     if (!measured) {
-      const jobs = normalizeJobs(resume.experience, resume.noExperience);
+      const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder);
       return [
         {
           summaryHtml: resume.personal.summary,

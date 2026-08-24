@@ -12,8 +12,8 @@ import type {
 } from "../../../types/resume";
 import {
   LANGUAGE_LEVEL_LABELS,
-  NO_EXPERIENCE_TYPE_LABELS,
 } from "../../../types/resume";
+import { extraExperienceTitle } from "../../../lib/experienceDisplay";
 import { cssFontStack } from "../../../lib/fonts";
 import { photoImgStyle } from "../../../lib/photoFit";
 
@@ -224,20 +224,26 @@ export type JobLike = {
 export function normalizeJobs(
   experience: ExperienceItem[],
   noExperience: NoExperienceItem[],
+  order?: string[],
 ): JobLike[] {
-  if (experience.length > 0) return experience;
-  return noExperience.map((n) => ({
+  const extras: JobLike[] = noExperience.map((n) => ({
     id: n.id,
-    jobTitle: n.title,
-    company: [NO_EXPERIENCE_TYPE_LABELS[n.type], n.subtitle]
-      .filter(Boolean)
-      .join(" · "),
-    location: n.url || "",
+    jobTitle: extraExperienceTitle(n),
+    company: n.subtitle,
+    location: "",
     startDate: n.startDate,
     endDate: n.endDate,
     current: n.current,
     description: n.description,
   }));
+  const all = [...experience, ...extras];
+  if (!order?.length) return all;
+  const byId = new Map(all.map((item) => [item.id, item]));
+  const ordered = order
+    .map((id) => byId.get(id))
+    .filter((item): item is JobLike => !!item);
+  const used = new Set(ordered.map((item) => item.id));
+  return [...ordered, ...all.filter((item) => !used.has(item.id))];
 }
 
 export function PhotoBox({

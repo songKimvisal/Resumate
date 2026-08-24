@@ -41,7 +41,7 @@ export default function ExecutiveCardLayout({
   const nameParts = (personal.fullName || "").trim().split(/\s+/);
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ");
-  const jobs = normalizeJobs(experience, noExperience);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
   const nameColor = customization.toggles.fullName ? accent : navy;
