@@ -54,7 +54,7 @@ export default function DesignerBlockLayout({
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#F4F4F4")}
     >
-      {/* LEFT RAIL — identity only on page 1; later pages keep the colored band */}
+      {/* LEFT RAIL - identity only on page 1; later pages keep the colored band */}
       <aside
         className="flex h-full shrink-0 flex-col text-white"
         style={{ width: "38%", backgroundColor: sidebar }}
@@ -135,7 +135,7 @@ export default function DesignerBlockLayout({
         )}
       </aside>
 
-      {/* RIGHT COLUMN — page 1 top sections, then experience pushed across pages */}
+      {/* RIGHT COLUMN - page 1 top sections, then experience pushed across pages */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {(hasText(personal.summary) || education.length > 0) && (
           <div className="shrink-0 space-y-5 bg-white px-6 py-6">

@@ -324,7 +324,7 @@ function applyPagePlan(
       // One entry per job id per page (merged description).
       if (usedIds.has(slice.id)) continue;
       usedIds.add(slice.id);
-      // Re-merge all slices for this id in order (in case non-adjacent — shouldn't happen).
+      // Re-merge all slices for this id in order (in case non-adjacent - shouldn't happen).
       const combined = mergedJobs
         .filter((s) => s.id === slice.id)
         .reduce(
@@ -474,7 +474,7 @@ function MeasureBlock({
         {unit.showMeta !== false && (
           <>
             <p className="font-bold">{edu.school}</p>
-            <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+            <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
             {edu.gpa && <p>GPA: {edu.gpa}</p>}
           </>
         )}

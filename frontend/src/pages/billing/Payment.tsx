@@ -17,6 +17,15 @@ import { cn } from "../../lib/utils";
 import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
 import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { useEntitlementStore } from "../../store/entitlementStore";
+import { useResumeStore } from "../../store/resumeStore";
+import { consumePendingTemplateId } from "../../lib/session";
+import {
+  packIncludesTemplates,
+  packUnlocksAllTemplates,
+  remainingTemplateSlots,
+} from "../../lib/templateAccess";
+import { TEMPLATE_PRESETS } from "../../data/templates";
 import {
   packToPlanId,
   isPackId,
@@ -24,7 +33,7 @@ import {
   type PaymentProvider,
   type PlanId,
 } from "../../types/billing";
-import PaymentSuccessModal from "./PaymentSuccessModal";
+import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
 const MOCK_KHQR_SUCCESS_DELAY_MS = 5000;
@@ -41,6 +50,9 @@ export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
+  const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
+  const unlockTemplates = useEntitlementStore((s) => s.unlockTemplates);
+  const updateCustomization = useResumeStore((s) => s.updateCustomization);
 
   const checkout = location.state as
     | { pack?: PackId; plan?: PlanId }
@@ -63,6 +75,7 @@ export default function Payment() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentProvider>("khqr");
   const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -76,8 +89,52 @@ export default function Payment() {
     cardCvc.length >= 3 &&
     cardName.trim().length > 0;
 
+  const fulfillPurchase = (packId: PackId) => {
+    subscribeToPlan(packToPlanId(packId), packId);
+    const pendingId = consumePendingTemplateId();
+
+    if (packUnlocksAllTemplates(packId)) {
+      unlockTemplates(
+        TEMPLATE_PRESETS.filter((p) => p.tier === "premium").map((p) => p.id),
+      );
+      if (pendingId) {
+        const preset = TEMPLATE_PRESETS.find((p) => p.id === pendingId);
+        if (preset) updateCustomization(preset.customization);
+        setAfterPay("builder");
+      } else {
+        setAfterPay("browse");
+      }
+    } else if (packIncludesTemplates(packId)) {
+      if (pendingId) {
+        unlockTemplate(pendingId);
+        const preset = TEMPLATE_PRESETS.find((p) => p.id === pendingId);
+        if (preset) updateCustomization(preset.customization);
+      }
+      const unlocked = useEntitlementStore.getState().unlockedTemplateIds.length;
+      const remaining = remainingTemplateSlots(packId, unlocked);
+      if (remaining > 0) setAfterPay("pick");
+      else setAfterPay(pendingId ? "builder" : "dashboard");
+    } else {
+      setAfterPay("dashboard");
+    }
+
+    setShowSuccess(true);
+  };
+
+  const continueAfterPay = (next: AfterPay) => {
+    if (next === "pick") {
+      navigate("/marketplace", { replace: true, state: { pickTemplates: true } });
+      return;
+    }
+    if (next === "browse") {
+      navigate("/marketplace", { replace: true });
+      return;
+    }
+    navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
+  };
+
   // KHQR: show a live countdown and simulate detecting the payment after a
-  // short delay — there's no backend/webhook in this repo to poll yet.
+  // short delay - there's no backend/webhook in this repo to poll yet.
   useEffect(() => {
     if (!planData || paymentMethod !== "khqr") return;
 
@@ -86,15 +143,16 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     const successTimeout = setTimeout(() => {
-      subscribeToPlan(packToPlanId(planData.id), planData.id);
-      setShowSuccess(true);
+      fulfillPurchase(planData.id);
     }, MOCK_KHQR_SUCCESS_DELAY_MS);
 
     return () => {
       clearInterval(interval);
       clearTimeout(successTimeout);
     };
-  }, [paymentMethod, planData, subscribeToPlan]);
+    // fulfillPurchase is recreated each render; the timeout is reset with paymentMethod/planData.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, planData]);
 
   if (!planData) return null;
 
@@ -102,9 +160,8 @@ export default function Payment() {
     if (!isStripeFormValid || processing) return;
     setProcessing(true);
     setTimeout(() => {
-      subscribeToPlan(packToPlanId(planData.id), planData.id);
+      fulfillPurchase(planData.id);
       setProcessing(false);
-      setShowSuccess(true);
     }, MOCK_STRIPE_PROCESSING_MS);
   };
 
@@ -119,7 +176,7 @@ export default function Payment() {
 
   return (
     <div className="min-h-screen bg-bg text-text px-4 sm:px-8 py-6">
-      <Button variant="outline" onClick={() => navigate(-1)}>
+      <Button size="compact" onClick={() => navigate(-1)}>
         <ChevronLeft size={16} />
         {t("billing.payment.back")}
       </Button>
@@ -272,7 +329,7 @@ export default function Payment() {
             </p>
 
             <div className="px-5 pb-5">
-              <Button className="mt-4 w-full" disabled>
+              <Button className="mt-4 h-9 w-full" size="compact" disabled>
                 <Loader2 size={15} className="animate-spin" />
                 {t("billing.payment.khqr.waitingForPayment")}
               </Button>
@@ -310,7 +367,8 @@ export default function Payment() {
             </div>
 
             <Button
-              className="mt-5 w-full"
+              className="mt-5 h-9 w-full"
+              size="compact"
               disabled={!isStripeFormValid || processing}
               onClick={handlePay}
             >
@@ -327,7 +385,8 @@ export default function Payment() {
       <PaymentSuccessModal
         open={showSuccess}
         planName={planData.name}
-        onGoToDashboard={() => navigate("/dashboard")}
+        afterPay={afterPay}
+        onContinue={() => continueAfterPay(afterPay)}
       />
     </div>
   );

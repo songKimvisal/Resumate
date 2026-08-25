@@ -178,7 +178,7 @@ export interface Customization {
   sectionIcon: "none" | "outline" | "filled";
   headerAlignment: "left" | "center";
   /** "row" places the photo beside the name/title/contact block instead of
-   *  above it — only applies to the full-width header (columns "one", or
+   *  above it - only applies to the full-width header (columns "one", or
    *  columns "two" with headerPosition "top") */
   headerLayout: "stacked" | "row";
   contactArrangement: "inline" | "stacked";
@@ -192,7 +192,7 @@ export interface Customization {
   /** thin accentColor ring around the profile photo */
   photoBorder: boolean;
   /** photo bleeds full-width across the top of the sidebar column, edge to
-   *  edge, instead of the small inset headshot — only applies when the
+   *  edge, instead of the small inset headshot - only applies when the
    *  header lives in the sidebar (headerPosition left/right) */
   sidebarPhotoFill: boolean;
   /** "meter" keeps the existing dot-rating/inline-text behavior (governed

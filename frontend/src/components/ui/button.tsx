@@ -20,7 +20,7 @@ const buttonVariants = cva(
       },
 
       size: {
-        // Primary button — compact on small screens, Figma size from sm up
+        // Primary button - compact on small screens, Figma size from sm up
         default: "h-10 px-4 text-sm sm:h-auto sm:px-8 sm:py-[15px]",
 
         // Small / Secondary button (Figma)

@@ -14,7 +14,7 @@ import {
 } from "./shared";
 import { photoImgStyle } from "../../../lib/photoFit";
 
-/** Graphic/pro sidebar — meters kept subtle; ATS text hierarchy first. */
+/** Graphic/pro sidebar - meters kept subtle; ATS text hierarchy first. */
 export default function GraphicProLayout({
   resume,
   pageWidthPx,

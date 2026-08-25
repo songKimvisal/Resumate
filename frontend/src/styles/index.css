@@ -298,7 +298,7 @@
   padding-left: 1.25em;
 }
 
-/* customization.bulletStyle overrides — the disc default needs no override */
+/* customization.bulletStyle overrides - the disc default needs no override */
 .rte-content.bullet-dash ul li::marker {
   content: "– ";
 }

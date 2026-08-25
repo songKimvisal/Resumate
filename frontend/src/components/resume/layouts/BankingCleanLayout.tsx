@@ -15,7 +15,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Premium banking — classic header + two columns. Highly ATS-readable. */
+/** Premium banking - classic header + two columns. Highly ATS-readable. */
 export default function BankingCleanLayout({
   resume,
   pageWidthPx,
@@ -136,7 +136,7 @@ export default function BankingCleanLayout({
                     <li key={l.id}>
                       {l.name}
                       {l.level >= 1 && l.level <= 5
-                        ? ` — ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
+                        ? ` - ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
                         : ""}
                     </li>
                   ))}

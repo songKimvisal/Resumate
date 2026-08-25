@@ -12,7 +12,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Banking classic — full-width navy header band (distinct from executiveCard). */
+/** Banking classic - full-width navy header band (distinct from executiveCard). */
 export default function CorporateBandLayout({
   resume,
   pageWidthPx,
@@ -103,7 +103,7 @@ export default function CorporateBandLayout({
                 {education.map((edu) => (
                   <div key={edu.id}>
                     <p className="font-bold">{edu.school}</p>
-                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
                   </div>

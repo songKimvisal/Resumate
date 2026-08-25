@@ -21,11 +21,11 @@ There is no server-side HTML-to-PDF step. The browser holds the resume object, d
 
 One resume is a typed `Resume` object (`frontend/src/types/resume.ts`):
 
-- **Identity** — `id`, `title`, `builderStep` (which wizard step to reopen)
-- **Personal** — name, title, contact, photo, summary (HTML)
-- **Work** — `experience[]` or `noExperience[]` (fresh-graduate path)
+- **Identity** - `id`, `title`, `builderStep` (which wizard step to reopen)
+- **Personal** - name, title, contact, photo, summary (HTML)
+- **Work** - `experience[]` or `noExperience[]` (fresh-graduate path)
 - **Education, skills, languages, references**
-- **Customization** — template, colors, fonts, margins, columns, section order, layout variant
+- **Customization** - template, colors, fonts, margins, columns, section order, layout variant
 
 Templates are not separate documents. A template preset is a `Customization` snapshot (colors, fonts, `layoutVariant`, column setup) applied onto the same content.
 
@@ -37,11 +37,11 @@ Route: `/builder` → `BuilderLayout`.
 
 The wizard is five steps, plus a Customize panel:
 
-1. **Personal info** — identity, photo, summary  
-2. **Experience** — jobs, or a no-experience / project path  
-3. **Education** — school, dates, achievements  
-4. **Skills & more** — skills, languages, references  
-5. **Review** — save and download PDF  
+1. **Personal info** - identity, photo, summary  
+2. **Experience** - jobs, or a no-experience / project path  
+3. **Education** - school, dates, achievements  
+4. **Skills & more** - skills, languages, references  
+5. **Review** - save and download PDF  
 
 Long text uses TipTap (`RichTextEditor`) and is stored as HTML. Smart Rewrite can replace a field with AI variations without changing layout.
 
@@ -90,7 +90,7 @@ If `customization.layoutVariant` is not `"default"` (for example `designerBlock`
 
 1. Flatten content into **units** (summary slices, education slices, job slices).
 2. Measure and pack units into a page budget.
-3. Build a per-page resume subset (`applyPagePlan`) — later pages hide identity chrome and only show overflow.
+3. Build a per-page resume subset (`applyPagePlan`) - later pages hide identity chrome and only show overflow.
 4. Render that subset with the matching layout component in `frontend/src/components/resume/layouts/`.
 
 Thumbnails (home, dashboard, marketplace) use `ScaledResumePreview` (first page only, scaled to the card).

@@ -4,7 +4,7 @@ import ResumePreview from "./ResumePreview";
 import { cn } from "../../lib/utils";
 
 // ResumePreview renders at a fixed native width. A4 @ 96dpi is the common
-// default (~794px) — if your ResumePreview renders at a different pixel
+// default (~794px) - if your ResumePreview renders at a different pixel
 // width, change this one constant; everything else scales off it.
 export const RESUME_PREVIEW_NATIVE_WIDTH = 794;
 

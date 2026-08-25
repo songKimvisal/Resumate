@@ -12,7 +12,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Hospitality classic no-photo — warm equal two-column split. */
+/** Hospitality classic no-photo - warm equal two-column split. */
 export default function WarmColumnsLayout({
   resume,
   pageWidthPx,
@@ -75,7 +75,7 @@ export default function WarmColumnsLayout({
                 {education.map((edu) => (
                   <div key={edu.id}>
                     <p className="font-bold">{edu.school}</p>
-                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
                   </div>

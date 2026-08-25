@@ -14,7 +14,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Executive navy card — polished professional, ATS-readable text. */
+/** Executive navy card - polished professional, ATS-readable text. */
 export default function ExecutiveCardLayout({
   resume,
   pageWidthPx,
@@ -159,7 +159,7 @@ export default function ExecutiveCardLayout({
                     <p className="font-bold">{edu.school}</p>
                     <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                   </div>
-                  <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                  <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
                 </div>
               ))}

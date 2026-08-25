@@ -141,7 +141,7 @@ export const ATS = {
   slate: "#334155",
 };
 
-/** Root page styles shared by every special layout — honors Customize controls. */
+/** Root page styles shared by every special layout - honors Customize controls. */
 export function layoutPageStyle(
   customization: Customization,
   fallbackBg = "#FFFFFF",
@@ -448,7 +448,7 @@ export function EducationBlock({
       </div>
       {(edu.degree || edu.field) && (
         <p className="font-medium" style={{ color: accent || muted }}>
-          {[edu.degree, edu.field].filter(Boolean).join(" — ")}
+          {[edu.degree, edu.field].filter(Boolean).join(" - ")}
         </p>
       )}
       {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
@@ -483,7 +483,7 @@ export function LanguagesBlock({
         return (
           <li key={l.id}>
             {l.name}
-            {level ? ` — ${level}` : ""}
+            {level ? ` - ${level}` : ""}
           </li>
         );
       })}

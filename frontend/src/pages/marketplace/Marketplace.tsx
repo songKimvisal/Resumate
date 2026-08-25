@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "motion/react";
 import { Bot, Check, ChevronLeft, ChevronRight, Filter } from "lucide-react";
@@ -12,6 +12,8 @@ import {
 } from "../../components/ui/popover";
 import { useResumeStore } from "../../store/resumeStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { hasTemplateAccess, remainingTemplateSlots } from "../../lib/templateAccess";
 import {
   INDUSTRIES,
   TEMPLATE_PRESETS,
@@ -36,16 +38,27 @@ const TIER_TABS: (TemplateTier | "all")[] = ["all", "free", "premium"];
 export default function Marketplace() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const pickFromCheckout = Boolean(
+    (location.state as { pickTemplates?: boolean } | null)?.pickTemplates,
+  );
   const updateCustomization = useResumeStore((s) => s.updateCustomization);
-  const isUnlocked = useEntitlementStore((s) => s.isUnlocked);
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
+  const remainingSlots = remainingTemplateSlots(
+    lastPackId,
+    unlockedTemplateIds.length,
+  );
 
   const [pendingUnlock, setPendingUnlock] = useState<{
     preset: TemplatePreset;
     customization: Partial<Customization>;
   } | null>(null);
 
-  const [tierFilter, setTierFilter] = useState<TemplateTier | "all">("all");
+  const [tierFilter, setTierFilter] = useState<TemplateTier | "all">(
+    pickFromCheckout ? "premium" : "all",
+  );
   const [industryFilter, setIndustryFilter] = useState<TemplateIndustry[]>([]);
   const [page, setPage] = useState(1);
 
@@ -100,7 +113,21 @@ export default function Marketplace() {
     preset: TemplatePreset,
     customization: Partial<Customization>,
   ) => {
-    if (preset.tier === "premium" && !isUnlocked(preset.id)) {
+    if (
+      preset.tier === "premium" &&
+      !hasTemplateAccess(preset.id, lastPackId, unlockedTemplateIds)
+    ) {
+      if (remainingSlots > 0) {
+        unlockTemplate(preset.id);
+        updateCustomization(customization);
+        const nextCount = unlockedTemplateIds.includes(preset.id)
+          ? unlockedTemplateIds.length
+          : unlockedTemplateIds.length + 1;
+        if (remainingTemplateSlots(lastPackId, nextCount) <= 0) {
+          navigate("/builder");
+        }
+        return;
+      }
       setPendingUnlock({ preset, customization });
       return;
     }
@@ -139,15 +166,45 @@ export default function Marketplace() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         {screen === "gallery" ? (
           <>
-            <h1 className="text-3xl font-bold text-text">
-              {t("marketplace.hero.title")}{" "}
-              <span className="text-brand italic">
-                {t("marketplace.hero.titleAccent")}
-              </span>
-            </h1>
-            <p className="text-sm text-text-secondary mt-2">
-              {t("marketplace.hero.subtitle")}
-            </p>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-3xl font-bold text-text">
+                  {t("marketplace.hero.title")}{" "}
+                  <span className="text-brand italic">
+                    {t("marketplace.hero.titleAccent")}
+                  </span>
+                </h1>
+                <p className="text-sm text-text-secondary mt-2 max-w-xl">
+                  {t("marketplace.hero.subtitle")}
+                </p>
+              </div>
+
+              {remainingSlots > 0 && (
+                <div
+                  className="flex items-center gap-1.5 self-start lg:mt-2"
+                  aria-label={t("marketplace.pickBanner.label")}
+                >
+                  <span
+                    title={t("marketplace.pickBanner.hint")}
+                    className="inline-flex items-center gap-2 rounded-full border border-line py-1 pl-1 pr-3"
+                  >
+                    <span className="inline-flex size-7 items-center justify-center rounded-full bg-brand text-xs font-bold tabular-nums text-white">
+                      {remainingSlots}
+                    </span>
+                    <span className="text-sm text-text">
+                      {t("marketplace.pickBanner.unit")}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard")}
+                    className="rounded-full px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-2 hover:text-text"
+                  >
+                    {t("marketplace.pickBanner.later")}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* ---------- AI pick banner ---------- */}
             <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl sm:rounded-full border-2 border-brand/30 bg-brand/5 px-4 py-3 sm:py-2">

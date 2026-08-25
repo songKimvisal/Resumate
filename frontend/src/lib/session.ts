@@ -1,6 +1,7 @@
 import { isPackId, type PackId } from "../types/billing";
 
 const PENDING_PLAN_KEY = "resumate:pendingPlan";
+const PENDING_TEMPLATE_KEY = "resumate:pendingTemplate";
 const ENTERED_KEY = "resumate-entered";
 const STAY_HOME_KEY = "resumate-stay-home";
 
@@ -13,6 +14,15 @@ export const getPendingPlan = (): PackId | null => {
 };
 
 export const clearPendingPlan = () => sessionStorage.removeItem(PENDING_PLAN_KEY);
+
+export const setPendingTemplateId = (templateId: string) =>
+  sessionStorage.setItem(PENDING_TEMPLATE_KEY, templateId);
+
+export const consumePendingTemplateId = (): string | null => {
+  const value = sessionStorage.getItem(PENDING_TEMPLATE_KEY);
+  sessionStorage.removeItem(PENDING_TEMPLATE_KEY);
+  return value;
+};
 
 export function markAppEntered() {
   sessionStorage.setItem(ENTERED_KEY, "1");

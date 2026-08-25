@@ -30,7 +30,7 @@ FastAPI backend for Resumate. Currently just verifies Supabase auth end to end.
    uvicorn app.main:app --reload --port 8000
    ```
 
-4. Check it's alive: open http://localhost:8000/api/health — should return `{"status": "ok"}`.
+4. Check it's alive: open http://localhost:8000/api/health - should return `{"status": "ok"}`.
 
 ## Testing the authenticated endpoint
 
@@ -60,7 +60,7 @@ app/
     supabase_jwt.py     Verifies Supabase JWTs, provides get_current_user()
   routers/
     me.py               GET /api/me (test endpoint)
-  services/             (empty for now — Gemini client goes here next)
+  services/             (empty for now - Gemini client goes here next)
 ```
 
 ## Next steps

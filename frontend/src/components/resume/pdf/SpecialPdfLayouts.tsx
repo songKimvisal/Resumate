@@ -53,7 +53,7 @@ function combinedJobs(
   return [...ordered, ...all.filter((item) => !used.has(item.id))];
 }
 
-/** PDF twins of the special DOM layouts — approximate composition for download fidelity. */
+/** PDF twins of the special DOM layouts - approximate composition for download fidelity. */
 export function SpecialPdfDocument({ resume }: { resume: Resume }) {
   const variant = resume.customization.layoutVariant;
   if (variant === "designerBlock") return <DesignerPdf resume={resume} />;
@@ -513,7 +513,7 @@ function NavyPdf({ resume }: { resume: Resume }) {
             </View>
           ))}
           {includeReferences && references.slice(0, 2).map((r) => (
-            <Text key={r.id}>{r.name} — {r.company}</Text>
+            <Text key={r.id}>{r.name} - {r.company}</Text>
           ))}
         </View>
       </Page>
@@ -665,7 +665,7 @@ function ExecutivePdf({ resume }: { resume: Resume }) {
           ))}
           <Text style={s.pill}>Education</Text>
           {education.map((edu) => (
-            <Text key={edu.id}>{edu.school} — {range(edu.startDate, edu.endDate, edu.current)}</Text>
+            <Text key={edu.id}>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
           ))}
           {includeReferences && references.slice(0, 2).map((r) => (
             <Text key={r.id}>{r.name}</Text>
@@ -713,7 +713,7 @@ function MonoPdf({ resume }: { resume: Resume }) {
         ))}
         <Text style={s.h}>Education</Text>
         {education.map((edu) => (
-          <Text key={edu.id}>{edu.school} — {range(edu.startDate, edu.endDate, edu.current)}</Text>
+          <Text key={edu.id}>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
         ))}
         <Text style={s.h}>Skills</Text>
         <Text>{skills.map((sk) => sk.name).join("  ·  ")}</Text>

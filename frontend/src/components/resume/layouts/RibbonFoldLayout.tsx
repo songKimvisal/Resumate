@@ -16,7 +16,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Professional charcoal sidebar — ATS-safe (no decorative ribbons). */
+/** Professional charcoal sidebar - ATS-safe (no decorative ribbons). */
 export default function RibbonFoldLayout({
   resume,
   pageWidthPx,

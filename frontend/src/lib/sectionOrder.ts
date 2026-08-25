@@ -45,7 +45,7 @@ const ALL_SECTION_KEYS: SectionOrderKey[] = [
 ];
 
 /** splits `order` into the sections that render in the main column vs. the
- *  sidebar column, preserving each side's relative order — used in
+ *  sidebar column, preserving each side's relative order - used in
  *  two-column mode, where `sidebarKeys` records which sections the user has
  *  dragged into the sidebar (anything else defaults to the main column) */
 export function partitionSectionOrder(

@@ -44,7 +44,7 @@ function isSpecialLayout(variant: LayoutVariant | undefined) {
 // the small/medium/large -> 9/10/11pt mapping this replaced, as a ratio).
 const PDF_FONT_SIZE_RATIO = 10 / 14.5;
 // the live preview measures the page in CSS px (96/inch); PDF pages are laid
-// out in points (72/inch) — this keeps a border set to Npx look the same
+// out in points (72/inch) - this keeps a border set to Npx look the same
 // physical thickness in the exported PDF as it does in the preview.
 const PDF_PX_TO_PT = 72 / 96;
 function fmtDate(
@@ -84,12 +84,12 @@ function photoRadius(shape: Customization["photoShape"], size: number) {
 const SIDEBAR_WIDTH_PCT = 34;
 
 /** react-pdf has no CSS aspect-ratio support, so the full-bleed sidebar
- *  photo needs an explicit point value instead — close enough across
+ *  photo needs an explicit point value instead - close enough across
  *  A4/Letter that the difference is imperceptible */
 const FULL_BLEED_PHOTO_HEIGHT_PT = 190;
 
 /* ---------------------------------------------------------------------
- * contact icons — react-pdf can't render DOM/lucide-react icons, so the
+ * contact icons - react-pdf can't render DOM/lucide-react icons, so the
  * handful used in the header/sidebar contact rows are reproduced here as
  * raw path data (lucide-react's own source, 24x24 viewBox) drawn through
  * @react-pdf/renderer's Svg primitives.
@@ -320,7 +320,7 @@ function SectionPdfIcon({
   const isFilled = sectionIcon === "filled";
   // "filled"'s bg/icon are an inverted pair for contrast; "outline" has no
   // fill, so its border and icon both just take the "ink" color (white on
-  // an accent-filled heading, accent otherwise) — mirrors SectionHeadingIcon
+  // an accent-filled heading, accent otherwise) - mirrors SectionHeadingIcon
   // in ResumePreview.tsx
   const badgeBg = onAccentBg ? "#fff" : accent;
   const filledIconColor = onAccentBg ? accent : "#fff";
@@ -362,7 +362,7 @@ function StyledPdfIcon({
   color: string;
   accent: string;
   /** contrast-safe stand-in for `accent` used as ink (border/glyph) instead
-   *  of fill — see the comment on `accentText` in ResumeDocument's main
+   *  of fill - see the comment on `accentText` in ResumeDocument's main
    *  render function */
   accentText: string;
   iconStyle: Customization["iconStyle"];
@@ -408,7 +408,7 @@ interface ContactItem {
   url?: string;
   /** header-type fields (phone/email/location/...) are governed by the
    *  "Header icons" toggle; link-type fields (portfolio/website/...) by
-   *  "Link icons" (or linkStyle "icon") — mirrors contactItems() in
+   *  "Link icons" (or linkStyle "icon") - mirrors contactItems() in
    *  ResumePreview.tsx */
   isHeader: boolean;
 }
@@ -630,7 +630,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     // NOTE: `lineHeight` is only ever set alongside an explicit `fontSize`
     // on the same style object. @react-pdf/renderer doesn't recompute an
     // inherited lineHeight as a multiplier of each descendant's own font
-    // size — it reuses the literal inherited value as an absolute line-box
+    // size - it reuses the literal inherited value as an absolute line-box
     // height, which collapses larger text (e.g. the name) into an overlap.
     page: {
       paddingVertical: `${marginVerticalPct}%`,
@@ -992,7 +992,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     );
   };
 
-  // self-contained per-entry dot + short line — deliberately NOT a
+  // self-contained per-entry dot + short line - deliberately NOT a
   // continuous line across entries, since entries can land on different
   // auto-paginated pages
   const timelineWrap = (node: React.ReactNode) =>

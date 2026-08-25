@@ -934,7 +934,7 @@
       },
       "locked": {
         "title": "{{style}} is a premium template",
-        "subtitle": "Unlock it to customize colors, fonts, and layout. Free templates can't be edited into a premium look.",
+        "subtitle": "Unlock it once to customize colors, fonts, and layout. Free templates can't be edited into this look.",
         "changeTemplate": "Choose another template",
         "unlockCta": "Unlock template"
       },
@@ -1296,6 +1296,13 @@
       "titleAccent": "template.",
       "subtitle": "Choose a layout that fits your industry and vibe. Switch anytime without losing your data."
     },
+    "pickBanner": {
+      "label": "Your template pack",
+      "hint": "Tap a locked design to unlock it.",
+      "remaining": "left to pick",
+      "later": "Later",
+      "unit": "left in pack"
+    },
     "aiBanner": {
       "title": "Not sure which template to pick?",
       "subtitle": "Answer 3 quick questions or mix and match manually. Smart picks the best layout, color, and font for you.",
@@ -1320,12 +1327,18 @@
     "premiumHover": "Unlock template",
     "premiumOverlay": {
       "title": "Premium Template",
-      "unlockFor": "Unlock for ${{price}}"
+      "unlockFor": "Unlock for ${{price}}",
+      "claim": "Tap to unlock",
+      "claimBadge": "Unlock"
     },
     "unlockModal": {
-      "description": "This is a premium template. Unlock it to use this design and customize it freely.",
+      "title": "Unlock {{style}}",
+      "description": "One-time. Nothing renews.",
+      "claimDescription": "Your pack includes a template slot. Use it on this design.",
+      "chooseLabel": "What do you need?",
       "cancel": "Cancel",
-      "unlockCta": "Unlock template"
+      "claimCta": "Unlock with your pack",
+      "viewFull": "View full size"
     },
     "empty": "No templates match your filters.",
     "pagination": {
@@ -1522,7 +1535,12 @@
         "title": "Payment",
         "titleAccent": "Successful.",
         "description": "Thank you for buying the {{plan}} pack. It's on your account and ready to use.",
-        "cta": "Go to Dashboard"
+        "descriptionPick": "Your pack includes templates. Pick which designs to unlock next.",
+        "descriptionBrowse": "Every template is unlocked. Open the gallery to start using one.",
+        "cta": "Go to Dashboard",
+        "ctaPick": "Choose templates",
+        "ctaBrowse": "Browse templates",
+        "ctaContinue": "Continue editing"
       }
     },
     "paymentMethod": {

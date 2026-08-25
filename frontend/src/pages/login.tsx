@@ -64,7 +64,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4 lg:p-10">
       <div className="lg:min-h-[707px] w-full max-w-6xl grid lg:grid-cols-2 rounded-2xl overflow-hidden border border-line shadow-sm">
-        {/* ============ Left panel — brand ============ */}
+        {/* ============ Left panel - brand ============ */}
         <div className="relative hidden lg:flex flex-col justify-between bg-brand text-white p-12 overflow-hidden">
           {/* decorative circles */}
           <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10" />
@@ -107,7 +107,7 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ============ Right panel — sign in ============ */}
+        {/* ============ Right panel - sign in ============ */}
         <div className="bg-bg flex items-center justify-center p-8 lg:p-16">
           <div className="w-full max-w-sm space-y-8">
             {/* logo shown on mobile only, since left panel is hidden */}

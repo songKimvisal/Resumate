@@ -3,9 +3,10 @@ import { useTranslation } from "react-i18next";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
+import { usePacks } from "../../hooks/usePacks";
+import { canClaimTemplateSlot, hasTemplateAccess } from "../../lib/templateAccess";
 import { useEntitlementStore } from "../../store/entitlementStore";
-
-const UNLOCK_PRICE = "2.99";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
 
 export default function TemplateCard({
   preset,
@@ -15,8 +16,12 @@ export default function TemplateCard({
   onSelect: (preset: TemplatePreset) => void;
 }) {
   const { t } = useTranslation();
+  const { design } = usePacks();
   const isPremium = preset.tier === "premium";
-  const isUnlocked = useEntitlementStore((s) => s.isUnlocked(preset.id));
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const unlockedIds = useEntitlementStore((s) => s.unlockedTemplateIds);
+  const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
+  const canClaim = canClaimTemplateSlot(lastPackId, unlockedIds.length);
   const resume = useMemo(
     () => ({ ...DEMO_RESUME, customization: preset.customization }),
     [preset],
@@ -31,22 +36,24 @@ export default function TemplateCard({
       <div className="relative pointer-events-none">
         <ResumePreview singlePage resume={resume} />
 
-        {isPremium && !isUnlocked && (
+        {isPremium && !hasAccess && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="mx-5 flex max-w-[85%] flex-col items-center gap-2.5 rounded-2xl bg-white/60 px-5 py-5 text-center shadow-[0_8px_24px_-6px_rgba(0,0,0,0.3)] ring-1 ring-black/6 backdrop-blur-lg backdrop-saturate-150 transition-transform duration-200 group-hover:scale-[1.04]">
               <span className="text-sm leading-snug font-bold uppercase tracking-wide text-brand-dark">
                 {t("marketplace.premiumOverlay.title")}
               </span>
               <span className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-md shadow-brand/30">
-                {t("marketplace.premiumOverlay.unlockFor", {
-                  price: UNLOCK_PRICE,
-                })}
+                {canClaim
+                  ? t("marketplace.premiumOverlay.claim")
+                  : t("marketplace.premiumOverlay.unlockFor", {
+                      price: design.price,
+                    })}
               </span>
             </div>
           </div>
         )}
 
-        {isPremium && isUnlocked && (
+        {isPremium && hasAccess && (
           <span className="absolute top-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-dark shadow-sm ring-1 ring-black/6">
             {t("marketplace.premiumBadge")}
           </span>

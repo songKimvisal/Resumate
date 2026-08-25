@@ -37,6 +37,11 @@ import { TEMPLATE_PRESETS, type TemplatePreset } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
+import {
+  hasTemplateAccess,
+  packIncludesTemplates,
+} from "../../lib/templateAccess";
+import { usePacks } from "../../hooks/usePacks";
 import { cn } from "../../lib/utils";
 import {
   isSpecialLayoutVariant,
@@ -48,7 +53,6 @@ import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { DEMO_RESUME } from "../../data/demoResume";
 
-const TEMPLATE_UNLOCK_PRICE = "2.99";
 const ACCENT_COLORS = [
   "#C1121F",
   "#EA580C",
@@ -189,6 +193,7 @@ const ICON_STYLE_LABEL_KEY: Record<Customization["iconStyle"], string> = {
 export default function CustomizePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { design } = usePacks();
   const customization = useResumeStore((s) => s.resume.customization);
   const updateCustomization = useResumeStore((s) => s.updateCustomization);
   const isSpecialLayout = isSpecialLayoutVariant(customization.layoutVariant);
@@ -202,35 +207,38 @@ export default function CustomizePage() {
 
   // a premium template applied from the marketplace/AI picker leaves its
   // preset id in customization.template; while it's not unlocked, Customize
-  // stays locked so a free user can't dial a free template to match it
+  // stays locked so a free user can't dial a free template to match it.
+  // a pack that includes templates also unlocks colors/fonts/layout on free
+  // templates - they already paid for design control
   const activeTemplatePreset = TEMPLATE_PRESETS.find(
     (p) => p.id === customization.template,
   );
-  const isTemplateUnlocked = useEntitlementStore((s) =>
-    activeTemplatePreset ? s.isUnlocked(activeTemplatePreset.id) : true,
-  );
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
-  const isSubscribed = useSubscriptionStore((s) => s.isSubscribed);
-  // a monthly subscriber can open any premium template's customize page,
-  // not just ones they've individually bought
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
+  const hasActiveTemplateAccess =
+    !activeTemplatePreset ||
+    activeTemplatePreset.tier !== "premium" ||
+    hasTemplateAccess(
+      activeTemplatePreset.id,
+      lastPackId,
+      unlockedTemplateIds,
+    );
   const isLocked =
-    activeTemplatePreset?.tier === "premium" &&
-    !isTemplateUnlocked &&
-    !isSubscribed;
-  // full customization freedom (advanced styling controls, two-column
-  // layout) requires either a monthly subscription or having bought the
-  // active premium template outright
+    activeTemplatePreset?.tier === "premium" && !hasActiveTemplateAccess;
   const hasFullCustomizationAccess =
-    isSubscribed ||
-    (activeTemplatePreset?.tier === "premium" && isTemplateUnlocked);
-  const isPresetUnlocked = useEntitlementStore((s) => s.isUnlocked);
+    hasActiveTemplateAccess &&
+    !!lastPackId &&
+    packIncludesTemplates(lastPackId);
+  const isPresetUnlocked = (id: string) =>
+    hasTemplateAccess(id, lastPackId, unlockedTemplateIds);
   const [unlockTarget, setUnlockTarget] = useState<TemplatePreset | null>(
     null,
   );
   // CTA for any premium-gated control: unlock the active template if it's
   // premium and not yet owned, otherwise send them to subscribe
   const openUpgrade = () => {
-    if (activeTemplatePreset?.tier === "premium" && !isTemplateUnlocked) {
+    if (activeTemplatePreset?.tier === "premium" && !hasActiveTemplateAccess) {
       setUnlockTarget(activeTemplatePreset);
     } else {
       navigate("/billing");
@@ -467,7 +475,7 @@ export default function CustomizePage() {
                   className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-md shadow-brand/30"
                 >
                   {t("marketplace.premiumOverlay.unlockFor", {
-                    price: TEMPLATE_UNLOCK_PRICE,
+                    price: design.price,
                   })}
                 </button>
               </div>
@@ -1421,7 +1429,7 @@ export default function CustomizePage() {
                       className="text-base leading-none"
                       style={{ color: customization.accentColor }}
                     >
-                      {BULLET_STYLE_GLYPH[option] || "—"}
+                      {BULLET_STYLE_GLYPH[option] || "-"}
                     </span>
                   </OptionCard>
                 ))}
@@ -1857,7 +1865,7 @@ function HeadingPresetPreview({
 }
 
 /** dims+disables a block of premium-only controls and overlays a small
- *  upgrade prompt — used to gate whole sections (colors' accent block,
+ *  upgrade prompt - used to gate whole sections (colors' accent block,
  *  header, section headings, spacing, photo styling) behind a monthly
  *  subscription or an unlocked premium template */
 function PremiumGate({
@@ -1907,7 +1915,7 @@ function OptionCard({
   selected: boolean;
   onClick: () => void;
   children?: React.ReactNode;
-  /** shows a premium badge and blocks the click instead of applying it —
+  /** shows a premium badge and blocks the click instead of applying it -
    *  used to keep premium-only layout options visible but unreachable from
    *  a free template, so free resumes can't be dialed in to look premium */
   premiumLocked?: boolean;
@@ -1952,8 +1960,11 @@ function TemplateSwitchThumb({
   onSelect: (preset: TemplatePreset) => void;
 }) {
   const { t } = useTranslation();
-  const isUnlocked = useEntitlementStore((s) => s.isUnlocked(preset.id));
-  const isPremiumLocked = preset.tier === "premium" && !isUnlocked;
+  const { design } = usePacks();
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const unlockedIds = useEntitlementStore((s) => s.unlockedTemplateIds);
+  const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
+  const isPremiumLocked = preset.tier === "premium" && !hasAccess;
   const resume = useMemo(
     () => ({ ...DEMO_RESUME, customization: preset.customization }),
     [preset],
@@ -1977,7 +1988,7 @@ function TemplateSwitchThumb({
             </span>
             <span className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-1.5 py-0.5 text-[6px] leading-none font-bold uppercase tracking-wide text-white shadow-sm shadow-brand/30">
               {t("marketplace.premiumOverlay.unlockFor", {
-                price: TEMPLATE_UNLOCK_PRICE,
+                price: design.price,
               })}
             </span>
           </div>
@@ -2065,7 +2076,7 @@ function DragRow({
   label: string;
   tall?: boolean;
   draggable?: boolean;
-  /** always-first row (Personal Details) — shown but not reorderable */
+  /** always-first row (Personal Details) - shown but not reorderable */
   pinned?: boolean;
   onDragStart?: () => void;
   onDropOn?: () => void;

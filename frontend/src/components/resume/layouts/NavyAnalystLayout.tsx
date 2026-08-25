@@ -15,7 +15,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Navy left sidebar analyst — professional ATS two-column. */
+/** Navy left sidebar analyst - professional ATS two-column. */
 export default function NavyAnalystLayout({
   resume,
   pageWidthPx,
@@ -94,7 +94,7 @@ export default function NavyAnalystLayout({
               {education.map((edu) => (
                 <div key={edu.id}>
                   <p className="font-bold uppercase tracking-wide">{edu.school}</p>
-                  <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                  <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p>GPA: {edu.gpa}</p>}
                 </div>
@@ -122,7 +122,7 @@ export default function NavyAnalystLayout({
                 <li key={l.id}>
                   {l.name}
                   {l.level >= 1 && l.level <= 5
-                    ? ` — ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
+                    ? ` - ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
                     : ""}
                 </li>
               ))}

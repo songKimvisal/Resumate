@@ -12,7 +12,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Fresh-grad classic — education-first, soft boxed sections, no photo. */
+/** Fresh-grad classic - education-first, soft boxed sections, no photo. */
 export default function GraduateFocusLayout({
   resume,
   pageWidthPx,
@@ -71,7 +71,7 @@ export default function GraduateFocusLayout({
                   <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                 </div>
                 <p className="font-medium" style={{ color: accent }}>
-                  {[edu.degree, edu.field].filter(Boolean).join(" — ")}
+                  {[edu.degree, edu.field].filter(Boolean).join(" - ")}
                 </p>
                 {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
                 <RichHtml html={edu.description} className="rte-content mt-1" style={{ color: muted }} />

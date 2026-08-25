@@ -308,7 +308,7 @@ export default function Step1Personal() {
           />
         </div>
 
-        {/* photo upload — hidden when the selected template has no photo slot */}
+        {/* photo upload - hidden when the selected template has no photo slot */}
         {showPhoto && (
         <div className="order-1 sm:order-2 space-y-2 text-center">
           <p className="text-sm font-medium text-text">

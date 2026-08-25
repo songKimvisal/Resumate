@@ -12,7 +12,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Tech classic — full-width top band, left skills rail, right experience (no photo). */
+/** Tech classic - full-width top band, left skills rail, right experience (no photo). */
 export default function CompactTechLayout({
   resume,
   pageWidthPx,
@@ -90,7 +90,7 @@ export default function CompactTechLayout({
                 {education.map((edu) => (
                   <div key={edu.id}>
                     <p className="font-bold">{edu.school}</p>
-                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
                   </div>

@@ -15,7 +15,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Premium fresh grad — main narrative + navy sidebar. ATS section names. */
+/** Premium fresh grad - main narrative + navy sidebar. ATS section names. */
 export default function FreshSidebarLayout({
   resume,
   pageWidthPx,
@@ -164,7 +164,7 @@ export default function FreshSidebarLayout({
               {education.map((edu) => (
                 <div key={edu.id}>
                   <p className="font-bold uppercase">{edu.school}</p>
-                  <p>{[edu.degree, edu.field].filter(Boolean).join(" — ")}</p>
+                  <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p>GPA: {edu.gpa}</p>}
                 </div>

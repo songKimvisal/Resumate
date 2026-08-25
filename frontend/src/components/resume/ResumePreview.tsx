@@ -232,7 +232,7 @@ export default function ResumePreview({
 }: {
   resume?: Resume;
   pageLabelClassName?: string;
-  /** Render only the first page, with no "Page X of Y" label — used for small thumbnails. */
+  /** Render only the first page, with no "Page X of Y" label - used for small thumbnails. */
   singlePage?: boolean;
 }) {
   const storeResume = useResumeStore((s) => s.resume);
@@ -494,7 +494,7 @@ export default function ResumePreview({
     } else {
       // two-column mode: each of the 4 movable sections is independently
       // placed, so only the ones the user left in the main column land here
-      // — whatever's in `sidebarSectionKeys` renders inside SidebarColumn
+      // - whatever's in `sidebarSectionKeys` renders inside SidebarColumn
       const skillsBlocks: Block[] = [];
       skills
         .filter((s) => s.name)
@@ -1656,7 +1656,7 @@ function SidebarColumn({
 }
 
 /** simplified experience+education renderer for when "Experience" is
- *  dragged into the sidebar — unlike the main column, sidebar content isn't
+ *  dragged into the sidebar - unlike the main column, sidebar content isn't
  *  paginated (see the module comment above SidebarColumn), so entries are
  *  just stacked directly instead of built as measurable/splittable Blocks */
 function SidebarExperienceBody({
@@ -1724,7 +1724,7 @@ function SidebarExperienceBody({
   );
 }
 
-/** self-contained per-entry dot + short line — deliberately NOT a
+/** self-contained per-entry dot + short line - deliberately NOT a
  *  continuous line across entries, since entries can land on different
  *  pages when the main column paginates */
 function TimelineMarker({ theme }: { theme: Theme }) {

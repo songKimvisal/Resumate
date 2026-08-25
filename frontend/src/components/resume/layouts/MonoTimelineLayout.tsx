@@ -101,7 +101,7 @@ export default function MonoTimelineLayout({
               <div key={edu.id}>
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-bold">
-                    {[edu.degree, edu.field].filter(Boolean).join(" — ") || edu.school}
+                    {[edu.degree, edu.field].filter(Boolean).join(" - ") || edu.school}
                   </p>
                   <p className="shrink-0 tabular-nums" style={{ color: muted }}>
                     {dateRange(edu, dateFmt)}

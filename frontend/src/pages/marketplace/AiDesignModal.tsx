@@ -48,7 +48,7 @@ export default function AiDesignModal({
 }) {
   const { t } = useTranslation();
   // the parent remounts this component (via a changing `key`) each time it
-  // opens, so seeding state from `initialAnswers` here is enough — no
+  // opens, so seeding state from `initialAnswers` here is enough - no
   // effect/ref needed to "reset on reopen"
   const [industry, setIndustry] = useState<AiIndustryAnswer | null>(
     initialAnswers?.industry ?? null,

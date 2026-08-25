@@ -12,7 +12,7 @@ import {
   layoutShellStyle,
 } from "./shared";
 
-/** Designer classic — centered editorial header, double rules, no photo. */
+/** Designer classic - centered editorial header, double rules, no photo. */
 export default function EditorialClassicLayout({
   resume,
   pageWidthPx,
@@ -100,7 +100,7 @@ export default function EditorialClassicLayout({
                 <div key={edu.id}>
                   <p className="font-bold">{edu.school}</p>
                   <p style={{ color: muted }}>
-                    {[edu.degree, edu.field].filter(Boolean).join(" — ")}
+                    {[edu.degree, edu.field].filter(Boolean).join(" - ")}
                   </p>
                   <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}

@@ -1,10 +1,26 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { Crown, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import ResumePreview from "../../components/resume/ResumePreview";
+import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
+import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
 import { DEMO_RESUME } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
+import {
+  NeedTabs,
+  PackCard,
+  PackCarousel,
+} from "../../components/home/PackPicker";
+import { usePacks } from "../../hooks/usePacks";
+import { setPendingTemplateId } from "../../lib/session";
+import { canClaimTemplateSlot } from "../../lib/templateAccess";
+import { useEntitlementStore } from "../../store/entitlementStore";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
+import type { NeedId, PackId } from "../../types/billing";
+
+const UNLOCK_NEEDS: NeedId[] = ["design", "both"];
 
 export default function UnlockTemplateModal({
   open,
@@ -18,74 +34,189 @@ export default function UnlockTemplateModal({
   onUnlock: () => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { byNeed } = usePacks();
+  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const unlockedCount = useEntitlementStore((s) => s.unlockedTemplateIds.length);
+  const canClaim = canClaimTemplateSlot(lastPackId, unlockedCount);
+  const [need, setNeed] = useState<NeedId>("design");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const packs = byNeed[need];
+  const popularBadge = t(
+    need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
+  );
+
+  const previewResume = useMemo(
+    () =>
+      preset
+        ? { ...DEMO_RESUME, customization: preset.customization }
+        : DEMO_RESUME,
+    [preset],
+  );
+
+  useEffect(() => {
+    if (open) {
+      setNeed("design");
+      setPreviewOpen(false);
+    }
+  }, [open, preset?.id]);
+
+  const checkout = (packId: PackId) => {
+    if (!preset) return;
+    setPendingTemplateId(preset.id);
+    onCancel();
+    navigate("/billing/payment", { state: { pack: packId } });
+  };
+
+  const styleName = preset
+    ? t(`marketplace.styleNames.${preset.styleKey}`)
+    : "";
 
   return (
     <AnimatePresence>
       {open && preset && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 py-10"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onCancel}
         >
-          <motion.div
-            className="relative w-full max-w-sm rounded-2xl bg-bg shadow-2xl overflow-hidden"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.18 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-amber-400 via-brand to-amber-400" />
-
-            <button
-              type="button"
-              onClick={onCancel}
-              aria-label={t("marketplace.unlockModal.cancel")}
-              className="absolute right-4 top-5 size-8 rounded-full text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+          <div className="flex min-h-dvh items-start justify-center p-3 sm:items-center sm:p-6">
+            <motion.div
+              className="relative my-3 w-full max-w-6xl rounded-2xl bg-bg px-4 py-5 shadow-xl sm:my-auto sm:px-6 sm:py-7 lg:px-8 lg:py-8"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={16} strokeWidth={2} />
-            </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                aria-label={t("marketplace.unlockModal.cancel")}
+                className="absolute right-3 top-3 z-10 inline-flex size-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-2 hover:text-text sm:right-4 sm:top-4"
+              >
+                <X size={16} strokeWidth={2} />
+              </button>
 
-            <div className="relative flex justify-center overflow-hidden bg-linear-to-b from-brand-light to-bg pt-9 pb-7">
-              <div className="absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300/25 blur-3xl" />
-              <div className="relative w-36 rounded-lg border border-line overflow-hidden shadow-lg pointer-events-none">
-                <ResumePreview
-                  singlePage
-                  resume={{ ...DEMO_RESUME, customization: preset.customization }}
-                />
+              <div className="grid items-start gap-5 lg:grid-cols-[20.5rem_minmax(0,1fr)] lg:gap-7">
+                <aside className="flex flex-col items-center lg:items-stretch">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewOpen(true)}
+                    aria-label={t("marketplace.unlockModal.viewFull")}
+                    className="group w-44 sm:w-52 lg:w-full"
+                  >
+                    <span className="block rounded-2xl bg-surface-2 p-1 shadow-inner ring-1 ring-line">
+                      <span className="relative block overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-black/5">
+                        <ScaledResumePreview
+                          resume={previewResume}
+                          className="rounded-none border-0 shadow-none"
+                        />
+                        <span className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full bg-black/55 text-white opacity-100 shadow-sm transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+                          <Maximize2 size={13} strokeWidth={2.5} />
+                        </span>
+                      </span>
+                    </span>
+                    <span className="mt-2.5 block text-center text-xs font-medium text-text-secondary">
+                      {t(`marketplace.industries.${preset.industry}`)}
+                    </span>
+                    <span className="mt-0.5 block text-center text-[11px] text-text-secondary/80 lg:hidden">
+                      {t("marketplace.unlockModal.viewFull")}
+                    </span>
+                  </button>
+                </aside>
+
+                <div className="min-w-0 text-center lg:text-left">
+                  <h2 className="px-8 text-xl font-bold tracking-tight text-text lg:px-0 lg:pr-10 lg:text-2xl">
+                    {t("marketplace.unlockModal.title", { style: styleName })}
+                  </h2>
+                  <p className="mt-1.5 text-sm text-text-secondary">
+                    {t(
+                      canClaim
+                        ? "marketplace.unlockModal.claimDescription"
+                        : "marketplace.unlockModal.description",
+                    )}
+                  </p>
+
+                  {canClaim ? (
+                    <div className="mx-auto mt-6 max-w-sm lg:mx-0">
+                      <Button
+                        className="h-9 w-full"
+                        size="compact"
+                        onClick={onUnlock}
+                      >
+                        {t("marketplace.unlockModal.claimCta")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mt-5">
+                        <NeedTabs
+                          value={need}
+                          onChange={setNeed}
+                          label={t("marketplace.unlockModal.chooseLabel")}
+                          ids={UNLOCK_NEEDS}
+                          align="start"
+                          className="w-full lg:max-w-[20.5rem]"
+                        />
+                        <p className="mt-2.5 text-sm text-text-secondary">
+                          {t(`home.pricing.${need}.label`)}
+                        </p>
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        {need === "design" ? (
+                          <motion.div
+                            key="design"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="mx-auto mt-5 w-full max-w-sm lg:mx-0"
+                          >
+                            {packs[0] && (
+                              <PackCard
+                                pack={packs[0]}
+                                badge={popularBadge}
+                                compact
+                                onSelect={() => checkout("design")}
+                              />
+                            )}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="both"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="mt-5 min-w-0"
+                          >
+                            <PackCarousel
+                              packs={packs}
+                              popularBadge={popularBadge}
+                              onSelect={checkout}
+                              contained
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-
-            <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-5 text-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-amber-400 to-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950 shadow-sm shadow-amber-500/30 ring-1 ring-amber-300/60">
-                <Crown size={12} strokeWidth={2.5} />
-                {t("marketplace.premiumBadge")}
-              </span>
-              <h2 className="text-xl font-bold text-text mt-3">
-                {t(`marketplace.styleNames.${preset.styleKey}`)}
-              </h2>
-              <p className="text-sm text-text-secondary mt-1.5">
-                {t("marketplace.unlockModal.description")}
-              </p>
-
-              <div className="mt-6 space-y-2.5">
-                <Button className="w-full" onClick={onUnlock}>
-                  {t("marketplace.unlockModal.unlockCta")}
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="ghost"
-                  onClick={onCancel}
-                >
-                  {t("marketplace.unlockModal.cancel")}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
       )}
+      <ResumePreviewOverlay
+        resume={previewResume}
+        open={open && previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        closeLabel={t("marketplace.unlockModal.cancel")}
+      />
     </AnimatePresence>
   );
 }

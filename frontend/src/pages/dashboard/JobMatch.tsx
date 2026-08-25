@@ -48,7 +48,7 @@ export default function JobMatch() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzePhase, setAnalyzePhase] = useState(0);
   const [hasResults, setHasResults] = useState(false);
-  /** Missing keywords from the first analysis — kept stable so Add/Level UI stays visible after apply. */
+  /** Missing keywords from the first analysis - kept stable so Add/Level UI stays visible after apply. */
   const [keywordCandidates, setKeywordCandidates] = useState<string[]>([]);
   /** token → skill added/linked from this analysis */
   const [appliedSkills, setAppliedSkills] = useState<
@@ -144,7 +144,7 @@ export default function JobMatch() {
   const canAnalyze = charCount >= MIN_CHARS && !analyzing;
   const subStep = analyzing || hasResults ? 1 : 0;
 
-  /** Live score against the current resume — rises as keywords are added to skills. */
+  /** Live score against the current resume - rises as keywords are added to skills. */
   const result = useMemo(() => {
     if (!hasResults || !selectedResume || !jobText.trim()) return null;
     return computeJobMatch(jobText, selectedResume);
@@ -548,7 +548,7 @@ function ResultsPanel({
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {matched.length === 0 ? (
-              <span className="text-xs text-text-secondary">—</span>
+              <span className="text-xs text-text-secondary">-</span>
             ) : (
               matched.map((item) => (
                 <span
@@ -568,7 +568,7 @@ function ResultsPanel({
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {missingPills.length === 0 ? (
-              <span className="text-xs text-text-secondary">—</span>
+              <span className="text-xs text-text-secondary">-</span>
             ) : (
               missingPills.map((item) => (
                 <span
@@ -593,7 +593,7 @@ function ResultsPanel({
               {t("jobMatch.results.addKeywordsHint")}
             </p>
             {keywordCandidates.length === 0 ? (
-              <p className="mt-2 text-sm text-text-secondary">—</p>
+              <p className="mt-2 text-sm text-text-secondary">-</p>
             ) : (
               <ul className="mt-3 space-y-2.5">
                 {keywordCandidates.map((token) => {

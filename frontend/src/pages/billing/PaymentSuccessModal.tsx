@@ -3,16 +3,43 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../../components/ui/button";
 import mascot from "../../assets/logo/mascot.png";
 
+export type AfterPay = "dashboard" | "builder" | "pick" | "browse";
+
+const SUCCESS_COPY: Record<
+  AfterPay,
+  { description: string; cta: string }
+> = {
+  pick: {
+    description: "billing.payment.success.descriptionPick",
+    cta: "billing.payment.success.ctaPick",
+  },
+  browse: {
+    description: "billing.payment.success.descriptionBrowse",
+    cta: "billing.payment.success.ctaBrowse",
+  },
+  builder: {
+    description: "billing.payment.success.description",
+    cta: "billing.payment.success.ctaContinue",
+  },
+  dashboard: {
+    description: "billing.payment.success.description",
+    cta: "billing.payment.success.cta",
+  },
+};
+
 export default function PaymentSuccessModal({
   open,
   planName,
-  onGoToDashboard,
+  afterPay,
+  onContinue,
 }: {
   open: boolean;
   planName: string;
-  onGoToDashboard: () => void;
+  afterPay: AfterPay;
+  onContinue: () => void;
 }) {
   const { t } = useTranslation();
+  const copy = SUCCESS_COPY[afterPay];
 
   return (
     <AnimatePresence>
@@ -38,11 +65,11 @@ export default function PaymentSuccessModal({
                 </span>
               </h2>
               <p className="text-sm text-text-secondary mt-2">
-                {t("billing.payment.success.description", { plan: planName })}
+                {t(copy.description, { plan: planName })}
               </p>
 
-              <Button className="mt-6 w-full" onClick={onGoToDashboard}>
-                {t("billing.payment.success.cta")}
+              <Button className="mt-6 h-9 w-full" size="compact" onClick={onContinue}>
+                {t(copy.cta)}
               </Button>
             </div>
 

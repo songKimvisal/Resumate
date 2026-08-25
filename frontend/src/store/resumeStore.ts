@@ -23,7 +23,7 @@ import {
 export const uid = () => crypto.randomUUID();
 
 // resumes saved before fontSize became a plain px number stored it as this
-// enum — convert on load so old saves don't end up with a non-numeric size
+// enum - convert on load so old saves don't end up with a non-numeric size
 const LEGACY_FONT_SIZE_PX: Record<string, number> = {
   small: 13,
   medium: 14.5,

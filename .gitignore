@@ -24,6 +24,9 @@ backend/**/__pycache__
 frontend/.env
 backend/.env
 
+# ---------- Private notes (your machine only) ----------
+docs/
+
 # ---------- Editor / OS ----------
 .vscode/*
 !.vscode/extensions.json

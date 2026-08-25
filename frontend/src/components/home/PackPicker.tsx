@@ -12,17 +12,36 @@ export function NeedTabs({
   value,
   onChange,
   label,
+  ids = NEED_IDS,
+  className,
+  align = "center",
 }: {
   value: NeedId;
   onChange: (id: NeedId) => void;
   label: string;
+  ids?: NeedId[];
+  className?: string;
+  align?: "center" | "start";
 }) {
   const { t } = useTranslation();
 
   return (
-    <div role="radiogroup" aria-label={label} className="flex justify-center">
-      <div className="grid w-full max-w-[20.5rem] grid-cols-3 rounded-full bg-surface-2 p-[3px]">
-        {NEED_IDS.map((id) => {
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={cn(
+        "flex",
+        align === "start" ? "justify-center lg:justify-start" : "justify-center",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "grid w-full max-w-[20.5rem] rounded-full bg-surface-2 p-[3px]",
+          ids.length === 2 ? "grid-cols-2" : "grid-cols-3",
+        )}
+      >
+        {ids.map((id) => {
           const selected = value === id;
           return (
             <button
@@ -59,11 +78,13 @@ export function PackCarousel({
   popularBadge,
   loading = false,
   onSelect,
+  contained = false,
 }: {
   packs: PurchasePack[];
   popularBadge: string;
   loading?: boolean;
   onSelect: (packId: PackId) => void;
+  contained?: boolean;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(() => {
@@ -96,14 +117,16 @@ export function PackCarousel({
     return best;
   };
 
+  const gridMin = contained ? "(min-width: 1024px)" : "(min-width: 768px)";
+
   useEffect(() => {
-    if (window.matchMedia("(min-width: 768px)").matches) return;
+    if (window.matchMedia(gridMin).matches) return;
     const start = packs.findIndex((p) => p.popular);
     const id = requestAnimationFrame(() =>
       scrollToIndex(start >= 0 ? start : 0, "auto"),
     );
     return () => cancelAnimationFrame(id);
-    // Mount once per pack set — parent remounts with key={need}.
+    // Mount once per pack set - parent remounts with key={need}.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -189,7 +212,7 @@ export function PackCarousel({
       items.forEach((item) => {
         item.style.minHeight = "";
       });
-      if (window.matchMedia("(min-width: 768px)").matches) return;
+      if (window.matchMedia(gridMin).matches) return;
       const max = items.reduce((m, item) => Math.max(m, item.offsetHeight), 0);
       if (max <= 0) return;
       items.forEach((item) => {
@@ -213,29 +236,42 @@ export function PackCarousel({
       <div
         ref={scrollerRef}
         className={cn(
-          "-mx-4 grid auto-cols-[min(100%,20.5rem)] grid-flow-col items-stretch gap-3 overflow-x-auto px-4",
-          "snap-x snap-mandatory cursor-grab touch-pan-x active:cursor-grabbing md:cursor-auto",
+          "grid items-stretch gap-3 overflow-x-auto",
           "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          "md:mx-0 md:grid-flow-row md:grid-cols-3 md:auto-cols-auto md:gap-5 md:overflow-visible md:px-0 md:snap-none",
+          "snap-x snap-mandatory cursor-grab touch-pan-x active:cursor-grabbing",
+          contained
+            ? "auto-cols-[minmax(15.5rem,calc(100%-1.5rem))] grid-flow-col lg:cursor-auto lg:grid-flow-row lg:grid-cols-3 lg:auto-cols-auto lg:gap-3 lg:overflow-visible lg:snap-none"
+            : "-mx-4 auto-cols-[min(100%,20.5rem)] grid-flow-col px-4 md:mx-0 md:cursor-auto md:grid-flow-row md:grid-cols-3 md:auto-cols-auto md:gap-5 md:overflow-visible md:px-0 md:snap-none",
         )}
       >
         {packs.map((pack) => (
           <div
             key={pack.id}
-            className="flex h-full min-h-full snap-center md:min-w-0 md:snap-align-none"
+            className={cn(
+              "flex h-full min-h-full snap-center",
+              contained
+                ? "lg:min-w-0 lg:snap-align-none"
+                : "md:min-w-0 md:snap-align-none",
+            )}
           >
             <PackCard
               pack={pack}
               badge={pack.popular ? popularBadge : undefined}
               loading={loading}
               onSelect={() => onSelect(pack.id)}
+              compact={contained}
             />
           </div>
         ))}
       </div>
 
       {packs.length > 1 && (
-        <div className="mt-5 flex items-center justify-center gap-1.5 md:hidden">
+        <div
+          className={cn(
+            "mt-4 flex items-center justify-center gap-1.5",
+            contained ? "lg:hidden" : "md:hidden",
+          )}
+        >
           {packs.map((pack, i) => (
             <button
               key={pack.id}
@@ -260,17 +296,22 @@ export function PackCard({
   badge,
   loading = false,
   onSelect,
+  compact = false,
 }: {
   pack: PurchasePack;
   badge?: string;
   loading?: boolean;
   onSelect: () => void;
+  compact?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "flex h-full min-h-full w-full flex-1 flex-col rounded-2xl border bg-bg p-5 text-left",
-        pack.popular ? "border-brand" : "border-line",
+        "flex h-full min-h-full w-full flex-1 flex-col rounded-2xl border text-left transition-shadow",
+        compact ? "p-3.5 sm:p-4" : "p-4 sm:p-5",
+        pack.popular
+          ? "border-brand bg-brand/[0.04] shadow-[0_0_0_1px] shadow-brand/15"
+          : "border-line bg-bg",
       )}
     >
       <div className="flex h-5 items-start justify-between gap-2">
@@ -278,15 +319,22 @@ export function PackCard({
         <span
           className={cn(
             "shrink-0 text-[11px] font-medium leading-5",
-            badge ? "text-brand" : "invisible",
+            badge
+              ? "rounded-full bg-brand/10 px-2 text-brand"
+              : "invisible px-2",
           )}
         >
           {badge ?? "Best value"}
         </span>
       </div>
 
-      <p className="mt-2 flex items-baseline gap-1.5">
-        <span className="text-[2rem] font-bold leading-none tracking-tight">
+      <p className={cn("mt-2 flex items-baseline gap-1.5", compact && "mt-1.5")}>
+        <span
+          className={cn(
+            "font-bold leading-none tracking-tight",
+            compact ? "text-[1.75rem]" : "text-[2rem]",
+          )}
+        >
           ${pack.price}
         </span>
         {pack.period ? (
@@ -294,7 +342,12 @@ export function PackCard({
         ) : null}
       </p>
 
-      <ul className="mt-4 flex-1 space-y-2.5 border-t border-line pt-4">
+      <ul
+        className={cn(
+          "flex-1 border-t border-line",
+          compact ? "mt-3 space-y-2 pt-3" : "mt-4 space-y-2.5 pt-4",
+        )}
+      >
         {pack.features.map((feature) => (
           <FeatureCheck key={feature}>{feature}</FeatureCheck>
         ))}
@@ -302,7 +355,7 @@ export function PackCard({
 
       <Button
         size="compact"
-        className="mt-5 h-9 w-full"
+        className={cn("h-9 w-full", compact ? "mt-4" : "mt-5")}
         disabled={loading}
         onClick={onSelect}
       >
