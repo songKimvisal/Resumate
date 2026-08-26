@@ -85,6 +85,8 @@ export default function ForgotPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
+                id="forgot-email"
+                name="email"
                 type="email"
                 label={t("forgotPassword.emailLabel")}
                 placeholder={t("forgotPassword.emailPlaceholder")}

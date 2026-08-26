@@ -13,7 +13,7 @@ import type {
   ReferenceItem,
   Customization,
 } from "../types/resume";
-import { emptyResume } from "../types/resume";
+import { emptyResume, createEmptyResume } from "../types/resume";
 import {
   moveIdBefore,
   resolveExperienceOrder,
@@ -48,6 +48,11 @@ interface ResumeState {
 
   updatePersonal: (patch: Partial<PersonalInfo>) => void;
   updateCustomization: (patch: Partial<Customization>) => void;
+  /** Start a blank resume on a new template. Does not copy previous content. */
+  startResumeFromTemplate: (
+    customization: Partial<Customization>,
+    title: string,
+  ) => void;
 
   addExperience: () => void;
   updateExperience: (id: string, patch: Partial<ExperienceItem>) => void;
@@ -113,7 +118,7 @@ export const useResumeStore = create<ResumeState>()(
       },
       dirty: false,
     }),
-  resetResume: () => set({ resume: emptyResume, dirty: false }),
+  resetResume: () => set({ resume: createEmptyResume(), dirty: false }),
   setTitle: (title) =>
     set((s) => ({ resume: { ...s.resume, title }, dirty: true })),
   setBuilderStep: (step) =>
@@ -142,6 +147,22 @@ export const useResumeStore = create<ResumeState>()(
       },
       dirty: true,
     })),
+  startResumeFromTemplate: (customization, title) =>
+    set({
+      resume: {
+        ...createEmptyResume(),
+        title,
+        customization: {
+          ...emptyResume.customization,
+          ...customization,
+          toggles: {
+            ...emptyResume.customization.toggles,
+            ...customization.toggles,
+          },
+        },
+      },
+      dirty: true,
+    }),
 
   /* ---------- experience ---------- */
   addExperience: () =>

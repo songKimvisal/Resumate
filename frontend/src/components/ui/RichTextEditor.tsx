@@ -22,6 +22,7 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
 }
 
 function normalizeUrl(raw: string) {
@@ -35,6 +36,7 @@ export function RichTextEditor({
   onChange,
   placeholder,
   className,
+  id,
 }: RichTextEditorProps) {
   const placeholderRef = useRef(placeholder);
   placeholderRef.current = placeholder;
@@ -65,6 +67,9 @@ export function RichTextEditor({
       attributes: {
         class:
           "rte-content min-h-40 px-3 py-2 text-sm text-text focus:outline-none",
+        ...(id ? { id } : {}),
+        role: "textbox",
+        "aria-multiline": "true",
       },
     },
   });

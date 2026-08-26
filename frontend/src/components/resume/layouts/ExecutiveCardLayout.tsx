@@ -12,6 +12,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Executive navy card - polished professional, ATS-readable text. */
@@ -84,8 +85,8 @@ export default function ExecutiveCardLayout({
           <section>
             <AtsHeading title="Contact" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
             <div className="space-y-2 text-[0.78em] text-white/90">
-              {contacts.map((c) => (
-                <p key={c.id} className="flex gap-2">
+              {contacts.map((c, contactIdx) => (
+                <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
                   {c.kind === "phone" ? (
                     <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   ) : c.kind === "email" ? (
@@ -115,8 +116,8 @@ export default function ExecutiveCardLayout({
           <section>
             <AtsHeading title="Languages" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
             <ul className="space-y-1 text-[0.78em] text-white/90">
-              {languages.map((l) => (
-                <li key={l.id}>{l.name}</li>
+              {languages.map((l, langIdx) => (
+                <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
               ))}
             </ul>
           </section>
@@ -142,8 +143,8 @@ export default function ExecutiveCardLayout({
           <section className="mb-5">
             <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
             <div className="space-y-4">
-              {jobs.map((job) => (
-                <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+              {jobs.map((job, jobIdx) => (
+                <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
               ))}
             </div>
           </section>
@@ -153,8 +154,8 @@ export default function ExecutiveCardLayout({
           <section className="mb-5">
             <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
             <div className="space-y-3 text-[0.9em]">
-              {education.map((edu) => (
-                <div key={edu.id}>
+              {education.map((edu, eduIdx) => (
+                <div key={listKey(edu.id, eduIdx, "edu")}>
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="font-bold">{edu.school}</p>
                     <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
@@ -171,8 +172,8 @@ export default function ExecutiveCardLayout({
           <section>
             <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
             <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-              {references.slice(0, 4).map((r) => (
-                <div key={r.id}>
+              {references.slice(0, 4).map((r, refIdx) => (
+                <div key={listKey(r.id, refIdx, "ref")}>
                   <p className="font-bold">{r.name}</p>
                   <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" / ")}</p>
                   {r.phone && <p style={{ color: muted }}>Phone: {r.phone}</p>}

@@ -14,8 +14,11 @@ import {
   LANGUAGE_LEVEL_LABELS,
 } from "../../../types/resume";
 import { extraExperienceTitle } from "../../../lib/experienceDisplay";
-import { cssFontStack } from "../../../lib/fonts";
 import { photoImgStyle } from "../../../lib/photoFit";
+import { cssFontStack } from "../../../lib/fonts";
+import { listKey } from "../../../lib/resumeIds";
+
+export { listKey };
 
 /** Prefer month+year for ATS parsers (e.g. "Jan 2022 – Present"). */
 export function fmtDate(
@@ -226,8 +229,8 @@ export function normalizeJobs(
   noExperience: NoExperienceItem[],
   order?: string[],
 ): JobLike[] {
-  const extras: JobLike[] = noExperience.map((n) => ({
-    id: n.id,
+  const extras: JobLike[] = (noExperience ?? []).map((n, i) => ({
+    id: n.id?.trim() ? n.id : `noexp-${i}`,
     jobTitle: extraExperienceTitle(n),
     company: n.subtitle,
     location: "",
@@ -236,14 +239,25 @@ export function normalizeJobs(
     current: n.current,
     description: n.description,
   }));
-  const all = [...experience, ...extras];
-  if (!order?.length) return all;
-  const byId = new Map(all.map((item) => [item.id, item]));
+  const jobs = (experience ?? []).map((item, i) =>
+    item.id?.trim() ? item : { ...item, id: `exp-${i}` },
+  );
+  const all = [...jobs, ...extras];
+  const seen = new Set<string>();
+  const unique = all.map((item, i) => {
+    const trimmed = item.id?.trim() ?? "";
+    let id = trimmed && !seen.has(trimmed) ? trimmed : `job-${i}`;
+    if (seen.has(id)) id = `job-${i}-${seen.size}`;
+    seen.add(id);
+    return id === item.id ? item : { ...item, id };
+  });
+  if (!order?.length) return unique;
+  const byId = new Map(unique.map((item) => [item.id, item]));
   const ordered = order
     .map((id) => byId.get(id))
     .filter((item): item is JobLike => !!item);
   const used = new Set(ordered.map((item) => item.id));
-  return [...ordered, ...all.filter((item) => !used.has(item.id))];
+  return [...ordered, ...unique.filter((item) => !used.has(item.id))];
 }
 
 export function PhotoBox({
@@ -478,10 +492,10 @@ export function LanguagesBlock({
       className="space-y-1.5 text-[0.85em]"
       style={{ color: light ? undefined : muted }}
     >
-      {languages.map((l) => {
+      {languages.map((l, i) => {
         const level = showLevel ? languageLabel(l.level) : "";
         return (
-          <li key={l.id}>
+          <li key={listKey(l.id, i, "lang")}>
             {l.name}
             {level ? ` - ${level}` : ""}
           </li>
@@ -506,8 +520,8 @@ export function ReferencesBlock({
   const list = max ? references.slice(0, max) : references;
   return (
     <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-      {list.map((r) => (
-        <div key={r.id}>
+      {list.map((r, i) => (
+        <div key={listKey(r.id, i, "ref")}>
           <p className="font-bold">{r.name}</p>
           <p style={{ color: muted }}>
             {[r.jobTitle, r.company].filter(Boolean).join(" · ")}
@@ -542,8 +556,8 @@ export function SkillsList({
         className="space-y-1.5 text-[0.85em]"
         style={{ color: light ? undefined : muted }}
       >
-        {skills.map((s) => (
-          <li key={s.id}>{s.name}</li>
+        {skills.map((s, i) => (
+          <li key={listKey(s.id, i, "skill")}>{s.name}</li>
         ))}
       </ul>
     );
@@ -551,21 +565,21 @@ export function SkillsList({
   const dotFill = fill || customization.accentColor || ATS.navy;
   return (
     <div className="space-y-2 text-[0.85em]">
-      {skills.map((s) => {
+      {skills.map((s, i) => {
         const filled = Math.max(1, Math.min(5, Math.round(s.level || 3)));
         return (
-          <div key={s.id}>
+          <div key={listKey(s.id, i, "skill")}>
             <p className="mb-1" style={{ color: light ? undefined : muted }}>
               {s.name}
             </p>
             <div className="flex gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {Array.from({ length: 5 }).map((_, dot) => (
                 <span
-                  key={i}
+                  key={dot}
                   className="h-1.5 w-1.5 rounded-full"
                   style={{
                     backgroundColor:
-                      i < filled
+                      dot < filled
                         ? light
                           ? "#fff"
                           : dotFill

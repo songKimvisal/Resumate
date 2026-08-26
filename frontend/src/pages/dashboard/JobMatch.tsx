@@ -550,9 +550,9 @@ function ResultsPanel({
             {matched.length === 0 ? (
               <span className="text-xs text-text-secondary">-</span>
             ) : (
-              matched.map((item) => (
+              matched.map((item, i) => (
                 <span
-                  key={item}
+                  key={item || `matched-${i}`}
                   className="max-w-full break-all rounded-full bg-success-bg px-2.5 py-1 text-[11px] font-medium text-success"
                 >
                   {prettyKeyword(item)}
@@ -570,9 +570,9 @@ function ResultsPanel({
             {missingPills.length === 0 ? (
               <span className="text-xs text-text-secondary">-</span>
             ) : (
-              missingPills.map((item) => (
+              missingPills.map((item, i) => (
                 <span
-                  key={item}
+                  key={item || `missing-${i}`}
                   className="max-w-full break-all rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
                 >
                   {prettyKeyword(item)}
@@ -596,13 +596,13 @@ function ResultsPanel({
               <p className="mt-2 text-sm text-text-secondary">-</p>
             ) : (
               <ul className="mt-3 space-y-2.5">
-                {keywordCandidates.map((token) => {
+                {keywordCandidates.map((token, i) => {
                   const entry = appliedSkills[token];
                   const applied = Boolean(entry);
                   const skill = entry ? skillsById[entry.skillId] : undefined;
                   return (
                     <li
-                      key={token}
+                      key={token || `kw-${i}`}
                       className="rounded-2xl border border-line bg-bg px-3.5 py-3"
                     >
                       <div className="flex items-center gap-2.5">
@@ -667,12 +667,12 @@ function ResultsPanel({
                 {t("jobMatch.results.rewriteTitle")}
               </h3>
               <div className="mt-3 space-y-2.5">
-                {suggestions.map((token) => {
+                {suggestions.map((token, i) => {
                   const applied = token in appliedSkills;
                   const label = prettyKeyword(token);
                   return (
                     <button
-                      key={token}
+                      key={token || `sug-${i}`}
                       type="button"
                       disabled={applied}
                       onClick={() => onApply(token)}

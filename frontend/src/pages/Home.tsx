@@ -157,7 +157,7 @@ export default function Home() {
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-x-4">
             {industries.map((name, i) => (
-              <Fragment key={name}>
+              <Fragment key={name || `industry-${i}`}>
                 {i > 0 && (
                   <span className="size-1 rounded-full bg-brand/50" />
                 )}

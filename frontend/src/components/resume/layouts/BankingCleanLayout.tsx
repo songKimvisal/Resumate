@@ -13,6 +13,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Premium banking - classic header + two columns. Highly ATS-readable. */
@@ -69,8 +70,8 @@ export default function BankingCleanLayout({
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[0.82em]" style={{ color: muted }}>
-                {contacts.map((c) => (
-                  <span key={c.id} className="inline-flex items-center gap-1.5">
+                {contacts.map((c, contactIdx) => (
+                  <span key={listKey(c.id, contactIdx, "contact")} className="inline-flex items-center gap-1.5">
                     {c.kind === "phone" ? (
                       <Phone className="h-3.5 w-3.5" />
                     ) : c.kind === "email" ? (
@@ -104,8 +105,8 @@ export default function BankingCleanLayout({
               <section>
                 <AtsHeading title="Education" size={customization.headingsSize} ruleColor={accent} customization={customization} />
                 <div className="space-y-3 text-[0.88em]">
-                  {education.map((edu) => (
-                    <div key={edu.id}>
+                  {education.map((edu, eduIdx) => (
+                    <div key={listKey(edu.id, eduIdx, "edu")}>
                       <p className="font-bold">
                         {[edu.degree, edu.field].filter(Boolean).join(" ") || edu.school}
                       </p>
@@ -132,8 +133,8 @@ export default function BankingCleanLayout({
               <section>
                 <AtsHeading title="Languages" size={customization.headingsSize} ruleColor={accent} customization={customization} />
                 <ul className="space-y-1 text-[0.88em]" style={{ color: muted }}>
-                  {languages.map((l) => (
-                    <li key={l.id}>
+                  {languages.map((l, langIdx) => (
+                    <li key={listKey(l.id, langIdx, "lang")}>
                       {l.name}
                       {l.level >= 1 && l.level <= 5
                         ? ` - ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
@@ -150,8 +151,8 @@ export default function BankingCleanLayout({
               <section>
                 <AtsHeading title="Work Experience" size={customization.headingsSize} ruleColor={accent} customization={customization} />
                 <div className="space-y-4">
-                  {jobs.map((job) => (
-                    <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+                  {jobs.map((job, jobIdx) => (
+                    <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
                   ))}
                 </div>
               </section>
@@ -160,8 +161,8 @@ export default function BankingCleanLayout({
               <section>
                 <AtsHeading title="References" size={customization.headingsSize} ruleColor={accent} customization={customization} />
                 <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-                  {references.slice(0, 4).map((r) => (
-                    <div key={r.id}>
+                  {references.slice(0, 4).map((r, refIdx) => (
+                    <div key={listKey(r.id, refIdx, "ref")}>
                       <p className="font-bold">{r.name}</p>
                       <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(", ")}</p>
                       {r.phone && <p style={{ color: muted }}>Phone: {r.phone}</p>}

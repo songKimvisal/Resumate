@@ -42,7 +42,7 @@ import {
   packIncludesTemplates,
 } from "../../lib/templateAccess";
 import { usePacks } from "../../hooks/usePacks";
-import { cn } from "../../lib/utils";
+import { cn, useFieldId } from "../../lib/utils";
 import {
   isSpecialLayoutVariant,
   usesPhotoControls,
@@ -495,7 +495,7 @@ export default function CustomizePage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate("/marketplace")}
+            onClick={() => navigate("/marketplace", { state: { restyle: true } })}
             className="rounded-full border border-line px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-2 hover:text-text transition-colors"
           >
             {t("builder.customizePage.locked.changeTemplate")}
@@ -594,7 +594,7 @@ export default function CustomizePage() {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/marketplace")}
+              onClick={() => navigate("/marketplace", { state: { restyle: true } })}
               className="w-full rounded-full border border-line text-text text-sm font-medium py-2.5 transition-colors hover:bg-surface-2"
             >
               {t("builder.customizePage.templates.button")}
@@ -2378,6 +2378,7 @@ function CustomColorFields({
   onChange: (hex: string) => void;
 }) {
   const { t } = useTranslation();
+  const hexId = useFieldId();
   const rgb = hexToRgb(color);
   const [hexDraft, setHexDraft] = useState(color);
   useEffect(() => setHexDraft(color), [color]);
@@ -2427,10 +2428,14 @@ function CustomColorFields({
           </button>
         )}
         <div className="flex-1 space-y-1">
-          <label className="block text-[10px] font-medium tracking-wide text-text-secondary uppercase">
+          <label
+            htmlFor={hexId}
+            className="block text-[10px] font-medium tracking-wide text-text-secondary uppercase"
+          >
             {t("builder.customizePage.colors.hex")}
           </label>
           <input
+            id={hexId}
             type="text"
             value={hexDraft}
             onChange={(e) => setHexDraft(e.target.value)}
@@ -2473,6 +2478,7 @@ function RgbField({
   value: number;
   onCommit: (value: number) => void;
 }) {
+  const inputId = useFieldId();
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
 
@@ -2489,10 +2495,14 @@ function RgbField({
 
   return (
     <div className="space-y-1">
-      <label className="block text-center text-[10px] font-medium tracking-wide text-text-secondary uppercase">
+      <label
+        htmlFor={inputId}
+        className="block text-center text-[10px] font-medium tracking-wide text-text-secondary uppercase"
+      >
         {label}
       </label>
       <input
+        id={inputId}
         type="text"
         inputMode="numeric"
         value={draft}

@@ -160,9 +160,9 @@ export default function SelectResume() {
               </span>
             </motion.button>
 
-            {resumes?.map((item) => (
+            {resumes?.map((item, i) => (
               <motion.button
-                key={item.resume.id}
+                key={item.resume.id || `resume-${item.updatedAt}-${i}`}
                 variants={cardVariants}
                 whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.98 }}

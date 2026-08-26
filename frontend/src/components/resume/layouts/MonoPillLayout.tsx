@@ -22,6 +22,7 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
 
@@ -106,9 +107,9 @@ export default function MonoPillLayout({
                   customization={customization}
                 />
                 <div className="mt-3 space-y-2.5 text-[0.82em]">
-                  {contacts.map((c) => (
+                  {contacts.map((c, contactIdx) => (
                     <ContactLine
-                      key={c.id}
+                      key={listKey(c.id, contactIdx, "contact")}
                       icon={
                         c.kind === "phone"
                           ? Phone
@@ -135,8 +136,8 @@ export default function MonoPillLayout({
                   customization={customization}
                 />
                 <div className="mt-3 space-y-2.5">
-                  {skills.map((s) => (
-                    <div key={s.id} className="text-[0.82em]">
+                  {skills.map((s, skillIdx) => (
+                    <div key={listKey(s.id, skillIdx, "skill")} className="text-[0.82em]">
                       <p className="mb-1 font-medium">{s.name}</p>
                       {customization.skillsDisplay !== "list" &&
                       customization.toggles.dots ? (
@@ -198,8 +199,8 @@ export default function MonoPillLayout({
                 className="absolute bottom-1 left-[3px] top-1 w-px"
                 style={{ backgroundColor: charcoal }}
               />
-              {education.map((edu) => (
-                <div key={edu.id} className="relative text-[0.88em]">
+              {education.map((edu, eduIdx) => (
+                <div key={listKey(edu.id, eduIdx, "edu")} className="relative text-[0.88em]">
                   <span
                     className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
                     style={{ backgroundColor: charcoal }}
@@ -238,8 +239,8 @@ export default function MonoPillLayout({
                 className="absolute bottom-1 left-[3px] top-1 w-px"
                 style={{ backgroundColor: charcoal }}
               />
-              {jobs.map((job) => (
-                <div key={job.id} className="relative text-[0.88em]">
+              {jobs.map((job, jobIdx) => (
+                <div key={listKey(job.id, jobIdx, "job")} className="relative text-[0.88em]">
                   <span
                     className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
                     style={{ backgroundColor: charcoal }}

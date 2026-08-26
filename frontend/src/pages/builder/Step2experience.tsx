@@ -182,7 +182,7 @@ export default function Step2Experience() {
               if (job) {
                 return (
                   <ExperienceCard
-                    key={job.id}
+                    key={job.id || `job-${i}`}
                     index={i}
                     exp={job}
                     expanded={expandedId === job.id}
@@ -218,7 +218,7 @@ export default function Step2Experience() {
               if (!other) return null;
               return (
                 <NoExperienceCard
-                  key={other.id}
+                  key={other.id || `other-${i}`}
                   index={i}
                   exp={other}
                   expanded={expandedId === other.id}
@@ -419,6 +419,7 @@ function ExperienceCard({
               onChange={(e) => onChange({ location: e.target.value })}
             />
             <DurationFields
+              idPrefix={`exp-${exp.id}`}
               startDate={exp.startDate}
               endDate={exp.endDate}
               current={exp.current}
@@ -429,7 +430,10 @@ function ExperienceCard({
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-text">
+              <label
+                htmlFor={`exp-desc-${exp.id}`}
+                className="text-sm font-medium text-text"
+              >
                 {t("builder.experience.achievements")}
               </label>
               <AiRewriteButton
@@ -439,6 +443,7 @@ function ExperienceCard({
               />
             </div>
             <RichTextEditor
+              id={`exp-desc-${exp.id}`}
               value={exp.description}
               onChange={(description) => onChange({ description })}
               placeholder={t("builder.experience.achievementsPlaceholder")}
@@ -577,11 +582,15 @@ function NoExperienceCard({
 
           {hasUrl ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text">
+              <label
+                htmlFor={`noexp-title-${exp.id}`}
+                className="text-sm font-medium text-text"
+              >
                 {t(`builder.experience.noExperienceFields.${exp.type}.title`)}
               </label>
               <div className="relative">
                 <input
+                  id={`noexp-title-${exp.id}`}
                   type="text"
                   placeholder={t(
                     `builder.experience.noExperienceFields.${exp.type}.titlePlaceholder`,
@@ -669,6 +678,7 @@ function NoExperienceCard({
           />
 
           <DurationFields
+            idPrefix={`noexp-${exp.id}`}
             startDate={exp.startDate}
             endDate={exp.endDate}
             current={exp.current}
@@ -679,7 +689,10 @@ function NoExperienceCard({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-text">
+              <label
+                htmlFor={`noexp-desc-${exp.id}`}
+                className="text-sm font-medium text-text"
+              >
                 {t(
                   `builder.experience.noExperienceFields.${exp.type}.description`,
                 )}
@@ -691,6 +704,7 @@ function NoExperienceCard({
               />
             </div>
             <RichTextEditor
+              id={`noexp-desc-${exp.id}`}
               value={exp.description}
               onChange={(description) => onChange({ description })}
               placeholder={t(
@@ -792,6 +806,7 @@ function CardHeader({
 }
 
 function DurationFields({
+  idPrefix,
   startDate,
   endDate,
   current,
@@ -799,6 +814,7 @@ function DurationFields({
   onChange,
   t,
 }: {
+  idPrefix: string;
   startDate: string;
   endDate: string;
   current: boolean;
@@ -806,14 +822,18 @@ function DurationFields({
   onChange: (patch: { startDate?: string; endDate?: string; current?: boolean }) => void;
   t: TFn;
 }) {
+  const startId = `${idPrefix}-start`;
+  const endId = `${idPrefix}-end`;
+  const currentId = `${idPrefix}-current`;
   return (
     <div className="min-w-0 space-y-1.5">
-      <label className="text-sm font-medium text-text">
+      <label htmlFor={startId} className="text-sm font-medium text-text">
         {t("builder.experience.duration")}
       </label>
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">
           <MonthPicker
+            id={startId}
             value={startDate}
             max={endDate || undefined}
             onChange={(next) => onChange({ startDate: next })}
@@ -823,6 +843,7 @@ function DurationFields({
         <span className="text-text-placeholder shrink-0">–</span>
         <div className="flex-1 min-w-0">
           <MonthPicker
+            id={endId}
             value={endDate}
             min={startDate || undefined}
             disabled={current}
@@ -831,8 +852,12 @@ function DurationFields({
           />
         </div>
       </div>
-      <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
+      <label
+        htmlFor={currentId}
+        className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer"
+      >
         <input
+          id={currentId}
           type="checkbox"
           checked={current}
           onChange={(e) =>

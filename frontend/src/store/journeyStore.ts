@@ -29,6 +29,7 @@ interface JourneyState {
   lastResumeId: string | null;
   getDraft: (userId?: string | null, resumeId?: string | null) => JourneyDraft;
   rememberResume: (userId: string, resumeId: string) => void;
+  forgetResume: (userId: string, resumeId: string) => void;
   reachStep: (
     userId: string,
     resumeId: string,
@@ -59,6 +60,21 @@ export const useJourneyStore = create<JourneyState>()(
             ? s
             : { lastUserId: userId, lastResumeId: resumeId },
         ),
+
+      forgetResume: (userId, resumeId) =>
+        set((s) => {
+          const k = storageKey(userId, resumeId);
+          if (!(k in s.byKey) && s.lastResumeId !== resumeId) return s;
+          const byKey = { ...s.byKey };
+          delete byKey[k];
+          return {
+            byKey,
+            lastResumeId:
+              s.lastUserId === userId && s.lastResumeId === resumeId
+                ? null
+                : s.lastResumeId,
+          };
+        }),
 
       reachStep: (userId, resumeId, step) =>
         set((s) => {

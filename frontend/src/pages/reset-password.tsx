@@ -107,6 +107,8 @@ export default function ResetPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <PasswordInput
+                id="reset-password"
+                name="password"
                 label={t("resetPassword.passwordLabel")}
                 placeholder={t("resetPassword.passwordPlaceholder")}
                 value={password}
@@ -115,6 +117,8 @@ export default function ResetPassword() {
                 required
               />
               <PasswordInput
+                id="reset-confirm-password"
+                name="confirmPassword"
                 label={t("resetPassword.confirmPasswordLabel")}
                 placeholder={t("resetPassword.confirmPasswordPlaceholder")}
                 value={confirmPassword}

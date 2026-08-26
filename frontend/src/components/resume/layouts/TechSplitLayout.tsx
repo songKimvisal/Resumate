@@ -13,6 +13,7 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
 
@@ -108,8 +109,8 @@ export default function TechSplitLayout({
               customization={customization}
             >
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <div key={job.id} className="text-[0.88em]">
+                {jobs.map((job, jobIdx) => (
+                  <div key={listKey(job.id, jobIdx, "job")} className="text-[0.88em]">
                     <p className="font-bold uppercase tracking-wide">
                       {job.jobTitle}
                     </p>
@@ -164,9 +165,9 @@ export default function TechSplitLayout({
 
             {contacts.length > 0 && (
               <div className="space-y-2.5 text-[0.82em]">
-                {contacts.map((c) => (
+                {contacts.map((c, contactIdx) => (
                   <SideContact
-                    key={c.id}
+                    key={listKey(c.id, contactIdx, "contact")}
                     icon={
                       c.kind === "phone"
                         ? Phone
@@ -210,8 +211,8 @@ export default function TechSplitLayout({
           <section>
             <SideHeading title="Education" size={customization.headingsSize} customization={customization} />
             <div className="mt-2.5 space-y-3 text-[0.85em]">
-              {education.map((edu) => (
-                <div key={edu.id}>
+              {education.map((edu, eduIdx) => (
+                <div key={listKey(edu.id, eduIdx, "edu")}>
                   <p className="font-bold uppercase tracking-wide">
                     {edu.degree || edu.field || edu.school}
                   </p>

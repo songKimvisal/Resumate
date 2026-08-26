@@ -11,6 +11,7 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
 
@@ -124,8 +125,8 @@ export default function DesignerBlockLayout({
                     Languages
                   </h2>
                   <ul className="space-y-1.5 text-[0.9em] text-white/95">
-                    {languages.map((l) => (
-                      <li key={l.id}>{l.name}</li>
+                    {languages.map((l, langIdx) => (
+                      <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
                     ))}
                   </ul>
                 </section>
@@ -162,8 +163,8 @@ export default function DesignerBlockLayout({
               <section className="flex gap-3">
                 <VerticalLabel label="Education" color={ink} customization={customization} />
                 <div className="min-w-0 flex-1 space-y-3.5 pt-0.5">
-                  {education.map((edu) => (
-                    <div key={edu.id} className="text-[0.88em]">
+                  {education.map((edu, eduIdx) => (
+                    <div key={listKey(edu.id, eduIdx, "edu")} className="text-[0.88em]">
                       <p className="font-semibold">
                         {dateRange(edu, dateFmt)}
                         {(edu.degree || edu.field) &&
@@ -251,9 +252,9 @@ export default function DesignerBlockLayout({
               Contact
             </h2>
             <div className="grid gap-2.5 text-[0.86em]">
-              {contacts.map((c) => (
+              {contacts.map((c, contactIdx) => (
                 <ContactRow
-                  key={c.id}
+                  key={listKey(c.id, contactIdx, "contact")}
                   icon={
                     c.kind === "phone"
                       ? Phone

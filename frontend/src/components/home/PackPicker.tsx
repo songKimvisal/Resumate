@@ -348,8 +348,8 @@ export function PackCard({
           compact ? "mt-3 space-y-2 pt-3" : "mt-4 space-y-2.5 pt-4",
         )}
       >
-        {pack.features.map((feature) => (
-          <FeatureCheck key={feature}>{feature}</FeatureCheck>
+        {pack.features.map((feature, i) => (
+          <FeatureCheck key={`${pack.id}-feat-${i}`}>{feature}</FeatureCheck>
         ))}
       </ul>
 

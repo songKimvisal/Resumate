@@ -449,8 +449,8 @@ function MeasureBlock({
     return (
       <div style={{ fontSize }} className="space-y-2 py-2">
         <p className="font-bold">CONTACT</p>
-        {lines.map((l) => (
-          <p key={l.id}>{l.text}</p>
+        {lines.map((l, li) => (
+          <p key={l.id || `contact-${li}`}>{l.text}</p>
         ))}
       </div>
     );
@@ -509,8 +509,8 @@ function MeasureBlock({
   }
   return (
     <div style={{ fontSize }} className="space-y-2">
-      {references.map((r) => (
-        <div key={r.id}>
+      {references.map((r, i) => (
+        <div key={r.id || `ref-${i}`}>
           <p className="font-bold">{r.name}</p>
           <p>{[r.jobTitle, r.company].filter(Boolean).join(" · ")}</p>
         </div>
@@ -618,8 +618,12 @@ export function SpecialPaginatedLayout({
           lineHeight: resume.customization.lineHeight || 1.45,
         }}
       >
-        {units.map((unit) => (
-          <div key={unit.key} data-unit-key={unit.key} className="pb-1">
+        {units.map((unit, unitIdx) => (
+          <div
+            key={unit.key || `unit-${unitIdx}`}
+            data-unit-key={unit.key}
+            className="pb-1"
+          >
             <MeasureBlock resume={resume} unit={unit} />
           </div>
         ))}

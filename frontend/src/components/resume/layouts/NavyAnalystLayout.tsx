@@ -13,6 +13,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Navy left sidebar analyst - professional ATS two-column. */
@@ -68,8 +69,8 @@ export default function NavyAnalystLayout({
             <section>
               <AtsHeading title="Contact" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.4)" customization={customization} />
               <div className="space-y-2 text-[0.8em] text-white/90">
-                {contacts.map((c) => (
-                  <p key={c.id} className="flex gap-2">
+                {contacts.map((c, contactIdx) => (
+                  <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
                     {c.kind === "phone" ? (
                       <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     ) : c.kind === "email" ? (
@@ -91,8 +92,8 @@ export default function NavyAnalystLayout({
           <section>
             <AtsHeading title="Education" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.4)" customization={customization} />
             <div className="space-y-3 text-[0.8em] text-white/90">
-              {education.map((edu) => (
-                <div key={edu.id}>
+              {education.map((edu, eduIdx) => (
+                <div key={listKey(edu.id, eduIdx, "edu")}>
                   <p className="font-bold uppercase tracking-wide">{edu.school}</p>
                   <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
@@ -118,8 +119,8 @@ export default function NavyAnalystLayout({
           <section>
             <AtsHeading title="Languages" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.4)" customization={customization} />
             <ul className="space-y-1.5 text-[0.8em] text-white/90">
-              {languages.map((l) => (
-                <li key={l.id}>
+              {languages.map((l, langIdx) => (
+                <li key={listKey(l.id, langIdx, "lang")}>
                   {l.name}
                   {l.level >= 1 && l.level <= 5
                     ? ` - ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
@@ -170,8 +171,8 @@ export default function NavyAnalystLayout({
           <section className="mb-5">
             <AtsHeading title="Work Experience" size={customization.headingsSize} ruleColor={mainRuleColor} customization={customization} />
             <div className="space-y-4 border-l-2 pl-4" style={{ borderColor: ATS.line }}>
-              {jobs.map((job) => (
-                <div key={job.id} className="relative">
+              {jobs.map((job, jobIdx) => (
+                <div key={listKey(job.id, jobIdx, "job")} className="relative">
                   <span
                     className="absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: accent }}
@@ -187,8 +188,8 @@ export default function NavyAnalystLayout({
           <section>
             <AtsHeading title="References" size={customization.headingsSize} ruleColor={mainRuleColor} customization={customization} />
             <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-              {references.slice(0, 4).map((r) => (
-                <div key={r.id}>
+              {references.slice(0, 4).map((r, refIdx) => (
+                <div key={listKey(r.id, refIdx, "ref")}>
                   <p className="font-bold">{r.name}</p>
                   <p style={{ color: muted }}>{[r.company, r.jobTitle].filter(Boolean).join(" / ")}</p>
                   {r.phone && <p style={{ color: muted }}>{r.phone}</p>}

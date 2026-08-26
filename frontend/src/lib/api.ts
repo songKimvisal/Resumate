@@ -7,11 +7,22 @@ export async function saveResumeToDashboard(resume: Resume, userId: string) {
     data: resume,
     updated_at: new Date().toISOString(),
   };
-  if (resume.id) payload.id = resume.id;
+
+  if (resume.id) {
+    const { data, error } = await supabase
+      .from("resumes")
+      .update(payload)
+      .eq("id", resume.id)
+      .eq("user_id", userId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (data?.id) return data.id as string;
+  }
 
   const { data, error } = await supabase
     .from("resumes")
-    .upsert(payload)
+    .insert(payload)
     .select("id")
     .single();
 
@@ -56,6 +67,23 @@ export async function renameResume(id: string, title: string) {
 export async function deleteResume(id: string) {
   const { error } = await supabase.from("resumes").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function deleteResumes(ids: string[]) {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("resumes").delete().in("id", ids);
+  if (error) throw error;
+}
+
+export async function resumeExists(id: string, userId: string) {
+  const { data, error } = await supabase
+    .from("resumes")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data?.id);
 }
 
 export async function deleteAllResumes(userId: string) {

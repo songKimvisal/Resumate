@@ -11,6 +11,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 import { photoImgStyle } from "../../../lib/photoFit";
 
@@ -112,8 +113,8 @@ export default function GraphicProLayout({
                     customization={customization}
                   />
                   <div className="space-y-2.5 text-[0.8em] text-white/90">
-                    {contacts.map((c) => (
-                      <p key={c.id} className="flex gap-2">
+                    {contacts.map((c, contactIdx) => (
+                      <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
                         {c.kind === "phone" ? (
                           <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         ) : c.kind === "email" ? (
@@ -140,9 +141,9 @@ export default function GraphicProLayout({
                     customization={customization}
                   />
                   <div className="space-y-2">
-                    {languages.map((l) => (
+                    {languages.map((l, langIdx) => (
                       <Meter
-                        key={l.id}
+                        key={listKey(l.id, langIdx, "lang")}
                         label={l.name}
                         level={l.level}
                         fill="#94A3B8"
@@ -182,9 +183,9 @@ export default function GraphicProLayout({
               customization={customization}
             />
             <div className="mt-1 space-y-4">
-              {jobs.map((job) => (
+              {jobs.map((job, jobIdx) => (
                 <JobBlock
-                  key={job.id}
+                  key={listKey(job.id, jobIdx, "job")}
                   job={job}
                   ink={ink}
                   muted={muted}
@@ -203,9 +204,9 @@ export default function GraphicProLayout({
               customization={customization}
             />
             <div className="space-y-3">
-              {education.map((edu) => (
+              {education.map((edu, eduIdx) => (
                 <EducationBlock
-                  key={edu.id}
+                  key={listKey(edu.id, eduIdx, "edu")}
                   edu={edu}
                   muted={muted}
                   dateFmt={dateFmt}
@@ -225,15 +226,15 @@ export default function GraphicProLayout({
             {customization.skillsDisplay === "list" ||
             !customization.toggles.dots ? (
               <ul className="mt-2 space-y-1 text-[0.88em]" style={{ color: muted }}>
-                {skills.map((s) => (
-                  <li key={s.id}>{s.name}</li>
+                {skills.map((s, skillIdx) => (
+                  <li key={listKey(s.id, skillIdx, "skill")}>{s.name}</li>
                 ))}
               </ul>
             ) : (
               <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2.5">
-                {skills.map((s) => (
+                {skills.map((s, skillIdx) => (
                   <Meter
-                    key={s.id}
+                    key={listKey(s.id, skillIdx, "skill")}
                     label={s.name}
                     level={s.level}
                     fill={accent}

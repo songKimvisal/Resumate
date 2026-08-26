@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "../../lib/utils";
+import { cn, useFieldId } from "../../lib/utils";
 
 interface FieldProps {
   label?: string;
@@ -11,7 +11,7 @@ export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement> & FieldProps
 >(({ label, hint, error, className, id, ...props }, ref) => {
-  const inputId = id ?? React.useId();
+  const inputId = useFieldId(id);
   return (
     <div className="space-y-1.5">
       {label && (
@@ -21,7 +21,6 @@ export const Input = React.forwardRef<
       )}
       <input
         ref={ref}
-        id={inputId}
         aria-invalid={!!error}
         className={cn(
           "w-full h-10 px-3 rounded-lg border bg-bg text-sm text-text",
@@ -34,6 +33,7 @@ export const Input = React.forwardRef<
           className,
         )}
         {...props}
+        id={inputId}
       />
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
@@ -49,7 +49,7 @@ export const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement> & FieldProps
 >(({ label, hint, className, id, ...props }, ref) => {
-  const inputId = id ?? React.useId();
+  const inputId = useFieldId(id);
   return (
     <div className="space-y-1.5">
       {label && (
@@ -59,7 +59,6 @@ export const Textarea = React.forwardRef<
       )}
       <textarea
         ref={ref}
-        id={inputId}
         className={cn(
           "w-full min-h-28 p-3 rounded-lg border border-line bg-bg text-sm text-text resize-y",
           "placeholder:text-text-placeholder",
@@ -68,6 +67,7 @@ export const Textarea = React.forwardRef<
           className,
         )}
         {...props}
+        id={inputId}
       />
       {hint && <p className="text-xs text-text-placeholder">{hint}</p>}
     </div>

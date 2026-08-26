@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal } from "lucide-react";
+import { Check, MoreHorizontal } from "lucide-react";
 import type { Resume } from "../../../types/resume";
 import ResumePreview from "../../resume/ResumePreview";
 import { Button } from "../button";
+import { cn } from "../../../lib/utils";
 
 interface ResumeCardProps {
   resume: Resume;
   updatedAt: string;
+  selecting?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onContinue: () => void;
   onDownload: () => Promise<void>;
   onDelete: () => Promise<void>;
@@ -17,6 +21,9 @@ interface ResumeCardProps {
 export default function ResumeCard({
   resume,
   updatedAt,
+  selecting = false,
+  selected = false,
+  onToggleSelect,
   onContinue,
   onDownload,
   onDelete,
@@ -42,6 +49,13 @@ export default function ResumeCard({
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (selecting) {
+      setMenuOpen(false);
+      setConfirming(false);
+    }
+  }, [selecting]);
 
   const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
     dateStyle: "medium",
@@ -87,15 +101,42 @@ export default function ResumeCard({
     setRenaming(false);
   };
 
+  const openCard = () => {
+    if (selecting) {
+      onToggleSelect?.();
+      return;
+    }
+    onContinue();
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div
-        onClick={onContinue}
+        onClick={openCard}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onContinue()}
-        className="relative rounded-lg border border-line bg-white overflow-hidden cursor-pointer hover:ring-2 hover:ring-brand/40 transition-shadow"
+        aria-pressed={selecting ? selected : undefined}
+        onKeyDown={(e) => e.key === "Enter" && openCard()}
+        className={cn(
+          "relative rounded-lg border bg-white overflow-hidden cursor-pointer transition-shadow",
+          selected
+            ? "border-brand ring-2 ring-brand/40"
+            : "border-line hover:ring-2 hover:ring-brand/40",
+        )}
       >
+        {selecting && (
+          <span
+            className={cn(
+              "absolute top-2 left-2 z-10 size-6 rounded-md border-2 inline-flex items-center justify-center",
+              selected
+                ? "border-brand bg-brand text-white"
+                : "border-line bg-white/90 text-transparent",
+            )}
+            aria-hidden
+          >
+            <Check size={14} strokeWidth={3} />
+          </span>
+        )}
         <div className="pointer-events-none">
           <ResumePreview singlePage resume={resume} />
         </div>
@@ -117,87 +158,89 @@ export default function ResumeCard({
           />
         ) : (
           <button
-            onClick={onContinue}
+            onClick={openCard}
             className="text-sm font-medium truncate hover:text-brand transition-colors"
           >
             {resume.title || t("myResumes.untitled")}
           </button>
         )}
 
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label={t("myResumes.menu.open")}
-            className="size-7 rounded-full text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
-          >
-            <MoreHorizontal size={16} />
-          </button>
+        {!selecting && (
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={t("myResumes.menu.open")}
+              className="size-7 rounded-full text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+            >
+              <MoreHorizontal size={16} />
+            </button>
 
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-line bg-bg shadow-lg overflow-hidden z-10">
-              {!confirming ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onContinue();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
-                  >
-                    {t("myResumes.menu.continue")}
-                  </button>
-                  <button
-                    onClick={startRenaming}
-                    className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
-                  >
-                    {t("myResumes.menu.rename")}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors disabled:opacity-50"
-                  >
-                    {downloading
-                      ? t("myResumes.menu.downloading")
-                      : t("myResumes.menu.download")}
-                  </button>
-                  <button
-                    onClick={() => setConfirming(true)}
-                    className="w-full text-left px-4 py-2 text-sm text-brand hover:bg-surface-2 transition-colors"
-                  >
-                    {t("myResumes.menu.delete")}
-                  </button>
-                </>
-              ) : (
-                <div className="p-3 space-y-2">
-                  <p className="text-xs text-text-secondary">
-                    {t("myResumes.menu.confirmDelete")}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      size="xs"
-                      variant="destructive"
-                      disabled={deleting}
-                      onClick={handleDelete}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-line bg-bg shadow-lg overflow-hidden z-10">
+                {!confirming ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onContinue();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
                     >
-                      {deleting
-                        ? t("myResumes.menu.deleting")
-                        : t("myResumes.menu.confirmYes")}
-                    </Button>
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      disabled={deleting}
-                      onClick={() => setConfirming(false)}
+                      {t("myResumes.menu.continue")}
+                    </button>
+                    <button
+                      onClick={startRenaming}
+                      className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors"
                     >
-                      {t("myResumes.menu.confirmCancel")}
-                    </Button>
+                      {t("myResumes.menu.rename")}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      disabled={downloading}
+                      className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-2 transition-colors disabled:opacity-50"
+                    >
+                      {downloading
+                        ? t("myResumes.menu.downloading")
+                        : t("myResumes.menu.download")}
+                    </button>
+                    <button
+                      onClick={() => setConfirming(true)}
+                      className="w-full text-left px-4 py-2 text-sm text-brand hover:bg-surface-2 transition-colors"
+                    >
+                      {t("myResumes.menu.delete")}
+                    </button>
+                  </>
+                ) : (
+                  <div className="p-3 space-y-2">
+                    <p className="text-xs text-text-secondary">
+                      {t("myResumes.menu.confirmDelete")}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="xs"
+                        variant="destructive"
+                        disabled={deleting}
+                        onClick={handleDelete}
+                      >
+                        {deleting
+                          ? t("myResumes.menu.deleting")
+                          : t("myResumes.menu.confirmYes")}
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={deleting}
+                        onClick={() => setConfirming(false)}
+                      >
+                        {t("myResumes.menu.confirmCancel")}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-text-secondary">

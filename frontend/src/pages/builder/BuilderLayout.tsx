@@ -464,9 +464,9 @@ export default function BuilderLayout() {
                 ) : null}
                 {stepTip.points.length > 0 ? (
                   <ul className="mt-2.5 space-y-2">
-                    {stepTip.points.map((point) => (
+                    {stepTip.points.map((point, i) => (
                       <li
-                        key={point}
+                        key={point || `tip-${i}`}
                         className="flex gap-2.5 text-sm text-text-secondary leading-relaxed"
                       >
                         <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-brand" />

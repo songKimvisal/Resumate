@@ -14,6 +14,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Professional charcoal sidebar - ATS-safe (no decorative ribbons). */
@@ -122,8 +123,8 @@ export default function RibbonFoldLayout({
                 customization={customization}
               />
               <div className="space-y-2 text-[0.8em] text-white/90">
-                {contacts.map((c) => (
-                  <p key={c.id} className="flex gap-2">
+                {contacts.map((c, contactIdx) => (
+                  <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
                     {c.kind === "phone" ? (
                       <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     ) : c.kind === "email" ? (
@@ -174,9 +175,9 @@ export default function RibbonFoldLayout({
               customization={customization}
             />
             <div className="space-y-3">
-              {education.map((edu) => (
+              {education.map((edu, eduIdx) => (
                 <EducationBlock
-                  key={edu.id}
+                  key={listKey(edu.id, eduIdx, "edu")}
                   edu={edu}
                   muted={muted}
                   dateFmt={dateFmt}
@@ -195,9 +196,9 @@ export default function RibbonFoldLayout({
               customization={customization}
             />
             <div className="space-y-4">
-              {jobs.map((job) => (
+              {jobs.map((job, jobIdx) => (
                 <JobBlock
-                  key={job.id}
+                  key={listKey(job.id, jobIdx, "job")}
                   job={job}
                   ink={ink}
                   muted={muted}

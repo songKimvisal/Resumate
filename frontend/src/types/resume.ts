@@ -325,3 +325,7 @@ export const emptyResume: Resume = {
     },
   },
 };
+
+export function createEmptyResume(): Resume {
+  return structuredClone(emptyResume);
+}

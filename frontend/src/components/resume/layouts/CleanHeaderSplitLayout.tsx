@@ -12,6 +12,7 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
 
@@ -76,9 +77,9 @@ export default function CleanHeaderSplitLayout({
               )}
             </div>
             <div className="w-[42%] shrink-0 space-y-1.5 text-[0.8em]">
-              {contacts.map((c) => (
+              {contacts.map((c, contactIdx) => (
                 <HeaderContact
-                  key={c.id}
+                  key={listKey(c.id, contactIdx, "contact")}
                   icon={
                     c.kind === "phone"
                       ? Phone
@@ -107,8 +108,8 @@ export default function CleanHeaderSplitLayout({
             <section>
               <SectionTitle title="Education" size={customization.headingsSize} color={accent} customization={customization} />
               <div className="space-y-3 text-[0.88em]">
-                {education.map((edu) => (
-                  <div key={edu.id}>
+                {education.map((edu, eduIdx) => (
+                  <div key={listKey(edu.id, eduIdx, "edu")}>
                     <p className="font-bold">
                       {[edu.degree, edu.field].filter(Boolean).join(" ") ||
                         edu.school}
@@ -184,8 +185,8 @@ export default function CleanHeaderSplitLayout({
                   className="absolute bottom-2 left-[3px] top-2 w-px"
                   style={{ backgroundColor: "#BDBDBD" }}
                 />
-                {jobs.map((job) => (
-                  <div key={job.id} className="relative text-[0.88em]">
+                {jobs.map((job, jobIdx) => (
+                  <div key={listKey(job.id, jobIdx, "job")} className="relative text-[0.88em]">
                     <span
                       className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
                       style={{ backgroundColor: accent }}

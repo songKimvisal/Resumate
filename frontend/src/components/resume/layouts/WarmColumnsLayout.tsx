@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Hospitality classic no-photo - warm equal two-column split. */
@@ -55,7 +56,7 @@ export default function WarmColumnsLayout({
             </p>
           )}
           <p className="mt-2 text-[0.82em]" style={{ color: muted }}>
-            {contacts.map((c) => c.text).join("   ·   ")}
+            {contacts.map((c, contactIdx) => c.text).join("   ·   ")}
           </p>
         </header>
       )}
@@ -72,8 +73,8 @@ export default function WarmColumnsLayout({
             <section>
               <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="space-y-3 text-[0.88em]">
-                {education.map((edu) => (
-                  <div key={edu.id}>
+                {education.map((edu, eduIdx) => (
+                  <div key={listKey(edu.id, eduIdx, "edu")}>
                     <p className="font-bold">{edu.school}</p>
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
@@ -98,7 +99,7 @@ export default function WarmColumnsLayout({
             <section>
               <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
               <p className="text-[0.88em]" style={{ color: muted }}>
-                {languages.map((l) => l.name).join(" · ")}
+                {languages.map((l, langIdx) => l.name).join(" · ")}
               </p>
             </section>
           )}
@@ -109,8 +110,8 @@ export default function WarmColumnsLayout({
             <section>
               <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+                {jobs.map((job, jobIdx) => (
+                  <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
                 ))}
               </div>
             </section>
@@ -119,8 +120,8 @@ export default function WarmColumnsLayout({
             <section>
               <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="space-y-3 text-[0.85em]">
-                {references.slice(0, 4).map((r) => (
-                  <div key={r.id}>
+                {references.slice(0, 4).map((r, refIdx) => (
+                  <div key={listKey(r.id, refIdx, "ref")}>
                     <p className="font-bold">{r.name}</p>
                     <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" · ")}</p>
                     {r.phone && <p style={{ color: muted }}>{r.phone}</p>}

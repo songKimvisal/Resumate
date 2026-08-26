@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { extraExperienceTitle } from "../../lib/experienceDisplay";
 import { orderedExperienceEntries } from "../../lib/experienceOrder";
+import { withStableItemIds, listKey } from "../../lib/resumeIds";
 import { useResumeStore } from "../../store/resumeStore";
 import {
   LANGUAGE_LEVEL_LABELS,
@@ -236,7 +237,10 @@ export default function ResumePreview({
   singlePage?: boolean;
 }) {
   const storeResume = useResumeStore((s) => s.resume);
-  const resume = resumeProp ?? storeResume;
+  const resume = useMemo(
+    () => withStableItemIds(resumeProp ?? storeResume),
+    [resumeProp, storeResume],
+  );
   const {
     personal,
     experience,
@@ -471,8 +475,8 @@ export default function ResumePreview({
           node: (
             <Section title="References" theme={theme}>
               <div className="grid grid-cols-2 gap-4">
-                {references.map((r) => (
-                  <ReferenceEntry key={r.id} r={r} theme={theme} />
+                {references.map((r, i) => (
+                  <ReferenceEntry key={listKey(r.id, i, "ref")} r={r} theme={theme} />
                 ))}
               </div>
             </Section>
@@ -543,8 +547,8 @@ export default function ResumePreview({
           node: (
             <Section title="References" theme={theme}>
               <div className="grid grid-cols-2 gap-4">
-                {references.map((r) => (
-                  <ReferenceEntry key={r.id} r={r} theme={theme} />
+                {references.map((r, i) => (
+                  <ReferenceEntry key={listKey(r.id, i, "ref")} r={r} theme={theme} />
                 ))}
               </div>
             </Section>
@@ -706,8 +710,11 @@ export default function ResumePreview({
           lineHeight: theme.lineHeight,
         }}
       >
-        {blocks.map((b) => (
-          <div key={b.key} style={b.lane ? { width: "50%" } : undefined}>
+        {blocks.map((b, blockIdx) => (
+          <div
+            key={b.key || `measure-${blockIdx}`}
+            style={b.lane ? { width: "50%" } : undefined}
+          >
             {b.node}
           </div>
         ))}
@@ -988,15 +995,15 @@ function renderPreviewPageBlocks(pageBlocks: Block[], theme: Theme) {
       }
       nodes.push(
         <div
-          key={`twocol-${skills[0]?.key ?? ""}-${langs[0]?.key ?? ""}`}
+          key={`twocol-${i}-${skills[0]?.key || "s"}-${langs[0]?.key || "l"}`}
           className="grid grid-cols-2 gap-6"
           style={{ marginTop: nodes.length === 0 ? 0 : groupGap }}
         >
           <div className="min-w-0 space-y-1">
             {skills.length > 0 && (
               <Section title="Skills" theme={theme}>
-                {skills.map((s) => (
-                  <div key={s.key}>{s.node}</div>
+                {skills.map((s, si) => (
+                  <div key={s.key || `skill-block-${si}`}>{s.node}</div>
                 ))}
               </Section>
             )}
@@ -1004,8 +1011,8 @@ function renderPreviewPageBlocks(pageBlocks: Block[], theme: Theme) {
           <div className="min-w-0 space-y-1">
             {langs.length > 0 && (
               <Section title="Languages" theme={theme}>
-                {langs.map((s) => (
-                  <div key={s.key}>{s.node}</div>
+                {langs.map((s, li) => (
+                  <div key={s.key || `lang-block-${li}`}>{s.node}</div>
                 ))}
               </Section>
             )}
@@ -1016,7 +1023,7 @@ function renderPreviewPageBlocks(pageBlocks: Block[], theme: Theme) {
     }
     nodes.push(
       <div
-        key={block.key}
+        key={block.key || `block-${i}`}
         style={{ marginTop: nodes.length === 0 ? 0 : block.gapBefore }}
       >
         {block.node}
@@ -1127,9 +1134,9 @@ function SkillsBody({
       <ul className="space-y-1">
         {skills
           .filter((s) => s.name)
-          .map((s) => (
+          .map((s, i) => (
             <li
-              key={s.id}
+              key={listKey(s.id, i, "skill")}
               className="flex items-center gap-1.5 text-[0.85em]"
               style={{ color: theme.bodyTextColor }}
             >
@@ -1147,8 +1154,8 @@ function SkillsBody({
     <div className="space-y-1">
       {skills
         .filter((s) => s.name)
-        .map((s) => (
-          <div key={s.id} className="flex items-center justify-between gap-2">
+        .map((s, i) => (
+          <div key={listKey(s.id, i, "skill")} className="flex items-center justify-between gap-2">
             <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
               {s.name}
             </p>
@@ -1185,9 +1192,9 @@ function LanguagesBody({
       <ul className="space-y-1">
         {languages
           .filter((l) => l.name)
-          .map((l) => (
+          .map((l, i) => (
             <li
-              key={l.id}
+              key={listKey(l.id, i, "lang")}
               className="flex items-center gap-1.5 text-[0.85em]"
               style={{ color: theme.bodyTextColor }}
             >
@@ -1205,8 +1212,8 @@ function LanguagesBody({
     <div className="space-y-1">
       {languages
         .filter((l) => l.name)
-        .map((l) => (
-          <div key={l.id} className="flex items-center justify-between gap-2">
+        .map((l, i) => (
+          <div key={listKey(l.id, i, "lang")} className="flex items-center justify-between gap-2">
             <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
               {l.name}
             </p>
@@ -1303,33 +1310,33 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
     );
   personal.portfolio.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="briefcase" entry={entry} theme={theme} />,
+      <LinkText key={`portfolio-${entry.id}`} icon="briefcase" entry={entry} theme={theme} />,
     ),
   );
   personal.website.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="globe" entry={entry} theme={theme} />,
+      <LinkText key={`website-${entry.id}`} icon="globe" entry={entry} theme={theme} />,
     ),
   );
   personal.linkedin.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="linkedin" entry={entry} theme={theme} />,
+      <LinkText key={`linkedin-${entry.id}`} icon="linkedin" entry={entry} theme={theme} />,
     ),
   );
   personal.github.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="github" entry={entry} theme={theme} />,
+      <LinkText key={`github-${entry.id}`} icon="github" entry={entry} theme={theme} />,
     ),
   );
   personal.gitlab.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="gitlab" entry={entry} theme={theme} />,
+      <LinkText key={`gitlab-${entry.id}`} icon="gitlab" entry={entry} theme={theme} />,
     ),
   );
   personal.stackoverflow.forEach((entry) =>
     items.push(
       <LinkText
-        key={entry.id}
+        key={`stackoverflow-${entry.id}`}
         icon="stackoverflow"
         entry={entry}
         theme={theme}
@@ -1338,7 +1345,7 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
   );
   personal.telegram.forEach((entry) =>
     items.push(
-      <LinkText key={entry.id} icon="send" entry={entry} theme={theme} />,
+      <LinkText key={`telegram-${entry.id}`} icon="send" entry={entry} theme={theme} />,
     ),
   );
   if (personal.passportId)
@@ -1627,8 +1634,8 @@ function SidebarColumn({
               return (
                 <Section key="references" title="References" theme={theme}>
                   <div className="space-y-3">
-                    {references.map((r) => (
-                      <ReferenceEntry key={r.id} r={r} theme={theme} />
+                    {references.map((r, i) => (
+                      <ReferenceEntry key={listKey(r.id, i, "ref")} r={r} theme={theme} />
                     ))}
                   </div>
                 </Section>
@@ -1683,8 +1690,8 @@ function SidebarExperienceBody({
       {mixedExperience.length > 0 && (
         <Section title="Experience" theme={theme}>
           <div className="space-y-3">
-            {mixedExperience.map((entry) => (
-              <div key={entry.item.id}>
+            {mixedExperience.map((entry, i) => (
+              <div key={listKey(entry.item.id, i, "exp")}>
                 {entry.kind === "job" ? (
                   <ExperienceHeader exp={entry.item} theme={theme} />
                 ) : (
@@ -1705,8 +1712,8 @@ function SidebarExperienceBody({
       {education.length > 0 && (
         <Section title="Education" theme={theme}>
           <div className="space-y-3">
-            {education.map((edu) => (
-              <div key={edu.id}>
+            {education.map((edu, i) => (
+              <div key={listKey(edu.id, i, "edu")}>
                 <EducationEntry edu={edu} theme={theme} />
                 {hasText(edu.description) && (
                   <div

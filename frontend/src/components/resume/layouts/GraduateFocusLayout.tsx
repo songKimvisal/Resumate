@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Fresh-grad classic - education-first, soft boxed sections, no photo. */
@@ -55,7 +56,7 @@ export default function GraduateFocusLayout({
             </p>
           )}
           <p className="mt-2 text-[0.82em]" style={{ color: muted }}>
-            {contacts.map((c) => c.text).join("  ·  ")}
+            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
           </p>
         </header>
       )}
@@ -64,8 +65,8 @@ export default function GraduateFocusLayout({
         <section className="mb-4 rounded-xl bg-white px-6 py-4 shadow-sm">
           <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="space-y-4">
-            {education.map((edu) => (
-              <div key={edu.id} className="text-[0.9em]">
+            {education.map((edu, eduIdx) => (
+              <div key={listKey(edu.id, eduIdx, "edu")} className="text-[0.9em]">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-bold" style={{ fontSize: "1.05em" }}>{edu.school}</p>
                   <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
@@ -92,8 +93,8 @@ export default function GraduateFocusLayout({
         <section className="mb-4 rounded-xl bg-white px-6 py-4 shadow-sm">
           <AtsHeading title="Experience & Projects" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="space-y-4">
-            {jobs.map((job) => (
-              <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+            {jobs.map((job, jobIdx) => (
+              <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
             ))}
           </div>
         </section>
@@ -117,7 +118,7 @@ export default function GraduateFocusLayout({
               <div>
                 <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
                 <p className="text-[0.88em]" style={{ color: muted }}>
-                  {languages.map((l) => l.name).join(" · ")}
+                  {languages.map((l, langIdx) => l.name).join(" · ")}
                 </p>
               </div>
             )}
@@ -126,8 +127,8 @@ export default function GraduateFocusLayout({
             <div className="mt-4">
               <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="grid grid-cols-2 gap-3 text-[0.85em]">
-                {references.slice(0, 2).map((r) => (
-                  <div key={r.id}>
+                {references.slice(0, 2).map((r, refIdx) => (
+                  <div key={listKey(r.id, refIdx, "ref")}>
                     <p className="font-bold">{r.name}</p>
                     <p style={{ color: muted }}>{r.company}</p>
                   </div>

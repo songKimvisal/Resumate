@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/UseAuth";
 import { useTheme } from "../../hooks/UseTheme";
 import { supabase } from "../../lib/supabase";
 import { deleteAllResumes } from "../../lib/api";
+import { useResumeStore } from "../../store/resumeStore";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { Switch } from "../../components/ui/Switch";
@@ -59,6 +60,7 @@ export default function Settings() {
     setDeleteError(null);
     try {
       await deleteAllResumes(user.id);
+      useResumeStore.getState().resetResume();
       await signOut();
       navigate("/");
     } catch {
@@ -102,6 +104,9 @@ export default function Settings() {
         </div>
 
         <Input
+          id="settings-name"
+          name="name"
+          autoComplete="name"
           label={t("settings.profile.nameLabel")}
           value={name}
           onChange={(e) => {

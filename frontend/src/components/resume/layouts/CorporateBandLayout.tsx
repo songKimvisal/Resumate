@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Banking classic - full-width navy header band (distinct from executiveCard). */
@@ -59,9 +60,9 @@ export default function CorporateBandLayout({
               )}
             </div>
             <div className="max-w-[42%] text-right text-[0.78em] leading-relaxed text-white/85">
-              {contacts.map((c) => (
+              {contacts.map((c, contactIdx) => (
                 <p
-                  key={c.id}
+                  key={listKey(c.id, contactIdx, "contact")}
                   className={
                     c.kind === "email" || c.kind === "link" ? "break-all" : undefined
                   }
@@ -87,8 +88,8 @@ export default function CorporateBandLayout({
             <section>
               <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+                {jobs.map((job, jobIdx) => (
+                  <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
                 ))}
               </div>
             </section>
@@ -100,8 +101,8 @@ export default function CorporateBandLayout({
             <section>
               <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
               <div className="space-y-3 text-[0.85em]">
-                {education.map((edu) => (
-                  <div key={edu.id}>
+                {education.map((edu, eduIdx) => (
+                  <div key={listKey(edu.id, eduIdx, "edu")}>
                     <p className="font-bold">{edu.school}</p>
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
@@ -126,7 +127,7 @@ export default function CorporateBandLayout({
             <section>
               <AtsHeading title="Languages" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
               <p className="text-[0.85em]" style={{ color: muted }}>
-                {languages.map((l) => l.name).join(" · ")}
+                {languages.map((l, langIdx) => l.name).join(" · ")}
               </p>
             </section>
           )}
@@ -134,8 +135,8 @@ export default function CorporateBandLayout({
             <section>
               <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
               <div className="space-y-2 text-[0.82em]">
-                {references.slice(0, 2).map((r) => (
-                  <div key={r.id}>
+                {references.slice(0, 2).map((r, refIdx) => (
+                  <div key={listKey(r.id, refIdx, "ref")}>
                     <p className="font-bold">{r.name}</p>
                     <p style={{ color: muted }}>{r.company}</p>
                   </div>

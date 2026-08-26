@@ -98,7 +98,7 @@ function SkillsPanel({ t }: { t: (key: string) => string }) {
       <AnimatePresence initial={false}>
         {skills.map((skill, i) => (
           <SkillCard
-            key={skill.id}
+            key={skill.id || `skill-${i}`}
             index={i}
             skill={skill}
             expanded={expandedId === skill.id}
@@ -202,9 +202,9 @@ function SkillCard({
             onChange={(e) => onChange({ name: e.target.value })}
           />
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text">
+            <p className="text-sm font-medium text-text">
               {t("builder.skillsMore.skills.skillLevel")}
-            </label>
+            </p>
             <DotRating
               value={skill.level}
               onChange={(level) => onChange({ level })}
@@ -237,9 +237,9 @@ function LanguagesPanel({ t }: { t: (key: string) => string }) {
   return (
     <div className="space-y-3">
       <AnimatePresence initial={false}>
-        {languages.map((lang) => (
+        {languages.map((lang, i) => (
           <LanguageRow
-            key={lang.id}
+            key={lang.id || `lang-${i}`}
             lang={lang}
             onChange={(patch) => updateLanguage(lang.id, patch)}
             onRemove={() => removeLanguage(lang.id)}
@@ -284,9 +284,9 @@ function LanguageRow({
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-text">
+        <p className="text-sm font-medium text-text">
           {t("builder.skillsMore.languages.languageLevel")}
-        </label>
+        </p>
         <DotRating
           value={lang.level}
           onChange={(level) => onChange({ level })}
@@ -355,7 +355,7 @@ function ReferencesPanel({ t }: { t: (key: string) => string }) {
       <AnimatePresence initial={false}>
         {references.map((ref, i) => (
           <ReferenceCard
-            key={ref.id}
+            key={ref.id || `ref-${i}`}
             index={i}
             reference={ref}
             expanded={expandedId === ref.id}

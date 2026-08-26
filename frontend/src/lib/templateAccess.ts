@@ -32,6 +32,16 @@ export function hasTemplateAccess(
   return templateSlotsForPack(packId) === Number.POSITIVE_INFINITY;
 }
 
+/** Free templates plus premium ones the user has already unlocked. */
+export function canUseTemplate(
+  preset: { id: string; tier: "free" | "premium" },
+  packId: PackId | null | undefined,
+  unlockedIds: string[],
+): boolean {
+  if (preset.tier === "free") return true;
+  return hasTemplateAccess(preset.id, packId, unlockedIds);
+}
+
 export function canClaimTemplateSlot(
   packId: PackId | null | undefined,
   unlockedCount: number,

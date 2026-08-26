@@ -194,6 +194,8 @@ export default function Signup() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Input
+                    id="signup-email"
+                    name="email"
                     type="email"
                     label={t("signup.emailLabel")}
                     placeholder={t("signup.emailPlaceholder")}
@@ -203,6 +205,8 @@ export default function Signup() {
                     required
                   />
                   <PasswordInput
+                    id="signup-password"
+                    name="password"
                     label={t("signup.passwordLabel")}
                     placeholder={t("signup.passwordPlaceholder")}
                     value={password}
@@ -211,6 +215,8 @@ export default function Signup() {
                     required
                   />
                   <PasswordInput
+                    id="signup-confirm-password"
+                    name="confirmPassword"
                     label={t("signup.confirmPasswordLabel")}
                     placeholder={t("signup.confirmPasswordPlaceholder")}
                     value={confirmPassword}

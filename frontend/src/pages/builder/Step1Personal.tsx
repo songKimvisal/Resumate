@@ -445,6 +445,7 @@ export default function Step1Personal() {
           />
         </div>
         <RichTextEditor
+          id="personal-summary"
           value={personal.summary}
           onChange={(summary) => updatePersonal({ summary })}
           placeholder={t("builder.personal.summaryPlaceholder")}
@@ -470,11 +471,15 @@ export default function Step1Personal() {
         <div className="grid sm:grid-cols-2 gap-4">
           {textDetails.map((f) => (
             <div key={f.key} className="space-y-1.5">
-              <label className="text-sm font-medium text-text">
+              <label
+                htmlFor={`personal-${f.key}`}
+                className="text-sm font-medium text-text"
+              >
                 {t(`builder.personal.details.${f.labelKey}`)}
               </label>
               <div className="flex items-center gap-2">
                 <input
+                  id={`personal-${f.key}`}
                   type="text"
                   placeholder={f.placeholder}
                   value={personal[f.key] as string}
@@ -513,14 +518,14 @@ export default function Step1Personal() {
                 </div>
                 <div className="space-y-2">
                   <AnimatePresence initial={false}>
-                    {entries.map((entry) => {
+                    {entries.map((entry, entryIdx) => {
                       const popoverOpen =
                         urlPopover?.key === f.key && urlPopover.id === entry.id;
                       const invalid =
                         entry.url.trim() !== "" && !isValidLink(entry.url);
                       return (
                         <motion.div
-                          key={entry.id}
+                          key={entry.id || `link-${f.key}-${entryIdx}`}
                           layout
                           initial={{ opacity: 0, y: -8, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}

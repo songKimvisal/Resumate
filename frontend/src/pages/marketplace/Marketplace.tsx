@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "motion/react";
@@ -10,10 +10,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover";
-import { useResumeStore } from "../../store/resumeStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
-import { hasTemplateAccess, remainingTemplateSlots } from "../../lib/templateAccess";
+import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
+import { hasTemplateAccess, remainingTemplateSlots, canUseTemplate } from "../../lib/templateAccess";
 import {
   INDUSTRIES,
   TEMPLATE_PRESETS,
@@ -33,7 +33,9 @@ import TemplateCard from "./TemplateCard";
 import UnlockTemplateModal from "./UnlockTemplateModal";
 
 const PAGE_SIZE = 8;
-const TIER_TABS: (TemplateTier | "all")[] = ["all", "free", "premium"];
+type GalleryFilter = TemplateTier | "all" | "available";
+const TIER_TABS: GalleryFilter[] = ["available", "all", "free", "premium"];
+const RESTYLE_TABS: GalleryFilter[] = ["available", "free", "premium"];
 
 export default function Marketplace() {
   const { t } = useTranslation();
@@ -42,8 +44,11 @@ export default function Marketplace() {
   const pickFromCheckout = Boolean(
     (location.state as { pickTemplates?: boolean } | null)?.pickTemplates,
   );
-  const updateCustomization = useResumeStore((s) => s.updateCustomization);
+  const restyleCurrent = Boolean(
+    (location.state as { restyle?: boolean } | null)?.restyle,
+  );
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
+  const applyingRef = useRef(false);
   const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
   const remainingSlots = remainingTemplateSlots(
@@ -56,8 +61,8 @@ export default function Marketplace() {
     customization: Partial<Customization>;
   } | null>(null);
 
-  const [tierFilter, setTierFilter] = useState<TemplateTier | "all">(
-    pickFromCheckout ? "premium" : "all",
+  const [tierFilter, setTierFilter] = useState<GalleryFilter>(
+    pickFromCheckout ? "premium" : restyleCurrent ? "available" : "all",
   );
   const [industryFilter, setIndustryFilter] = useState<TemplateIndustry[]>([]);
   const [page, setPage] = useState(1);
@@ -79,18 +84,25 @@ export default function Marketplace() {
 
   const filtered = useMemo(
     () =>
-      TEMPLATE_PRESETS.filter(
-        (p) =>
-          (tierFilter === "all" || p.tier === tierFilter) &&
-          (industryFilter.length === 0 || industryFilter.includes(p.industry)),
-      ),
-    [tierFilter, industryFilter],
+      TEMPLATE_PRESETS.filter((p) => {
+        const matchesTier =
+          tierFilter === "all"
+            ? true
+            : tierFilter === "available"
+              ? canUseTemplate(p, lastPackId, unlockedTemplateIds)
+              : p.tier === tierFilter;
+        return (
+          matchesTier &&
+          (industryFilter.length === 0 || industryFilter.includes(p.industry))
+        );
+      }),
+    [lastPackId, unlockedTemplateIds, tierFilter, industryFilter],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const setTierFilterAndResetPage = (tier: TemplateTier | "all") => {
+  const setTierFilterAndResetPage = (tier: GalleryFilter) => {
     setTierFilter(tier);
     setPage(1);
   };
@@ -109,41 +121,77 @@ export default function Marketplace() {
     setPage(1);
   };
 
-  const requestApply = (
+  const applyChosenTemplate = async (
+    preset: TemplatePreset,
+    customization: Partial<Customization>,
+    asNewResume = false,
+  ) => {
+    await applyMarketplaceTemplate({
+      customization,
+      templateId: preset.id,
+      title: t(`marketplace.styleNames.${preset.styleKey}`),
+      asNewResume,
+    });
+  };
+
+  const requestApply = async (
     preset: TemplatePreset,
     customization: Partial<Customization>,
   ) => {
+    if (applyingRef.current) return;
     if (
       preset.tier === "premium" &&
       !hasTemplateAccess(preset.id, lastPackId, unlockedTemplateIds)
     ) {
       if (remainingSlots > 0) {
+        applyingRef.current = true;
         unlockTemplate(preset.id);
-        updateCustomization(customization);
-        const nextCount = unlockedTemplateIds.includes(preset.id)
-          ? unlockedTemplateIds.length
-          : unlockedTemplateIds.length + 1;
-        if (remainingTemplateSlots(lastPackId, nextCount) <= 0) {
-          navigate("/builder");
+        try {
+          await applyChosenTemplate(
+            preset,
+            customization,
+            !restyleCurrent,
+          );
+          const nextCount = unlockedTemplateIds.includes(preset.id)
+            ? unlockedTemplateIds.length
+            : unlockedTemplateIds.length + 1;
+          if (remainingTemplateSlots(lastPackId, nextCount) <= 0) {
+            navigate("/builder");
+          }
+        } finally {
+          applyingRef.current = false;
         }
         return;
       }
       setPendingUnlock({ preset, customization });
       return;
     }
-    updateCustomization(customization);
-    navigate("/builder");
+    applyingRef.current = true;
+    try {
+      await applyChosenTemplate(preset, customization);
+      navigate("/builder");
+    } finally {
+      applyingRef.current = false;
+    }
   };
 
   const applyTemplate = (preset: TemplatePreset) =>
     requestApply(preset, preset.customization);
 
-  const confirmUnlock = () => {
-    if (!pendingUnlock) return;
+  const confirmUnlock = async () => {
+    if (!pendingUnlock || applyingRef.current) return;
+    applyingRef.current = true;
     unlockTemplate(pendingUnlock.preset.id);
-    updateCustomization(pendingUnlock.customization);
-    navigate("/builder");
-    setPendingUnlock(null);
+    try {
+      await applyChosenTemplate(
+        pendingUnlock.preset,
+        pendingUnlock.customization,
+      );
+      navigate("/builder");
+      setPendingUnlock(null);
+    } finally {
+      applyingRef.current = false;
+    }
   };
 
   const handleGenerate = async (answers: AiAnswers) => {
@@ -169,13 +217,25 @@ export default function Marketplace() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <h1 className="text-3xl font-bold text-text">
-                  {t("marketplace.hero.title")}{" "}
+                  {t(
+                    restyleCurrent
+                      ? "marketplace.heroRestyle.title"
+                      : "marketplace.hero.title",
+                  )}{" "}
                   <span className="text-brand italic">
-                    {t("marketplace.hero.titleAccent")}
+                    {t(
+                      restyleCurrent
+                        ? "marketplace.heroRestyle.titleAccent"
+                        : "marketplace.hero.titleAccent",
+                    )}
                   </span>
                 </h1>
                 <p className="text-sm text-text-secondary mt-2 max-w-xl">
-                  {t("marketplace.hero.subtitle")}
+                  {t(
+                    restyleCurrent
+                      ? "marketplace.heroRestyle.subtitle"
+                      : "marketplace.hero.subtitle",
+                  )}
                 </p>
               </div>
 
@@ -227,8 +287,8 @@ export default function Marketplace() {
             </div>
 
             {/* ---------- filters ---------- */}
-            <div className="mt-6 flex items-center gap-2">
-              {TIER_TABS.map((tier) => (
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {(restyleCurrent ? RESTYLE_TABS : TIER_TABS).map((tier) => (
                 <button
                   key={tier}
                   type="button"

@@ -111,6 +111,9 @@ export default function Contact() {
         >
           <div className="grid sm:grid-cols-2 gap-5">
             <Input
+              id="contact-name"
+              name="name"
+              autoComplete="name"
               label={t("contact.form.nameLabel")}
               placeholder={t("contact.form.namePlaceholder")}
               value={name}
@@ -121,7 +124,10 @@ export default function Contact() {
               error={errors.name}
             />
             <Input
+              id="contact-email"
+              name="email"
               type="email"
+              autoComplete="email"
               label={t("contact.form.emailLabel")}
               placeholder={t("contact.form.emailPlaceholder")}
               value={email}
@@ -134,14 +140,17 @@ export default function Contact() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text">
+            <label htmlFor="contact-topic" className="text-sm font-medium text-text">
               {t("contact.form.topicLabel")}
             </label>
             <Select
               value={topic}
               onValueChange={(value) => setTopic(value as typeof topic)}
             >
-              <SelectTrigger className="w-full h-10! rounded-lg border-line bg-bg text-sm">
+              <SelectTrigger
+                id="contact-topic"
+                className="w-full h-10! rounded-lg border-line bg-bg text-sm"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -155,6 +164,8 @@ export default function Contact() {
           </div>
 
           <Textarea
+            id="contact-message"
+            name="message"
             label={t("contact.form.messageLabel")}
             placeholder={t("contact.form.messagePlaceholder")}
             rows={6}

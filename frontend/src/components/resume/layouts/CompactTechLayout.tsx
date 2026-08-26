@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Tech classic - full-width top band, left skills rail, right experience (no photo). */
@@ -55,7 +56,7 @@ export default function CompactTechLayout({
             </p>
           )}
           <p className="mt-3 text-[0.8em] text-white/85">
-            {contacts.map((c) => c.text).join("  ·  ")}
+            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
           </p>
         </header>
       )}
@@ -77,8 +78,8 @@ export default function CompactTechLayout({
             <section>
               <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
               <ul className="space-y-1 text-[0.85em]" style={{ color: muted }}>
-                {languages.map((l) => (
-                  <li key={l.id}>{l.name}</li>
+                {languages.map((l, langIdx) => (
+                  <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
                 ))}
               </ul>
             </section>
@@ -87,8 +88,8 @@ export default function CompactTechLayout({
             <section>
               <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="space-y-3 text-[0.85em]">
-                {education.map((edu) => (
-                  <div key={edu.id}>
+                {education.map((edu, eduIdx) => (
+                  <div key={listKey(edu.id, eduIdx, "edu")}>
                     <p className="font-bold">{edu.school}</p>
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
@@ -111,8 +112,8 @@ export default function CompactTechLayout({
             <section>
               <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+                {jobs.map((job, jobIdx) => (
+                  <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
                 ))}
               </div>
             </section>
@@ -121,8 +122,8 @@ export default function CompactTechLayout({
             <section>
               <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
               <div className="grid grid-cols-2 gap-3 text-[0.85em]">
-                {references.slice(0, 4).map((r) => (
-                  <div key={r.id}>
+                {references.slice(0, 4).map((r, refIdx) => (
+                  <div key={listKey(r.id, refIdx, "ref")}>
                     <p className="font-bold">{r.name}</p>
                     <p style={{ color: muted }}>{r.company}</p>
                   </div>

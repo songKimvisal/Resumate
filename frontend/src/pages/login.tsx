@@ -168,6 +168,8 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
+                id="login-email"
+                name="email"
                 type="email"
                 label={t("login.emailLabel")}
                 placeholder={t("login.emailPlaceholder")}
@@ -178,6 +180,8 @@ export default function Login() {
               />
               <div className="space-y-1.5">
                 <PasswordInput
+                  id="login-password"
+                  name="password"
                   label={t("login.passwordLabel")}
                   placeholder={t("login.passwordPlaceholder")}
                   value={password}

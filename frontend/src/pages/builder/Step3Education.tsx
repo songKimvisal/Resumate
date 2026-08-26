@@ -67,7 +67,7 @@ export default function Step3Education() {
         <AnimatePresence initial={false}>
           {education.map((edu, i) => (
             <EducationCard
-              key={edu.id}
+              key={edu.id || `edu-${i}`}
               index={i}
               edu={edu}
               expanded={expandedId === edu.id}
@@ -245,13 +245,17 @@ function EducationCard({
           />
 
           <div className="min-w-0 space-y-1.5">
-            <label className="text-sm font-medium text-text">
+            <label
+              htmlFor={`edu-${edu.id}-start`}
+              className="text-sm font-medium text-text"
+            >
               {t("builder.education.duration")}
             </label>
 
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <MonthPicker
+                  id={`edu-${edu.id}-start`}
                   value={edu.startDate}
                   max={edu.endDate || undefined}
                   onChange={(startDate) => onChange({ startDate })}
@@ -261,6 +265,7 @@ function EducationCard({
               <span className="text-text-placeholder shrink-0">–</span>
               <div className="flex-1 min-w-0">
                 <MonthPicker
+                  id={`edu-${edu.id}-end`}
                   value={edu.endDate}
                   min={edu.startDate || undefined}
                   disabled={edu.current}
@@ -269,8 +274,12 @@ function EducationCard({
                 />
               </div>
             </div>
-            <label className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer">
+            <label
+              htmlFor={`edu-${edu.id}-current`}
+              className="flex items-center gap-2 text-sm text-text-secondary pt-1 cursor-pointer"
+            >
               <input
+                id={`edu-${edu.id}-current`}
                 type="checkbox"
                 checked={edu.current}
                 onChange={(e) =>
@@ -284,7 +293,10 @@ function EducationCard({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-text">
+              <label
+                htmlFor={`edu-desc-${edu.id}`}
+                className="text-sm font-medium text-text"
+              >
                 {t("builder.education.achievements")}
               </label>
               <AiRewriteButton
@@ -294,6 +306,7 @@ function EducationCard({
               />
             </div>
             <RichTextEditor
+              id={`edu-desc-${edu.id}`}
               value={edu.description}
               onChange={(description) => onChange({ description })}
               placeholder={t("builder.education.achievementsPlaceholder")}

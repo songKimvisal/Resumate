@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /** Designer classic - centered editorial header, double rules, no photo. */
@@ -62,7 +63,7 @@ export default function EditorialClassicLayout({
             </p>
           )}
           <p className="mt-3 text-[0.8em]" style={{ color: muted }}>
-            {contacts.map((c) => c.text).join("  |  ")}
+            {contacts.map((c, contactIdx) => c.text).join("  |  ")}
           </p>
           <div className="mx-auto mt-4 h-[2px] w-full max-w-md" style={{ backgroundColor: accent }} />
           <div className="mx-auto mt-1 h-px w-full max-w-md" style={{ backgroundColor: accent }} />
@@ -84,8 +85,8 @@ export default function EditorialClassicLayout({
         <section className="mb-5">
           <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="space-y-4">
-            {jobs.map((job) => (
-              <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+            {jobs.map((job, jobIdx) => (
+              <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
             ))}
           </div>
         </section>
@@ -96,8 +97,8 @@ export default function EditorialClassicLayout({
           <section>
             <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
             <div className="space-y-3 text-[0.88em]">
-              {education.map((edu) => (
-                <div key={edu.id}>
+              {education.map((edu, eduIdx) => (
+                <div key={listKey(edu.id, eduIdx, "edu")}>
                   <p className="font-bold">{edu.school}</p>
                   <p style={{ color: muted }}>
                     {[edu.degree, edu.field].filter(Boolean).join(" - ")}
@@ -124,7 +125,7 @@ export default function EditorialClassicLayout({
                   <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
                 </div>
                 <p className="text-[0.88em]" style={{ color: muted }}>
-                  {languages.map((l) => l.name).join(" · ")}
+                  {languages.map((l, langIdx) => l.name).join(" · ")}
                 </p>
               </>
             )}
@@ -136,8 +137,8 @@ export default function EditorialClassicLayout({
         <section>
           <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-            {references.slice(0, 4).map((r) => (
-              <div key={r.id}>
+            {references.slice(0, 4).map((r, refIdx) => (
+              <div key={listKey(r.id, refIdx, "ref")}>
                 <p className="font-bold">{r.name}</p>
                 <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" · ")}</p>
               </div>

@@ -10,6 +10,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  listKey,
 } from "./shared";
 
 /**
@@ -66,7 +67,7 @@ export default function MonoTimelineLayout({
             </p>
           )}
           <p className="mt-3 text-[0.85em]" style={{ color: muted }}>
-            {contacts.map((c) => c.text).join("  ·  ")}
+            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
           </p>
         </header>
       )}
@@ -86,8 +87,8 @@ export default function MonoTimelineLayout({
         <section className="mb-5">
           <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
           <div className="space-y-4">
-            {jobs.map((job) => (
-              <JobBlock key={job.id} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+            {jobs.map((job, jobIdx) => (
+              <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
             ))}
           </div>
         </section>
@@ -97,8 +98,8 @@ export default function MonoTimelineLayout({
         <section className="mb-5">
           <AtsHeading title="Education" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
           <div className="space-y-3 text-[0.9em]">
-            {education.map((edu) => (
-              <div key={edu.id}>
+            {education.map((edu, eduIdx) => (
+              <div key={listKey(edu.id, eduIdx, "edu")}>
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-bold">
                     {[edu.degree, edu.field].filter(Boolean).join(" - ") || edu.school}
@@ -132,7 +133,7 @@ export default function MonoTimelineLayout({
             <section>
               <AtsHeading title="Languages" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
               <p className="text-[0.9em]" style={{ color: muted }}>
-                {languages.map((l) => l.name).join(" · ")}
+                {languages.map((l, langIdx) => l.name).join(" · ")}
               </p>
             </section>
           )}
@@ -143,8 +144,8 @@ export default function MonoTimelineLayout({
         <section>
           <AtsHeading title="References" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
           <div className="grid grid-cols-2 gap-4 text-[0.88em]">
-            {references.slice(0, 4).map((r) => (
-              <div key={r.id}>
+            {references.slice(0, 4).map((r, refIdx) => (
+              <div key={listKey(r.id, refIdx, "ref")}>
                 <p className="font-bold">{r.name}</p>
                 <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" · ")}</p>
                 {r.phone && <p style={{ color: muted }}>{r.phone}</p>}

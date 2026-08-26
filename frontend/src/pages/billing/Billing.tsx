@@ -214,6 +214,9 @@ export default function Billing() {
                   >
                     <div className="mt-4 rounded-xl border border-line p-4 space-y-4">
                       <Input
+                        id="billing-cc-name"
+                        name="ccname"
+                        autoComplete="cc-name"
                         label={t("billing.paymentMethod.card.nameLabel")}
                         placeholder={t(
                           "billing.paymentMethod.card.namePlaceholder",
@@ -222,6 +225,9 @@ export default function Billing() {
                         onChange={(e) => setCardName(e.target.value)}
                       />
                       <Input
+                        id="billing-cc-number"
+                        name="cardnumber"
+                        autoComplete="cc-number"
                         label={t("billing.paymentMethod.card.numberLabel")}
                         placeholder="4242 4242 4242 4242"
                         inputMode="numeric"
@@ -232,6 +238,9 @@ export default function Billing() {
                       />
                       <div className="flex gap-4">
                         <Input
+                          id="billing-cc-exp"
+                          name="cc-exp"
+                          autoComplete="cc-exp"
                           label={t("billing.paymentMethod.card.expiryLabel")}
                           placeholder="MM/YY"
                           inputMode="numeric"
@@ -242,6 +251,9 @@ export default function Billing() {
                           className="flex-1"
                         />
                         <Input
+                          id="billing-cc-csc"
+                          name="cvc"
+                          autoComplete="cc-csc"
                           label={t("billing.paymentMethod.card.cvcLabel")}
                           placeholder="123"
                           inputMode="numeric"

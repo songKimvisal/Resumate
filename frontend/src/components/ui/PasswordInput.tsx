@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn, useFieldId } from "../../lib/utils";
 
 interface FieldProps {
   label?: string;
@@ -12,7 +12,7 @@ export const PasswordInput = React.forwardRef<
   HTMLInputElement,
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & FieldProps
 >(({ label, hint, error, className, id, ...props }, ref) => {
-  const inputId = id ?? React.useId();
+  const inputId = useFieldId(id);
   const [visible, setVisible] = React.useState(false);
 
   return (
@@ -25,7 +25,6 @@ export const PasswordInput = React.forwardRef<
       <div className="relative">
         <input
           ref={ref}
-          id={inputId}
           type={visible ? "text" : "password"}
           aria-invalid={!!error}
           className={cn(
@@ -39,6 +38,7 @@ export const PasswordInput = React.forwardRef<
             className,
           )}
           {...props}
+          id={inputId}
         />
         <button
           type="button"

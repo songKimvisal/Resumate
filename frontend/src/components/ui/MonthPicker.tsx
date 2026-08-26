@@ -31,6 +31,7 @@ export function MonthPicker({
   max,
   disabled,
   className,
+  id,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -39,6 +40,7 @@ export function MonthPicker({
   max?: string;
   disabled?: boolean;
   className?: string;
+  id?: string;
 }) {
   const [open, setOpen] = useState(false);
   const selected = parse(value);
@@ -65,6 +67,7 @@ export function MonthPicker({
       }}
     >
       <PopoverTrigger
+        id={id}
         type="button"
         disabled={disabled}
         className={cn(

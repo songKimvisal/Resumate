@@ -18,8 +18,8 @@ import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
 import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { useResumeStore } from "../../store/resumeStore";
 import { consumePendingTemplateId } from "../../lib/session";
+import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
   packIncludesTemplates,
   packUnlocksAllTemplates,
@@ -52,7 +52,6 @@ export default function Payment() {
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
   const unlockTemplates = useEntitlementStore((s) => s.unlockTemplates);
-  const updateCustomization = useResumeStore((s) => s.updateCustomization);
 
   const checkout = location.state as
     | { pack?: PackId; plan?: PlanId }
@@ -92,24 +91,20 @@ export default function Payment() {
   const fulfillPurchase = (packId: PackId) => {
     subscribeToPlan(packToPlanId(packId), packId);
     const pendingId = consumePendingTemplateId();
+    const pendingPreset = pendingId
+      ? TEMPLATE_PRESETS.find((p) => p.id === pendingId)
+      : undefined;
+    const shouldApplyPending =
+      Boolean(pendingPreset) &&
+      (packUnlocksAllTemplates(packId) || packIncludesTemplates(packId));
 
     if (packUnlocksAllTemplates(packId)) {
       unlockTemplates(
         TEMPLATE_PRESETS.filter((p) => p.tier === "premium").map((p) => p.id),
       );
-      if (pendingId) {
-        const preset = TEMPLATE_PRESETS.find((p) => p.id === pendingId);
-        if (preset) updateCustomization(preset.customization);
-        setAfterPay("builder");
-      } else {
-        setAfterPay("browse");
-      }
+      setAfterPay(pendingPreset ? "builder" : "browse");
     } else if (packIncludesTemplates(packId)) {
-      if (pendingId) {
-        unlockTemplate(pendingId);
-        const preset = TEMPLATE_PRESETS.find((p) => p.id === pendingId);
-        if (preset) updateCustomization(preset.customization);
-      }
+      if (pendingId) unlockTemplate(pendingId);
       const unlocked = useEntitlementStore.getState().unlockedTemplateIds.length;
       const remaining = remainingTemplateSlots(packId, unlocked);
       if (remaining > 0) setAfterPay("pick");
@@ -118,7 +113,16 @@ export default function Payment() {
       setAfterPay("dashboard");
     }
 
-    setShowSuccess(true);
+    const showSuccess = () => setShowSuccess(true);
+    if (shouldApplyPending && pendingPreset) {
+      void applyMarketplaceTemplate({
+        customization: pendingPreset.customization,
+        templateId: pendingPreset.id,
+        title: t(`marketplace.styleNames.${pendingPreset.styleKey}`),
+      }).finally(showSuccess);
+      return;
+    }
+    showSuccess();
   };
 
   const continueAfterPay = (next: AfterPay) => {
@@ -243,6 +247,9 @@ export default function Payment() {
               >
                 <div className="mt-4 rounded-xl border border-line p-4 space-y-4">
                   <Input
+                    id="cc-name"
+                    name="ccname"
+                    autoComplete="cc-name"
                     label={t("billing.paymentMethod.card.nameLabel")}
                     placeholder={t(
                       "billing.paymentMethod.card.namePlaceholder",
@@ -251,6 +258,9 @@ export default function Payment() {
                     onChange={(e) => setCardName(e.target.value)}
                   />
                   <Input
+                    id="cc-number"
+                    name="cardnumber"
+                    autoComplete="cc-number"
                     label={t("billing.paymentMethod.card.numberLabel")}
                     placeholder="4242 4242 4242 4242"
                     inputMode="numeric"
@@ -261,6 +271,9 @@ export default function Payment() {
                   />
                   <div className="flex gap-4">
                     <Input
+                      id="cc-exp"
+                      name="cc-exp"
+                      autoComplete="cc-exp"
                       label={t("billing.paymentMethod.card.expiryLabel")}
                       placeholder="MM/YY"
                       inputMode="numeric"
@@ -271,6 +284,9 @@ export default function Payment() {
                       className="flex-1"
                     />
                     <Input
+                      id="cc-csc"
+                      name="cvc"
+                      autoComplete="cc-csc"
                       label={t("billing.paymentMethod.card.cvcLabel")}
                       placeholder="123"
                       inputMode="numeric"

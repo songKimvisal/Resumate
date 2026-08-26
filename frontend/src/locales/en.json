@@ -1296,6 +1296,11 @@
       "titleAccent": "template.",
       "subtitle": "Choose a layout that fits your industry and vibe. Switch anytime without losing your data."
     },
+    "heroRestyle": {
+      "title": "Change",
+      "titleAccent": "template.",
+      "subtitle": "Locked designs stay visible so you can unlock them. Use Available to see only templates you can apply."
+    },
     "pickBanner": {
       "label": "Your template pack",
       "hint": "Tap a locked design to unlock it.",
@@ -1312,6 +1317,7 @@
       "all": "All",
       "free": "Free",
       "premium": "Premium",
+      "available": "Available",
       "industryLabel": "Filter by industry",
       "clearIndustry": "All industries"
     },
@@ -1459,7 +1465,16 @@
       "confirmYes": "Yes, delete",
       "confirmCancel": "Cancel",
       "deleting": "Deleting…"
-    }
+    },
+    "select": "Select",
+    "cancelSelect": "Done",
+    "selectedCount": "{{count}} selected",
+    "selectHint": "Tap resumes to select them",
+    "selectAll": "Select all",
+    "deselectAll": "Clear",
+    "deleteSelected": "Delete",
+    "confirmDeleteSelected": "Delete {{count}} resumes? This cannot be undone.",
+    "deletingSelected": "Deleting…"
   },
   "settings": {
     "subtitle": "Manage your profile and account preferences.",
