@@ -7,6 +7,7 @@ import { useTheme } from "../../hooks/UseTheme";
 import { supabase } from "../../lib/supabase";
 import { deleteAllResumes } from "../../lib/api";
 import { useResumeStore } from "../../store/resumeStore";
+import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { Switch } from "../../components/ui/Switch";
@@ -61,6 +62,7 @@ export default function Settings() {
     try {
       await deleteAllResumes(user.id);
       useResumeStore.getState().resetResume();
+      useSubscriptionStore.getState().unsubscribe();
       await signOut();
       navigate("/");
     } catch {

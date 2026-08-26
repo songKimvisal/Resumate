@@ -1,6 +1,8 @@
 # Resumate Backend
 
-FastAPI backend for Resumate. Currently just verifies Supabase auth end to end.
+FastAPI backend for Resumate: auth, smart rewrite, AI design, and writing credits.
+
+For a plain-language guide to the credits update (what to set up once, why the service role key is needed, how the countdown works), see [docs/AI_CREDITS.md](../docs/AI_CREDITS.md).
 
 ## Setup
 
@@ -20,17 +22,28 @@ FastAPI backend for Resumate. Currently just verifies Supabase auth end to end.
    # cp .env.example .env        # macOS/Linux
    ```
 
-   - `SUPABASE_URL`: Supabase Dashboard > Project Settings > API > Project URL
-   - `SUPABASE_JWT_SECRET`: Supabase Dashboard > Project Settings > API > JWT Settings > JWT Secret
+   - `SUPABASE_URL`: Project Settings > API > Project URL
+   - `SUPABASE_SERVICE_ROLE_KEY`: Project Settings > API > service_role (secret). Used only on the server to grant and spend credits. Never put this in the frontend.
    - `FRONTEND_ORIGIN`: your Vite dev server URL (default `http://localhost:5173`)
+   - `GEMINI_API_KEY`: Gemini API key for smart rewrite / AI design
 
-3. Run the server:
+3. Apply the credits migration (`frontend/supabase/migrations/20260826120000_create_ai_credits.sql`) in the Supabase SQL editor, or with the Supabase CLI.
+
+4. Run the server:
 
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
 
-4. Check it's alive: open http://localhost:8000/api/health - should return `{"status": "ok"}`.
+5. Check it's alive: open http://localhost:8000/api/health - should return `{"status": "ok"}`.
+
+## Credits
+
+Balances live in the `ai_credits` table. The frontend never writes them.
+
+- `GET /api/credits` — current total / used / remaining
+- `POST /api/credits/grant` — `{ "pack_id": "ai-plus" }` after a purchase; the server decides how many credits that pack is worth
+- `POST /api/smart-rewrite` — spends 1 credit first; refunds it if the AI falls back
 
 ## Testing the authenticated endpoint
 
@@ -59,13 +72,10 @@ app/
   auth/
     supabase_jwt.py     Verifies Supabase JWTs, provides get_current_user()
   routers/
-    me.py               GET /api/me (test endpoint)
-  services/             (empty for now - Gemini client goes here next)
+    me.py               GET /api/me
+    credits.py          GET /api/credits, POST /api/credits/grant
+    smart_rewrite.py    POST /api/smart-rewrite (consumes a credit)
+    ai_design.py        POST /api/ai-design/recommend
+  services/
+    credits.py          Grant / consume / refund via Supabase RPCs
 ```
-
-## Next steps
-
-- Add a `resumes` router that reads/writes the `resumes` table via Supabase's
-  Python client, scoped to `get_current_user().id`.
-- Add `services/gemini_client.py` + `routers/ai_design.py` for the AI Design
-  suggestions feature.

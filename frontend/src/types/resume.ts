@@ -118,7 +118,6 @@ export interface CustomizationToggles {
   dates: boolean;
   linkIcons: boolean;
   headerIcons: boolean;
-  /** small accent-colored dot + short line beside each experience entry */
   timeline: boolean;
 }
 export type SectionOrderKey =
@@ -126,10 +125,6 @@ export type SectionOrderKey =
   | "experience"
   | "references"
   | "language";
-
-/** Named full-page layouts that opt out of the generic column engine and
- *  render a fixed composition matching a premium mockup. `"default"` keeps
- *  the existing customization-driven renderer. */
 export type LayoutVariant =
   | "default"
   | "designerBlock"
@@ -151,35 +146,24 @@ export type LayoutVariant =
 
 export interface Customization {
   template: string;
-  /** when not "default", ResumePreview/PDF use a dedicated layout component */
   layoutVariant: LayoutVariant;
   accentColor: string;
-  /** fills the sidebar column edge-to-edge in two-column layouts; "" means
-   *  no fill (sidebar just sits on the page background, the old behavior) */
   sidebarBgColor: string;
   columns: "one" | "two";
   headerPosition: "left" | "top" | "right";
-  /** base body text size, in px */
   fontSize: number;
   fontFamily: string;
   fullNameSize: number;
   titleSize: number;
   headingsSize: number;
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
-  /** extra tracking on section heading text, in px */
   headingsLetterSpacing: number;
   capitalization: "capitalize" | "uppercase";
-  /** marker glyph used for bullet lists inside rich-text fields (summary,
-   *  experience/education descriptions) */
   bulletStyle: "disc" | "dash" | "arrow" | "square" | "none";
-  /** how experience/education date ranges are formatted */
   dateFormat: "monthYear" | "numeric" | "yearOnly";
   linkStyle: ("underline" | "color" | "icon")[];
   sectionIcon: "none" | "outline" | "filled";
   headerAlignment: "left" | "center";
-  /** "row" places the photo beside the name/title/contact block instead of
-   *  above it - only applies to the full-width header (columns "one", or
-   *  columns "two" with headerPosition "top") */
   headerLayout: "stacked" | "row";
   contactArrangement: "inline" | "stacked";
   contactSeparator: "icon" | "bullet" | "bar";
@@ -189,22 +173,12 @@ export interface Customization {
   showPhoto: boolean;
   photoShape: "circle" | "rounded" | "square";
   photoSize: number;
-  /** thin accentColor ring around the profile photo */
   photoBorder: boolean;
-  /** photo bleeds full-width across the top of the sidebar column, edge to
-   *  edge, instead of the small inset headshot - only applies when the
-   *  header lives in the sidebar (headerPosition left/right) */
   sidebarPhotoFill: boolean;
-  /** "meter" keeps the existing dot-rating/inline-text behavior (governed
-   *  by toggles.dots); "list" shows names only, one per line, no rating */
   skillsDisplay: "meter" | "list";
-  /** thin flat accentColor bar in the page's top corner, pure decoration */
   topAccentBar: boolean;
-  /** solid bar at the bottom of every page, colored from sidebarBgColor */
   footerBar: boolean;
-  /** thin accentColor frame around the page edge */
   pageBorder: boolean;
-  /** thickness of the pageBorder frame, in px */
   pageBorderWidth: number;
   pageFormat: "a4" | "letter";
   lineHeight: number;
@@ -219,14 +193,11 @@ export interface Customization {
 export interface Resume {
   id: string | null;
   title: string;
-  /** Last builder wizard step (1-5). Used to resume an unfinished draft. */
   builderStep?: number;
-  /** Step 2 entry choice: has experience, none (fresh graduate), or not asked yet */
   experienceChoice: "has" | "none" | null;
   personal: PersonalInfo;
   experience: ExperienceItem[];
   noExperience: NoExperienceItem[];
-  /** Mixed display order of experience + noExperience ids. */
   experienceOrder?: string[];
   education: EducationItem[];
   skills: SkillItem[];

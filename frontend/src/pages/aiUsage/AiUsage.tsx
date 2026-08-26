@@ -10,32 +10,23 @@ import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { getResumesByUser } from "../../lib/api";
 import type { PackId, PlanId } from "../../types/billing";
 import { usePacks } from "../../hooks/usePacks";
+import { useAiCredits } from "../../hooks/useAiCredits";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 
-const PLAN_LIMITS: Record<PlanId, { aiCredits: number; resumesSaved: number }> =
-  {
-    free: { aiCredits: 0, resumesSaved: 1 },
-    starter: { aiCredits: 8, resumesSaved: 1 },
-    pro: { aiCredits: 60, resumesSaved: 5 },
-  };
-
-const PACK_LIMITS: Partial<
-  Record<PackId, { aiCredits: number; resumesSaved: number }>
-> = {
-  design: { aiCredits: 0, resumesSaved: 1 },
-  "ai-basic": { aiCredits: 8, resumesSaved: 1 },
-  "ai-plus": { aiCredits: 25, resumesSaved: 1 },
-  "ai-pro": { aiCredits: 60, resumesSaved: 1 },
-  "both-starter": { aiCredits: 8, resumesSaved: 1 },
-  "both-standard": { aiCredits: 25, resumesSaved: 2 },
-  "both-everything": { aiCredits: 60, resumesSaved: 5 },
+const PLAN_LIMITS: Record<PlanId, { resumesSaved: number }> = {
+  free: { resumesSaved: 1 },
+  starter: { resumesSaved: 1 },
+  pro: { resumesSaved: 5 },
 };
 
-// Credit usage isn't tracked server-side yet, so mock a used count.
-const AI_CREDITS_USED: Record<PlanId, number> = {
-  free: 0,
-  starter: 3,
-  pro: 20,
+const PACK_LIMITS: Partial<Record<PackId, { resumesSaved: number }>> = {
+  design: { resumesSaved: 1 },
+  "ai-basic": { resumesSaved: 1 },
+  "ai-plus": { resumesSaved: 1 },
+  "ai-pro": { resumesSaved: 1 },
+  "both-starter": { resumesSaved: 1 },
+  "both-standard": { resumesSaved: 2 },
+  "both-everything": { resumesSaved: 5 },
 };
 
 export default function AiUsage() {
@@ -45,6 +36,7 @@ export default function AiUsage() {
 
   const plan = useSubscriptionStore((s) => s.plan);
   const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const { used: aiCreditsUsed, total: aiCreditsTotal } = useAiCredits();
   const pricingPlans = usePricingPlans();
   const { all: packs } = usePacks();
   const currentPack = packs.find((p) => p.id === lastPackId);
@@ -69,8 +61,8 @@ export default function AiUsage() {
     {
       key: "aiCredits" as const,
       icon: Sparkles,
-      used: Math.min(AI_CREDITS_USED[plan], limits.aiCredits),
-      total: limits.aiCredits,
+      used: Math.min(aiCreditsUsed, aiCreditsTotal),
+      total: aiCreditsTotal,
     },
     {
       key: "resumesSaved" as const,
@@ -118,7 +110,8 @@ export default function AiUsage() {
           {metrics.map(({ key, icon: Icon, used, total }) => {
             const percent =
               total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
-            const limitReached = total === 0 || used >= total;
+            const exhausted = total > 0 && used >= total;
+            const emptyCredits = key === "aiCredits" && total === 0;
 
             return (
               <div key={key}>
@@ -144,15 +137,17 @@ export default function AiUsage() {
                 <p
                   className={cn(
                     "mt-1.5 text-right text-xs",
-                    limitReached
+                    exhausted
                       ? "flex items-center justify-end gap-1 text-destructive"
                       : "text-text-secondary",
                   )}
                 >
-                  {limitReached && <AlertCircle size={12} strokeWidth={2} />}
-                  {limitReached
-                    ? t("aiUsage.metrics.limitReached")
-                    : t("aiUsage.metrics.left", { count: total - used })}
+                  {exhausted && <AlertCircle size={12} strokeWidth={2} />}
+                  {emptyCredits
+                    ? t("billing.currentPlan.noCredits")
+                    : exhausted
+                      ? t("aiUsage.metrics.limitReached")
+                      : t("aiUsage.metrics.left", { count: total - used })}
                 </p>
               </div>
             );

@@ -18,6 +18,7 @@ import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
 import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
+import { grantAiCredits } from "../../lib/api/credits";
 import { consumePendingTemplateId } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
@@ -50,6 +51,7 @@ export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
+  const setCredits = useSubscriptionStore((s) => s.setCredits);
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
   const unlockTemplates = useEntitlementStore((s) => s.unlockTemplates);
 
@@ -88,8 +90,14 @@ export default function Payment() {
     cardCvc.length >= 3 &&
     cardName.trim().length > 0;
 
-  const fulfillPurchase = (packId: PackId) => {
+  const fulfillPurchase = async (packId: PackId) => {
     subscribeToPlan(packToPlanId(packId), packId);
+    try {
+      const credits = await grantAiCredits(packId);
+      setCredits(credits.total, credits.used);
+    } catch (err) {
+      console.warn("Could not grant AI credits:", err);
+    }
     const pendingId = consumePendingTemplateId();
     const pendingPreset = pendingId
       ? TEMPLATE_PRESETS.find((p) => p.id === pendingId)
@@ -147,7 +155,7 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     const successTimeout = setTimeout(() => {
-      fulfillPurchase(planData.id);
+      void fulfillPurchase(planData.id);
     }, MOCK_KHQR_SUCCESS_DELAY_MS);
 
     return () => {
@@ -164,8 +172,7 @@ export default function Payment() {
     if (!isStripeFormValid || processing) return;
     setProcessing(true);
     setTimeout(() => {
-      fulfillPurchase(planData.id);
-      setProcessing(false);
+      void fulfillPurchase(planData.id).finally(() => setProcessing(false));
     }, MOCK_STRIPE_PROCESSING_MS);
   };
 

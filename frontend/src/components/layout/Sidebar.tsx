@@ -24,6 +24,7 @@ import logo from "../../assets/logo/logo.png";
 import logoMark from "../../assets/logo/webpageIcon.png";
 import UserMenu from "./UserMenu";
 import { useTheme } from "../../hooks/UseTheme";
+import { useAiCredits } from "../../hooks/useAiCredits";
 
 const NAV_ITEMS = [
   { to: "/", icon: House, key: "home" },
@@ -49,6 +50,7 @@ export default function Sidebar({
   const location = useLocation();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { remaining: aiCreditsLeft } = useAiCredits();
   const dashboardTo = useJourneyStore((s) => continuePathForUser(s, user?.id));
 
   return (
@@ -96,7 +98,13 @@ export default function Sidebar({
             key={to}
             to={href}
             onClick={onNavigate}
-            title={collapsed ? t(`nav.${key}`) : undefined}
+            title={
+              collapsed
+                ? key === "aiUsage"
+                  ? t("nav.aiUsageCount", { count: aiCreditsLeft })
+                  : t(`nav.${key}`)
+                : undefined
+            }
             className={cn(
                 "flex items-center gap-2.5 py-2 rounded-full text-sm font-medium transition-colors",
                 collapsed ? "justify-center px-0" : "px-3",
@@ -107,7 +115,14 @@ export default function Sidebar({
           >
             <Icon size={compact ? 16 : 18} strokeWidth={2} className="shrink-0" />
             {!collapsed && (
-              <span className="truncate">{t(`nav.${key}`)}</span>
+              <>
+                <span className="min-w-0 truncate">{t(`nav.${key}`)}</span>
+                {key === "aiUsage" && (
+                  <span className="ml-auto tabular-nums text-xs font-semibold">
+                    {aiCreditsLeft}
+                  </span>
+                )}
+              </>
             )}
           </NavLink>
           );

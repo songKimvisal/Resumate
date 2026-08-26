@@ -8,6 +8,7 @@ import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
 import { formatCardNumber, formatExpiry, detectCardBrand } from "../../lib/cardFormat";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { useAiCredits } from "../../hooks/useAiCredits";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { usePacks } from "../../hooks/usePacks";
 import UpgradePlanModal from "./UpgradePlanModal";
@@ -15,7 +16,6 @@ import mascot from "../../assets/logo/mascot.png";
 
 type PaymentMethod = "khqr" | "stripe";
 
-const USAGE = { used: 3, total: 5 };
 const NEXT_BILLING_DATE = "19 Jul 2026";
 
 export default function Billing() {
@@ -24,6 +24,7 @@ export default function Billing() {
 
   const plan = useSubscriptionStore((s) => s.plan);
   const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const { used: creditsUsed, total: creditsTotal } = useAiCredits();
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   const pricingPlans = usePricingPlans();
@@ -47,10 +48,10 @@ export default function Billing() {
     last4: string;
   } | null>(null);
 
-  const usagePercent = Math.min(
-    100,
-    Math.round((USAGE.used / USAGE.total) * 100),
-  );
+  const usagePercent =
+    creditsTotal > 0
+      ? Math.min(100, Math.round((creditsUsed / creditsTotal) * 100))
+      : 0;
 
   const isStripeFormValid =
     cardNumber.replace(/\s/g, "").length === 16 &&
@@ -120,10 +121,12 @@ export default function Billing() {
             />
           </div>
           <p className="mt-2 text-sm text-text-secondary">
-            {t("billing.currentPlan.usageCount", {
-              used: USAGE.used,
-              total: USAGE.total,
-            })}
+            {creditsTotal === 0
+              ? t("billing.currentPlan.noCredits")
+              : t("billing.currentPlan.usageCount", {
+                  used: creditsUsed,
+                  total: creditsTotal,
+                })}
           </p>
 
           <Button

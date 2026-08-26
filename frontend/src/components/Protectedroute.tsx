@@ -1,10 +1,12 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/UseAuth";
+import { useHydrateAiCredits } from "../hooks/useAiCredits";
 import { markAppEntered } from "../lib/session";
 
 export default function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  useHydrateAiCredits();
 
   if (loading) {
     return (

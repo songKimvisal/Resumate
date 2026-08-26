@@ -15,8 +15,8 @@ from functools import lru_cache
 
 from app.schemas.smart_rewrite import (
     RewriteFieldType,
+    RewriteResult,
     RewriteVariation,
-    SmartRewriteResponse,
 )
 from app.services.ai_provider import generate_text
 
@@ -149,14 +149,14 @@ def _parse_variations(raw_variations: list) -> list[RewriteVariation]:
     return parsed
 
 
-def rewrite_text(field_type: RewriteFieldType, text: str) -> SmartRewriteResponse:
+def rewrite_text(field_type: RewriteFieldType, text: str) -> RewriteResult:
     return _cached_rewrite_text(field_type, text)
 
 
 @lru_cache(maxsize=256)
 def _cached_rewrite_text(
     field_type: RewriteFieldType, text: str
-) -> SmartRewriteResponse:
+) -> RewriteResult:
     """Cached so re-testing the exact same text doesn't burn extra Gemini
     quota - handy while developing/free-tier testing. Cache lives only in
     memory, so it resets whenever the server restarts, and only kicks in
@@ -174,10 +174,10 @@ def _cached_rewrite_text(
         if not variations:
             raise ValueError("AI returned no usable variations")
 
-        return SmartRewriteResponse(variations=variations[:3], source="gemini")
+        return RewriteResult(variations=variations[:3], source="gemini")
     except Exception:
         logger.exception("Smart Rewrite call failed, returning original text")
-        return SmartRewriteResponse(
+        return RewriteResult(
             variations=[RewriteVariation(label="Original", text=text)],
             source="fallback",
         )
