@@ -3,6 +3,7 @@ import type { Resume } from "../../../types/resume";
 import { extraExperienceTitle } from "../../../lib/experienceDisplay";
 import { hasVisibleText, richTextToPdf } from "../../../lib/richTextToPdf";
 import { pdfFontFamily } from "../../../lib/fonts";
+import { contrastOn } from "../../../lib/color";
 
 function fmtYear(value: string) {
   if (!value) return "";
@@ -26,6 +27,63 @@ function websiteOf(resume: Resume) {
   return (
     p.website[0]?.url || p.portfolio[0]?.url || p.linkedin[0]?.url || ""
   );
+}
+
+function rte(
+  html: string,
+  color: string,
+  resume: Resume,
+  fontSize = 9,
+) {
+  if (!hasVisibleText(html)) return null;
+  return richTextToPdf(html, {
+    color,
+    fontSize,
+    bulletStyle: resume.customization.bulletStyle,
+  });
+}
+
+function eduNotes(html: string, resume: Resume, color = "#4B5563") {
+  return rte(html, color, resume, 8);
+}
+
+function pdfSkills(
+  skills: Resume["skills"],
+  resume: Resume,
+  color = "#1E293B",
+  fill?: string,
+) {
+  if (!skills.length) return null;
+  const accent = fill || resume.customization.accentColor || "#0F2942";
+  if (resume.customization.skillsDisplay === "list") {
+    return skills.map((sk) => (
+      <Text key={sk.id} style={{ color, fontSize: 9, marginTop: 2 }}>
+        • {sk.name}
+      </Text>
+    ));
+  }
+  return skills.map((sk) => {
+    const filled = Math.max(1, Math.min(5, Math.round(sk.level || 3)));
+    return (
+      <View key={sk.id} style={{ marginTop: 4 }}>
+        <Text style={{ color, fontSize: 9 }}>{sk.name}</Text>
+        <View style={{ flexDirection: "row", marginTop: 3 }}>
+          {Array.from({ length: 5 }).map((_, d) => (
+            <View
+              key={d}
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                marginRight: 3,
+                backgroundColor: d < filled ? accent : "rgba(148,163,184,0.55)",
+              }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  });
 }
 
 function combinedJobs(
@@ -77,26 +135,20 @@ export function SpecialPdfDocument({ resume }: { resume: Resume }) {
 
 function DesignerPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, customization: c } = resume;
-  const accent = c.accentColor || "#EA580C";
-  const sidebar = c.sidebarBgColor || "#2A2A2A";
+  const sidebar = c.sidebarBgColor || "#0F2942";
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
-    page: { fontFamily: font, fontSize: 10, color: "#1A1A1A" },
-    left: { position: "absolute", left: 0, top: 0, bottom: 0, width: "38%", backgroundColor: sidebar, color: "#fff" },
+    page: { fontFamily: font, fontSize: 10, color: "#1E293B" },
+    left: { position: "absolute", left: 0, top: 0, bottom: 0, width: "34%", backgroundColor: sidebar, color: "#fff" },
     photo: { width: "100%", height: 180, objectFit: "cover" },
-    nameBlock: { backgroundColor: "#000", padding: 14 },
-    name: { fontSize: 18, fontWeight: 700 },
-    title: { fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 4 },
+    nameBlock: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 8, color: "#fff" },
+    name: { fontSize: 16, fontWeight: 600, color: "#fff" },
+    title: { fontSize: 9, marginTop: 4, color: "#fff" },
     sidePad: { padding: 14, gap: 10 },
-    sideH: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 },
-    right: { marginLeft: "38%", backgroundColor: "#F5F5F5" },
-    white: { backgroundColor: "#fff", padding: 16, gap: 10 },
-    gray: { backgroundColor: "#E8E8E8", padding: 16 },
-    contact: { backgroundColor: accent, padding: 14, color: "#fff" },
-    h: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
-    row: { flexDirection: "row", gap: 8 },
-    vLabel: { width: 14, fontSize: 9, fontWeight: 700, textTransform: "uppercase" },
+    sideH: { fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },
+    right: { marginLeft: "34%", backgroundColor: "#FFFFFF", padding: 18, gap: 12 },
+    h: { fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6, color: sidebar, borderBottomWidth: 0.5, borderBottomColor: "#CBD5E1", paddingBottom: 3 },
   });
   return (
     <Document>
@@ -105,19 +157,21 @@ function DesignerPdf({ resume }: { resume: Resume }) {
           {c.showPhoto && personal.photoUrl ? (
             <Image src={personal.photoUrl} style={s.photo} />
           ) : (
-            <View style={[s.photo, { backgroundColor: "#777" }]} />
+            <View style={[s.photo, { backgroundColor: sidebar }]} />
           )}
           <View style={s.nameBlock}>
             <Text style={s.name}>{personal.fullName}</Text>
             <Text style={s.title}>{personal.jobTitle}</Text>
           </View>
           <View style={s.sidePad}>
+            {personal.phone ? <Text>{personal.phone}</Text> : null}
+            {personal.email ? <Text>{personal.email}</Text> : null}
+            {personal.location ? <Text>{personal.location}</Text> : null}
+            {websiteOf(resume) ? <Text>{websiteOf(resume)}</Text> : null}
             {skills.length > 0 && (
               <View>
                 <Text style={s.sideH}>Skills</Text>
-                {skills.map((sk) => (
-                  <Text key={sk.id}>• {sk.name}</Text>
-                ))}
+                {pdfSkills(skills, resume, "#fff", "#fff")}
               </View>
             )}
             {languages.length > 0 && (
@@ -131,56 +185,44 @@ function DesignerPdf({ resume }: { resume: Resume }) {
           </View>
         </View>
         <View style={s.right}>
-          <View style={s.white}>
-            {hasVisibleText(personal.summary) && (
-              <View>
-                <Text style={s.h}>Professional Summary</Text>
-                {richTextToPdf(personal.summary, { color: "#1A1A1A", fontSize: 9 })}
-              </View>
-            )}
-            {education.length > 0 && (
-              <View style={s.row}>
-                <Text style={s.vLabel}>Education</Text>
-                <View style={{ flex: 1, gap: 6 }}>
-                  {education.map((edu) => (
-                    <View key={edu.id}>
-                      <Text style={{ fontWeight: 700 }}>
-                        {range(edu.startDate, edu.endDate, edu.current)}
-                        {edu.degree ? ` | ${edu.degree}` : ""}
-                      </Text>
-                      <Text>{edu.school}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </View>
-          {jobs.length > 0 && (
-            <View style={s.gray}>
-              <View style={s.row}>
-                <Text style={s.vLabel}>Work Experience</Text>
-                <View style={{ flex: 1, gap: 8 }}>
-                  {jobs.map((job) => (
-                    <View key={job.id}>
-                      <Text style={{ fontWeight: 700 }}>
-                        {range(job.startDate, job.endDate, job.current)}
-                        {job.jobTitle ? ` | ${job.jobTitle}` : ""}
-                      </Text>
-                      {richTextToPdf(job.description, { color: "#1A1A1A", fontSize: 9 })}
-                      {job.company ? <Text>{job.company}</Text> : null}
-                    </View>
-                  ))}
-                </View>
-              </View>
+          {hasVisibleText(personal.summary) && (
+            <View>
+              <Text style={s.h}>Professional Summary</Text>
+              {rte(personal.summary, "#1E293B", resume)}
             </View>
           )}
-          <View style={s.contact}>
-            <Text style={[s.h, { color: "#fff" }]}>Contact</Text>
-            {personal.phone ? <Text>{personal.phone}</Text> : null}
-            {personal.email ? <Text>{personal.email}</Text> : null}
-            {websiteOf(resume) ? <Text>{websiteOf(resume)}</Text> : null}
-            {personal.location ? <Text>{personal.location}</Text> : null}
-          </View>
+          {education.length > 0 && (
+            <View>
+              <Text style={s.h}>Education</Text>
+              {education.map((edu) => (
+                <View key={edu.id} style={{ marginBottom: 6 }}>
+                  <Text style={{ fontWeight: 700 }}>{edu.school}</Text>
+                  <Text style={{ color: "#64748B", fontSize: 9 }}>
+                    {[edu.degree, edu.field, range(edu.startDate, edu.endDate, edu.current)]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                  {eduNotes(edu.description, resume)}
+                </View>
+              ))}
+            </View>
+          )}
+          {jobs.length > 0 && (
+            <View>
+              <Text style={s.h}>Work Experience</Text>
+              {jobs.map((job) => (
+                <View key={job.id} style={{ marginBottom: 8 }}>
+                  <Text style={{ fontWeight: 700 }}>{job.jobTitle}</Text>
+                  <Text style={{ color: "#64748B", fontSize: 9 }}>
+                    {[job.company, range(job.startDate, job.endDate, job.current)]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                  {rte(job.description, "#1E293B", resume)}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </Page>
     </Document>
@@ -190,14 +232,15 @@ function DesignerPdf({ resume }: { resume: Resume }) {
 function TechPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#3C4452";
+  const nameInk = contrastOn(sidebar);
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
-    page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#3C4452" },
+    page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#1E293B" },
     main: { flex: 1 },
-    header: { backgroundColor: sidebar, color: "#fff", padding: 18 },
-    name: { fontSize: 20, fontWeight: 700, textTransform: "uppercase" },
-    title: { fontSize: 10, letterSpacing: 2, textTransform: "uppercase", marginTop: 4 },
+    header: { backgroundColor: sidebar, color: nameInk, padding: 18 },
+    name: { fontSize: 18, fontWeight: 600, color: nameInk },
+    title: { fontSize: 10, marginTop: 4, color: nameInk },
     body: { padding: 18, gap: 12 },
     side: { width: "34%", backgroundColor: sidebar, color: "#fff", padding: 14, gap: 10 },
     photo: { width: 90, height: 90, borderRadius: 45, alignSelf: "center", objectFit: "cover" },
@@ -215,7 +258,7 @@ function TechPdf({ resume }: { resume: Resume }) {
             {hasVisibleText(personal.summary) && (
               <View>
                 <Text style={s.h}>Professional Summary</Text>
-                {richTextToPdf(personal.summary, { color: "#6B7280", fontSize: 9 })}
+                {rte(personal.summary, "#1E293B", resume)}
               </View>
             )}
             {jobs.length > 0 && (
@@ -223,11 +266,11 @@ function TechPdf({ resume }: { resume: Resume }) {
                 <Text style={s.h}>Work Experience</Text>
                 {jobs.map((job) => (
                   <View key={job.id} style={{ marginBottom: 8 }}>
-                    <Text style={{ fontWeight: 700, textTransform: "uppercase" }}>{job.jobTitle}</Text>
+                    <Text style={{ fontWeight: 700 }}>{job.jobTitle}</Text>
                     <Text style={{ color: "#6B7280", fontSize: 9 }}>
                       {[job.company, range(job.startDate, job.endDate, job.current)].filter(Boolean).join(" · ")}
                     </Text>
-                    {richTextToPdf(job.description, { color: "#6B7280", fontSize: 9 })}
+                    {rte(job.description, "#1E293B", resume)}
                   </View>
                 ))}
               </View>
@@ -245,9 +288,7 @@ function TechPdf({ resume }: { resume: Resume }) {
           {skills.length > 0 && (
             <View>
               <Text style={s.h}>Skills</Text>
-              {skills.map((sk) => (
-                <Text key={sk.id}>• {sk.name}</Text>
-              ))}
+              {pdfSkills(skills, resume)}
             </View>
           )}
           {education.length > 0 && (
@@ -255,10 +296,11 @@ function TechPdf({ resume }: { resume: Resume }) {
               <Text style={s.h}>Education</Text>
               {education.map((edu) => (
                 <View key={edu.id} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontWeight: 700, textTransform: "uppercase" }}>
+                  <Text style={{ fontWeight: 700 }}>
                     {edu.degree || edu.school}
                   </Text>
                   <Text>{[edu.school, range(edu.startDate, edu.endDate, edu.current)].filter(Boolean).join(" · ")}</Text>
+                  {eduNotes(edu.description, resume, "#fff")}
                 </View>
               ))}
             </View>
@@ -308,7 +350,7 @@ function BankingPdf({ resume }: { resume: Resume }) {
             {hasVisibleText(personal.summary) && (
               <View>
                 <Text style={s.h}>Summary</Text>
-                {richTextToPdf(personal.summary, { color: "#2C333A", fontSize: 9 })}
+                {rte(personal.summary, "#2C333A", resume)}
               </View>
             )}
             {education.length > 0 && (
@@ -319,6 +361,7 @@ function BankingPdf({ resume }: { resume: Resume }) {
                     <Text style={{ fontWeight: 700 }}>{edu.degree || edu.school}</Text>
                     <Text>{edu.school}</Text>
                     <Text>{range(edu.startDate, edu.endDate, edu.current)}</Text>
+                    {eduNotes(edu.description, resume)}
                   </View>
                 ))}
               </View>
@@ -326,9 +369,7 @@ function BankingPdf({ resume }: { resume: Resume }) {
             {skills.length > 0 && (
               <View>
                 <Text style={s.h}>Skills</Text>
-                {skills.map((sk) => (
-                  <Text key={sk.id}>• {sk.name}</Text>
-                ))}
+                {pdfSkills(skills, resume)}
               </View>
             )}
             {languages.length > 0 && (
@@ -351,7 +392,7 @@ function BankingPdf({ resume }: { resume: Resume }) {
                       <Text>{range(job.startDate, job.endDate, job.current)}</Text>
                     </View>
                     <Text>{[job.company, job.location].filter(Boolean).join(" | ")}</Text>
-                    {richTextToPdf(job.description, { color: "#2C333A", fontSize: 9 })}
+                    {rte(job.description, "#2C333A", resume)}
                   </View>
                 ))}
               </View>
@@ -400,7 +441,7 @@ function FreshPdf({ resume }: { resume: Resume }) {
           {hasVisibleText(personal.summary) && (
             <View>
               <Text style={s.h}>Professional Summary</Text>
-              {richTextToPdf(personal.summary, { color: "#5B6470", fontSize: 9 })}
+              {rte(personal.summary, "#5B6470", resume)}
             </View>
           )}
           {jobs.length > 0 && (
@@ -412,7 +453,7 @@ function FreshPdf({ resume }: { resume: Resume }) {
                     <Text style={{ fontWeight: 700 }}>{job.company || job.jobTitle}</Text>
                     <Text style={{ color: "#5B6470" }}>{range(job.startDate, job.endDate, job.current)}</Text>
                   </View>
-                  {richTextToPdf(job.description, { color: "#5B6470", fontSize: 9 })}
+                  {rte(job.description, "#5B6470", resume)}
                 </View>
               ))}
             </View>
@@ -445,6 +486,7 @@ function FreshPdf({ resume }: { resume: Resume }) {
                 <View key={edu.id} style={{ marginBottom: 6 }}>
                   <Text>{range(edu.startDate, edu.endDate, edu.current)}</Text>
                   <Text style={{ fontWeight: 700, textTransform: "uppercase" }}>{edu.school}</Text>
+                  {eduNotes(edu.description, resume, "#fff")}
                 </View>
               ))}
             </View>
@@ -452,9 +494,7 @@ function FreshPdf({ resume }: { resume: Resume }) {
           {skills.length > 0 && (
             <View>
               <Text style={{ fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>Skills</Text>
-              {skills.map((sk) => (
-                <Text key={sk.id}>• {sk.name}</Text>
-              ))}
+              {pdfSkills(skills, resume)}
             </View>
           )}
         </View>
@@ -490,9 +530,10 @@ function NavyPdf({ resume }: { resume: Resume }) {
             <View key={edu.id}>
               <Text>{range(edu.startDate, edu.endDate, edu.current)}</Text>
               <Text style={{ fontWeight: 700 }}>{edu.school}</Text>
+              {eduNotes(edu.description, resume, "#fff")}
             </View>
           ))}
-          {skills.map((sk) => <Text key={sk.id}>• {sk.name}</Text>)}
+          {pdfSkills(skills, resume, "#fff", "#fff")}
           {languages.map((l) => <Text key={l.id}>• {l.name}</Text>)}
         </View>
         <View style={s.main}>
@@ -502,14 +543,14 @@ function NavyPdf({ resume }: { resume: Resume }) {
           {hasVisibleText(personal.summary) && (
             <View>
               <Text style={s.h}>Professional Summary</Text>
-              {richTextToPdf(personal.summary, { color: "#6B7280", fontSize: 9 })}
+              {rte(personal.summary, "#6B7280", resume)}
             </View>
           )}
           {jobs.map((job) => (
             <View key={job.id} style={{ marginBottom: 6 }}>
               <Text style={{ fontWeight: 700 }}>{job.company || job.jobTitle}</Text>
               <Text style={{ color: "#6B7280" }}>{range(job.startDate, job.endDate, job.current)}</Text>
-              {richTextToPdf(job.description, { color: "#6B7280", fontSize: 9 })}
+              {rte(job.description, "#6B7280", resume)}
             </View>
           ))}
           {includeReferences && references.slice(0, 2).map((r) => (
@@ -525,15 +566,16 @@ function RibbonPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#5A5A5A";
   const ribbon = c.accentColor || "#3F3F3F";
+  const ribbonInk = contrastOn(ribbon);
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10 },
     side: { width: "34%", backgroundColor: sidebar, color: "#fff", padding: 12, gap: 8 },
     photo: { width: 90, height: 90, borderRadius: 45, alignSelf: "center", objectFit: "cover", marginBottom: 8 },
-    ribbon: { backgroundColor: ribbon, color: "#fff", textAlign: "center", padding: 5, fontSize: 9, fontWeight: 700, textTransform: "uppercase", marginVertical: 4 },
+    ribbon: { backgroundColor: ribbon, color: ribbonInk, textAlign: "center", padding: 5, fontSize: 9, fontWeight: 700, textTransform: "uppercase", marginVertical: 4 },
     main: { flex: 1, padding: 16, gap: 8 },
-    bar: { backgroundColor: ribbon, color: "#fff", textAlign: "center", padding: 6, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
+    bar: { backgroundColor: ribbon, color: ribbonInk, textAlign: "center", padding: 6, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
   });
   return (
     <Document>
@@ -541,9 +583,9 @@ function RibbonPdf({ resume }: { resume: Resume }) {
         <View style={s.side}>
           {c.showPhoto && personal.photoUrl ? <Image src={personal.photoUrl} style={s.photo} /> : null}
           <Text style={s.ribbon}>Professional Summary</Text>
-          {hasVisibleText(personal.summary) ? richTextToPdf(personal.summary, { color: "#fff", fontSize: 8 }) : null}
+          {rte(personal.summary, "#fff", resume, 8)}
           <Text style={s.ribbon}>Skills</Text>
-          {skills.map((sk) => <Text key={sk.id}>• {sk.name}</Text>)}
+          {pdfSkills(skills, resume, "#fff", "#fff")}
           <Text style={s.ribbon}>Contact Me</Text>
           {personal.phone ? <Text>{personal.phone}</Text> : null}
           {personal.email ? <Text>{personal.email}</Text> : null}
@@ -556,6 +598,7 @@ function RibbonPdf({ resume }: { resume: Resume }) {
             <View key={edu.id} style={{ marginBottom: 4 }}>
               <Text style={{ fontWeight: 700 }}>{edu.degree || edu.school}</Text>
               <Text>{range(edu.startDate, edu.endDate, edu.current)}</Text>
+              {eduNotes(edu.description, resume)}
             </View>
           ))}
           <Text style={s.bar}>Work Experience</Text>
@@ -563,7 +606,7 @@ function RibbonPdf({ resume }: { resume: Resume }) {
             <View key={job.id} style={{ marginBottom: 6 }}>
               <Text style={{ fontWeight: 700 }}>{job.jobTitle}</Text>
               <Text>{[job.company, range(job.startDate, job.endDate, job.current)].filter(Boolean).join(" | ")}</Text>
-              {richTextToPdf(job.description, { color: "#444", fontSize: 9 })}
+              {rte(job.description, "#444", resume)}
             </View>
           ))}
         </View>
@@ -575,11 +618,12 @@ function RibbonPdf({ resume }: { resume: Resume }) {
 function GraphicPdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, customization: c } = resume;
   const sidebar = c.sidebarBgColor || "#1B2838";
+  const nameInk = contrastOn(sidebar);
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#111827" },
-    side: { width: "34%", backgroundColor: sidebar, color: "#fff" },
+    side: { width: "34%", backgroundColor: sidebar, color: nameInk },
     photo: { width: "100%", height: 160, objectFit: "cover" },
     sidePad: { padding: 12, gap: 8 },
     main: { flex: 1, padding: 16, gap: 10 },
@@ -591,8 +635,8 @@ function GraphicPdf({ resume }: { resume: Resume }) {
         <View style={s.side}>
           {c.showPhoto && personal.photoUrl ? <Image src={personal.photoUrl} style={s.photo} /> : null}
           <View style={s.sidePad}>
-            <Text style={{ fontSize: 16, fontWeight: 700 }}>{personal.fullName}</Text>
-            <Text style={{ textTransform: "uppercase", fontSize: 9 }}>{personal.jobTitle}</Text>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: nameInk }}>{personal.fullName}</Text>
+            <Text style={{ textTransform: "uppercase", fontSize: 9, color: nameInk }}>{personal.jobTitle}</Text>
             {personal.email ? <Text>{personal.email}</Text> : null}
             {personal.phone ? <Text>{personal.phone}</Text> : null}
             {languages.map((l) => <Text key={l.id}>{l.name}</Text>)}
@@ -602,7 +646,7 @@ function GraphicPdf({ resume }: { resume: Resume }) {
           {hasVisibleText(personal.summary) && (
             <View>
               <Text style={s.h}>Professional Summary</Text>
-              {richTextToPdf(personal.summary, { color: "#4B5563", fontSize: 9 })}
+              {rte(personal.summary, "#1E293B", resume)}
             </View>
           )}
           <Text style={s.h}>Work Experience</Text>
@@ -610,15 +654,16 @@ function GraphicPdf({ resume }: { resume: Resume }) {
             <View key={job.id} style={{ marginBottom: 6 }}>
               <Text style={{ fontWeight: 700 }}>{job.jobTitle}</Text>
               <Text style={{ color: "#6B7280" }}>{range(job.startDate, job.endDate, job.current)} · {job.company}</Text>
-              {richTextToPdf(job.description, { color: "#4B5563", fontSize: 9 })}
+              {rte(job.description, "#1E293B", resume)}
             </View>
           ))}
-          <Text style={s.h}>Expertise</Text>
-          {skills.map((sk) => <Text key={sk.id}>• {sk.name}</Text>)}
+          <Text style={s.h}>Skills</Text>
+          {pdfSkills(skills, resume)}
           {education.map((edu) => (
             <View key={edu.id}>
               <Text style={{ fontWeight: 700 }}>{edu.school}</Text>
               <Text>{range(edu.startDate, edu.endDate, edu.current)}</Text>
+              {eduNotes(edu.description, resume)}
             </View>
           ))}
         </View>
@@ -630,6 +675,7 @@ function GraphicPdf({ resume }: { resume: Resume }) {
 function ExecutivePdf({ resume }: { resume: Resume }) {
   const { personal, experience, noExperience, education, skills, languages, references, includeReferences, customization: c } = resume;
   const navy = c.sidebarBgColor || "#1D2B45";
+  const nameInk = contrastOn("#FFFFFF", navy);
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const parts = (personal.fullName || "").trim().split(/\s+/);
@@ -637,22 +683,22 @@ function ExecutivePdf({ resume }: { resume: Resume }) {
     page: { flexDirection: "row", fontFamily: font, fontSize: 10, color: "#111827", paddingTop: 20 },
     side: { width: "34%", backgroundColor: navy, color: "#fff", padding: 12, marginTop: 60, borderTopRightRadius: 40, gap: 8 },
     main: { flex: 1, paddingHorizontal: 16, gap: 8 },
-    name: { color: navy, fontSize: 22, fontWeight: 700, textTransform: "uppercase" },
+    name: { color: nameInk, fontSize: 22, fontWeight: 700, textTransform: "uppercase" },
     pill: { borderWidth: 1, borderColor: navy, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2, color: navy, fontSize: 9, fontWeight: 700, textTransform: "uppercase", alignSelf: "flex-start", marginBottom: 4 },
   });
   return (
     <Document>
       <Page size={c.pageFormat === "letter" ? "LETTER" : "A4"} style={s.page}>
         <View style={s.side}>
-          {hasVisibleText(personal.summary) ? richTextToPdf(personal.summary, { color: "#fff", fontSize: 8 }) : null}
+          {rte(personal.summary, "#fff", resume, 8)}
           <Text style={{ fontWeight: 700 }}>Contact</Text>
           {personal.phone ? <Text>{personal.phone}</Text> : null}
           {personal.email ? <Text>{personal.email}</Text> : null}
-          {skills.map((sk) => <Text key={sk.id}>• {sk.name}</Text>)}
+          {pdfSkills(skills, resume, "#fff", "#fff")}
           {languages.map((l) => <Text key={l.id}>{l.name}</Text>)}
         </View>
         <View style={s.main}>
-          <Text style={{ color: navy }}>{parts[0]}</Text>
+          <Text style={{ color: nameInk }}>{parts[0]}</Text>
           <Text style={s.name}>{parts.slice(1).join(" ") || parts[0]}</Text>
           <Text>{personal.jobTitle}</Text>
           <Text style={s.pill}>Work Experience</Text>
@@ -660,12 +706,15 @@ function ExecutivePdf({ resume }: { resume: Resume }) {
             <View key={job.id} style={{ marginBottom: 6 }}>
               <Text style={{ fontWeight: 700 }}>{job.company}</Text>
               <Text>{job.jobTitle} · {range(job.startDate, job.endDate, job.current)}</Text>
-              {richTextToPdf(job.description, { color: "#6B7280", fontSize: 9 })}
+              {rte(job.description, "#6B7280", resume)}
             </View>
           ))}
           <Text style={s.pill}>Education</Text>
           {education.map((edu) => (
-            <Text key={edu.id}>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
+            <View key={edu.id} style={{ marginBottom: 4 }}>
+              <Text>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
+              {eduNotes(edu.description, resume)}
+            </View>
           ))}
           {includeReferences && references.slice(0, 2).map((r) => (
             <Text key={r.id}>{r.name}</Text>
@@ -682,11 +731,11 @@ function MonoPdf({ resume }: { resume: Resume }) {
   const font = pdfFontFamily(c.fontFamily);
   const jobs = combinedJobs(experience, noExperience, resume.experienceOrder);
   const s = StyleSheet.create({
-    page: { fontFamily: font, fontSize: 10, color: "#111827", padding: 32, paddingLeft: 40 },
-    accentBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 6, backgroundColor: accent },
-    name: { fontSize: 24, fontWeight: 700, textTransform: "uppercase" },
-    title: { color: accent, textTransform: "uppercase", letterSpacing: 2, marginTop: 4, marginBottom: 8 },
-    h: { color: accent, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 10, marginBottom: 4 },
+    page: { fontFamily: font, fontSize: 10, color: "#1E293B", padding: 32 },
+    accentBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent },
+    name: { fontSize: 22, fontWeight: 600 },
+    title: { color: accent, marginTop: 4, marginBottom: 10 },
+    h: { color: accent, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, marginTop: 12, marginBottom: 4, borderBottomWidth: 0.5, borderBottomColor: "#CBD5E1", paddingBottom: 3 },
   });
   return (
     <Document>
@@ -700,7 +749,7 @@ function MonoPdf({ resume }: { resume: Resume }) {
         {hasVisibleText(personal.summary) && (
           <View>
             <Text style={s.h}>Professional Summary</Text>
-            {richTextToPdf(personal.summary, { color: "#6B7280", fontSize: 9 })}
+            {rte(personal.summary, "#6B7280", resume)}
           </View>
         )}
         <Text style={s.h}>Work Experience</Text>
@@ -708,15 +757,18 @@ function MonoPdf({ resume }: { resume: Resume }) {
           <View key={job.id} style={{ marginBottom: 6 }}>
             <Text style={{ fontWeight: 700 }}>{job.jobTitle}</Text>
             <Text style={{ color: "#6B7280" }}>{job.company} · {range(job.startDate, job.endDate, job.current)}</Text>
-            {richTextToPdf(job.description, { color: "#6B7280", fontSize: 9 })}
+            {rte(job.description, "#6B7280", resume)}
           </View>
         ))}
         <Text style={s.h}>Education</Text>
         {education.map((edu) => (
-          <Text key={edu.id}>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
+          <View key={edu.id} style={{ marginBottom: 4 }}>
+            <Text>{edu.school} - {range(edu.startDate, edu.endDate, edu.current)}</Text>
+            {eduNotes(edu.description, resume)}
+          </View>
         ))}
         <Text style={s.h}>Skills</Text>
-        <Text>{skills.map((sk) => sk.name).join("  ·  ")}</Text>
+        {pdfSkills(skills, resume)}
         {languages.length > 0 && (
           <View>
             <Text style={s.h}>Languages</Text>

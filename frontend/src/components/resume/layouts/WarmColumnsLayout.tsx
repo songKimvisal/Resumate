@@ -6,6 +6,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactInline,
   SkillsList,
   ATS,
   type LayoutProps,
@@ -13,7 +14,7 @@ import {
   listKey,
 } from "./shared";
 
-/** Hospitality classic no-photo - warm equal two-column split. */
+/** Hospitality classic no-photo — two equal white columns. */
 export default function WarmColumnsLayout({
   resume,
   pageWidthPx,
@@ -32,7 +33,7 @@ export default function WarmColumnsLayout({
     includeReferences,
     customization,
   } = resume;
-  const accent = customization.accentColor || "#B45309";
+  const accent = customization.accentColor || ATS.navy;
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
@@ -43,35 +44,43 @@ export default function WarmColumnsLayout({
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full flex-col ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
-      style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFBF7")}
+      style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
       {isFirstPage && (
-        <header className="border-b-4 px-9 py-6" style={{ borderColor: accent }}>
-          <h1 className="font-bold uppercase tracking-wide" style={{ fontSize: customization.fullNameSize }}>
+        <header className="border-b px-10 pb-6 pt-9" style={{ borderColor: ATS.line }}>
+          <h1
+            className="font-semibold tracking-tight"
+            style={{ fontSize: customization.fullNameSize, color: ink }}
+          >
             {personal.fullName}
           </h1>
           {personal.jobTitle && (
-            <p className="mt-1 font-medium" style={{ fontSize: customization.titleSize, color: accent }}>
+            <p
+              className="mt-1 font-medium"
+              style={{ fontSize: customization.titleSize, color: accent }}
+            >
               {personal.jobTitle}
             </p>
           )}
-          <p className="mt-2 text-[0.82em]" style={{ color: muted }}>
-            {contacts.map((c, contactIdx) => c.text).join("   ·   ")}
-          </p>
+          <ContactInline
+            contacts={contacts}
+            className="mt-2.5 text-[0.82em]"
+            style={{ color: muted }}
+          />
         </header>
       )}
 
       <div className={`grid ${expandHeight ? "" : "min-h-0"} flex-1 grid-cols-2 gap-0 ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}>
-        <div className="space-y-5 overflow-hidden border-r px-7 py-6" style={{ borderColor: ATS.line }}>
+        <div className="space-y-6 overflow-hidden border-r px-9 py-7" style={{ borderColor: ATS.line }}>
           {hasText(personal.summary) && (
             <section>
-              <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} customization={customization} />
-              <RichHtml html={personal.summary} className="rte-content text-[0.88em]" style={{ color: muted }} />
+              <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
+              <RichHtml html={personal.summary} className="rte-content text-[0.88em]" style={{ color: ink }} />
             </section>
           )}
           {education.length > 0 && (
             <section>
-              <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
+              <AtsHeading title="Education" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
               <div className="space-y-3 text-[0.88em]">
                 {education.map((edu, eduIdx) => (
                   <div key={listKey(edu.id, eduIdx, "edu")}>
@@ -79,6 +88,13 @@ export default function WarmColumnsLayout({
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                    {hasText(edu.description) && (
+                      <RichHtml
+                        html={edu.description}
+                        className="rte-content mt-1 leading-relaxed"
+                        style={{ color: ink }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -86,7 +102,7 @@ export default function WarmColumnsLayout({
           )}
           {skills.length > 0 && (
             <section>
-              <AtsHeading title="Skills" color={accent} size={customization.headingsSize} customization={customization} />
+              <AtsHeading title="Skills" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
               <SkillsList
                 skills={skills}
                 customization={customization}
@@ -97,18 +113,18 @@ export default function WarmColumnsLayout({
           )}
           {languages.length > 0 && (
             <section>
-              <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
+              <AtsHeading title="Languages" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
               <p className="text-[0.88em]" style={{ color: muted }}>
-                {languages.map((l, langIdx) => l.name).join(" · ")}
+                {languages.map((l) => l.name).join(" · ")}
               </p>
             </section>
           )}
         </div>
 
-        <div className="space-y-5 overflow-hidden px-7 py-6">
+        <div className="space-y-6 overflow-hidden px-9 py-7">
           {jobs.length > 0 && (
             <section>
-              <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
+              <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
               <div className="space-y-4">
                 {jobs.map((job, jobIdx) => (
                   <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
@@ -118,7 +134,7 @@ export default function WarmColumnsLayout({
           )}
           {includeReferences && references.length > 0 && (
             <section>
-              <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
+              <AtsHeading title="References" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
               <div className="space-y-3 text-[0.85em]">
                 {references.slice(0, 4).map((r, refIdx) => (
                   <div key={listKey(r.id, refIdx, "ref")}>

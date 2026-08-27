@@ -299,25 +299,40 @@
 }
 
 /* customization.bulletStyle overrides - the disc default needs no override */
-.rte-content.bullet-dash ul li::marker {
+.rte-content.bullet-dash ul li::marker,
+.bullet-dash .rte-content ul li::marker {
   content: "– ";
 }
 
-.rte-content.bullet-arrow ul li::marker {
+.rte-content.bullet-arrow ul li::marker,
+.bullet-arrow .rte-content ul li::marker {
   content: "→ ";
 }
 
-.rte-content.bullet-square ul li::marker {
+.rte-content.bullet-square ul li::marker,
+.bullet-square .rte-content ul li::marker {
   content: "▪ ";
 }
 
-.rte-content.bullet-none ul li::marker {
+.rte-content.bullet-none ul li::marker,
+.bullet-none .rte-content ul li::marker {
   content: "";
+}
+
+.resume-show-link-icons a[href]::after {
+  content: " ↗";
+  font-size: 0.8em;
 }
 
 .rte-content a {
   color: var(--brand-primary);
   text-decoration: underline;
+}
+
+/* Editor HTML can ship inline black; force inherit on dark bands. */
+.rte-on-dark,
+.rte-on-dark * {
+  color: inherit !important;
 }
 
 .rte-content p.is-editor-empty:first-child::before {

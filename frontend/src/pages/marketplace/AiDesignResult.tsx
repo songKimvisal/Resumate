@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { DEMO_RESUME } from "../../data/demoResume";
+import { demoResumeForPreset } from "../../data/demoResume";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { cn } from "../../lib/utils";
 import {
@@ -55,10 +55,12 @@ export default function AiDesignResult({
       ? recommendation.primary
       : recommendation.sibling;
 
-  const previewFor = (preset: TemplatePreset) => ({
-    ...DEMO_RESUME,
-    customization: { ...preset.customization, accentColor, fontFamily },
-  });
+  const previewFor = (preset: TemplatePreset) =>
+    demoResumeForPreset({
+      ...preset.customization,
+      accentColor,
+      fontFamily,
+    });
 
   const colorKey = ACCENT_COLOR_KEYS[accentColor];
   const colorName = colorKey ? t(`marketplace.colorNames.${colorKey}`) : "";

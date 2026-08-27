@@ -1,14 +1,10 @@
-import type { Resume } from "../types/resume";
+import type { Resume, Customization } from "../types/resume";
 import { emptyResume } from "../types/resume";
-const DEMO_PHOTO_URL =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">' +
-      '<rect width="200" height="200" fill="#CBD5E1"/>' +
-      '<circle cx="100" cy="78" r="38" fill="#94A3B8"/>' +
-      '<path d="M30 190c0-45 31-72 70-72s70 27 70 72" fill="#94A3B8"/>' +
-      "</svg>",
-  );
+import { personAvatarDataUrl } from "../lib/personAvatar";
+
+/** Professional person icon used in marketplace previews. */
+const DEMO_PHOTO_URL = personAvatarDataUrl();
+
 export const DEMO_RESUME: Resume = {
   ...emptyResume,
   title: "Demo resume",
@@ -17,11 +13,12 @@ export const DEMO_RESUME: Resume = {
     fullName: "Sokha Chan",
     jobTitle: "Marketing Executive",
     email: "sokha.chan@email.com",
-    phone: "012 345 678",
+    phone: "+855 12 345 678",
     location: "Phnom Penh, Cambodia",
     photoUrl: DEMO_PHOTO_URL,
+    linkedin: [{ id: "demo-li", title: "LinkedIn", url: "linkedin.com/in/sokhachan" }],
     summary:
-      "<p>Results-driven marketing professional with 4+ years of experience planning campaigns, growing brand reach, and collaborating across teams to hit ambitious targets.</p>",
+      "<p>Marketing executive with 4+ years in banking and telecom. Plans multi-channel campaigns, manages budgets, and reports results to leadership. Comfortable working in English and Khmer with cross-functional teams.</p>",
   },
   experience: [
     {
@@ -33,7 +30,7 @@ export const DEMO_RESUME: Resume = {
       endDate: "",
       current: true,
       description:
-        "<ul><li>Led 12 digital campaigns that grew qualified leads by 35%</li><li>Managed a monthly budget of $8,000 across social and search channels</li></ul>",
+        "<ul><li>Led 12 digital campaigns that increased qualified leads by 35% year on year</li><li>Managed an $8,000 monthly budget across social, search, and email channels</li><li>Prepared monthly performance reports for the marketing director and branch heads</li></ul>",
     },
     {
       id: "demo-exp-2",
@@ -44,7 +41,7 @@ export const DEMO_RESUME: Resume = {
       endDate: "2021-12",
       current: false,
       description:
-        "<ul><li>Coordinated launch events for 3 new mobile plans</li></ul>",
+        "<ul><li>Coordinated launch events for 3 new mobile plans across 8 retail locations</li><li>Wrote product copy and briefing notes for the social media and retail teams</li></ul>",
     },
   ],
   education: [
@@ -57,14 +54,17 @@ export const DEMO_RESUME: Resume = {
       endDate: "2020-07",
       current: false,
       gpa: "3.7",
-      description: "",
+      description:
+        "<p>Coursework in consumer behaviour, statistics, and brand management. Marketing club vice president (2019).</p>",
     },
   ],
   skills: [
-    { id: "demo-skill-1", name: "Campaign Strategy", level: 5 },
-    { id: "demo-skill-2", name: "Social Media Ads", level: 4 },
-    { id: "demo-skill-3", name: "Content Writing", level: 4 },
-    { id: "demo-skill-4", name: "Data Analysis", level: 3 },
+    { id: "demo-skill-1", name: "Campaign strategy", level: 5 },
+    { id: "demo-skill-2", name: "Digital advertising", level: 4 },
+    { id: "demo-skill-3", name: "Content writing", level: 4 },
+    { id: "demo-skill-4", name: "Google Analytics", level: 3 },
+    { id: "demo-skill-5", name: "Stakeholder reporting", level: 4 },
+    { id: "demo-skill-6", name: "Budget planning", level: 4 },
   ],
   languages: [
     { id: "demo-lang-1", name: "Khmer", level: 5 },
@@ -73,3 +73,11 @@ export const DEMO_RESUME: Resume = {
   references: [],
   includeReferences: false,
 };
+
+/** Same demo person + the template's layout, so every marketplace surface matches. */
+export function demoResumeForPreset(customization: Customization): Resume {
+  return {
+    ...DEMO_RESUME,
+    customization: { ...customization },
+  };
+}

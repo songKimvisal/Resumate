@@ -10,25 +10,28 @@ import {
   Contact,
   Languages,
 } from "lucide-react";
-import { photoImgStyle } from "../../../lib/photoFit";
 import {
   RichHtml,
   dateRange,
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   LanguagesBlock,
   ReferencesBlock,
+  SkillsList,
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
   listKey,
+  FullBleedPhoto,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { contrastOn } from "../../../lib/color";
 
 /**
  * Isabel Mercado–style layout:
- * monochrome, pill section headers with icons, skill dots, timeline on right.
+ * monochrome, pill section headers with icons.
  */
 export default function MonoPillLayout({
   resume,
@@ -66,35 +69,29 @@ export default function MonoPillLayout({
       <aside className="flex h-full w-[34%] shrink-0 flex-col gap-5 overflow-hidden px-5 py-6">
         {isFirstPage && (
           <>
-            <div
-              className="w-full shrink-0 overflow-hidden"
-              style={{ aspectRatio: "1 / 1.05", backgroundColor: "#E8E8E8" }}
-            >
-              {customization.showPhoto && personal.photoUrl ? (
-                <img
-                  src={personal.photoUrl}
-                  alt={personal.fullName || "Profile"}
-                  className="h-full w-full object-cover"
-                  style={photoImgStyle(personal)}
-                />
-              ) : null}
-            </div>
+            <FullBleedPhoto
+              personal={personal}
+              customization={customization}
+              aspectRatio="1 / 1.05"
+              fill={charcoal}
+            />
 
             <div>
               <h1
-                className="font-bold uppercase leading-tight tracking-wide"
+                className="font-bold uppercase leading-tight tracking-[0.12em]"
                 style={{ fontSize: customization.fullNameSize }}
               >
                 {personal.fullName}
               </h1>
               {personal.jobTitle && (
                 <p
-                  className="mt-1.5 uppercase tracking-[0.12em]"
+                  className="mt-2 uppercase tracking-[0.18em]"
                   style={{ fontSize: customization.titleSize, color: muted }}
                 >
                   {personal.jobTitle}
                 </p>
               )}
+              <div className="mt-3 h-[2px] w-9 rounded-full" style={{ backgroundColor: charcoal }} />
             </div>
 
             {contacts.length > 0 && (
@@ -120,6 +117,7 @@ export default function MonoPillLayout({
                               : Globe
                       }
                       text={c.text}
+                      href={c.href}
                     />
                   ))}
                 </div>
@@ -135,16 +133,13 @@ export default function MonoPillLayout({
                   size={customization.headingsSize}
                   customization={customization}
                 />
-                <div className="mt-3 space-y-2.5">
-                  {skills.map((s, skillIdx) => (
-                    <div key={listKey(s.id, skillIdx, "skill")} className="text-[0.82em]">
-                      <p className="mb-1 font-medium">{s.name}</p>
-                      {customization.skillsDisplay !== "list" &&
-                      customization.toggles.dots ? (
-                        <DotMeter level={s.level} fill={charcoal} />
-                      ) : null}
-                    </div>
-                  ))}
+                <div className="mt-3">
+                  <SkillsList
+                    skills={skills}
+                    customization={customization}
+                    muted={ink}
+                    fill={charcoal}
+                  />
                 </div>
               </section>
             )}
@@ -180,7 +175,7 @@ export default function MonoPillLayout({
             <RichHtml
               html={personal.summary}
               className="rte-content mt-3 text-[0.88em] leading-relaxed text-justify"
-              style={{ color: muted }}
+              style={{ color: ink }}
             />
           </section>
         )}
@@ -217,7 +212,7 @@ export default function MonoPillLayout({
                   <RichHtml
                     html={edu.description}
                     className="rte-content mt-1"
-                    style={{ color: muted }}
+                    style={{ color: ink }}
                   />
                 </div>
               ))}
@@ -256,7 +251,7 @@ export default function MonoPillLayout({
                   <RichHtml
                     html={job.description}
                     className="rte-content mt-1 leading-relaxed"
-                    style={{ color: muted }}
+                    style={{ color: ink }}
                   />
                 </div>
               ))}
@@ -300,21 +295,57 @@ function PillHeading({
   size: number;
   customization: Customization;
 }) {
+  const border = customization.headingBorder;
+  const titleStyle = {
+    fontSize: size,
+    ...headingCapStyle(customization),
+  };
+
+  if (border === "line") {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 font-bold" style={{ ...titleStyle, color }}>
+          {title}
+        </span>
+        <span className="h-px min-w-4 flex-1" style={{ backgroundColor: color }} />
+      </div>
+    );
+  }
+  if (border === "underline") {
+    return (
+      <div>
+        <span className="font-bold" style={{ ...titleStyle, color }}>
+          {title}
+        </span>
+        <div className="mt-1.5 h-px w-full" style={{ backgroundColor: color }} />
+      </div>
+    );
+  }
+  if (border === "outline") {
+    return (
+      <div
+        className="inline-flex max-w-full items-center gap-2 rounded-r-full py-1.5 pl-2.5 pr-5"
+        style={{ border: `1.5px solid ${color}`, color }}
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/5">
+          <Icon className="h-3 w-3" strokeWidth={2.2} />
+        </span>
+        <span className="font-bold" style={titleStyle}>
+          {title}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="inline-flex max-w-full items-center gap-2 rounded-r-full py-1.5 pl-2.5 pr-5 text-white"
-      style={{ backgroundColor: color }}
+      className="inline-flex max-w-full items-center gap-2 rounded-r-full py-1.5 pl-2.5 pr-5"
+      style={{ backgroundColor: color, color: contrastOn(color) }}
     >
       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15">
         <Icon className="h-3 w-3" strokeWidth={2.2} />
       </span>
-      <span
-        className="font-bold"
-        style={{
-          fontSize: size,
-          ...headingCapStyle(customization),
-        }}
-      >
+      <span className="font-bold" style={titleStyle}>
         {title}
       </span>
     </div>
@@ -324,31 +355,18 @@ function PillHeading({
 function ContactLine({
   icon: Icon,
   text,
+  href,
 }: {
   icon: typeof Phone;
   text: string;
+  href?: string;
 }) {
   return (
     <div className="flex items-start gap-2">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-      <span className="break-all leading-snug">{text}</span>
-    </div>
-  );
-}
-
-function DotMeter({ level, fill }: { level: number; fill: string }) {
-  const filled = Math.max(1, Math.min(8, Math.round(((level || 3) / 5) * 8)));
-  return (
-    <div className="flex gap-1">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <span
-          key={i}
-          className="h-2 w-2 rounded-full"
-          style={{
-            backgroundColor: i < filled ? fill : "#D4D4D4",
-          }}
-        />
-      ))}
+      <span className="break-all leading-snug">
+        <ContactLink item={{ id: text, text, kind: "link", href }} />
+      </span>
     </div>
   );
 }

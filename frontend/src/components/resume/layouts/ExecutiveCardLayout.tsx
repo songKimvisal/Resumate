@@ -8,12 +8,14 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   SkillsList,
   ATS,
   type LayoutProps,
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Executive navy card - polished professional, ATS-readable text. */
 export default function ExecutiveCardLayout({
@@ -45,8 +47,14 @@ export default function ExecutiveCardLayout({
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : navy;
-  const titleColor = customization.toggles.jobTitle ? accent : muted;
+  const nameColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.fullName ? accent : navy,
+  );
+  const titleColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.jobTitle ? accent : muted,
+  );
 
   return (
     <div
@@ -78,7 +86,11 @@ export default function ExecutiveCardLayout({
         {hasText(personal.summary) && (
           <section>
             <AtsHeading title="About" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
-            <RichHtml html={personal.summary} className="rte-content text-[0.78em] leading-relaxed text-white/90" />
+            <RichHtml
+              html={personal.summary}
+              className="rte-content rte-on-dark text-[0.78em] leading-relaxed"
+              style={{ color: ATS.onDark }}
+            />
           </section>
         )}
         {isFirstPage && (
@@ -96,7 +108,9 @@ export default function ExecutiveCardLayout({
                   ) : (
                     <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   )}
-                  <span className="break-all">{c.text}</span>
+                  <span className="break-all">
+                    <ContactLink item={c} />
+                  </span>
                 </p>
               ))}
             </div>
@@ -126,22 +140,23 @@ export default function ExecutiveCardLayout({
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-7 pb-6 pt-8">
         {isFirstPage && (
-          <header className="mb-6 pr-[28%]">
-            <p className="uppercase tracking-wide" style={{ color: nameColor, fontSize: customization.titleSize }}>
+          <header className="mb-7 pr-[28%]">
+            <p className="uppercase tracking-[0.28em]" style={{ color: nameColor, fontSize: customization.titleSize }}>
               {firstName}
             </p>
-            <h1 className="font-bold uppercase leading-none" style={{ color: nameColor, fontSize: customization.fullNameSize }}>
+            <h1 className="mt-1 font-bold uppercase leading-none tracking-tight" style={{ color: nameColor, fontSize: customization.fullNameSize }}>
               {lastName || firstName}
             </h1>
             {personal.jobTitle && (
-              <p className="mt-2 font-medium" style={{ color: titleColor }}>{personal.jobTitle}</p>
+              <p className="mt-2.5 font-medium tracking-wide" style={{ color: titleColor }}>{personal.jobTitle}</p>
             )}
+            <div className="mt-4 h-[2px] w-10 rounded-full" style={{ backgroundColor: accent }} />
           </header>
         )}
 
         {jobs.length > 0 && (
           <section className="mb-5">
-            <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
+            <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
             <div className="space-y-4">
               {jobs.map((job, jobIdx) => (
                 <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
@@ -152,7 +167,7 @@ export default function ExecutiveCardLayout({
 
         {education.length > 0 && (
           <section className="mb-5">
-            <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
+            <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
             <div className="space-y-3 text-[0.9em]">
               {education.map((edu, eduIdx) => (
                 <div key={listKey(edu.id, eduIdx, "edu")}>
@@ -162,6 +177,13 @@ export default function ExecutiveCardLayout({
                   </div>
                   <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                  {hasText(edu.description) && (
+                    <RichHtml
+                      html={edu.description}
+                      className="rte-content mt-1 leading-relaxed"
+                      style={{ color: ink }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -170,7 +192,7 @@ export default function ExecutiveCardLayout({
 
         {includeReferences && references.length > 0 && (
           <section>
-            <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={`${accent}44`} customization={customization} />
+            <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
             <div className="grid grid-cols-2 gap-4 text-[0.85em]">
               {references.slice(0, 4).map((r, refIdx) => (
                 <div key={listKey(r.id, refIdx, "ref")}>

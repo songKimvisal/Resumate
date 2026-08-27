@@ -5,6 +5,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   LanguagesBlock,
   ReferencesBlock,
   SkillsList,
@@ -15,6 +16,7 @@ import {
   listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { contrastOn } from "../../../lib/color";
 
 /**
  * Denise Henderson–style layout:
@@ -39,6 +41,7 @@ export default function CleanHeaderSplitLayout({
     customization,
   } = resume;
   const accent = customization.accentColor || ATS.navy;
+  const ink = customization.bodyTextColor || "#111111";
   const muted = "#6B6B6B";
   const line = "#D4D4D4";
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
@@ -46,8 +49,14 @@ export default function CleanHeaderSplitLayout({
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.fullName ? accent : ink,
+  );
+  const titleColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.jobTitle ? accent : muted,
+  );
 
   return (
     <div
@@ -66,7 +75,7 @@ export default function CleanHeaderSplitLayout({
               </h1>
               {personal.jobTitle && (
                 <p
-                  className="mt-2 uppercase tracking-[0.14em]"
+                  className="mt-2.5 uppercase tracking-[0.2em]"
                   style={{
                     fontSize: customization.titleSize,
                     color: titleColor || muted,
@@ -75,6 +84,7 @@ export default function CleanHeaderSplitLayout({
                   {personal.jobTitle}
                 </p>
               )}
+              <div className="mt-4 h-[2px] w-10 rounded-full" style={{ backgroundColor: accent }} />
             </div>
             <div className="w-[42%] shrink-0 space-y-1.5 text-[0.8em]">
               {contacts.map((c, contactIdx) => (
@@ -92,6 +102,7 @@ export default function CleanHeaderSplitLayout({
                             : Globe
                   }
                   text={c.text}
+                  href={c.href}
                   accent={accent}
                 />
               ))}
@@ -120,7 +131,7 @@ export default function CleanHeaderSplitLayout({
                     <RichHtml
                       html={edu.description}
                       className="rte-content mt-1"
-                      style={{ color: muted }}
+                      style={{ color: ink }}
                     />
                   </div>
                 ))}
@@ -172,7 +183,7 @@ export default function CleanHeaderSplitLayout({
               <RichHtml
                 html={personal.summary}
                 className="rte-content text-[0.9em] leading-relaxed text-justify"
-                style={{ color: muted }}
+                style={{ color: ink }}
               />
             </section>
           )}
@@ -200,7 +211,7 @@ export default function CleanHeaderSplitLayout({
                     <RichHtml
                       html={job.description}
                       className="rte-content mt-1.5 leading-relaxed"
-                      style={{ color: muted }}
+                      style={{ color: ink }}
                     />
                   </div>
                 ))}
@@ -216,10 +227,12 @@ export default function CleanHeaderSplitLayout({
 function HeaderContact({
   icon: Icon,
   text,
+  href,
   accent,
 }: {
   icon: typeof Phone;
   text: string;
+  href?: string;
   accent: string;
 }) {
   return (
@@ -230,7 +243,9 @@ function HeaderContact({
       >
         <Icon className="h-2.5 w-2.5" strokeWidth={2.4} />
       </span>
-      <span className="break-all leading-snug">{text}</span>
+      <span className="break-all leading-snug">
+        <ContactLink item={{ id: text, text, kind: "link", href }} />
+      </span>
     </div>
   );
 }

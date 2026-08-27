@@ -7,7 +7,7 @@ import type {
 } from "../../../types/resume";
 import { cn } from "../../../lib/utils";
 import { cssFontStack } from "../../../lib/fonts";
-import { hasText, normalizeJobs, personalContactLines } from "./shared";
+import { hasText, normalizeJobs, personalContactLines, ContactLink } from "./shared";
 import { SpecialLayout } from "./index";
 
 type JobSlice = {
@@ -450,7 +450,9 @@ function MeasureBlock({
       <div style={{ fontSize }} className="space-y-2 py-2">
         <p className="font-bold">CONTACT</p>
         {lines.map((l, li) => (
-          <p key={l.id || `contact-${li}`}>{l.text}</p>
+          <p key={l.id || `contact-${li}`}>
+            <ContactLink item={l} />
+          </p>
         ))}
       </div>
     );
@@ -558,7 +560,7 @@ export function SpecialPaginatedLayout({
     const next: Record<string, number> = {};
     root.querySelectorAll<HTMLElement>("[data-unit-key]").forEach((el) => {
       const key = el.dataset.unitKey;
-      if (key) next[key] = Math.ceil(el.getBoundingClientRect().height);
+      if (key) next[key] = Math.ceil(el.offsetHeight);
     });
     setHeights(next);
     setMeasured(true);
@@ -599,12 +601,20 @@ export function SpecialPaginatedLayout({
   const visible = singlePage ? pageResumes.slice(0, 1) : pageResumes;
   const aspect = pageFormat === "letter" ? "8.5/11" : "210/297";
   const measureWidth = Math.round(pageWidthPx * 0.66);
+  const bulletClass =
+    resume.customization.bulletStyle === "disc"
+      ? ""
+      : `bullet-${resume.customization.bulletStyle}`;
+  const linkIconClass = resume.customization.linkStyle.includes("icon")
+    ? "resume-show-link-icons"
+    : "";
 
   return (
     <div className="space-y-4">
       <div
         aria-hidden
         ref={measureRef}
+        className={cn(bulletClass, linkIconClass)}
         style={{
           position: "fixed",
           top: 0,
@@ -647,7 +657,7 @@ export function SpecialPaginatedLayout({
               outlineOffset: pageBorder ? -(pageBorderWidth || 0) : undefined,
             }}
           >
-            <div className="absolute inset-0 overflow-hidden rounded-sm">
+            <div className={cn("absolute inset-0 overflow-hidden rounded-sm", bulletClass, linkIconClass)}>
               <div
                 style={{
                   width: pageWidthPx,

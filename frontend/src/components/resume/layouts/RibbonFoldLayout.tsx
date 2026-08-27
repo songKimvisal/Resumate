@@ -7,6 +7,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   LanguagesBlock,
   ReferencesBlock,
   EducationBlock,
@@ -16,6 +17,7 @@ import {
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Professional charcoal sidebar - ATS-safe (no decorative ribbons). */
 export default function RibbonFoldLayout({
@@ -45,8 +47,14 @@ export default function RibbonFoldLayout({
   const dateFmt = customization.dateFormat;
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.fullName ? accent : ink,
+  );
+  const titleColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.jobTitle ? accent : muted,
+  );
 
   return (
     <div
@@ -79,7 +87,8 @@ export default function RibbonFoldLayout({
               />
               <RichHtml
                 html={personal.summary}
-                className="rte-content text-[0.82em] leading-relaxed text-white/90"
+                className="rte-content rte-on-dark text-[0.82em] leading-relaxed"
+                style={{ color: ATS.onDark }}
               />
             </section>
           )}
@@ -134,7 +143,9 @@ export default function RibbonFoldLayout({
                     ) : (
                       <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     )}
-                    <span className="break-all">{c.text}</span>
+                    <span className="break-all">
+                      <ContactLink item={c} />
+                    </span>
                   </p>
                 ))}
               </div>
@@ -143,26 +154,30 @@ export default function RibbonFoldLayout({
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-7 py-7">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-8 py-8">
         {isFirstPage && (
-          <header className="mb-6">
+          <header className="mb-7">
             <h1
-              className="font-bold leading-none"
+              className="font-bold leading-none tracking-tight"
               style={{ fontSize: customization.fullNameSize, color: nameColor }}
             >
               {personal.fullName || "Your Name"}
             </h1>
             {personal.jobTitle && (
               <p
-                className="mt-2 uppercase tracking-[0.18em]"
+                className="mt-2.5 uppercase tracking-[0.22em]"
                 style={{
                   fontSize: customization.titleSize,
-                  color: titleColor || muted,
+                  color: titleColor,
                 }}
               >
                 {personal.jobTitle}
               </p>
             )}
+            <div
+              className="mt-4 h-[2px] w-11 rounded-full"
+              style={{ backgroundColor: accent }}
+            />
           </header>
         )}
 
@@ -180,6 +195,7 @@ export default function RibbonFoldLayout({
                   key={listKey(edu.id, eduIdx, "edu")}
                   edu={edu}
                   muted={muted}
+                  ink={ink}
                   dateFmt={dateFmt}
                 />
               ))}

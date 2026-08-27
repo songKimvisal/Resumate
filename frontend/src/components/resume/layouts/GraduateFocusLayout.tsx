@@ -6,6 +6,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactInline,
   SkillsList,
   ATS,
   type LayoutProps,
@@ -46,7 +47,7 @@ export default function GraduateFocusLayout({
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#F8FAFC")}
     >
       {isFirstPage && (
-        <header className="mb-5 rounded-xl bg-white px-6 py-5 shadow-sm" style={{ borderLeft: `5px solid ${accent}` }}>
+        <header className="mb-5 rounded-lg bg-white px-6 py-5 ring-1 ring-slate-200/80" style={{ borderLeft: `4px solid ${accent}` }}>
           <h1 className="font-bold tracking-tight" style={{ fontSize: customization.fullNameSize }}>
             {personal.fullName}
           </h1>
@@ -55,14 +56,16 @@ export default function GraduateFocusLayout({
               {personal.jobTitle}
             </p>
           )}
-          <p className="mt-2 text-[0.82em]" style={{ color: muted }}>
-            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
-          </p>
+          <ContactInline
+            contacts={contacts}
+            className="mt-2 text-[0.82em]"
+            style={{ color: muted }}
+          />
         </header>
       )}
 
       {education.length > 0 && (
-        <section className="mb-4 rounded-xl bg-white px-6 py-4 shadow-sm">
+        <section className="mb-4 rounded-lg bg-white px-6 py-4 ring-1 ring-slate-200/80">
           <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="space-y-4">
             {education.map((edu, eduIdx) => (
@@ -75,7 +78,7 @@ export default function GraduateFocusLayout({
                   {[edu.degree, edu.field].filter(Boolean).join(" - ")}
                 </p>
                 {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
-                <RichHtml html={edu.description} className="rte-content mt-1" style={{ color: muted }} />
+                <RichHtml html={edu.description} className="rte-content mt-1" style={{ color: ink }} />
               </div>
             ))}
           </div>
@@ -83,14 +86,14 @@ export default function GraduateFocusLayout({
       )}
 
       {hasText(personal.summary) && (
-        <section className="mb-4 rounded-xl bg-white px-6 py-4 shadow-sm">
+        <section className="mb-4 rounded-lg bg-white px-6 py-4 ring-1 ring-slate-200/80">
           <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} customization={customization} />
-          <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: muted }} />
+          <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: ink }} />
         </section>
       )}
 
       {jobs.length > 0 && (
-        <section className="mb-4 rounded-xl bg-white px-6 py-4 shadow-sm">
+        <section className="mb-4 rounded-lg bg-white px-6 py-4 ring-1 ring-slate-200/80">
           <AtsHeading title="Experience & Projects" color={accent} size={customization.headingsSize} customization={customization} />
           <div className="space-y-4">
             {jobs.map((job, jobIdx) => (
@@ -101,7 +104,7 @@ export default function GraduateFocusLayout({
       )}
 
       {(skills.length > 0 || languages.length > 0) && (
-        <section className="rounded-xl bg-white px-6 py-4 shadow-sm">
+        <section className="rounded-lg bg-white px-6 py-4 ring-1 ring-slate-200/80">
           <div className="grid grid-cols-2 gap-6">
             {skills.length > 0 && (
               <div>

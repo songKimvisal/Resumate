@@ -17,6 +17,9 @@ import { extraExperienceTitle } from "../../../lib/experienceDisplay";
 import { photoImgStyle } from "../../../lib/photoFit";
 import { cssFontStack } from "../../../lib/fonts";
 import { listKey } from "../../../lib/resumeIds";
+import { resumePhotoSrc } from "../../../lib/personAvatar";
+import { hrefFromUrl, linkDisplayLabel, looksLikeUrl } from "../../../lib/contactLinks";
+import { contrastOn } from "../../../lib/color";
 
 export { listKey };
 
@@ -74,6 +77,7 @@ export type ContactLineItem = {
     | "nationality"
     | "passport"
     | "link";
+  href?: string;
 };
 
 function pushLinkLines(
@@ -82,12 +86,15 @@ function pushLinkLines(
   prefix: string,
 ) {
   items.forEach((entry, i) => {
-    const text = (entry.url || entry.title || "").trim();
-    if (!text) return;
+    const url = (entry.url || "").trim();
+    const title = (entry.title || "").trim();
+    if (!url && !title) return;
+    const href = url ? hrefFromUrl(url) : looksLikeUrl(title) ? hrefFromUrl(title) : "";
     lines.push({
       id: `${prefix}-${entry.id || i}`,
-      text,
+      text: linkDisplayLabel(entry, prefix),
       kind: "link",
+      href: href || undefined,
     });
   });
 }
@@ -98,9 +105,19 @@ export function personalContactLines(
 ): ContactLineItem[] {
   const lines: ContactLineItem[] = [];
   if (personal.phone)
-    lines.push({ id: "phone", text: personal.phone, kind: "phone" });
+    lines.push({
+      id: "phone",
+      text: personal.phone,
+      kind: "phone",
+      href: `tel:${personal.phone.replace(/\s+/g, "")}`,
+    });
   if (personal.email)
-    lines.push({ id: "email", text: personal.email, kind: "email" });
+    lines.push({
+      id: "email",
+      text: personal.email,
+      kind: "email",
+      href: `mailto:${personal.email}`,
+    });
   if (personal.location)
     lines.push({ id: "location", text: personal.location, kind: "location" });
   if (personal.nationality)
@@ -125,9 +142,62 @@ export function personalContactLines(
   return lines;
 }
 
+export function ContactLink({
+  item,
+  className,
+}: {
+  item: ContactLineItem;
+  className?: string;
+}) {
+  if (!item.href) return <>{item.text}</>;
+  const external = item.href.startsWith("http");
+  return (
+    <a
+      href={item.href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      className={className ?? "underline-offset-2 hover:underline"}
+      style={{
+        color: "var(--resume-link-color, inherit)",
+        textDecoration: "var(--resume-link-decoration, none)",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {item.text}
+    </a>
+  );
+}
+
+export function ContactInline({
+  contacts,
+  className,
+  style,
+  separator = "  ·  ",
+}: {
+  contacts: ContactLineItem[];
+  className?: string;
+  style?: React.CSSProperties;
+  separator?: string;
+}) {
+  return (
+    <p className={className} style={style}>
+      {contacts.map((c, i) => (
+        <span key={c.id}>
+          {i > 0 ? separator : null}
+          <ContactLink item={c} />
+        </span>
+      ))}
+    </p>
+  );
+}
+
 export function languageLabel(level: number) {
   if (level >= 1 && level <= 5) return LANGUAGE_LEVEL_LABELS[level - 1];
   return "";
+}
+
+export function clampedLevel(level: number, max = 5) {
+  return Math.max(1, Math.min(max, Math.round(level || 3)));
 }
 
 export function layoutFont(customization: Customization) {
@@ -142,6 +212,8 @@ export const ATS = {
   paper: "#FFFFFF",
   navy: "#0F2942",
   slate: "#334155",
+  /** Body copy on navy/charcoal sidebars — never inherit a dark accent. */
+  onDark: "rgba(255,255,255,0.92)",
 };
 
 /** Root page styles shared by every special layout - honors Customize controls. */
@@ -149,13 +221,21 @@ export function layoutPageStyle(
   customization: Customization,
   fallbackBg = "#FFFFFF",
 ): React.CSSProperties {
+  const linkColor = customization.linkStyle.includes("color")
+    ? customization.accentColor
+    : "inherit";
+  const linkDecoration = customization.linkStyle.includes("underline")
+    ? "underline"
+    : "none";
   return {
     fontFamily: layoutFont(customization),
     fontSize: customization.fontSize,
     lineHeight: customization.lineHeight || 1.45,
     color: customization.bodyTextColor || ATS.ink,
     backgroundColor: customization.bodyBgColor || fallbackBg,
-  };
+    ["--resume-link-color" as string]: linkColor,
+    ["--resume-link-decoration" as string]: linkDecoration,
+  } as React.CSSProperties;
 }
 
 const SIDEBAR_BG_VARIANTS: LayoutVariant[] = [
@@ -180,15 +260,13 @@ const PHOTO_VARIANTS: LayoutVariant[] = [
   "navyAnalyst",
   "ribbonFold",
   "executiveCard",
-];
-
-/** Layouts that can show/hide a photo (including full-bleed rails). */
-const PHOTO_SLOT_VARIANTS: LayoutVariant[] = [
-  ...PHOTO_VARIANTS,
   "designerBlock",
   "graphicPro",
   "monoPill",
 ];
+
+/** Layouts that can show/hide a photo (including full-bleed rails). */
+const PHOTO_SLOT_VARIANTS: LayoutVariant[] = PHOTO_VARIANTS;
 
 export function isSpecialLayoutVariant(variant: LayoutVariant | undefined) {
   return !!variant && variant !== "default";
@@ -260,6 +338,50 @@ export function normalizeJobs(
   return [...ordered, ...unique.filter((item) => !used.has(item.id))];
 }
 
+/** Full-rail photo that still honors Customize shape, size, and border. */
+export function FullBleedPhoto({
+  personal,
+  customization,
+  aspectRatio = "1 / 1",
+  fill = ATS.navy,
+  className = "",
+}: {
+  personal: PersonalInfo;
+  customization: Customization;
+  aspectRatio?: string;
+  fill?: string;
+  className?: string;
+}) {
+  const widthPct = Math.min(100, Math.max(56, customization.photoSize ?? 80));
+  const radius = photoRadius(customization.photoShape);
+  return (
+    <div
+      className={`flex w-full shrink-0 items-center justify-center overflow-hidden ${className}`}
+      style={{ aspectRatio, backgroundColor: fill }}
+    >
+      {customization.showPhoto ? (
+        <div
+          className="overflow-hidden"
+          style={{
+            width: `${widthPct}%`,
+            aspectRatio: "1 / 1",
+            borderRadius: radius,
+            border: customization.photoBorder ? "2.5px solid #fff" : undefined,
+            backgroundColor: fill,
+          }}
+        >
+          <img
+            src={resumePhotoSrc(personal)}
+            alt={personal.fullName || "Profile"}
+            className="h-full w-full object-cover"
+            style={photoImgStyle(personal)}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function PhotoBox({
   personal,
   customization,
@@ -280,7 +402,7 @@ export function PhotoBox({
   borderColor?: string;
   className?: string;
 }) {
-  if (!customization.showPhoto || !personal.photoUrl) return null;
+  if (!customization.showPhoto) return null;
   const resolvedShape = shape ?? customization.photoShape;
   const resolvedSize = size ?? customization.photoSize ?? 96;
   const resolvedBorder = border ?? customization.photoBorder;
@@ -292,12 +414,15 @@ export function PhotoBox({
         width: resolvedSize,
         height: resolvedSize,
         borderRadius: radius,
-        border: resolvedBorder ? `2px solid ${borderColor}` : undefined,
-        backgroundColor: "#E5E7EB",
+        border: resolvedBorder ? `2.5px solid ${borderColor}` : undefined,
+        backgroundColor: "#0F2942",
+        boxShadow: resolvedBorder
+          ? `0 0 0 4px ${borderColor}22`
+          : "0 6px 18px rgba(15, 41, 66, 0.12)",
       }}
     >
       <img
-        src={personal.photoUrl}
+        src={resumePhotoSrc(personal)}
         alt={personal.fullName ? `${personal.fullName} photo` : "Profile photo"}
         className="h-full w-full"
         style={photoImgStyle(personal)}
@@ -339,7 +464,7 @@ export function headingCapStyle(
   const transform = headingTextTransform(customization);
   const tracking =
     customization?.headingsLetterSpacing ??
-    (transform === "uppercase" ? 1.2 : 0.2);
+    (transform === "uppercase" ? 1.1 : 0.2);
   return {
     textTransform: transform,
     letterSpacing: `${tracking}px`,
@@ -352,6 +477,7 @@ export function AtsHeading({
   size = 11,
   rule = true,
   ruleColor,
+  ruleWidth = 36,
   customization,
 }: {
   title: string;
@@ -359,36 +485,75 @@ export function AtsHeading({
   size?: number;
   rule?: boolean;
   ruleColor?: string;
+  /** Short accent tick (default) or `"full"` for a hairline across the column. */
+  ruleWidth?: number | "full";
   customization?: Customization;
 }) {
-  const showRule =
-    rule && (customization ? customization.toggles.headingsLine : true);
+  const border = customization?.headingBorder ?? "none";
+  const showLineToggle = customization
+    ? customization.toggles.headingsLine
+    : true;
+  const ink =
+    color ||
+    (customization?.toggles.headings && customization.accentColor
+      ? customization.accentColor
+      : "inherit");
+  const barColor =
+    ruleColor ||
+    (customization?.toggles.headings ? customization.accentColor : color) ||
+    "currentColor";
+  const boxColor =
+    typeof ink === "string" && ink !== "inherit"
+      ? ink
+      : customization?.accentColor || ATS.navy;
+  const gap = customization?.elementSpacing ?? 12;
+  const isFilled = border === "filled";
+  const isOutline = border === "outline";
+  const isLongLine = border === "line";
+  const isUnderline = border === "underline";
+  const showShortRule =
+    rule &&
+    showLineToggle &&
+    (border === "none" || border === "line");
+
+  const titleStyle: React.CSSProperties = {
+    fontSize: size,
+    color: isFilled ? contrastOn(boxColor) : ink,
+    backgroundColor: isFilled ? boxColor : undefined,
+    border: isOutline ? `1px solid ${boxColor}` : undefined,
+    padding: isFilled || isOutline ? "3px 8px" : undefined,
+    borderRadius: isFilled ? 4 : undefined,
+    display: isFilled || isOutline ? "inline-block" : undefined,
+    ...headingCapStyle(customization),
+  };
+
+  if (isLongLine && rule && !showLineToggle) {
+    return (
+      <div className="flex items-center gap-2" style={{ marginBottom: gap }}>
+        <h2 className="shrink-0 font-bold" style={titleStyle}>
+          {title}
+        </h2>
+        <span className="h-px min-w-4 flex-1" style={{ backgroundColor: barColor }} />
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-2.5">
-      <h2
-        className="font-bold"
-        style={{
-          fontSize: size,
-          color:
-            customization?.toggles.headings && customization.accentColor
-              ? customization.accentColor
-              : color || "inherit",
-          ...headingCapStyle(customization),
-        }}
-      >
+    <div style={{ marginBottom: gap }}>
+      <h2 className="font-bold" style={titleStyle}>
         {title}
       </h2>
-      {showRule && (
+      {(isUnderline || showShortRule) && (
         <div
-          className="mt-1.5 h-[1.5px] w-full"
+          className={
+            isUnderline || ruleWidth === "full"
+              ? "mt-1.5 h-px w-full"
+              : "mt-1.5 h-[2px] rounded-full"
+          }
           style={{
-            backgroundColor:
-              ruleColor ||
-              (customization?.toggles.headings
-                ? customization.accentColor
-                : color) ||
-              "currentColor",
-            opacity: ruleColor ? 1 : 0.35,
+            width:
+              isUnderline || ruleWidth === "full" ? "100%" : ruleWidth,
+            backgroundColor: barColor,
           }}
         />
       )}
@@ -434,7 +599,7 @@ export function JobBlock({
       <RichHtml
         html={job.description}
         className="rte-content mt-1.5 leading-relaxed"
-        style={{ color: muted }}
+        style={{ color: ink }}
       />
     </div>
   );
@@ -444,11 +609,13 @@ export function JobBlock({
 export function EducationBlock({
   edu,
   muted,
+  ink,
   dateFmt = "monthYear",
   accent,
 }: {
   edu: EducationItem;
   muted: string;
+  ink?: string;
   dateFmt?: Customization["dateFormat"];
   accent?: string;
 }) {
@@ -468,8 +635,8 @@ export function EducationBlock({
       {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
       <RichHtml
         html={edu.description}
-        className="rte-content mt-1 leading-relaxed"
-        style={{ color: muted }}
+        className="rte-content mt-1 text-[0.95em] leading-relaxed"
+        style={{ color: ink || muted }}
       />
     </div>
   );
@@ -548,44 +715,48 @@ export function SkillsList({
   fill?: string;
 }) {
   if (skills.length === 0) return null;
-  const asList =
-    customization.skillsDisplay === "list" || !customization.toggles.dots;
+  const asList = customization.skillsDisplay === "list";
   if (asList) {
+    const tick = light ? "#fff" : fill || customization.accentColor || ATS.navy;
     return (
       <ul
         className="space-y-1.5 text-[0.85em]"
         style={{ color: light ? undefined : muted }}
       >
         {skills.map((s, i) => (
-          <li key={listKey(s.id, i, "skill")}>{s.name}</li>
+          <li key={listKey(s.id, i, "skill")} className="flex items-start gap-2">
+            <span
+              className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full"
+              style={{ backgroundColor: tick }}
+            />
+            <span>{s.name}</span>
+          </li>
         ))}
       </ul>
     );
   }
   const dotFill = fill || customization.accentColor || ATS.navy;
+  const empty = light ? "rgba(255,255,255,0.35)" : "#CBD5E1";
   return (
     <div className="space-y-2 text-[0.85em]">
       {skills.map((s, i) => {
-        const filled = Math.max(1, Math.min(5, Math.round(s.level || 3)));
+        const filled = clampedLevel(s.level);
         return (
           <div key={listKey(s.id, i, "skill")}>
             <p className="mb-1" style={{ color: light ? undefined : muted }}>
               {s.name}
             </p>
-            <div className="flex gap-1">
+            <div
+              className="flex gap-[3px]"
+              aria-label={`${s.name} ${filled} of 5`}
+            >
               {Array.from({ length: 5 }).map((_, dot) => (
                 <span
                   key={dot}
-                  className="h-1.5 w-1.5 rounded-full"
+                  className="h-2 w-2 rounded-full"
                   style={{
                     backgroundColor:
-                      dot < filled
-                        ? light
-                          ? "#fff"
-                          : dotFill
-                        : light
-                          ? "rgba(255,255,255,0.35)"
-                          : "#CBD5E1",
+                      dot < filled ? (light ? "#fff" : dotFill) : empty,
                   }}
                 />
               ))}

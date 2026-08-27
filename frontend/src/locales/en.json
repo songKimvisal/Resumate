@@ -948,7 +948,7 @@
         "columnsOne": "One",
         "columnsTwo": "Two",
         "columnsTwoPremiumHint": "Two-column sidebar layouts are a Premium feature. Unlock a premium template to use one.",
-        "specialLayoutHint": "This premium template uses a fixed layout. Colors, fonts, sizes, photo, and dates still apply below.",
+        "specialLayoutHint": "This premium template keeps its column structure. Heading style, links, bullets, photo, colors, fonts, spacing, and page border still apply below.",
         "headerPosition": "Header Position",
         "headerLeft": "Left",
         "headerTop": "Top",

@@ -8,6 +8,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   LanguagesBlock,
   SkillsList,
   ATS,
@@ -15,6 +16,7 @@ import {
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Premium fresh grad - main narrative + navy sidebar. ATS section names. */
 export default function FreshSidebarLayout({
@@ -43,8 +45,14 @@ export default function FreshSidebarLayout({
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.fullName ? accent : ink,
+  );
+  const titleColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.jobTitle ? accent : muted,
+  );
   const mainRuleColor = customization.toggles.headings ? accent : ATS.line;
 
   return (
@@ -54,24 +62,28 @@ export default function FreshSidebarLayout({
     >
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-1">
         {isFirstPage && (
-          <header className="mb-5">
+          <header className="mb-6">
             <h1
-              className="font-bold uppercase tracking-wide"
+              className="font-bold uppercase tracking-[0.12em]"
               style={{ fontSize: customization.fullNameSize, color: nameColor }}
             >
               {personal.fullName}
             </h1>
             {personal.jobTitle && (
               <p
-                className="mt-1 uppercase tracking-[0.14em]"
+                className="mt-1.5 uppercase tracking-[0.22em]"
                 style={{
                   fontSize: customization.titleSize,
-                  color: titleColor || muted,
+                  color: titleColor,
                 }}
               >
                 {personal.jobTitle}
               </p>
             )}
+            <div
+              className="mt-3 h-[2px] w-11 rounded-full"
+              style={{ backgroundColor: accent }}
+            />
           </header>
         )}
 
@@ -81,7 +93,7 @@ export default function FreshSidebarLayout({
             <RichHtml
               html={personal.summary}
               className="rte-content text-[0.9em] leading-relaxed"
-              style={{ color: muted }}
+              style={{ color: ink }}
             />
           </section>
         )}
@@ -121,8 +133,8 @@ export default function FreshSidebarLayout({
       </main>
 
       <aside
-        className="flex h-full w-[34%] shrink-0 flex-col gap-5 overflow-hidden px-4 py-5 text-white"
-        style={{ backgroundColor: sidebar, borderRadius: "20px 4px 4px 20px" }}
+        className="flex h-full w-[34%] shrink-0 flex-col gap-6 overflow-hidden px-5 py-6 text-white"
+        style={{ backgroundColor: sidebar, borderRadius: "18px 6px 6px 18px" }}
       >
         {isFirstPage && (
           <>
@@ -149,7 +161,9 @@ export default function FreshSidebarLayout({
                       ) : (
                         <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       )}
-                      <span className="break-all">{c.text}</span>
+                      <span className="break-all">
+                        <ContactLink item={c} />
+                      </span>
                     </p>
                   ))}
                 </div>
@@ -168,6 +182,13 @@ export default function FreshSidebarLayout({
                   <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p>GPA: {edu.gpa}</p>}
+                  {hasText(edu.description) && (
+                    <RichHtml
+                      html={edu.description}
+                      className="rte-content rte-on-dark mt-1 text-[0.95em] leading-relaxed"
+                      style={{ color: ATS.onDark }}
+                    />
+                  )}
                 </div>
               ))}
             </div>

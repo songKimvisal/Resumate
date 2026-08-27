@@ -25,8 +25,6 @@ import { orderedExperienceEntries } from "../../lib/experienceOrder";
 import { withStableItemIds, listKey } from "../../lib/resumeIds";
 import { useResumeStore } from "../../store/resumeStore";
 import {
-  LANGUAGE_LEVEL_LABELS,
-  SKILL_LEVEL_LABELS,
   type Resume,
   type Customization,
   type SectionOrderKey,
@@ -41,6 +39,8 @@ import {
 } from "../../types/resume";
 import { idealTextColor } from "../../lib/color";
 import { photoImgStyle } from "../../lib/photoFit";
+import { resumePhotoSrc } from "../../lib/personAvatar";
+import { hrefFromUrl, linkDisplayLabel, looksLikeUrl } from "../../lib/contactLinks";
 import { cssFontStack } from "../../lib/fonts";
 import { marginPercentCss, PAGE_SIZE_MM } from "../../lib/pageSize";
 import {
@@ -230,11 +230,14 @@ export default function ResumePreview({
   resume: resumeProp,
   pageLabelClassName = "text-text-secondary",
   singlePage = false,
+  lockNativeSize = false,
 }: {
   resume?: Resume;
   pageLabelClassName?: string;
   /** Render only the first page, with no "Page X of Y" label - used for small thumbnails. */
   singlePage?: boolean;
+  /** Keep the page at native A4/Letter px and let a parent scale it (ScaledResumePreview). */
+  lockNativeSize?: boolean;
 }) {
   const storeResume = useResumeStore((s) => s.resume);
   const resume = useMemo(
@@ -668,14 +671,21 @@ export default function ResumePreview({
     ? realPageWidthPx * (1 - SIDEBAR_WIDTH_FRACTION)
     : realPageWidthPx;
   const pageHeightPx = realPageWidthPx * pageAspect;
-  const scaleFactor =
-    containerWidth > 0 ? Math.min(1, containerWidth / realPageWidthPx) : 1;
+  const scaleFactor = lockNativeSize
+    ? 1
+    : containerWidth > 0
+      ? Math.min(1, containerWidth / realPageWidthPx)
+      : 1;
 
   const useSpecial = hasSpecialLayout(customization.layoutVariant);
 
   if (useSpecial) {
     return (
-      <div ref={wrapperRef} className="w-full min-w-0">
+      <div
+        ref={wrapperRef}
+        className="w-full min-w-0 text-left"
+        style={lockNativeSize ? { width: realPageWidthPx } : undefined}
+      >
         <SpecialPaginatedLayout
           resume={resume}
           pageWidthPx={realPageWidthPx}
@@ -693,7 +703,11 @@ export default function ResumePreview({
   }
 
   return (
-    <div ref={wrapperRef} className="w-full min-w-0 space-y-4">
+    <div
+      ref={wrapperRef}
+      className="w-full min-w-0 space-y-4 text-left"
+      style={lockNativeSize ? { width: realPageWidthPx } : undefined}
+    >
       <div
         ref={measureContainerRef}
         aria-hidden
@@ -1057,23 +1071,16 @@ function SkillLine({
       </div>
     );
   }
-  if (theme.showDots) {
-    return (
-      <div className="flex items-start justify-between gap-2">
-        <p
-          className="min-w-0 flex-1 break-words text-[0.85em]"
-          style={{ color: theme.bodyTextColor }}
-        >
-          {skill.name}
-        </p>
-        <DotRow level={skill.level} accent={accent} theme={theme} />
-      </div>
-    );
-  }
   return (
-    <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
-      {skill.name} ({SKILL_LEVEL_LABELS[skill.level - 1]})
-    </p>
+    <div className="flex items-start justify-between gap-2">
+      <p
+        className="min-w-0 flex-1 break-words text-[0.85em]"
+        style={{ color: theme.bodyTextColor }}
+      >
+        {skill.name}
+      </p>
+      <DotRow level={skill.level} accent={accent} theme={theme} />
+    </div>
   );
 }
 
@@ -1100,23 +1107,16 @@ function LanguageLine({
       </div>
     );
   }
-  if (theme.showDots) {
-    return (
-      <div className="flex items-start justify-between gap-2">
-        <p
-          className="min-w-0 flex-1 break-words text-[0.85em]"
-          style={{ color: theme.bodyTextColor }}
-        >
-          {language.name}
-        </p>
-        <DotRow level={language.level} accent={accent} theme={theme} />
-      </div>
-    );
-  }
   return (
-    <p className="text-[0.85em]" style={{ color: theme.bodyTextColor }}>
-      {language.name} ({LANGUAGE_LEVEL_LABELS[language.level - 1]})
-    </p>
+    <div className="flex items-start justify-between gap-2">
+      <p
+        className="min-w-0 flex-1 break-words text-[0.85em]"
+        style={{ color: theme.bodyTextColor }}
+      >
+        {language.name}
+      </p>
+      <DotRow level={language.level} accent={accent} theme={theme} />
+    </div>
   );
 }
 
@@ -1150,7 +1150,7 @@ function SkillsBody({
       </ul>
     );
   }
-  return theme.showDots ? (
+  return (
     <div className="space-y-1">
       {skills
         .filter((s) => s.name)
@@ -1163,18 +1163,6 @@ function SkillsBody({
           </div>
         ))}
     </div>
-  ) : (
-    <p
-      className="text-[0.85em] leading-relaxed"
-      style={{ color: theme.bodyTextColor }}
-    >
-      {skills
-        .map((s) =>
-          s.name ? `${s.name} (${SKILL_LEVEL_LABELS[s.level - 1]})` : "",
-        )
-        .filter(Boolean)
-        .join(" - ")}
-    </p>
   );
 }
 
@@ -1208,7 +1196,7 @@ function LanguagesBody({
       </ul>
     );
   }
-  return theme.showDots ? (
+  return (
     <div className="space-y-1">
       {languages
         .filter((l) => l.name)
@@ -1221,18 +1209,6 @@ function LanguagesBody({
           </div>
         ))}
     </div>
-  ) : (
-    <p
-      className="text-[0.85em] leading-relaxed"
-      style={{ color: theme.bodyTextColor }}
-    >
-      {languages
-        .map((l) =>
-          l.name ? `${l.name} (${LANGUAGE_LEVEL_LABELS[l.level - 1]})` : "",
-        )
-        .filter(Boolean)
-        .join(" - ")}
-    </p>
   );
 }
 
@@ -1310,27 +1286,27 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
     );
   personal.portfolio.forEach((entry) =>
     items.push(
-      <LinkText key={`portfolio-${entry.id}`} icon="briefcase" entry={entry} theme={theme} />,
+      <LinkText key={`portfolio-${entry.id}`} icon="briefcase" field="portfolio" entry={entry} theme={theme} />,
     ),
   );
   personal.website.forEach((entry) =>
     items.push(
-      <LinkText key={`website-${entry.id}`} icon="globe" entry={entry} theme={theme} />,
+      <LinkText key={`website-${entry.id}`} icon="globe" field="website" entry={entry} theme={theme} />,
     ),
   );
   personal.linkedin.forEach((entry) =>
     items.push(
-      <LinkText key={`linkedin-${entry.id}`} icon="linkedin" entry={entry} theme={theme} />,
+      <LinkText key={`linkedin-${entry.id}`} icon="linkedin" field="linkedin" entry={entry} theme={theme} />,
     ),
   );
   personal.github.forEach((entry) =>
     items.push(
-      <LinkText key={`github-${entry.id}`} icon="github" entry={entry} theme={theme} />,
+      <LinkText key={`github-${entry.id}`} icon="github" field="github" entry={entry} theme={theme} />,
     ),
   );
   personal.gitlab.forEach((entry) =>
     items.push(
-      <LinkText key={`gitlab-${entry.id}`} icon="gitlab" entry={entry} theme={theme} />,
+      <LinkText key={`gitlab-${entry.id}`} icon="gitlab" field="gitlab" entry={entry} theme={theme} />,
     ),
   );
   personal.stackoverflow.forEach((entry) =>
@@ -1338,6 +1314,7 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
       <LinkText
         key={`stackoverflow-${entry.id}`}
         icon="stackoverflow"
+        field="stackoverflow"
         entry={entry}
         theme={theme}
       />,
@@ -1345,7 +1322,7 @@ function contactItems(personal: PersonalInfo, theme: Theme) {
   );
   personal.telegram.forEach((entry) =>
     items.push(
-      <LinkText key={`telegram-${entry.id}`} icon="send" entry={entry} theme={theme} />,
+      <LinkText key={`telegram-${entry.id}`} icon="send" field="telegram" entry={entry} theme={theme} />,
     ),
   );
   if (personal.passportId)
@@ -1386,7 +1363,7 @@ function HeaderBlock({
   theme: Theme;
   textColor: string;
 }) {
-  const showPhoto = customization.showPhoto && !!personal.photoUrl;
+  const showPhoto = customization.showPhoto;
   const isRow = customization.headerLayout === "row" && showPhoto;
   const isLeft = theme.headerAlignment === "left" || isRow;
   const isStacked = theme.contactArrangement === "stacked";
@@ -1408,7 +1385,7 @@ function HeaderBlock({
         outlineOffset: customization.photoBorder ? -1.5 : undefined,
       }}
     >
-      <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
+      <img src={resumePhotoSrc(personal)} alt="" style={photoImgStyle(personal)} />
     </div>
   );
 
@@ -1479,7 +1456,7 @@ function SidebarHeaderBlock({
   textColor: string;
 }) {
   const showPhoto =
-    customization.showPhoto && !!personal.photoUrl && !customization.sidebarPhotoFill;
+    customization.showPhoto && !customization.sidebarPhotoFill;
 
   return (
     <header className="text-center space-y-2">
@@ -1496,7 +1473,7 @@ function SidebarHeaderBlock({
             outlineOffset: customization.photoBorder ? -1.5 : undefined,
           }}
         >
-          <img src={personal.photoUrl} alt="" style={photoImgStyle(personal)} />
+          <img src={resumePhotoSrc(personal)} alt="" style={photoImgStyle(personal)} />
         </div>
       )}
       <h1
@@ -1570,8 +1547,7 @@ function SidebarColumn({
   const showFullBleedPhoto =
     headerInSidebar &&
     customization.sidebarPhotoFill &&
-    customization.showPhoto &&
-    !!personal.photoUrl;
+    customization.showPhoto;
   return (
     <div
       className="h-full shrink-0 overflow-hidden"
@@ -1584,7 +1560,7 @@ function SidebarColumn({
         <>
           {showFullBleedPhoto && (
             <img
-              src={personal.photoUrl}
+              src={resumePhotoSrc(personal)}
               alt=""
               className="block w-full object-cover"
               style={{ aspectRatio: 0.92 }}
@@ -2077,19 +2053,29 @@ const icons: Record<string, LucideIcon> = {
 function LinkText({
   icon,
   entry,
+  field,
   theme,
 }: {
   icon: keyof typeof icons;
+  field: string;
   entry: LinkItem;
   theme: Theme;
 }) {
-  if (!entry.title.trim()) return null;
-  const showLinkGlyph = theme.linkStyle.includes("icon") && !!entry.url;
+  const url = (entry.url || "").trim();
+  const title = (entry.title || "").trim();
+  if (!url && !title) return null;
+  const label = linkDisplayLabel(entry, field);
+  const href = url
+    ? hrefFromUrl(url)
+    : looksLikeUrl(title)
+      ? hrefFromUrl(title)
+      : "";
+  const showLinkGlyph = theme.linkStyle.includes("icon") && !!href;
   return (
     <IconText icon={icon} theme={theme}>
-      {entry.url ? (
+      {href ? (
         <a
-          href={entry.url}
+          href={href}
           target="_blank"
           rel="noreferrer"
           className={
@@ -2100,11 +2086,12 @@ function LinkText({
               ? { color: theme.accentText }
               : undefined
           }
+          onClick={(e) => e.stopPropagation()}
         >
-          {entry.title}
+          {label}
         </a>
       ) : (
-        entry.title
+        label
       )}
       {showLinkGlyph && (
         <LinkGlyph

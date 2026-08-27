@@ -9,12 +9,14 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   SkillsList,
   ATS,
   type LayoutProps,
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Navy left sidebar analyst - professional ATS two-column. */
 export default function NavyAnalystLayout({
@@ -43,8 +45,14 @@ export default function NavyAnalystLayout({
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.fullName ? accent : ink,
+  );
+  const titleColor = contrastOn(
+    "#FFFFFF",
+    customization.toggles.jobTitle ? accent : muted,
+  );
   const mainRuleColor = customization.toggles.headings ? accent : ATS.line;
 
   return (
@@ -53,7 +61,7 @@ export default function NavyAnalystLayout({
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
       <aside
-        className="flex h-full w-[32%] shrink-0 flex-col gap-5 overflow-hidden px-5 py-7 text-white"
+        className="flex h-full w-[32%] shrink-0 flex-col gap-6 overflow-hidden px-6 py-8 text-white"
         style={{ backgroundColor: sidebar }}
       >
         {isFirstPage && (
@@ -80,7 +88,9 @@ export default function NavyAnalystLayout({
                     ) : (
                       <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     )}
-                    <span className="break-all">{c.text}</span>
+                    <span className="break-all">
+                      <ContactLink item={c} />
+                    </span>
                   </p>
                 ))}
               </div>
@@ -98,6 +108,13 @@ export default function NavyAnalystLayout({
                   <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p>GPA: {edu.gpa}</p>}
+                  {hasText(edu.description) && (
+                    <RichHtml
+                      html={edu.description}
+                      className="rte-content rte-on-dark mt-1 text-[0.95em] leading-relaxed"
+                      style={{ color: ATS.onDark }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -132,27 +149,27 @@ export default function NavyAnalystLayout({
         )}
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-7 py-7">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-8 py-8">
         {isFirstPage && (
-          <header className="mb-5">
+          <header className="mb-6">
             <h1
-              className="font-bold uppercase tracking-wide"
+              className="font-bold uppercase tracking-[0.12em]"
               style={{ fontSize: customization.fullNameSize, color: nameColor }}
             >
               {personal.fullName}
             </h1>
             {personal.jobTitle && (
               <p
-                className="mt-1 uppercase tracking-[0.14em]"
+                className="mt-1.5 uppercase tracking-[0.22em]"
                 style={{
                   fontSize: customization.titleSize,
-                  color: titleColor || muted,
+                  color: titleColor,
                 }}
               >
                 {personal.jobTitle}
               </p>
             )}
-            <div className="mt-3 h-[2.5px] w-full" style={{ backgroundColor: accent }} />
+            <div className="mt-3.5 h-[2px] w-12 rounded-full" style={{ backgroundColor: accent }} />
           </header>
         )}
 
@@ -162,7 +179,7 @@ export default function NavyAnalystLayout({
             <RichHtml
               html={personal.summary}
               className="rte-content text-[0.9em] leading-relaxed text-justify"
-              style={{ color: muted }}
+              style={{ color: ink }}
             />
           </section>
         )}

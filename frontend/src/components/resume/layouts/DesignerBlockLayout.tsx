@@ -1,24 +1,26 @@
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
-import { photoImgStyle } from "../../../lib/photoFit";
 import {
   RichHtml,
-  dateRange,
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   ReferencesBlock,
   SkillsList,
+  AtsHeading,
+  JobBlock,
+  EducationBlock,
+  ATS,
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
   listKey,
+  FullBleedPhoto,
 } from "./shared";
-import type { Customization } from "../../../types/resume";
+import { contrastOn } from "../../../lib/color";
 
 /**
- * Richard Sanchez–style premium layout:
- * dark left rail + vertical EDUCATION/EXPERIENCE labels + orange contact band.
- * Page 2+ keeps the same template shell and only shows content pushed from page 1.
+ * Classic photo layout: navy identity rail + white content column.
  */
 export default function DesignerBlockLayout({
   resume,
@@ -38,68 +40,103 @@ export default function DesignerBlockLayout({
     includeReferences,
     customization,
   } = resume;
-  const accent = customization.accentColor || "#F15A29";
-  const sidebar = customization.sidebarBgColor || "#2B2B2B";
-  const ink = customization.bodyTextColor || "#1A1A1A";
+  const accent = customization.accentColor || ATS.navy;
+  const sidebar = customization.sidebarBgColor || ATS.navy;
+  const ink = customization.bodyTextColor || ATS.ink;
+  const muted = ATS.muted;
   const contacts = personalContactLines(personal);
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
-  const dateFmt = customization.dateFormat || "yearOnly";
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const dateFmt = customization.dateFormat || "monthYear";
+  const nameColor = contrastOn(
+    sidebar,
+    customization.toggles.fullName ? accent : null,
+  );
+  const titleColor = contrastOn(
+    sidebar,
+    customization.toggles.jobTitle ? accent : null,
+  );
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
-  const showContact = contacts.length > 0;
 
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
-      style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#F4F4F4")}
+      style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
-      {/* LEFT RAIL - identity only on page 1; later pages keep the colored band */}
       <aside
         className="flex h-full shrink-0 flex-col text-white"
-        style={{ width: "38%", backgroundColor: sidebar }}
+        style={{ width: "34%", backgroundColor: sidebar }}
       >
         {isFirstPage && (
           <>
-            <div
-              className="w-full shrink-0 overflow-hidden bg-neutral-600"
-              style={{ aspectRatio: "1 / 1.02" }}
-            >
-              {customization.showPhoto && personal.photoUrl ? (
-                <img
-                  src={personal.photoUrl}
-                  alt={personal.fullName || "Profile"}
-                  className="h-full w-full object-cover"
-                  style={photoImgStyle(personal)}
-                />
-              ) : null}
-            </div>
+            <FullBleedPhoto
+              personal={personal}
+              customization={customization}
+              fill={sidebar}
+            />
 
-            <div className="bg-black px-5 py-5">
-              <h1
-                className="font-bold leading-[1.1]"
-                style={{ fontSize: customization.fullNameSize, color: nameColor }}
-              >
-                {personal.fullName}
-              </h1>
-              {personal.jobTitle && (
-                <p
-                  className="mt-2 uppercase tracking-[0.22em] text-white/90"
-                  style={{ fontSize: customization.titleSize, color: titleColor }}
+            <div className="flex flex-1 flex-col gap-6 overflow-hidden px-6 py-6">
+              <div>
+                <h1
+                  className="font-semibold leading-[1.15] tracking-tight"
+                  style={{ fontSize: customization.fullNameSize, color: nameColor }}
                 >
-                  {personal.jobTitle}
-                </p>
-              )}
-            </div>
+                  {personal.fullName}
+                </h1>
+                {personal.jobTitle && (
+                  <p
+                    className="mt-1.5 font-medium"
+                    style={{ fontSize: customization.titleSize, color: titleColor }}
+                  >
+                    {personal.jobTitle}
+                  </p>
+                )}
+                <div className="mt-3 h-px w-10 bg-white/40" />
+              </div>
 
-            <div className="flex flex-1 flex-col gap-6 overflow-hidden px-5 py-6">
+              {contacts.length > 0 && (
+                <section>
+                  <h2
+                    className="mb-2.5 font-bold"
+                    style={{
+                      fontSize: customization.headingsSize,
+                      color: "#fff",
+                      ...headingCapStyle(customization),
+                    }}
+                  >
+                    Contact
+                  </h2>
+                  <div className="space-y-2 text-[0.8em] text-white/90">
+                    {contacts.map((c, contactIdx) => (
+                      <p
+                        key={listKey(c.id, contactIdx, "contact")}
+                        className="flex gap-2"
+                      >
+                        {c.kind === "phone" ? (
+                          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                        ) : c.kind === "email" ? (
+                          <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                        ) : c.kind === "location" ? (
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                        ) : (
+                          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                        )}
+                        <span className="break-all">
+                          <ContactLink item={c} />
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {skills.length > 0 && (
                 <section>
                   <h2
-                    className="mb-3 font-bold"
+                    className="mb-2.5 font-bold"
                     style={{
                       fontSize: customization.headingsSize,
+                      color: "#fff",
                       ...headingCapStyle(customization),
                     }}
                   >
@@ -109,22 +146,24 @@ export default function DesignerBlockLayout({
                     skills={skills}
                     customization={customization}
                     light
-                    fill={accent}
+                    fill="#fff"
                   />
                 </section>
               )}
+
               {languages.length > 0 && (
                 <section>
                   <h2
-                    className="mb-3 font-bold"
+                    className="mb-2.5 font-bold"
                     style={{
                       fontSize: customization.headingsSize,
+                      color: "#fff",
                       ...headingCapStyle(customization),
                     }}
                   >
                     Languages
                   </h2>
-                  <ul className="space-y-1.5 text-[0.9em] text-white/95">
+                  <ul className="space-y-1.5 text-[0.85em] text-white/90">
                     {languages.map((l, langIdx) => (
                       <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
                     ))}
@@ -136,188 +175,91 @@ export default function DesignerBlockLayout({
         )}
       </aside>
 
-      {/* RIGHT COLUMN - page 1 top sections, then experience pushed across pages */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {(hasText(personal.summary) || education.length > 0) && (
-          <div className="shrink-0 space-y-5 bg-white px-6 py-6">
-            {hasText(personal.summary) && (
-              <section>
-                <h2
-                  className="mb-2 font-bold"
-                  style={{
-                    fontSize: customization.headingsSize,
-                    ...headingCapStyle(customization),
-                  }}
-                >
-                  Profile
-                </h2>
-                <RichHtml
-                  html={personal.summary}
-                  className="rte-content text-[0.9em] leading-relaxed"
-                  style={{ color: ink }}
-                />
-              </section>
-            )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white px-8 py-8">
+        {hasText(personal.summary) && (
+          <section className="mb-5">
+            <AtsHeading
+              title="Professional Summary"
+              color={sidebar}
+              size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
+              customization={customization}
+            />
+            <RichHtml
+              html={personal.summary}
+              className="rte-content text-[0.9em] leading-relaxed"
+              style={{ color: ink }}
+            />
+          </section>
+        )}
 
-            {education.length > 0 && (
-              <section className="flex gap-3">
-                <VerticalLabel label="Education" color={ink} customization={customization} />
-                <div className="min-w-0 flex-1 space-y-3.5 pt-0.5">
-                  {education.map((edu, eduIdx) => (
-                    <div key={listKey(edu.id, eduIdx, "edu")} className="text-[0.88em]">
-                      <p className="font-semibold">
-                        {dateRange(edu, dateFmt)}
-                        {(edu.degree || edu.field) &&
-                          ` | ${[edu.degree, edu.field].filter(Boolean).join(" ")}`}
-                      </p>
-                      {edu.school && (
-                        <p className="mt-0.5 opacity-75">{edu.school}</p>
-                      )}
-                      {edu.gpa && (
-                        <p className="mt-0.5 opacity-70">GPA: {edu.gpa}</p>
-                      )}
-                      <RichHtml
-                        html={edu.description}
-                        className="rte-content mt-1 opacity-90"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+        {education.length > 0 && (
+          <section className="mb-5">
+            <AtsHeading
+              title="Education"
+              color={sidebar}
+              size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
+              customization={customization}
+            />
+            <div className="space-y-3">
+              {education.map((edu, eduIdx) => (
+                <EducationBlock
+                  key={listKey(edu.id, eduIdx, "edu")}
+                  edu={edu}
+                  muted={muted}
+                  ink={ink}
+                  dateFmt={dateFmt}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {jobs.length > 0 && (
-          <div
-            className="flex shrink-0 gap-3 px-6 py-5"
-            style={{ backgroundColor: "#E6E6E6" }}
-          >
-            <VerticalLabel label="Experience" color={ink} withRule customization={customization} />
-            <div className="min-w-0 flex-1 space-y-4">
-              {jobs.map((job, idx) => (
-                <div key={`${job.id}-${idx}-${job.jobTitle}`} className="text-[0.88em]">
-                  <p className="font-bold">
-                    {[dateRange(job, dateFmt), job.jobTitle]
-                      .filter(Boolean)
-                      .join(" | ")}
-                  </p>
-                  <RichHtml
-                    html={job.description}
-                    className="rte-content mt-1 leading-relaxed opacity-90"
-                  />
-                  {job.company && (
-                    <p className="mt-1 font-medium opacity-70">{job.company}</p>
-                  )}
-                  {job.location && (
-                    <p className="mt-0.5 opacity-60">{job.location}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {showRefs && (
-          <div className="shrink-0 bg-white px-6 py-4">
-            <h2
-              className="mb-3 font-bold"
-              style={{
-                fontSize: customization.headingsSize,
-                ...headingCapStyle(customization),
-              }}
-            >
-              References
-            </h2>
-            <ReferencesBlock
-              references={references}
-              includeReferences={includeReferences}
-              muted="#64748B"
+          <section className="mb-5">
+            <AtsHeading
+              title="Work Experience"
+              color={sidebar}
+              size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
+              customization={customization}
             />
-          </div>
-        )}
-
-        {showContact && (
-          <div
-            className="shrink-0 px-6 py-4 text-white"
-            style={{ backgroundColor: accent }}
-          >
-            <h2
-              className="mb-3 font-bold"
-              style={{
-                fontSize: customization.headingsSize,
-                ...headingCapStyle(customization),
-              }}
-            >
-              Contact
-            </h2>
-            <div className="grid gap-2.5 text-[0.86em]">
-              {contacts.map((c, contactIdx) => (
-                <ContactRow
-                  key={listKey(c.id, contactIdx, "contact")}
-                  icon={
-                    c.kind === "phone"
-                      ? Phone
-                      : c.kind === "email"
-                        ? Mail
-                        : c.kind === "location"
-                          ? MapPin
-                          : Globe
-                  }
-                  text={c.text}
+            <div className="space-y-4">
+              {jobs.map((job, jobIdx) => (
+                <JobBlock
+                  key={listKey(job.id, jobIdx, "job")}
+                  job={job}
+                  ink={ink}
+                  muted={muted}
+                  dateFmt={dateFmt}
                 />
               ))}
             </div>
-          </div>
+          </section>
+        )}
+
+        {showRefs && (
+          <section>
+            <AtsHeading
+              title="References"
+              color={sidebar}
+              size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
+              customization={customization}
+            />
+            <ReferencesBlock
+              references={references}
+              includeReferences={includeReferences}
+              muted={muted}
+            />
+          </section>
         )}
       </div>
-    </div>
-  );
-}
-
-function VerticalLabel({
-  label,
-  color,
-  withRule = false,
-  customization,
-}: {
-  label: string;
-  color: string;
-  withRule?: boolean;
-  customization: Customization;
-}) {
-  return (
-    <div className="flex shrink-0 items-stretch gap-2.5">
-      <div
-        className="flex items-center justify-center font-bold"
-        style={{
-          writingMode: "vertical-rl",
-          transform: "rotate(180deg)",
-          fontSize: 11,
-          color,
-          ...headingCapStyle(customization),
-        }}
-      >
-        {label}
-      </div>
-      {withRule && <div className="w-px self-stretch bg-black/80" />}
-    </div>
-  );
-}
-
-function ContactRow({
-  icon: Icon,
-  text,
-}: {
-  icon: typeof Phone;
-  text: string;
-}) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-black">
-        <Icon className="h-3 w-3" strokeWidth={2.25} />
-      </span>
-      <span className="break-all">{text}</span>
     </div>
   );
 }

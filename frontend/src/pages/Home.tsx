@@ -14,7 +14,7 @@ import {
   markAppEntered,
 } from "../lib/session";
 import ScaledResumePreview from "../components/resume/ScaledResumePreview";
-import { DEMO_RESUME } from "../data/demoResume";
+import { demoResumeForPreset } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -34,7 +34,7 @@ const HERO_TEMPLATES = HERO_TEMPLATE_IDS.map((id) =>
 ).filter((p): p is TemplatePreset => !!p);
 const HERO_CARDS = HERO_TEMPLATES.map((preset) => ({
   preset,
-  resume: { ...DEMO_RESUME, customization: preset.customization },
+  resume: demoResumeForPreset(preset.customization),
 }));
 
 export default function Home() {

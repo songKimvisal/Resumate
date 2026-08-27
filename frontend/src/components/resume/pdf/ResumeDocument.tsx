@@ -25,9 +25,10 @@ import {
   type PersonalInfo,
   type Resume,
 } from "../../../types/resume";
-import { idealTextColor } from "../../../lib/color";
+import { idealTextColor, contrastOn } from "../../../lib/color";
 import { richTextToPdf, hasVisibleText } from "../../../lib/richTextToPdf";
 import { pdfFontFamily, pdfFontVariants } from "../../../lib/fonts";
+import { hrefFromUrl, linkDisplayLabel, looksLikeUrl } from "../../../lib/contactLinks";
 import { marginPercentPdf } from "../../../lib/pageSize";
 import {
   orderedMainGroups,
@@ -418,30 +419,35 @@ function buildContactItems(personal: PersonalInfo): ContactItem[] {
   const pushHeader = (key: string, icon: IconKey, text: string) => {
     if (text) items.push({ key, icon, text, isHeader: true });
   };
-  const pushLinks = (icon: IconKey, entries: LinkItem[]) => {
+  const pushLinks = (icon: IconKey, entries: LinkItem[], field: string) => {
     entries.forEach((entry) => {
-      if (entry.title.trim()) {
-        items.push({
-          key: entry.id,
-          icon,
-          text: entry.title,
-          url: entry.url || undefined,
-          isHeader: false,
-        });
-      }
+      const url = (entry.url || "").trim();
+      const title = (entry.title || "").trim();
+      if (!url && !title) return;
+      items.push({
+        key: entry.id,
+        icon,
+        text: linkDisplayLabel(entry, field),
+        url: url
+          ? hrefFromUrl(url)
+          : looksLikeUrl(title)
+            ? hrefFromUrl(title)
+            : undefined,
+        isHeader: false,
+      });
     });
   };
   pushHeader("phone", "phone", personal.phone);
   pushHeader("email", "mail", personal.email);
   pushHeader("location", "pin", personal.location);
   pushHeader("nationality", "flag", personal.nationality);
-  pushLinks("briefcase", personal.portfolio);
-  pushLinks("globe", personal.website);
-  pushLinks("linkedin", personal.linkedin);
-  pushLinks("github", personal.github);
-  pushLinks("gitlab", personal.gitlab);
-  pushLinks("stackoverflow", personal.stackoverflow);
-  pushLinks("send", personal.telegram);
+  pushLinks("briefcase", personal.portfolio, "portfolio");
+  pushLinks("globe", personal.website, "website");
+  pushLinks("linkedin", personal.linkedin, "linkedin");
+  pushLinks("github", personal.github, "github");
+  pushLinks("gitlab", personal.gitlab, "gitlab");
+  pushLinks("stackoverflow", personal.stackoverflow, "stackoverflow");
+  pushLinks("send", personal.telegram, "telegram");
   pushHeader("passport", "id", personal.passportId);
   return items;
 }
@@ -610,16 +616,26 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     ? idealTextColor(c.sidebarBgColor)
     : bodyTextColorEff;
   const sidebarHeadingsInk = c.sidebarBgColor
-    ? c.toggles.headings
-      ? accentText
-      : sidebarInk
+    ? contrastOn(
+        c.sidebarBgColor,
+        c.toggles.headings ? accentText : null,
+      )
     : headingsInk;
 
   const headerTextColor =
     headerInSidebar && c.sidebarBgColor ? sidebarInk : c.bodyTextColor;
   const pageBackgroundColor = c.bodyBgColor;
-  const fullNameAccent = c.toggles.fullName ? accentText : headerTextColor;
-  const jobTitleAccent = c.toggles.jobTitle ? accentText : headerTextColor;
+  const nameOn = headerInSidebar && c.sidebarBgColor
+    ? c.sidebarBgColor
+    : pageBackgroundColor;
+  const fullNameAccent = contrastOn(
+    nameOn,
+    c.toggles.fullName ? accentText : headerTextColor,
+  );
+  const jobTitleAccent = contrastOn(
+    nameOn,
+    c.toggles.jobTitle ? accentText : headerTextColor,
+  );
 
   const isFilled = c.headingBorder === "filled";
   const isOutline = c.headingBorder === "outline";
@@ -744,7 +760,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       paddingBottom: isOutline || isFilled ? 0 : 3,
       marginBottom: 6,
       alignSelf: "flex-start",
-      color: isFilled ? "#ffffff" : headingsInk,
+      color: isFilled ? idealTextColor(headingsFill) : headingsInk,
       backgroundColor: isFilled ? headingsFill : undefined,
       borderColor: headingsInk,
       borderBottomWidth:
@@ -913,7 +929,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
 
   const renderLevels = (
     items: { id: string; name: string; level: number }[],
-    labels: readonly string[],
+    _labels: readonly string[],
     inkOverride?: string,
   ) => {
     const ink = inkOverride ?? bodyTextColorEff;
@@ -949,7 +965,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         </View>
       );
     }
-    return c.toggles.dots ? (
+    return (
       <View>
         {items
           .filter((i) => i.name)
@@ -982,13 +998,6 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             </View>
           ))}
       </View>
-    ) : (
-      <Text style={{ fontSize: base * 0.85, color: ink }}>
-        {items
-          .map((i) => (i.name ? `${i.name} (${labels[i.level - 1]})` : ""))
-          .filter(Boolean)
-          .join("  ·  ")}
-      </Text>
     );
   };
 
@@ -1148,7 +1157,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   const twoColRows = Math.max(namedSkills.length, namedLangs.length);
   const renderPairedLevel = (
     item: { id: string; name: string; level: number } | undefined,
-    labels: readonly string[],
+    _labels: readonly string[],
   ) => {
     if (!item) return <View style={styles.col} />;
     if (c.skillsDisplay === "list") {
@@ -1173,45 +1182,36 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         </View>
       );
     }
-    if (c.toggles.dots) {
-      return (
-        <View
-          style={[
-            styles.col,
-            { flexDirection: "row", justifyContent: "space-between" },
-          ]}
-        >
-          <Text
-            style={{
-              flex: 1,
-              fontSize: base * 0.85,
-              color: bodyTextColorEff,
-              paddingRight: 6,
-            }}
-          >
-            {item.name}
-          </Text>
-          <View style={styles.dotRow} wrap={false}>
-            {Array.from({ length: 5 }).map((_, d) => (
-              <View
-                key={d}
-                style={[
-                  styles.dot,
-                  d < item.level
-                    ? { backgroundColor: accent }
-                    : { backgroundColor: bodyTextColorEff, opacity: 0.2 },
-                ]}
-              />
-            ))}
-          </View>
-        </View>
-      );
-    }
     return (
-      <View style={styles.col}>
-        <Text style={{ fontSize: base * 0.85, color: bodyTextColorEff }}>
-          {item.name} ({labels[item.level - 1]})
+      <View
+        style={[
+          styles.col,
+          { flexDirection: "row", justifyContent: "space-between" },
+        ]}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontSize: base * 0.85,
+            color: bodyTextColorEff,
+            paddingRight: 6,
+          }}
+        >
+          {item.name}
         </Text>
+        <View style={styles.dotRow} wrap={false}>
+          {Array.from({ length: 5 }).map((_, d) => (
+            <View
+              key={d}
+              style={[
+                styles.dot,
+                d < item.level
+                  ? { backgroundColor: accent }
+                  : { backgroundColor: bodyTextColorEff, opacity: 0.2 },
+              ]}
+            />
+          ))}
+        </View>
       </View>
     );
   };

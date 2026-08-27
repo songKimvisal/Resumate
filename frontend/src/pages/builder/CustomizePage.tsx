@@ -51,7 +51,7 @@ import {
 } from "../../components/resume/layouts/shared";
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import ResumePreview from "../../components/resume/ResumePreview";
-import { DEMO_RESUME } from "../../data/demoResume";
+import { demoResumeForPreset } from "../../data/demoResume";
 
 const ACCENT_COLORS = [
   "#C1121F",
@@ -444,10 +444,9 @@ export default function CustomizePage() {
   };
 
   if (isLocked && activeTemplatePreset) {
-    const lockedPreviewResume = {
-      ...DEMO_RESUME,
-      customization: activeTemplatePreset.customization,
-    };
+    const lockedPreviewResume = demoResumeForPreset(
+      activeTemplatePreset.customization,
+    );
     return (
       <div>
         <div>
@@ -993,7 +992,10 @@ export default function CustomizePage() {
                   label={t("builder.customizePage.layout.skillsMeter")}
                   selected={customization.skillsDisplay === "meter"}
                   onClick={() =>
-                    updateCustomization({ skillsDisplay: "meter" })
+                    updateCustomization({
+                      skillsDisplay: "meter",
+                      toggles: { ...customization.toggles, dots: true },
+                    })
                   }
                 />
                 <OptionCard
@@ -1317,7 +1319,6 @@ export default function CustomizePage() {
               onUpgrade={openUpgrade}
             >
             <div className="space-y-6">
-            {!isSpecialLayout && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {HEADING_PRESETS.map((preset, i) => (
                 <button
@@ -1342,7 +1343,6 @@ export default function CustomizePage() {
                 </button>
               ))}
             </div>
-            )}
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -1367,7 +1367,6 @@ export default function CustomizePage() {
             </div>
 
             {!isSpecialLayout && (
-            <>
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.sectionIcon")}
@@ -1385,6 +1384,7 @@ export default function CustomizePage() {
                 ))}
               </div>
             </div>
+            )}
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -1435,8 +1435,6 @@ export default function CustomizePage() {
                 ))}
               </div>
             </div>
-            </>
-            )}
 
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
@@ -1490,8 +1488,6 @@ export default function CustomizePage() {
                   step={0.05}
                   onChange={(v) => updateCustomization({ lineHeight: v })}
                 />
-                {!isSpecialLayout && (
-                <>
                 <SliderRow
                   label={t("builder.customizePage.spacing.elementSpacing")}
                   value={customization.elementSpacing}
@@ -1500,6 +1496,8 @@ export default function CustomizePage() {
                   max={30}
                   onChange={(v) => updateCustomization({ elementSpacing: v })}
                 />
+                {!isSpecialLayout && (
+                <>
                 <SliderRow
                   label={t("builder.customizePage.spacing.topBottomMargin")}
                   value={customization.topBottomMargin}
@@ -1518,6 +1516,8 @@ export default function CustomizePage() {
                   step={1}
                   onChange={(v) => updateCustomization({ leftRightMargin: v })}
                 />
+                </>
+                )}
                 <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3">
                   <p className="min-w-0 truncate text-sm font-medium text-text">
                     {t("builder.customizePage.spacing.pageBorder")}
@@ -1543,8 +1543,6 @@ export default function CustomizePage() {
                       updateCustomization({ pageBorderWidth: v })
                     }
                   />
-                )}
-                </>
                 )}
               </div>
             </PremiumGate>
@@ -1966,7 +1964,7 @@ function TemplateSwitchThumb({
   const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
   const isPremiumLocked = preset.tier === "premium" && !hasAccess;
   const resume = useMemo(
-    () => ({ ...DEMO_RESUME, customization: preset.customization }),
+    () => demoResumeForPreset(preset.customization),
     [preset],
   );
 

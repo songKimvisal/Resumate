@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Globe, User, Briefcase } from "lucide-react";
+import { Phone, Mail, MapPin, Globe } from "lucide-react";
 import {
   PhotoBox,
   RichHtml,
@@ -6,9 +6,12 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   LanguagesBlock,
   ReferencesBlock,
   SkillsList,
+  AtsHeading,
+  JobBlock,
   ATS,
   headingCapStyle,
   type LayoutProps,
@@ -16,10 +19,10 @@ import {
   listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { contrastOn } from "../../../lib/color";
 
 /**
- * Dani Schwaiger–style layout:
- * left navy name band + icon timeline; right navy sidebar with circle photo.
+ * Designer sidebar: navy name band + white body, photo in the right rail.
  */
 export default function TechSplitLayout({
   resume,
@@ -39,17 +42,23 @@ export default function TechSplitLayout({
     includeReferences,
     customization,
   } = resume;
-  const navy = customization.sidebarBgColor || "#3C4452";
+  const navy = customization.sidebarBgColor || ATS.navy;
   const accent = customization.accentColor || ATS.navy;
-  const ink = customization.bodyTextColor || "#3C4452";
-  const muted = "#6B7280";
+  const ink = customization.bodyTextColor || ATS.ink;
+  const muted = ATS.muted;
   const contacts = personalContactLines(personal);
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
-  const dateFmt = customization.dateFormat || "yearOnly";
+  const dateFmt = customization.dateFormat || "monthYear";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    navy,
+    customization.toggles.fullName ? accent : null,
+  );
+  const titleColor = contrastOn(
+    navy,
+    customization.toggles.jobTitle ? accent : null,
+  );
 
   return (
     <div
@@ -58,16 +67,16 @@ export default function TechSplitLayout({
     >
       <main className="flex min-w-0 flex-1 flex-col">
         {isFirstPage && (
-          <header className="px-7 py-5 text-white" style={{ backgroundColor: navy }}>
+          <header className="px-8 py-6" style={{ backgroundColor: navy, color: nameColor }}>
             <h1
-              className="font-bold uppercase tracking-wide"
+              className="font-semibold tracking-tight"
               style={{ fontSize: customization.fullNameSize, color: nameColor }}
             >
               {personal.fullName}
             </h1>
             {personal.jobTitle && (
               <p
-                className="mt-1.5 uppercase tracking-[0.28em] text-white/90"
+                className="mt-1.5 font-medium"
                 style={{ fontSize: customization.titleSize, color: titleColor }}
               >
                 {personal.jobTitle}
@@ -76,109 +85,99 @@ export default function TechSplitLayout({
           </header>
         )}
 
-        <div className="relative flex-1 space-y-1 overflow-hidden px-7 py-6">
-          <div
-            className="absolute bottom-8 left-[2.35rem] top-8 w-px"
-            style={{ backgroundColor: accent }}
-          />
-
+        <div className="flex-1 space-y-5 overflow-hidden px-8 py-7">
           {hasText(personal.summary) && (
-            <IconSection
-              icon={User}
-              title="Profile"
-              ink={navy}
-              accent={accent}
-              size={customization.headingsSize}
-              customization={customization}
-            >
+            <section>
+              <AtsHeading
+                title="Professional Summary"
+                color={navy}
+                size={customization.headingsSize}
+                ruleWidth="full"
+                ruleColor={ATS.line}
+                customization={customization}
+              />
               <RichHtml
                 html={personal.summary}
                 className="rte-content text-[0.9em] leading-relaxed"
-                style={{ color: muted }}
+                style={{ color: ink }}
               />
-            </IconSection>
+            </section>
           )}
 
           {jobs.length > 0 && (
-            <IconSection
-              icon={Briefcase}
-              title="Experience"
-              ink={navy}
-              accent={accent}
-              size={customization.headingsSize}
-              customization={customization}
-            >
+            <section>
+              <AtsHeading
+                title="Work Experience"
+                color={navy}
+                size={customization.headingsSize}
+                ruleWidth="full"
+                ruleColor={ATS.line}
+                customization={customization}
+              />
               <div className="space-y-4">
                 {jobs.map((job, jobIdx) => (
-                  <div key={listKey(job.id, jobIdx, "job")} className="text-[0.88em]">
-                    <p className="font-bold uppercase tracking-wide">
-                      {job.jobTitle}
-                    </p>
-                    <p style={{ color: muted }}>
-                      {[job.company, job.location, dateRange(job, dateFmt)]
-                        .filter(Boolean)
-                        .join("  ")}
-                    </p>
-                    <RichHtml
-                      html={job.description}
-                      className="rte-content mt-1.5 leading-relaxed"
-                      style={{ color: muted }}
-                    />
-                  </div>
+                  <JobBlock
+                    key={listKey(job.id, jobIdx, "job")}
+                    job={job}
+                    ink={ink}
+                    muted={muted}
+                    dateFmt={dateFmt}
+                  />
                 ))}
               </div>
-            </IconSection>
+            </section>
           )}
 
           {showRefs && (
-            <IconSection
-              icon={User}
-              title="References"
-              ink={navy}
-              accent={accent}
-              size={customization.headingsSize}
-              customization={customization}
-            >
+            <section>
+              <AtsHeading
+                title="References"
+                color={navy}
+                size={customization.headingsSize}
+                ruleWidth="full"
+                ruleColor={ATS.line}
+                customization={customization}
+              />
               <ReferencesBlock
                 references={references}
                 includeReferences={includeReferences}
                 muted={muted}
               />
-            </IconSection>
+            </section>
           )}
         </div>
       </main>
 
       <aside
-        className="flex h-full w-[34%] shrink-0 flex-col gap-5 overflow-hidden px-5 py-6 text-white"
+        className="flex h-full w-[34%] shrink-0 flex-col gap-6 overflow-hidden px-6 py-7 text-white"
         style={{ backgroundColor: navy }}
       >
         {isFirstPage && (
           <>
             <div className="flex justify-center pt-1">
-              <PhotoBox
-                personal={personal}
-                customization={customization}
-                borderColor="#fff"
-              />
+              <PhotoBox personal={personal} customization={customization} />
             </div>
 
             {contacts.length > 0 && (
-              <div className="space-y-2.5 text-[0.82em]">
+              <div className="space-y-2 text-[0.82em] text-white/90">
                 {contacts.map((c, contactIdx) => (
-                  <SideContact
+                  <p
                     key={listKey(c.id, contactIdx, "contact")}
-                    icon={
-                      c.kind === "phone"
-                        ? Phone
-                        : c.kind === "email"
-                          ? Mail
-                          : c.kind === "location"
-                            ? MapPin
-                            : Globe
-                    }
-                    text={c.text}
-                  />
+                    className="flex gap-2"
+                  >
+                    {c.kind === "phone" ? (
+                      <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                    ) : c.kind === "email" ? (
+                      <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                    ) : c.kind === "location" ? (
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                    ) : (
+                      <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                    )}
+                    <span className="break-all leading-snug">
+                      <ContactLink item={c} />
+                    </span>
+                  </p>
                 ))}
               </div>
             )}
@@ -191,6 +190,7 @@ export default function TechSplitLayout({
                     skills={skills}
                     customization={customization}
                     light
+                    fill="#fff"
                   />
                 </div>
               </section>
@@ -200,7 +200,7 @@ export default function TechSplitLayout({
               <section>
                 <SideHeading title="Languages" size={customization.headingsSize} customization={customization} />
                 <div className="mt-2.5 text-white/90">
-                  <LanguagesBlock languages={languages} light showLevel />
+                  <LanguagesBlock languages={languages} light showLevel={false} />
                 </div>
               </section>
             )}
@@ -213,7 +213,7 @@ export default function TechSplitLayout({
             <div className="mt-2.5 space-y-3 text-[0.85em]">
               {education.map((edu, eduIdx) => (
                 <div key={listKey(edu.id, eduIdx, "edu")}>
-                  <p className="font-bold uppercase tracking-wide">
+                  <p className="font-semibold">
                     {edu.degree || edu.field || edu.school}
                   </p>
                   <p className="opacity-90">
@@ -222,56 +222,19 @@ export default function TechSplitLayout({
                       .join(" · ")}
                   </p>
                   {edu.gpa && <p className="opacity-80">GPA: {edu.gpa}</p>}
+                  {hasText(edu.description) && (
+                    <RichHtml
+                      html={edu.description}
+                      className="rte-content rte-on-dark mt-1 text-[0.95em] leading-relaxed"
+                      style={{ color: ATS.onDark }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           </section>
         )}
       </aside>
-    </div>
-  );
-}
-
-function IconSection({
-  icon: Icon,
-  title,
-  ink,
-  accent,
-  size,
-  customization,
-  children,
-}: {
-  icon: typeof User;
-  title: string;
-  ink: string;
-  accent: string;
-  size: number;
-  customization: Customization;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="relative flex gap-3 pb-5">
-      <div className="relative z-10 flex w-7 shrink-0 flex-col items-center">
-        <span
-          className="flex h-7 w-7 items-center justify-center rounded-full text-white"
-          style={{ backgroundColor: accent }}
-        >
-          <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
-        </span>
-      </div>
-      <div className="min-w-0 flex-1 pt-0.5">
-        <h2
-          className="mb-2 font-bold"
-          style={{
-            fontSize: size,
-            color: ink,
-            ...headingCapStyle(customization),
-          }}
-        >
-          {title}
-        </h2>
-        {children}
-      </div>
     </div>
   );
 }
@@ -296,24 +259,7 @@ function SideHeading({
       >
         {title}
       </h2>
-      <div className="mt-1.5 h-px w-full bg-white/75" />
-    </div>
-  );
-}
-
-function SideContact({
-  icon: Icon,
-  text,
-}: {
-  icon: typeof Phone;
-  text: string;
-}) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15">
-        <Icon className="h-3 w-3" strokeWidth={2.2} />
-      </span>
-      <span className="break-all leading-snug">{text}</span>
+      <div className="mt-1.5 h-px w-full bg-white/30" />
     </div>
   );
 }

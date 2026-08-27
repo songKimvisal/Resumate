@@ -9,6 +9,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   SkillsList,
   ATS,
   type LayoutProps,
@@ -55,20 +56,21 @@ export default function BankingCleanLayout({
 
       <div className="flex flex-1 flex-col px-8 pb-5 pt-9">
         {isFirstPage && (
-          <header className="mb-6 flex items-start gap-5 border-b pb-5" style={{ borderColor: ATS.line }}>
-            <PhotoBox personal={personal} customization={customization} />
+          <header className="mb-7 flex items-start gap-5 border-b pb-6" style={{ borderColor: ATS.line }}>
+            <PhotoBox personal={personal} customization={customization} border borderColor={accent} />
             <div className="min-w-0 flex-1">
               <h1
-                className="font-semibold uppercase tracking-[0.06em]"
+                className="font-semibold uppercase tracking-[0.14em]"
                 style={{ fontSize: customization.fullNameSize }}
               >
                 {personal.fullName}
               </h1>
               {personal.jobTitle && (
-                <p className="mt-1 font-medium" style={{ fontSize: customization.titleSize, color: accent }}>
+                <p className="mt-1.5 font-medium tracking-wide" style={{ fontSize: customization.titleSize, color: accent }}>
                   {personal.jobTitle}
                 </p>
               )}
+              <div className="mt-2 h-[2px] w-10 rounded-full" style={{ backgroundColor: accent }} />
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[0.82em]" style={{ color: muted }}>
                 {contacts.map((c, contactIdx) => (
                   <span key={listKey(c.id, contactIdx, "contact")} className="inline-flex items-center gap-1.5">
@@ -81,7 +83,7 @@ export default function BankingCleanLayout({
                     ) : (
                       <Globe className="h-3.5 w-3.5" />
                     )}
-                    {c.text}
+                    <ContactLink item={c} />
                   </span>
                 ))}
               </div>
@@ -93,11 +95,11 @@ export default function BankingCleanLayout({
           <div className="w-[34%] shrink-0 space-y-5">
             {hasText(personal.summary) && (
               <section>
-                <AtsHeading title="Summary" size={customization.headingsSize} ruleColor={accent} customization={customization} />
+                <AtsHeading title="Professional Summary" size={customization.headingsSize} ruleColor={accent} customization={customization} />
                 <RichHtml
                   html={personal.summary}
                   className="rte-content text-[0.88em] leading-relaxed text-justify"
-                  style={{ color: muted }}
+                  style={{ color: ink }}
                 />
               </section>
             )}
@@ -113,6 +115,13 @@ export default function BankingCleanLayout({
                       <p style={{ color: muted }}>{edu.school}</p>
                       <p className="tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                       {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                      {hasText(edu.description) && (
+                        <RichHtml
+                          html={edu.description}
+                          className="rte-content mt-1 leading-relaxed"
+                          style={{ color: ink }}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

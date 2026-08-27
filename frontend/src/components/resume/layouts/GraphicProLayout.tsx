@@ -6,16 +6,19 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   ReferencesBlock,
   EducationBlock,
+  SkillsList,
   ATS,
   type LayoutProps,
   layoutShellStyle,
   listKey,
+  FullBleedPhoto,
 } from "./shared";
-import { photoImgStyle } from "../../../lib/photoFit";
+import { contrastOn } from "../../../lib/color";
 
-/** Graphic/pro sidebar - meters kept subtle; ATS text hierarchy first. */
+/** Graphic/pro sidebar — navy rail, white body, list skills. */
 export default function GraphicProLayout({
   resume,
   pageWidthPx,
@@ -44,8 +47,14 @@ export default function GraphicProLayout({
   const nameParts = (personal.fullName || "").trim().split(/\s+/);
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
-  const nameColor = customization.toggles.fullName ? accent : undefined;
-  const titleColor = customization.toggles.jobTitle ? accent : undefined;
+  const nameColor = contrastOn(
+    sidebar,
+    customization.toggles.fullName ? accent : null,
+  );
+  const titleColor = contrastOn(
+    sidebar,
+    customization.toggles.jobTitle ? accent : null,
+  );
 
   return (
     <div
@@ -58,28 +67,18 @@ export default function GraphicProLayout({
       >
         {isFirstPage && (
           <>
-            <div
-              className="w-full shrink-0 overflow-hidden"
-              style={{ aspectRatio: "1 / 1" }}
-            >
-              {customization.showPhoto && personal.photoUrl ? (
-                <img
-                  src={personal.photoUrl}
-                  className="h-full w-full object-cover"
-                  alt={personal.fullName || "Profile"}
-                  style={photoImgStyle(personal)}
-                />
-              ) : (
-                <div className="h-full w-full bg-slate-600" />
-              )}
-            </div>
+            <FullBleedPhoto
+              personal={personal}
+              customization={customization}
+              fill={sidebar}
+            />
 
-            <div className="flex flex-1 flex-col gap-5 overflow-hidden px-5 py-5">
+            <div className="flex flex-1 flex-col gap-6 overflow-hidden px-6 py-6">
               <div>
                 <h1
-                  className="font-bold leading-tight"
+                  className="font-semibold leading-[1.15] tracking-tight"
                   style={{
-                    fontSize: customization.fullNameSize * 0.82,
+                    fontSize: customization.fullNameSize * 0.86,
                     color: nameColor,
                   }}
                 >
@@ -91,7 +90,7 @@ export default function GraphicProLayout({
                 </h1>
                 {personal.jobTitle && (
                   <p
-                    className="mt-2 uppercase tracking-[0.14em] text-white/85"
+                    className="mt-1.5 font-medium"
                     style={{
                       fontSize: customization.titleSize,
                       color: titleColor,
@@ -100,7 +99,7 @@ export default function GraphicProLayout({
                     {personal.jobTitle}
                   </p>
                 )}
-                <div className="mt-3 h-px w-12 bg-white/70" />
+                <div className="mt-3 h-px w-10 bg-white/40" />
               </div>
 
               {contacts.length > 0 && (
@@ -112,19 +111,21 @@ export default function GraphicProLayout({
                     ruleColor="rgba(255,255,255,0.35)"
                     customization={customization}
                   />
-                  <div className="space-y-2.5 text-[0.8em] text-white/90">
+                  <div className="space-y-2 text-[0.8em] text-white/90">
                     {contacts.map((c, contactIdx) => (
                       <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
                         {c.kind === "phone" ? (
-                          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                         ) : c.kind === "email" ? (
-                          <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                         ) : c.kind === "location" ? (
-                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                         ) : (
-                          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                         )}
-                        <span className="break-all">{c.text}</span>
+                        <span className="break-all">
+                          <ContactLink item={c} />
+                        </span>
                       </p>
                     ))}
                   </div>
@@ -140,16 +141,9 @@ export default function GraphicProLayout({
                     ruleColor="rgba(255,255,255,0.35)"
                     customization={customization}
                   />
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 text-[0.8em] text-white/90">
                     {languages.map((l, langIdx) => (
-                      <Meter
-                        key={listKey(l.id, langIdx, "lang")}
-                        label={l.name}
-                        level={l.level}
-                        fill="#94A3B8"
-                        track="#0B1A2A"
-                        light
-                      />
+                      <p key={listKey(l.id, langIdx, "lang")}>{l.name}</p>
                     ))}
                   </div>
                 </section>
@@ -159,18 +153,21 @@ export default function GraphicProLayout({
         )}
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-7 py-7">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-8 py-8">
         {hasText(personal.summary) && (
           <section className="mb-5">
             <AtsHeading
               title="Professional Summary"
+              color={sidebar}
               size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
               customization={customization}
             />
             <RichHtml
               html={personal.summary}
               className="rte-content mt-1 text-[0.9em] leading-relaxed"
-              style={{ color: muted }}
+              style={{ color: ink }}
             />
           </section>
         )}
@@ -179,7 +176,10 @@ export default function GraphicProLayout({
           <section className="mb-5">
             <AtsHeading
               title="Work Experience"
+              color={sidebar}
               size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
               customization={customization}
             />
             <div className="mt-1 space-y-4">
@@ -200,7 +200,10 @@ export default function GraphicProLayout({
           <section className="mb-5">
             <AtsHeading
               title="Education"
+              color={sidebar}
               size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
               customization={customization}
             />
             <div className="space-y-3">
@@ -209,6 +212,7 @@ export default function GraphicProLayout({
                   key={listKey(edu.id, eduIdx, "edu")}
                   edu={edu}
                   muted={muted}
+                  ink={ink}
                   dateFmt={dateFmt}
                 />
               ))}
@@ -220,29 +224,20 @@ export default function GraphicProLayout({
           <section className="mb-5">
             <AtsHeading
               title="Skills"
+              color={sidebar}
               size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
               customization={customization}
             />
-            {customization.skillsDisplay === "list" ||
-            !customization.toggles.dots ? (
-              <ul className="mt-2 space-y-1 text-[0.88em]" style={{ color: muted }}>
-                {skills.map((s, skillIdx) => (
-                  <li key={listKey(s.id, skillIdx, "skill")}>{s.name}</li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2.5">
-                {skills.map((s, skillIdx) => (
-                  <Meter
-                    key={listKey(s.id, skillIdx, "skill")}
-                    label={s.name}
-                    level={s.level}
-                    fill={accent}
-                    track="#E2E8F0"
-                  />
-                ))}
-              </div>
-            )}
+            <div className="mt-2">
+              <SkillsList
+                skills={skills}
+                customization={customization}
+                muted={ink}
+                fill={sidebar}
+              />
+            </div>
           </section>
         )}
 
@@ -250,7 +245,10 @@ export default function GraphicProLayout({
           <section>
             <AtsHeading
               title="References"
+              color={sidebar}
               size={customization.headingsSize}
+              ruleWidth="full"
+              ruleColor={ATS.line}
               customization={customization}
             />
             <ReferencesBlock
@@ -261,35 +259,6 @@ export default function GraphicProLayout({
           </section>
         )}
       </main>
-    </div>
-  );
-}
-
-function Meter({
-  label,
-  level,
-  fill,
-  track,
-  light,
-}: {
-  label: string;
-  level: number;
-  fill: string;
-  track: string;
-  light?: boolean;
-}) {
-  const pct = Math.max(0, Math.min(5, level || 3)) * 20;
-  return (
-    <div className="text-[0.78em]">
-      <p className="mb-1" style={{ color: light ? "#fff" : undefined }}>
-        {label}
-      </p>
-      <div className="h-1.5 w-full rounded-sm" style={{ backgroundColor: track }}>
-        <div
-          className="h-full rounded-sm"
-          style={{ width: `${pct}%`, backgroundColor: fill }}
-        />
-      </div>
     </div>
   );
 }

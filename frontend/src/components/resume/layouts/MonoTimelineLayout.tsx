@@ -6,6 +6,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactInline,
   SkillsList,
   ATS,
   type LayoutProps,
@@ -51,9 +52,9 @@ export default function MonoTimelineLayout({
       <div className="absolute bottom-0 left-0 top-0 w-[5px]" style={{ backgroundColor: accent }} />
 
       {isFirstPage && (
-        <header className="mb-6 border-b pb-5" style={{ borderColor: ATS.line }}>
+        <header className="mb-7 border-b pb-6" style={{ borderColor: ATS.line }}>
           <h1
-            className="font-bold uppercase tracking-tight"
+            className="font-bold uppercase tracking-[0.12em]"
             style={{ fontSize: customization.fullNameSize }}
           >
             {personal.fullName}
@@ -66,26 +67,28 @@ export default function MonoTimelineLayout({
               {personal.jobTitle}
             </p>
           )}
-          <p className="mt-3 text-[0.85em]" style={{ color: muted }}>
-            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
-          </p>
+          <ContactInline
+            contacts={contacts}
+            className="mt-3 text-[0.85em]"
+            style={{ color: muted }}
+          />
         </header>
       )}
 
       {hasText(personal.summary) && (
         <section className="mb-5">
-          <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
+          <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} ruleColor={accent} customization={customization} />
           <RichHtml
             html={personal.summary}
             className="rte-content text-[0.92em] leading-relaxed"
-            style={{ color: muted }}
+            style={{ color: ink }}
           />
         </section>
       )}
 
       {jobs.length > 0 && (
         <section className="mb-5">
-          <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} ruleColor={ATS.line} customization={customization} />
+          <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} ruleColor={accent} customization={customization} />
           <div className="space-y-4">
             {jobs.map((job, jobIdx) => (
               <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
@@ -110,6 +113,13 @@ export default function MonoTimelineLayout({
                 </div>
                 <p style={{ color: muted }}>{edu.school}</p>
                 {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                {hasText(edu.description) && (
+                  <RichHtml
+                    html={edu.description}
+                    className="rte-content mt-1 leading-relaxed"
+                    style={{ color: ink }}
+                  />
+                )}
               </div>
             ))}
           </div>

@@ -57,7 +57,7 @@ export default function ScaledResumePreview({
             transform: `scale(${scale})`,
           }}
         >
-          <ResumePreview singlePage resume={resume} />
+          <ResumePreview singlePage lockNativeSize resume={resume} />
         </div>
       )}
     </div>

@@ -6,12 +6,14 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactInline,
   SkillsList,
   ATS,
   type LayoutProps,
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Tech classic - full-width top band, left skills rail, right experience (no photo). */
 export default function CompactTechLayout({
@@ -35,6 +37,7 @@ export default function CompactTechLayout({
   const accent = customization.accentColor || "#1D4ED8";
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
+  const headerInk = contrastOn(accent);
   const contacts = personalContactLines(personal);
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
@@ -46,18 +49,20 @@ export default function CompactTechLayout({
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
       {isFirstPage && (
-        <header className="px-8 py-6 text-white" style={{ backgroundColor: accent }}>
-          <h1 className="font-bold uppercase tracking-wide" style={{ fontSize: customization.fullNameSize }}>
+        <header className="px-9 py-7" style={{ backgroundColor: accent, color: headerInk }}>
+          <h1 className="font-bold uppercase tracking-[0.14em]" style={{ fontSize: customization.fullNameSize }}>
             {personal.fullName}
           </h1>
           {personal.jobTitle && (
-            <p className="mt-1 uppercase tracking-[0.18em] text-white/90" style={{ fontSize: customization.titleSize }}>
+            <p className="mt-2 uppercase tracking-[0.24em] opacity-90" style={{ fontSize: customization.titleSize }}>
               {personal.jobTitle}
             </p>
           )}
-          <p className="mt-3 text-[0.8em] text-white/85">
-            {contacts.map((c, contactIdx) => c.text).join("  ·  ")}
-          </p>
+          <div className="mt-4 h-[2px] w-10 rounded-full" style={{ backgroundColor: headerInk, opacity: 0.7 }} />
+          <ContactInline
+            contacts={contacts}
+            className="mt-3 text-[0.8em] opacity-85"
+          />
         </header>
       )}
 
@@ -94,6 +99,13 @@ export default function CompactTechLayout({
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                    {hasText(edu.description) && (
+                      <RichHtml
+                        html={edu.description}
+                        className="rte-content mt-1 leading-relaxed"
+                        style={{ color: ink }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

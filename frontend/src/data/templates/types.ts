@@ -26,6 +26,7 @@ export interface TemplatePreset {
   customization: Customization;
 }
 const BASE = emptyResume.customization;
+
 export function preset(
   id: string,
   styleKey: string,

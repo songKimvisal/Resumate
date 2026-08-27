@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { Maximize2, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
+import ResumePreview from "../../components/resume/ResumePreview";
 import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
-import { DEMO_RESUME } from "../../data/demoResume";
+import { demoResumeForPreset } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
 import {
   NeedTabs,
@@ -47,10 +47,7 @@ export default function UnlockTemplateModal({
   );
 
   const previewResume = useMemo(
-    () =>
-      preset
-        ? { ...DEMO_RESUME, customization: preset.customization }
-        : DEMO_RESUME,
+    () => (preset ? demoResumeForPreset(preset.customization) : null),
     [preset],
   );
 
@@ -106,21 +103,28 @@ export default function UnlockTemplateModal({
                     type="button"
                     onClick={() => setPreviewOpen(true)}
                     aria-label={t("marketplace.unlockModal.viewFull")}
-                    className="group w-44 sm:w-52 lg:w-full"
+                    className="group w-44 text-left sm:w-52 lg:w-full"
                   >
                     <span className="block rounded-2xl bg-surface-2 p-1 shadow-inner ring-1 ring-line">
                       <span className="relative block overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-black/5">
-                        <ScaledResumePreview
-                          resume={previewResume}
-                          className="rounded-none border-0 shadow-none"
-                        />
+                        {previewResume && (
+                          <ResumePreview
+                            singlePage
+                            resume={previewResume}
+                          />
+                        )}
                         <span className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full bg-black/55 text-white opacity-100 shadow-sm transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
                           <Maximize2 size={13} strokeWidth={2.5} />
                         </span>
                       </span>
                     </span>
-                    <span className="mt-2.5 block text-center text-xs font-medium text-text-secondary">
-                      {t(`marketplace.industries.${preset.industry}`)}
+                    <span className="mt-2.5 block text-center text-xs font-semibold text-text">
+                      {styleName}
+                    </span>
+                    <span className="mt-0.5 block text-center text-[11px] text-text-secondary">
+                      {t(
+                        `marketplace.aiResult.layout${preset.layout === "classic" ? "Classic" : "Sidebar"}`,
+                      )}
                     </span>
                     <span className="mt-0.5 block text-center text-[11px] text-text-secondary/80 lg:hidden">
                       {t("marketplace.unlockModal.viewFull")}
@@ -211,12 +215,14 @@ export default function UnlockTemplateModal({
           </div>
         </motion.div>
       )}
+      {previewResume && (
       <ResumePreviewOverlay
         resume={previewResume}
         open={open && previewOpen}
         onClose={() => setPreviewOpen(false)}
         closeLabel={t("marketplace.unlockModal.cancel")}
       />
+      )}
     </AnimatePresence>
   );
 }

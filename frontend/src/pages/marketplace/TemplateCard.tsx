@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ResumePreview from "../../components/resume/ResumePreview";
-import { DEMO_RESUME } from "../../data/demoResume";
+import { demoResumeForPreset } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
 import { usePacks } from "../../hooks/usePacks";
 import { canClaimTemplateSlot, hasTemplateAccess } from "../../lib/templateAccess";
@@ -23,7 +23,7 @@ export default function TemplateCard({
   const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
   const canClaim = canClaimTemplateSlot(lastPackId, unlockedIds.length);
   const resume = useMemo(
-    () => ({ ...DEMO_RESUME, customization: preset.customization }),
+    () => demoResumeForPreset(preset.customization),
     [preset],
   );
 

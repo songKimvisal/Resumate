@@ -6,6 +6,7 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactInline,
   SkillsList,
   ATS,
   type LayoutProps,
@@ -46,44 +47,44 @@ export default function EditorialClassicLayout({
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
       {isFirstPage && (
-        <header className="mb-7 text-center">
-          <div className="mx-auto mb-3 h-px w-24" style={{ backgroundColor: accent }} />
+        <header className="mb-8 text-center">
           <h1
-            className="font-bold uppercase tracking-[0.2em]"
-            style={{ fontSize: customization.fullNameSize }}
+            className="font-semibold tracking-tight"
+            style={{ fontSize: customization.fullNameSize, color: ink }}
           >
             {personal.fullName}
           </h1>
           {personal.jobTitle && (
             <p
-              className="mt-2 italic"
-              style={{ fontSize: customization.titleSize, color: muted }}
+              className="mt-1.5 font-medium"
+              style={{ fontSize: customization.titleSize, color: accent }}
             >
               {personal.jobTitle}
             </p>
           )}
-          <p className="mt-3 text-[0.8em]" style={{ color: muted }}>
-            {contacts.map((c, contactIdx) => c.text).join("  |  ")}
-          </p>
-          <div className="mx-auto mt-4 h-[2px] w-full max-w-md" style={{ backgroundColor: accent }} />
-          <div className="mx-auto mt-1 h-px w-full max-w-md" style={{ backgroundColor: accent }} />
+          <ContactInline
+            contacts={contacts}
+            className="mt-3 text-[0.8em]"
+            style={{ color: muted }}
+          />
+          <div className="mx-auto mt-5 h-px w-full" style={{ backgroundColor: ATS.line }} />
         </header>
       )}
 
       {hasText(personal.summary) && (
         <section className="mb-5">
-          <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} customization={customization} />
+          <AtsHeading title="Professional Summary" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
           <RichHtml
             html={personal.summary}
             className="rte-content text-center text-[0.9em] leading-relaxed"
-            style={{ color: muted }}
+            style={{ color: ink }}
           />
         </section>
       )}
 
       {jobs.length > 0 && (
         <section className="mb-5">
-          <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
+          <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
           <div className="space-y-4">
             {jobs.map((job, jobIdx) => (
               <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
@@ -95,7 +96,7 @@ export default function EditorialClassicLayout({
       <div className="mb-5 grid grid-cols-2 gap-8">
         {education.length > 0 && (
           <section>
-            <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
+            <AtsHeading title="Education" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
             <div className="space-y-3 text-[0.88em]">
               {education.map((edu, eduIdx) => (
                 <div key={listKey(edu.id, eduIdx, "edu")}>
@@ -105,6 +106,13 @@ export default function EditorialClassicLayout({
                   </p>
                   <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                   {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                  {hasText(edu.description) && (
+                    <RichHtml
+                      html={edu.description}
+                      className="rte-content mt-1 leading-relaxed"
+                      style={{ color: ink }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -112,7 +120,7 @@ export default function EditorialClassicLayout({
         )}
         {skills.length > 0 && (
           <section>
-            <AtsHeading title="Skills" color={accent} size={customization.headingsSize} customization={customization} />
+            <AtsHeading title="Skills" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
             <SkillsList
               skills={skills}
               customization={customization}
@@ -122,10 +130,10 @@ export default function EditorialClassicLayout({
             {languages.length > 0 && (
               <>
                 <div className="mt-4">
-                  <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
+                  <AtsHeading title="Languages" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
                 </div>
                 <p className="text-[0.88em]" style={{ color: muted }}>
-                  {languages.map((l, langIdx) => l.name).join(" · ")}
+                  {languages.map((l) => l.name).join(" · ")}
                 </p>
               </>
             )}
@@ -135,7 +143,7 @@ export default function EditorialClassicLayout({
 
       {includeReferences && references.length > 0 && (
         <section>
-          <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
+          <AtsHeading title="References" color={accent} size={customization.headingsSize} ruleWidth="full" ruleColor={ATS.line} customization={customization} />
           <div className="grid grid-cols-2 gap-4 text-[0.85em]">
             {references.slice(0, 4).map((r, refIdx) => (
               <div key={listKey(r.id, refIdx, "ref")}>

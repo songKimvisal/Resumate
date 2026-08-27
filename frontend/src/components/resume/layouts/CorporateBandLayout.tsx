@@ -6,12 +6,14 @@ import {
   hasText,
   normalizeJobs,
   personalContactLines,
+  ContactLink,
   SkillsList,
   ATS,
   type LayoutProps,
   layoutShellStyle,
   listKey,
 } from "./shared";
+import { contrastOn } from "../../../lib/color";
 
 /** Banking classic - full-width navy header band (distinct from executiveCard). */
 export default function CorporateBandLayout({
@@ -36,6 +38,7 @@ export default function CorporateBandLayout({
   const accent = customization.accentColor || "#0E7490";
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
+  const headerInk = contrastOn(navy);
   const contacts = personalContactLines(personal);
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
   const dateFmt = customization.dateFormat;
@@ -47,19 +50,19 @@ export default function CorporateBandLayout({
       style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
     >
       {isFirstPage && (
-        <header className="px-9 py-7 text-white" style={{ backgroundColor: navy }}>
+        <header className="px-10 py-8" style={{ backgroundColor: navy, color: headerInk }}>
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="font-bold uppercase tracking-wide" style={{ fontSize: customization.fullNameSize }}>
+              <h1 className="font-bold uppercase tracking-[0.16em]" style={{ fontSize: customization.fullNameSize }}>
                 {personal.fullName}
               </h1>
               {personal.jobTitle && (
-                <p className="mt-1.5 text-white/90" style={{ fontSize: customization.titleSize }}>
+                <p className="mt-2 uppercase tracking-[0.2em] opacity-90" style={{ fontSize: customization.titleSize }}>
                   {personal.jobTitle}
                 </p>
               )}
             </div>
-            <div className="max-w-[42%] text-right text-[0.78em] leading-relaxed text-white/85">
+            <div className="max-w-[42%] text-right text-[0.78em] leading-relaxed opacity-85">
               {contacts.map((c, contactIdx) => (
                 <p
                   key={listKey(c.id, contactIdx, "contact")}
@@ -67,12 +70,12 @@ export default function CorporateBandLayout({
                     c.kind === "email" || c.kind === "link" ? "break-all" : undefined
                   }
                 >
-                  {c.text}
+                  <ContactLink item={c} />
                 </p>
               ))}
             </div>
           </div>
-          <div className="mt-4 h-1 w-24" style={{ backgroundColor: accent }} />
+          <div className="mt-5 h-[2px] w-12 rounded-full" style={{ backgroundColor: accent }} />
         </header>
       )}
 
@@ -81,7 +84,7 @@ export default function CorporateBandLayout({
           {hasText(personal.summary) && (
             <section>
               <AtsHeading title="Professional Summary" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: muted }} />
+              <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: ink }} />
             </section>
           )}
           {jobs.length > 0 && (
@@ -107,6 +110,13 @@ export default function CorporateBandLayout({
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                     {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                    {hasText(edu.description) && (
+                      <RichHtml
+                        html={edu.description}
+                        className="rte-content mt-1 leading-relaxed"
+                        style={{ color: ink }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
