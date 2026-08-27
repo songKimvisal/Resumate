@@ -38,7 +38,7 @@ export function useAuth() {
 
   const signUpWithPassword = (email: string, password: string) =>
     supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: {
         emailRedirectTo: window.location.origin,

@@ -61,9 +61,21 @@ export default function Signup() {
       setSubmitted(true);
     } catch (err) {
       clearStayOnHome();
-      setError(
-        err instanceof AuthError ? err.message : t("signup.errorGeneric"),
-      );
+      const authErr = err instanceof AuthError ? err : null;
+      const message = authErr?.message.toLowerCase() ?? "";
+      const status = authErr?.status;
+      if (status === 429 || message.includes("too many requests") || message.includes("rate limit")) {
+        setError(t("signup.errorRateLimit"));
+      } else if (message.includes("invalid") && message.includes("email")) {
+        setError(t("signup.errorInvalidEmail"));
+      } else if (
+        message.includes("already registered") ||
+        message.includes("already been registered")
+      ) {
+        setError(t("signup.errorUserExists"));
+      } else {
+        setError(authErr?.message ?? t("signup.errorGeneric"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -222,9 +234,13 @@ export default function Signup() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     autoComplete="new-password"
-                    error={error ?? undefined}
                     required
                   />
+                  {error && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
 
                   <Button
                     type="submit"
