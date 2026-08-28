@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/UseAuth";
 import {
   continuePathForUser,
   isJourneyNavPath,
+  reviewableJobsForUser,
   useJourneyStore,
 } from "../../store/journeyStore";
 import {
@@ -11,6 +12,7 @@ import {
   LayoutGrid,
   FileText,
   MessagesSquare,
+  FolderOpen,
   ReceiptText,
   PieChart,
   Settings as SettingsIcon,
@@ -31,6 +33,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutGrid, key: "dashboard" },
   { to: "/my-resumes", icon: FileText, key: "myResumes" },
   { to: "/interview-prep", icon: MessagesSquare, key: "interviewPrep" },
+  { to: "/saved-jobs", icon: FolderOpen, key: "savedJobs" },
   { to: "/billing", icon: ReceiptText, key: "billing" },
   { to: "/ai-usage", icon: PieChart, key: "aiUsage" },
   { to: "/settings", icon: SettingsIcon, key: "settings" },
@@ -52,6 +55,9 @@ export default function Sidebar({
   const { theme, toggleTheme } = useTheme();
   const { remaining: aiCreditsLeft } = useAiCredits();
   const dashboardTo = useJourneyStore((s) => continuePathForUser(s, user?.id));
+  const savedCount = useJourneyStore((s) =>
+    user?.id ? reviewableJobsForUser(s.byKey, user.id).length : 0,
+  );
 
   return (
     <div
@@ -90,8 +96,11 @@ export default function Sidebar({
               ? location.pathname === "/"
               : key === "dashboard"
                 ? isJourneyNavPath(location.pathname)
-                : location.pathname === to ||
-                  location.pathname.startsWith(`${to}/`);
+                : key === "interviewPrep"
+                  ? location.pathname === "/interview-prep" ||
+                    location.pathname === "/job-match/interview-prep"
+                  : location.pathname === to ||
+                    location.pathname.startsWith(`${to}/`);
 
           return (
           <NavLink
@@ -107,7 +116,7 @@ export default function Sidebar({
             }
             className={cn(
                 "flex items-center gap-2.5 py-2 rounded-full text-sm font-medium transition-colors",
-                collapsed ? "justify-center px-0" : "px-3",
+                collapsed ? "justify-center px-0" : "pl-3 pr-4",
                 isActive
                   ? "bg-brand text-white"
                   : "text-text-secondary hover:bg-surface-2 hover:text-text",
@@ -118,8 +127,13 @@ export default function Sidebar({
               <>
                 <span className="min-w-0 truncate">{t(`nav.${key}`)}</span>
                 {key === "aiUsage" && (
-                  <span className="ml-auto tabular-nums text-xs font-semibold">
+                  <span className="ml-auto min-w-[1.25rem] pr-0.5 text-right tabular-nums text-xs font-semibold">
                     {aiCreditsLeft}
+                  </span>
+                )}
+                {key === "savedJobs" && savedCount > 0 && (
+                  <span className="ml-auto min-w-[1.25rem] pr-0.5 text-right tabular-nums text-xs font-semibold">
+                    {savedCount}
                   </span>
                 )}
               </>

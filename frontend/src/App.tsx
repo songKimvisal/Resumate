@@ -20,6 +20,7 @@ import SelectResume from "./pages/dashboard/SelectResume";
 import JobMatch from "./pages/dashboard/JobMatch";
 import JobReadiness from "./pages/dashboard/JobReadiness";
 import MyResumes from "./pages/dashboard/MyResumes";
+import SavedJobs from "./pages/dashboard/SavedJobs";
 import InterviewPrep from "./pages/interviewPrep/InterviewPrep";
 import ProcessInterviewPrep from "./pages/dashboard/ProcessInterviewPrep";
 import Billing from "./pages/billing/Billing";
@@ -61,6 +62,7 @@ export default function App() {
             <Route path="/job-readiness" element={<JobReadiness />} />
             <Route path="/my-resumes" element={<MyResumes />} />
             <Route path="/interview-prep" element={<InterviewPrep />} />
+            <Route path="/saved-jobs" element={<SavedJobs />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/billing/history" element={<BillingHistory />} />
             <Route path="/ai-usage" element={<AiUsage />} />

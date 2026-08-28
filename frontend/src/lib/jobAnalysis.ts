@@ -16,6 +16,7 @@ import type {
 import {
   completeInterviewSet,
   interviewContextFromResume,
+  polishInterviewQuestions,
 } from "./interviewSet";
 import { buildFallbackBulletRewrites } from "./bulletRewrites";
 
@@ -38,14 +39,105 @@ export function isInterviewCategory(value: string): value is InterviewCategory {
   return CATEGORIES.includes(value as InterviewCategory);
 }
 
+const JOB_SECTION_HEADING =
+  /^(requirements?|responsibilities|qualifications?|about( the)? role|job description|description|duties|skills needed|benefits|overview|summary)\s*:?\s*$/i;
+
+function looksLikeJobHeading(value: string) {
+  const text = value.trim();
+  if (text.length < 3) return true;
+  if (JOB_SECTION_HEADING.test(text)) return true;
+  if (/https?:\/\//i.test(text)) return true;
+  return (
+    /^(requirements?|responsibilities|qualifications?)\b/i.test(text) &&
+    text.split(/\s+/).length <= 4
+  );
+}
+
+function firstUsefulJobLine(jobText: string) {
+  const labeled = jobText.match(
+    /(?:job title|position|role)\s*[:\-]\s*([^\n]{4,70})/i,
+  );
+  if (labeled?.[1] && !looksLikeJobHeading(labeled[1])) {
+    return labeled[1].trim().replace(/[.:]+$/, "");
+  }
+  return (
+    jobText
+      .split(/\n/)
+      .map((line) => line.trim())
+      .find(
+        (line) =>
+          line.length >= 4 &&
+          line.length <= 70 &&
+          line.split(/\s+/).length <= 12 &&
+          !looksLikeJobHeading(line),
+      ) || ""
+  );
+}
+
 export function guessRoleTitle(jobText: string, resume: Resume) {
+  const fromField = splitJobAd(jobText).title;
+  if (fromField) return fromField;
   const fromResume = resume.personal.jobTitle.trim();
-  const firstLine = jobText
-    .split(/\n/)
-    .map((line) => line.trim())
-    .find((line) => line.length >= 4 && line.length <= 80);
-  if (firstLine && !/https?:\/\//i.test(firstLine)) return firstLine;
-  return fromResume || "this role";
+  return firstUsefulJobLine(jobText) || fromResume || "this role";
+}
+
+/** Title for lists when Gemini returns a section heading like "Requirements :". */
+export function displayJobTitle(roleTitle: string | undefined, jobText: string) {
+  const fromField = splitJobAd(jobText).title;
+  if (fromField) return fromField;
+  const title = (roleTitle || "").trim().replace(/[.:]+$/, "");
+  if (title && !looksLikeJobHeading(title) && title.toLowerCase() !== "this role") {
+    return title;
+  }
+  return firstUsefulJobLine(jobText);
+}
+
+export function displayJobCompany(jobText: string) {
+  return splitJobAd(jobText).company;
+}
+
+const COMPANY_LINE = /^Company:\s*(.*)$/i;
+const TITLE_LINE = /^Job title:\s*(.*)$/i;
+
+/** Optional company and title fields plus the pasted ad, for analysis. */
+export function composeJobAd(company: string, title: string, body: string) {
+  const parts: string[] = [];
+  const companyName = company.trim();
+  const roleTitle = title.trim();
+  if (companyName) parts.push(`Company: ${companyName}`);
+  if (roleTitle) parts.push(`Job title: ${roleTitle}`);
+  const rest = body.trim();
+  if (rest) parts.push(rest);
+  return parts.join("\n");
+}
+
+/** Pull Company / Job title lines we prepended, so the paste box stays just the ad. */
+export function splitJobAd(text: string) {
+  const lines = text.replace(/\r\n/g, "\n").trim().split("\n");
+  let index = 0;
+  let company = "";
+  let title = "";
+  const companyHit = lines[index]?.match(COMPANY_LINE);
+  if (companyHit) {
+    company = companyHit[1].trim();
+    index += 1;
+  }
+  const titleHit = lines[index]?.match(TITLE_LINE);
+  if (titleHit) {
+    title = titleHit[1].trim();
+    index += 1;
+  }
+  return {
+    company,
+    title,
+    body: lines.slice(index).join("\n").trim(),
+  };
+}
+
+export function jobAdSnippet(jobText: string, max = 110) {
+  const clean = jobText.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max).replace(/\s+\S*$/, "")}...`;
 }
 
 /** Plain English for fresh graduates. Never keep an em dash. */
@@ -62,9 +154,13 @@ export function plainInterviewText(value: string) {
 export function withNormalizedQuestions(
   pack: JobAnalysisPack,
   resume?: Resume,
+  jobText?: string,
 ): JobAnalysisPack {
+  const parts = splitJobAd(jobText || "");
+  const roleTitle = parts.title || pack.roleTitle || "this role";
   const normalized: JobAnalysisPack = {
     ...pack,
+    roleTitle,
     questions: pack.questions.map((q) => ({
       ...q,
       category: normalizeInterviewCategory(q.category),
@@ -72,7 +168,7 @@ export function withNormalizedQuestions(
         (q.why ?? "").trim() ||
           defaultWhy(
             normalizeInterviewCategory(q.category),
-            pack.roleTitle || "this role",
+            roleTitle,
           ),
       ),
       angle: plainInterviewText((q.angle ?? "").trim()),
@@ -113,10 +209,15 @@ export function withNormalizedQuestions(
     normalized.roleTitle || "this role",
     normalized.missing.map(prettyKeyword),
     normalized.matched.map(prettyKeyword),
+    parts.company,
   );
   return {
     ...normalized,
-    questions: completeInterviewSet(normalized.questions, ctx),
+    questions: polishInterviewQuestions(
+      completeInterviewSet(normalized.questions, ctx),
+      resume,
+      parts.company || ctx.company,
+    ),
   };
 }
 
@@ -166,6 +267,7 @@ export function buildFallbackAnalysis(
     roleTitle,
     topMissing,
     topMatched,
+    splitJobAd(jobText).company,
   );
 
   const flags = resumeInsightFlags(resume);
@@ -211,7 +313,11 @@ export function buildFallbackAnalysis(
         "The resume has a clear structure. Align the summary and skills to this job next.",
       ];
 
-  const questions = completeInterviewSet([], ctx);
+  const questions = polishInterviewQuestions(
+    completeInterviewSet([], ctx),
+    resume,
+    ctx.company,
+  );
   const readyToApply = local.score >= 70 && qualificationGaps.length === 0;
   const actions = [
     `Practice the ${questions.length} interview questions written for this ${roleTitle} role.`,
@@ -327,6 +433,7 @@ export async function resolveJobAnalysisPack(
           missing: split.missing,
         },
         resume,
+        jobText,
       );
     }
   } catch (err) {

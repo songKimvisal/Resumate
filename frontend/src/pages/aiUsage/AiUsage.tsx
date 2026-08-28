@@ -12,6 +12,7 @@ import type { PackId, PlanId } from "../../types/billing";
 import { usePacks } from "../../hooks/usePacks";
 import { useAiCredits } from "../../hooks/useAiCredits";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
+import PageTitle from "../../components/layout/PageTitle";
 
 const PLAN_LIMITS: Record<PlanId, { resumesSaved: number }> = {
   free: { resumesSaved: 1 },
@@ -74,9 +75,10 @@ export default function AiUsage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <h1 className="text-3xl font-bold">
-        <span className="text-text">{t("aiUsage.title")}</span>
-      </h1>
+      <PageTitle
+        text={t("aiUsage.title")}
+        accent={t("aiUsage.titleAccent")}
+      />
       <p className="text-sm text-text-secondary mt-2">
         {t("aiUsage.subtitle")}
       </p>

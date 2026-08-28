@@ -1,6 +1,6 @@
 import type { Resume } from "../types/resume";
+import { NO_EXPERIENCE_TYPE_LABELS } from "../types/resume";
 import type {
-  InterviewCategory,
   InterviewQuestion,
   JobAnalysisPack,
 } from "../store/journeyStore";
@@ -8,10 +8,134 @@ import type {
 /** One paid interview set. One credit. One job ad. */
 export const INTERVIEW_SET_SIZE = 20;
 
+const FILLER_SKILLS = new Set([
+  "spoken",
+  "written",
+  "oral",
+  "verbal",
+  "tools",
+  "tool",
+  "design",
+  "future",
+  "honest",
+  "hybrid",
+  "skill",
+  "skills",
+  "communication",
+  "teamwork",
+]);
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Keyboard smash, repeated letters, or obvious dummy text. */
+export function looksLikePlaceholder(value: string) {
+  const text = value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return true;
+  const compact = text.replace(/[^a-z0-9]+/gi, "");
+  if (
+    /^(test|asdf|qwer|lorem|xxx+|n\/a|na|tbd|todo|placeholder|dummy|sample)$/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  if (compact.length >= 6) {
+    const unique = new Set(compact.toLowerCase()).size;
+    if (unique <= 3) return true;
+    if (/(.)\1{3,}/i.test(compact)) return true;
+    if (/(.{2,3})\1{2,}/i.test(compact)) return true;
+  }
+  return false;
+}
+
+function usablePhrase(value: string) {
+  const text = value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  if (!text || looksLikePlaceholder(text)) return "";
+  const parts = text.split(/[\s,;/()]+/).filter(Boolean);
+  if (parts.some((part) => looksLikePlaceholder(part))) return "";
+  return text;
+}
+
+export function prettyProperName(value: string) {
+  const text = value.trim();
+  if (!text) return "";
+  if (text !== text.toLowerCase()) return text;
+  return text.replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+function junkTokensFromResume(resume: Resume) {
+  const blobs: string[] = [];
+  const push = (value?: string) => {
+    const text = (value || "").replace(/<[^>]*>/g, " ").trim();
+    if (text) blobs.push(text);
+  };
+  push(resume.personal.fullName);
+  push(resume.personal.jobTitle);
+  push(resume.personal.summary);
+  for (const item of resume.experience) {
+    push(item.jobTitle);
+    push(item.company);
+    push(item.description);
+  }
+  for (const item of resume.noExperience) {
+    push(item.title);
+    push(item.subtitle);
+    push(item.description);
+  }
+  for (const item of resume.education) {
+    push(item.school);
+    push(item.degree);
+    push(item.field);
+    push(item.description);
+  }
+  for (const item of resume.skills) push(item.name);
+  for (const link of resume.personal.portfolio) push(link.title);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const blob of blobs) {
+    const chunks = [blob, ...blob.split(/[\s,;:/()]+/)].map((item) => item.trim());
+    for (const chunk of chunks) {
+      if (chunk.length < 4 || !looksLikePlaceholder(chunk)) continue;
+      const key = chunk.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(chunk);
+    }
+  }
+  return out.sort((a, b) => b.length - a.length);
+}
+
+export function polishInterviewText(
+  value: string,
+  junk: string[],
+  company = "",
+) {
+  let text = value;
+  for (const token of junk) {
+    text = text.replace(new RegExp(escapeRegExp(token), "gi"), "a recent project");
+  }
+  text = text.replace(
+    /(?:a recent project\s*,\s*)+a recent project/gi,
+    "a recent project",
+  );
+  text = text.replace(/practice on a recent project/gi, "already practice");
+  text = text.replace(/already already practice/gi, "already practice");
+  text = text.replace(/from a recent project, a recent project/gi, "from a recent project");
+  const prettyCompany = prettyProperName(company);
+  if (prettyCompany && company) {
+    text = text.replace(new RegExp(`\\b${escapeRegExp(company)}\\b`, "gi"), prettyCompany);
+  }
+  return text.replace(/\s{2,}/g, " ").trim();
+}
+
 type Story = { label: string; proof: string };
 
 export type InterviewSetContext = {
   roleTitle: string;
+  company: string;
   name: string;
   title: string;
   story: Story;
@@ -36,7 +160,7 @@ export function completeInterviewSet(
       ...item,
       id: `q${out.length + 1}`,
     });
-    if (out.length >= INTERVIEW_SET_SIZE) return out;
+    if (out.length >= INTERVIEW_SET_SIZE) return groundInEmployer(out, ctx);
   }
   for (const extra of buildInterviewBank(ctx)) {
     const key = extra.question.trim().toLowerCase();
@@ -45,7 +169,7 @@ export function completeInterviewSet(
     out.push({ ...extra, id: `q${out.length + 1}` });
     if (out.length >= INTERVIEW_SET_SIZE) break;
   }
-  return out;
+  return groundInEmployer(out, ctx);
 }
 
 export function ensurePackInterviewSet(
@@ -58,26 +182,84 @@ export function ensurePackInterviewSet(
   };
 }
 
+/** Swap generic filler for questions that name the employer, without inventing facts. */
+function groundInEmployer(
+  questions: InterviewQuestion[],
+  ctx: InterviewSetContext,
+): InterviewQuestion[] {
+  const company = ctx.company.trim();
+  if (!company) return questions;
+  const needle = company.toLowerCase();
+  const named = questions.filter((q) =>
+    `${q.question} ${q.why}`.toLowerCase().includes(needle),
+  ).length;
+  if (named >= 8) return questions;
+  const extras = buildInterviewBank(ctx).filter((q) =>
+    q.question.toLowerCase().includes(needle),
+  );
+  const seen = new Set(questions.map((q) => q.question.trim().toLowerCase()));
+  const inject = extras.filter((q) => !seen.has(q.question.trim().toLowerCase()));
+  if (!inject.length) return questions;
+  const need = Math.min(inject.length, 8 - named);
+  const keep = questions.slice(0, Math.max(0, INTERVIEW_SET_SIZE - need));
+  return [...keep, ...inject.slice(0, need)]
+    .slice(0, INTERVIEW_SET_SIZE)
+    .map((item, i) => ({ ...item, id: `q${i + 1}` }));
+}
+
 export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[] {
   const r = ctx.roleTitle;
+  const company = prettyProperName(ctx.company.trim());
+  const job = company ? `this ${r} role at ${company}` : `this ${r} job`;
+  const team = company ? `the ${company} team` : "your team";
   const story = ctx.story.label;
   const proof = ctx.proof;
   const skill = ctx.skillHint;
   const matched = ctx.matchedHint;
   const who = ctx.name ? `${ctx.name}, a ${ctx.title}` : `a ${ctx.title}`;
 
+  const targeted: Omit<InterviewQuestion, "id">[] = company
+    ? [
+        {
+          category: "behavioral",
+          question: `Why ${company}, and why this ${r} role?`,
+          why: `${company} wants to hear you chose them, not any ${r} job.`,
+          angle: `Name ${company}. Name the ${r} work from the ad. Tie one example from ${story}. Do not invent products.`,
+          talkingPoints: [
+            `Say why ${company}, in one sentence.`,
+            `Say why this ${r} role.`,
+            `Give one example from ${story}.`,
+          ],
+          sampleAnswer: `I want this ${r} role at ${company} because the work matches what I already practice.${proof} I am not applying to every company. I want to grow here.`,
+        },
+        {
+          category: "situational",
+          question: `What would you do in your first week as a ${r} at ${company}?`,
+          why: `They want a calm first week on the ${company} team, not a big speech.`,
+          angle: "Ask who owns the work. Learn from existing files. Share one small piece by Friday.",
+          talkingPoints: [
+            `Find who you report to at ${company}.`,
+            "Write what you know versus what you are guessing.",
+            "Offer one small piece of work.",
+          ],
+          sampleAnswer: `On day one I would ask who owns the work at ${company}. I would learn from existing files, then bring one small example by Friday using ${matched}.`,
+        },
+      ]
+    : [];
+
   const bank: Omit<InterviewQuestion, "id">[] = [
+    ...targeted,
     {
       category: "behavioral",
-      question: `Tell me about yourself, and why you want this ${r} job.`,
-      why: `They want a short story of who you are, and why this ${r} job fits you.`,
-      angle: `Say who you are. Give one example from ${story}. End with why you want this ${r} job.`,
+      question: `Tell me about yourself, and why you want ${job}.`,
+      why: `They want a short story of who you are, and why ${job} fits you.`,
+      angle: `Say who you are. Give one example from ${story}. End with why you want ${job}.`,
       talkingPoints: [
         `Say you are ${who}.`,
         `Give one example from ${story}.`,
-        `End with why this ${r} job is next.`,
+        `End with why ${job} is next.`,
       ],
-      sampleAnswer: `Hi, I'm ${who}. Recently I worked on ${story}.${proof} I want this ${r} job because it matches what I already practice, and I want to do it on your team.`,
+      sampleAnswer: `Hi, I'm ${who}. Recently I worked on ${story}.${proof} I want ${job} because it matches what I already practice, and I want to do it on ${team}.`,
     },
     {
       category: "behavioral",
@@ -89,7 +271,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Say what you learned, and how.",
         "End with a result.",
       ],
-      sampleAnswer: `On ${story} I had to learn faster than I planned.${proof} I made a small first version, asked one clear question, and checked my work. I would do the same in a ${r} job.`,
+      sampleAnswer: `On ${story} I had to learn faster than I planned.${proof} I made a small first version, asked one clear question, and checked my work. I would do the same in ${job}.`,
     },
     {
       category: "behavioral",
@@ -101,19 +283,19 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Say how you fixed it.",
         "Say what you do differently now.",
       ],
-      sampleAnswer: `On ${story} I moved too fast and missed a check. I told my teammate, fixed the work, and added a simple checklist. In a ${r} job I would rather catch a miss early than hide it.`,
+      sampleAnswer: `On ${story} I moved too fast and missed a check. I told my teammate, fixed the work, and added a simple checklist. In ${job} I would rather catch a miss early than hide it.`,
     },
     {
       category: "behavioral",
       question: "Describe a time you worked with someone who had a different style than you.",
-      why: `This ${r} job needs calm teamwork, not being the loudest person.`,
+      why: `${job.charAt(0).toUpperCase()}${job.slice(1)} needs calm teamwork, not being the loudest person.`,
       angle: `Use a real person from ${story}. What you changed in how you worked.`,
       talkingPoints: [
         "Say how they liked to work.",
         "Say what you changed.",
         "End with a better result.",
       ],
-      sampleAnswer: `On ${story} a teammate wanted more detail before starting. I sent a short plan first, then we built. The work got clearer. I would do that on a ${r} team too.`,
+      sampleAnswer: `On ${story} a teammate wanted more detail before starting. I sent a short plan first, then we built. The work got clearer. I would do that on ${team} too.`,
     },
     {
       category: "behavioral",
@@ -125,7 +307,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Say what you did first, and why.",
         "Say what you paused.",
       ],
-      sampleAnswer: `On ${story} I had two tasks and one deadline. I asked which one blocked other people, did that first, and told my manager what would wait. That is how I would choose on a ${r} day.`,
+      sampleAnswer: `On ${story} I had two tasks and one deadline. I asked which one blocked other people, did that first, and told my manager what would wait. That is how I would choose on a ${r} day${company ? ` at ${company}` : ""}.`,
     },
     {
       category: "behavioral",
@@ -137,7 +319,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Say who you asked.",
         "Say what you did with the answer.",
       ],
-      sampleAnswer: `On ${story} I tried once on my own, then asked a clearer question. I used the answer the same day. In this ${r} job I would ask early, with a small example in hand.`,
+      sampleAnswer: `On ${story} I tried once on my own, then asked a clearer question. I used the answer the same day. In ${job} I would ask early, with a small example in hand.`,
     },
     {
       category: "behavioral",
@@ -149,7 +331,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Say your part in one sentence.",
         "Say the result.",
       ],
-      sampleAnswer: `I'm proud of ${story}.${proof} I owned a clear piece of the work and checked it before sharing. That habit is what I would bring to this ${r} role.`,
+      sampleAnswer: `I'm proud of ${story}.${proof} I owned a clear piece of the work and checked it before sharing. That habit is what I would bring to ${job}.`,
     },
     {
       category: "behavioral",
@@ -223,7 +405,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
     },
     {
       category: "technical",
-      question: `What would you do in the first two weeks to get good at the tools this ${r} job uses?`,
+      question: `What would you do in the first two weeks to get good at the tools ${job} uses?`,
       why: "They know you may not know every tool yet. They want a plan.",
       angle: `Name ${skill} or ${matched}. Copy one real example. Ask for a review.`,
       talkingPoints: [
@@ -247,7 +429,7 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
     },
     {
       category: "situational",
-      question: `If you joined as ${r} tomorrow and the task was unclear, what would you do in the first week?`,
+      question: `If you joined as ${r}${company ? ` at ${company}` : ""} tomorrow and the task was unclear, what would you do in the first week?`,
       why: "They want to see you ask questions and make a small plan.",
       angle: "Ask who owns the work. Write what you know. Share one small piece by Friday.",
       talkingPoints: [
@@ -291,12 +473,12 @@ export function buildInterviewBank(ctx: InterviewSetContext): InterviewQuestion[
         "Name the error in one line.",
         "Offer the fix.",
       ],
-      sampleAnswer: `I would tell the owner quickly, name the error, and send the fix. Waiting makes it worse. That is how I would handle it on a ${r} team.`,
+      sampleAnswer: `I would tell the owner quickly, name the error, and send the fix. Waiting makes it worse. That is how I would handle it on ${team}.`,
     },
     {
       category: "situational",
       question: `Two people ask you for help at the same time. How do you choose?`,
-      why: `This ${r} job will have competing asks.`,
+      why: `${job.charAt(0).toUpperCase()}${job.slice(1)} will have competing asks.`,
       angle: "Ask which one blocks the team. Tell the other person when you can help.",
       talkingPoints: [
         "Ask which one is blocking others.",
@@ -327,14 +509,12 @@ export function interviewContextFromResume(
   roleTitle: string,
   missing: string[],
   matched: string[],
+  company = "",
 ): InterviewSetContext {
-  const exp = resume.experience[0];
-  const alt = resume.noExperience[0];
-  const edu = resume.education[0];
   const strip = (html: string) =>
     html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
   const first = (text: string) => {
-    const clean = strip(text);
+    const clean = usablePhrase(strip(text));
     if (!clean) return "";
     const clause = clean.split(/[.!?]/)[0]?.trim() || clean;
     return clause.length > 140 ? `${clause.slice(0, 139).trim()}…` : clause;
@@ -342,29 +522,64 @@ export function interviewContextFromResume(
 
   let label = "my recent work";
   let proofRaw = "";
+  const exp = resume.experience.find(
+    (item) => usablePhrase(item.jobTitle) || usablePhrase(item.company),
+  );
+  const alt = resume.noExperience[0];
+  const edu = resume.education.find(
+    (item) =>
+      usablePhrase(item.school) ||
+      usablePhrase(item.degree) ||
+      usablePhrase(item.field),
+  );
+
   if (exp) {
-    label = [exp.jobTitle, exp.company].filter(Boolean).join(" at ") || label;
+    const role = usablePhrase(exp.jobTitle);
+    const firm = usablePhrase(exp.company);
+    label = [role, firm].filter(Boolean).join(" at ") || "my recent work";
     proofRaw = first(exp.description);
   } else if (alt) {
-    label = [alt.title, alt.subtitle].filter(Boolean).join(", ") || "a recent project";
+    const title = usablePhrase(alt.title);
+    const subtitle = usablePhrase(alt.subtitle);
+    const kind = (NO_EXPERIENCE_TYPE_LABELS[alt.type] || "recent project").toLowerCase();
+    label = title
+      ? subtitle
+        ? `${title}, ${subtitle}`
+        : title
+      : kind.startsWith("a ")
+        ? kind
+        : `a ${kind}`;
     proofRaw = first(alt.description);
   } else if (edu) {
-    label = [edu.degree, edu.field, edu.school].filter(Boolean).join(" · ") || "my studies";
+    label =
+      [usablePhrase(edu.degree), usablePhrase(edu.field), usablePhrase(edu.school)]
+        .filter(Boolean)
+        .join(" · ") || "my studies";
     proofRaw = first(edu.description);
   }
 
   const proof = proofRaw
     ? ` ${proofRaw.charAt(0).toLowerCase()}${proofRaw.slice(1)}`
     : "";
-  const title = resume.personal.jobTitle.trim() || roleTitle;
+  const title = usablePhrase(resume.personal.jobTitle) || roleTitle;
   const skillLine =
-    resume.skills.map((s) => s.name.trim()).filter(Boolean).slice(0, 3).join(", ") ||
+    resume.skills
+      .map((s) => s.name.trim())
+      .filter(
+        (name) =>
+          name &&
+          !FILLER_SKILLS.has(name.toLowerCase()) &&
+          !looksLikePlaceholder(name),
+      )
+      .slice(0, 3)
+      .join(", ") ||
     matched[0] ||
     title;
 
   return {
     roleTitle,
-    name: resume.personal.fullName.trim(),
+    company: prettyProperName(company.trim()),
+    name: usablePhrase(resume.personal.fullName) || resume.personal.fullName.trim(),
     title,
     story: { label, proof: proofRaw },
     proof,
@@ -373,4 +588,23 @@ export function interviewContextFromResume(
     skillLine,
     missing: missing.length > 0,
   };
+}
+
+export function polishInterviewQuestions(
+  questions: InterviewQuestion[],
+  resume: Resume,
+  company = "",
+) {
+  const junk = junkTokensFromResume(resume);
+  if (!junk.length && !company) return questions;
+  return questions.map((item) => ({
+    ...item,
+    question: polishInterviewText(item.question, junk, company),
+    why: polishInterviewText(item.why ?? "", junk, company),
+    angle: polishInterviewText(item.angle, junk, company),
+    sampleAnswer: polishInterviewText(item.sampleAnswer ?? "", junk, company),
+    talkingPoints: (item.talkingPoints ?? []).map((point) =>
+      polishInterviewText(point, junk, company),
+    ),
+  }));
 }

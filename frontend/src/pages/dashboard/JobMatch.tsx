@@ -19,16 +19,15 @@ import {
   requirementKeywords,
   type JobMatchResult,
 } from "../../lib/jobMatch";
-import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing } from "../../lib/jobAnalysis";
+import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing, composeJobAd, splitJobAd } from "../../lib/jobAnalysis";
 import { useAiCredits } from "../../hooks/useAiCredits";
-import { cn } from "../../lib/utils";
+import { cn, useFieldId } from "../../lib/utils";
 import type { Resume } from "../../types/resume";
 
 const MIN_CHARS = 40;
 const GAUGE_RADIUS = 42;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 const ANALYZE_PHASE_MS = 1100;
-
 const ANALYZE_PHASE_KEYS = [
   "jobMatch.analyzePhases.extract",
   "jobMatch.analyzePhases.detect",
@@ -48,6 +47,11 @@ export default function JobMatch() {
   const markSaved = useResumeStore((s) => s.markSaved);
 
   const [jobText, setJobText] = useState("");
+  const [jobCompany, setJobCompany] = useState("");
+  const [jobRole, setJobRole] = useState("");
+  const companyFieldId = useFieldId("job-company");
+  const roleFieldId = useFieldId("job-role");
+  const adFieldId = useFieldId("job-ad");
   const [loadingResume, setLoadingResume] = useState(!selectedResume?.id);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzePhase, setAnalyzePhase] = useState(0);
@@ -112,7 +116,10 @@ export default function JobMatch() {
 
     const draft = getDraft(user.id, selectedResume.id);
     if (draft.jobText) {
-      setJobText(draft.jobText);
+      const parts = splitJobAd(draft.jobText);
+      setJobCompany(parts.company);
+      setJobRole(parts.title);
+      setJobText(parts.body);
       if (draft.hasResults) {
         const match = computeJobMatch(
           draft.jobText,
@@ -123,6 +130,8 @@ export default function JobMatch() {
         setHasResults(true);
       }
     } else {
+      setJobCompany("");
+      setJobRole("");
       setJobText("");
       setHasResults(false);
       setKeywordCandidates([]);
@@ -135,25 +144,29 @@ export default function JobMatch() {
     if (!user || !selectedResume?.id) return;
     if (restoredForRef.current !== selectedResume.id) return;
     const draft = getDraft(user.id, selectedResume.id);
+    const fullAd = composeJobAd(jobCompany, jobRole, jobText);
     if (
       draft.analysis &&
-      jobText.trim() !== (draft.jobText ?? "").trim()
+      fullAd.trim() !== (draft.jobText ?? "").trim()
     ) {
       saveDraft(user.id, selectedResume.id, { hasResults });
       return;
     }
     saveDraft(user.id, selectedResume.id, {
-      jobText,
+      jobText: fullAd,
       hasResults,
     });
-  }, [user, selectedResume?.id, jobText, hasResults, saveDraft, getDraft]);
+  }, [user, selectedResume?.id, jobCompany, jobRole, jobText, hasResults, saveDraft, getDraft]);
 
   useEffect(() => {
     if (!selectedResume?.id) return;
     if (restoredForRef.current !== selectedResume.id) return;
     const stored = analysisDraft?.jobText ?? "";
-    if (stored === jobText) return;
+    const fullAd = composeJobAd(jobCompany, jobRole, jobText);
+    if (stored === fullAd) return;
     if (!stored) {
+      setJobCompany("");
+      setJobRole("");
       setJobText("");
       setHasResults(false);
       setKeywordCandidates([]);
@@ -161,7 +174,10 @@ export default function JobMatch() {
       return;
     }
     if (analysisDraft?.hasResults && analysisDraft.analysis) {
-      setJobText(stored);
+      const parts = splitJobAd(stored);
+      setJobCompany(parts.company);
+      setJobRole(parts.title);
+      setJobText(parts.body);
       setHasResults(true);
       const match = computeJobMatch(
         stored,
@@ -192,16 +208,20 @@ export default function JobMatch() {
   const charCount = jobText.trim().length;
   const canAnalyze = charCount >= MIN_CHARS && !analyzing;
   const subStep = analyzing || hasResults ? 1 : 0;
+  const fullAd = useMemo(
+    () => composeJobAd(jobCompany, jobRole, jobText),
+    [jobCompany, jobRole, jobText],
+  );
 
   /** Live score against the current resume - rises as keywords are added to skills. */
   const result = useMemo(() => {
-    if (!hasResults || !selectedResume || !jobText.trim()) return null;
+    if (!hasResults || !selectedResume || !fullAd.trim()) return null;
     return computeJobMatch(
-      jobText,
+      fullAd,
       selectedResume,
-      requirementKeywords(jobText, analysisDraft?.analysis),
+      requirementKeywords(fullAd, analysisDraft?.analysis),
     );
-  }, [hasResults, selectedResume, jobText, analysisDraft?.analysis]);
+  }, [hasResults, selectedResume, fullAd, analysisDraft?.analysis]);
 
   const matchScore = result?.score ?? 0;
 
@@ -287,6 +307,14 @@ export default function JobMatch() {
     setPreviewOpen(false);
   };
 
+  const noteJobEdit = () => {
+    setError(null);
+    if (!hasResults) return;
+    setHasResults(false);
+    setKeywordCandidates([]);
+    setAppliedSkills({});
+  };
+
   const handleGetSuggestions = () => {
     if (!result) return;
     if (user && selectedResume.id) {
@@ -307,7 +335,7 @@ export default function JobMatch() {
     const resume = useResumeStore.getState().resume;
     const draft =
       user && resume.id ? getDraft(user.id, resume.id) : undefined;
-    const trimmed = jobText.trim();
+    const trimmed = fullAd.trim();
     const savedHit = savedJobsOf(draft).find(
       (job) => job.jobText.trim() === trimmed && job.analysis,
     );
@@ -315,9 +343,9 @@ export default function JobMatch() {
       activateSavedJob(user.id, resume.id, savedHit.id);
       const pack = savedHit.analysis!;
       const local = computeJobMatch(
-        jobText,
+        fullAd,
         resume,
-        requirementKeywords(jobText, pack),
+        requirementKeywords(fullAd, pack),
       );
       setKeywordCandidates(local.missing);
       setHasResults(true);
@@ -332,6 +360,7 @@ export default function JobMatch() {
       (draft.jobText ?? "").trim() !== trimmed
     ) {
       startNewJob(user.id, resume.id);
+      reachStep(user.id, resume.id, 1);
     }
 
     const fresh = user && resume.id ? getDraft(user.id, resume.id) : draft;
@@ -349,17 +378,17 @@ export default function JobMatch() {
         new Promise((r) => setTimeout(r, totalMs)),
         reusePack
           ? Promise.resolve(reusePack)
-          : resolveJobAnalysisPack(jobText, resume, remaining, setCredits),
+          : resolveJobAnalysisPack(fullAd, resume, remaining, setCredits),
       ]);
       const local = computeJobMatch(
-        jobText,
+        fullAd,
         resume,
-        requirementKeywords(jobText, pack),
+        requirementKeywords(fullAd, pack),
       );
       setKeywordCandidates(local.missing);
       if (user && resume.id) {
         saveDraft(user.id, resume.id, {
-          jobText,
+          jobText: fullAd,
           hasResults: true,
           analysis: pack,
           ...(reusePack ? {} : { practicedQuestionIds: [] }),
@@ -477,65 +506,113 @@ export default function JobMatch() {
                   {t("jobMatch.description")}
                 </p>
 
-                <div className="mt-3.5 space-y-3 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start lg:gap-x-5 lg:gap-y-1.5 lg:space-y-0">
-                  <p
-                    className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary lg:block"
-                    aria-hidden
+                <div className="mt-4 lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_11rem] lg:items-start lg:gap-5">
+                  <div
+                    className={cn(
+                      "min-w-0 overflow-hidden rounded-2xl border bg-bg shadow-sm",
+                      "focus-within:ring-2 focus-within:ring-ring/50",
+                      error ? "border-destructive" : "border-line",
+                    )}
                   >
-                    <span className="invisible">
-                      {t("jobMatch.comparingAgainst")}
-                    </span>
-                  </p>
-                  <p className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary lg:block">
-                    {t("jobMatch.comparingAgainst")}
-                  </p>
-
-                  <div className="relative min-w-0 h-40 min-[375px]:h-44 sm:h-52 lg:h-[calc(12rem*297/210)]">
-                    <textarea
-                      value={jobText}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck={false}
-                      name="job-ad"
-                      onChange={(e) => {
-                        setJobText(e.target.value);
-                        setError(null);
-                        if (hasResults) {
-                          setHasResults(false);
-                          setKeywordCandidates([]);
-                          setAppliedSkills({});
-                        }
-                      }}
-                      rows={8}
-                      placeholder={t("jobMatch.placeholder")}
-                      className={cn(
-                        "absolute inset-0 size-full resize-none rounded-2xl border bg-white p-3 pb-8",
-                        "text-[16px] leading-relaxed text-text sm:p-4 sm:pb-10 sm:text-sm",
-                        "dark:bg-surface-2/60",
-                        "placeholder:text-text-placeholder",
-                        "focus:outline-none focus:ring-2 focus:ring-ring/50",
-                        "transition-colors",
-                        error
-                          ? "border-destructive focus:border-destructive"
-                          : "border-line focus:border-ring",
-                      )}
-                    />
-                    <div className="pointer-events-none absolute inset-x-3 bottom-2 text-[11px] text-text-secondary sm:inset-x-4 sm:bottom-2.5">
-                      {t("jobMatch.charCount", { count: charCount })}
-                      {charCount > 0 && charCount < MIN_CHARS && (
-                        <span className="ml-1.5 text-text-placeholder">
-                          {t("jobMatch.minChars", { count: MIN_CHARS })}
+                    <div className="grid grid-cols-1 divide-y divide-line min-[400px]:grid-cols-2 min-[400px]:divide-x min-[400px]:divide-y-0">
+                      <label
+                        htmlFor={companyFieldId}
+                        className="block px-3 py-2.5 sm:px-3.5"
+                      >
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-[11px] font-semibold text-text">
+                            {t("jobMatch.companyLabel")}
+                          </span>
+                          <span className="text-[10px] font-medium text-text-placeholder">
+                            {t("jobMatch.optional")}
+                          </span>
                         </span>
-                      )}
+                        <input
+                          id={companyFieldId}
+                          value={jobCompany}
+                          autoComplete="organization"
+                          placeholder={t("jobMatch.companyPlaceholder")}
+                          onChange={(e) => {
+                            setJobCompany(e.target.value);
+                            noteJobEdit();
+                          }}
+                          className="mt-1 w-full bg-transparent text-[16px] text-text outline-none placeholder:text-text-placeholder sm:text-sm"
+                        />
+                      </label>
+                      <label
+                        htmlFor={roleFieldId}
+                        className="block px-3 py-2.5 sm:px-3.5"
+                      >
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-[11px] font-semibold text-text">
+                            {t("jobMatch.roleLabel")}
+                          </span>
+                          <span className="text-[10px] font-medium text-text-placeholder">
+                            {t("jobMatch.optional")}
+                          </span>
+                        </span>
+                        <input
+                          id={roleFieldId}
+                          value={jobRole}
+                          autoComplete="off"
+                          placeholder={t("jobMatch.rolePlaceholder")}
+                          onChange={(e) => {
+                            setJobRole(e.target.value);
+                            noteJobEdit();
+                          }}
+                          className="mt-1 w-full bg-transparent text-[16px] text-text outline-none placeholder:text-text-placeholder sm:text-sm"
+                        />
+                      </label>
+                    </div>
+                    <div className="border-t border-line">
+                      <label
+                        htmlFor={adFieldId}
+                        className="block px-3 pt-2.5 text-[11px] font-semibold text-text sm:px-3.5"
+                      >
+                        {t("jobMatch.adLabel")}
+                      </label>
+                      <textarea
+                        id={adFieldId}
+                        value={jobText}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        name="job-ad"
+                        onChange={(e) => {
+                          setJobText(e.target.value);
+                          noteJobEdit();
+                        }}
+                        rows={8}
+                        placeholder={t("jobMatch.placeholder")}
+                        className={cn(
+                          "block h-48 w-full resize-none bg-transparent px-3 py-2",
+                          "text-[16px] leading-relaxed text-text min-[375px]:h-52 sm:h-64 sm:px-3.5 sm:text-sm",
+                          "placeholder:text-text-placeholder",
+                          "focus:outline-none",
+                        )}
+                      />
+                      <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2 sm:px-3.5">
+                        <p className="min-w-0 text-[11px] tabular-nums text-text-secondary">
+                          {t("jobMatch.charCount", { count: charCount })}
+                          {charCount > 0 && charCount < MIN_CHARS ? (
+                            <span className="ml-1.5 text-text-placeholder">
+                              {t("jobMatch.minChars", { count: MIN_CHARS })}
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="mt-3 min-w-0 lg:mt-0 lg:text-center">
+                    <p className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary lg:block">
+                      {t("jobMatch.comparingAgainst")}
+                    </p>
                     <button
                       type="button"
                       onClick={() => setPreviewOpen(true)}
-                    className="group flex w-full cursor-zoom-in items-center gap-3 rounded-2xl border border-line bg-surface-2/40 p-3 text-left transition-colors hover:border-brand/40 lg:block lg:border-0 lg:bg-transparent lg:p-0"
+                      className="group mt-0 flex w-full cursor-zoom-in items-center gap-3 rounded-2xl border border-line bg-surface-2/40 p-3 text-left transition-colors hover:border-brand/40 lg:mt-2 lg:block lg:border-0 lg:bg-transparent lg:p-0"
                       aria-label={t("jobMatch.results.viewPreview")}
                     >
                       <div className="w-14 shrink-0 overflow-hidden rounded-lg border border-line bg-bg shadow-sm min-[375px]:w-[4.25rem] lg:w-full lg:rounded-2xl lg:shadow-sm lg:transition-colors lg:group-hover:border-brand/40">
@@ -556,13 +633,18 @@ export default function JobMatch() {
                         </p>
                       </div>
                     </button>
+                    {resumeLabel ? (
+                      <p className="mt-2 hidden truncate text-center text-[11px] font-medium text-text lg:block">
+                        {resumeLabel}
+                      </p>
+                    ) : null}
                   </div>
 
-                  {error && (
-                    <p className="text-xs text-destructive lg:col-start-1">
+                  {error ? (
+                    <p className="mt-2 text-xs text-destructive lg:col-start-1">
                       {error}
                     </p>
-                  )}
+                  ) : null}
                 </div>
 
                 <StepActions

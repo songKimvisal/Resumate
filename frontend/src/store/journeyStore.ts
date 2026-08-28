@@ -61,6 +61,8 @@ export type SavedJobRun = {
   hasResults: boolean;
   analysis?: JobAnalysisPack;
   practicedQuestionIds?: string[];
+  /** Resume this analysis belongs to. Required to review after switching resumes. */
+  resumeId?: string;
 };
 
 export type JourneyDraft = {
@@ -70,14 +72,14 @@ export type JourneyDraft = {
   /** One AI (or local fallback) pack reused by Interview Prep and Readiness. */
   analysis?: JobAnalysisPack;
   practicedQuestionIds?: string[];
-  /** Other job ads on this resume. Active job stays in jobText/analysis. Max 2. */
+  /** Other job ads kept on this resume. Active job stays in jobText/analysis. Max 4. */
   savedJobs?: SavedJobRun[];
 };
 
 const EMPTY: JourneyDraft = { step: 0 };
 const EMPTY_IDS: string[] = [];
 const EMPTY_JOBS: SavedJobRun[] = [];
-const MAX_SAVED_JOBS = 2;
+export const MAX_SAVED_JOBS = 4;
 
 function storageKey(userId: string, resumeId: string) {
   return `${userId}:${resumeId}`;
@@ -96,7 +98,88 @@ export function savedJobsOf(draft?: JourneyDraft) {
   return draft?.savedJobs ?? EMPTY_JOBS;
 }
 
-function snapshotActive(draft: JourneyDraft): SavedJobRun | null {
+export type ReviewableJob = SavedJobRun & { resumeId: string };
+
+/** Active analysis first, then other stored jobs on this resume. */
+export function reviewableJobsOf(
+  draft?: JourneyDraft,
+  resumeId?: string,
+) {
+  const saved = savedJobsOf(draft);
+  const snap = draft ? snapshotActive(draft, resumeId) : null;
+  if (!snap) return saved;
+  return [snap, ...saved.filter((job) => job.id !== snap.id)];
+}
+
+/** Saved and in-progress jobs across every resume for this user. */
+export function reviewableJobsForUser(
+  byKey: Record<string, JourneyDraft>,
+  userId: string,
+): ReviewableJob[] {
+  const prefix = `${userId}:`;
+  const jobs: ReviewableJob[] = [];
+  const seen = new Set<string>();
+  for (const [key, draft] of Object.entries(byKey)) {
+    if (!key.startsWith(prefix)) continue;
+    const resumeId = key.slice(prefix.length);
+    if (!resumeId) continue;
+    for (const job of reviewableJobsOf(draft, resumeId)) {
+      const id = `${resumeId}:${job.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      jobs.push({ ...job, resumeId });
+    }
+  }
+  return jobs;
+}
+
+export function activeJobId(draft?: JourneyDraft) {
+  const text = draft?.jobText?.trim();
+  return text && draft?.analysis ? jobKey(text) : null;
+}
+
+/** Best interview set on a resume: active analysis, else the latest saved job. */
+export function interviewPrepForDraft(draft?: JourneyDraft): {
+  practiced: number;
+  total: number;
+  jobId: string | null;
+} | null {
+  if (!draft) return null;
+
+  const fromPack = (
+    questions: InterviewQuestion[] | undefined,
+    practicedIds: string[] | undefined,
+    jobId: string | null,
+  ) => {
+    const total = questions?.length ?? 0;
+    if (total === 0) return null;
+    const ready = new Set(practicedIds ?? []);
+    const practiced = questions!.filter((q) => ready.has(q.id)).length;
+    return { practiced, total, jobId };
+  };
+
+  const active = fromPack(
+    draft.analysis?.questions,
+    draft.practicedQuestionIds,
+    activeJobId(draft),
+  );
+  if (active) return active;
+
+  for (const job of draft.savedJobs ?? []) {
+    const found = fromPack(
+      job.analysis?.questions,
+      job.practicedQuestionIds,
+      job.id,
+    );
+    if (found) return found;
+  }
+  return null;
+}
+
+function snapshotActive(
+  draft: JourneyDraft,
+  resumeId?: string,
+): SavedJobRun | null {
   const jobText = draft.jobText?.trim();
   if (!jobText || !draft.analysis) return null;
   return {
@@ -107,6 +190,7 @@ function snapshotActive(draft: JourneyDraft): SavedJobRun | null {
     hasResults: Boolean(draft.hasResults),
     analysis: draft.analysis,
     practicedQuestionIds: draft.practicedQuestionIds ?? [],
+    resumeId,
   };
 }
 
@@ -150,7 +234,10 @@ interface JourneyState {
     patch: Partial<Omit<JourneyDraft, "step">>,
   ) => void;
   startNewJob: (userId: string, resumeId: string) => void;
+  keepCurrentJob: (userId: string, resumeId: string) => void;
   activateSavedJob: (userId: string, resumeId: string, jobId: string) => void;
+  removeJob: (userId: string, resumeId: string, jobId: string) => void;
+  clearResumeJobs: (userId: string, resumeId: string) => void;
 }
 
 export const useJourneyStore = create<JourneyState>()(
@@ -228,7 +315,7 @@ export const useJourneyStore = create<JourneyState>()(
         set((s) => {
           const k = storageKey(userId, resumeId);
           const prev = s.byKey[k] ?? EMPTY;
-          const snap = snapshotActive(prev);
+          const snap = snapshotActive(prev, resumeId);
           return {
             lastUserId: userId,
             lastResumeId: resumeId,
@@ -243,6 +330,26 @@ export const useJourneyStore = create<JourneyState>()(
                 hasResults: false,
                 analysis: undefined,
                 practicedQuestionIds: [],
+                step: 0,
+              },
+            },
+          };
+        }),
+
+      keepCurrentJob: (userId, resumeId) =>
+        set((s) => {
+          const k = storageKey(userId, resumeId);
+          const prev = s.byKey[k] ?? EMPTY;
+          const snap = snapshotActive(prev, resumeId);
+          if (!snap) return s;
+          return {
+            lastUserId: userId,
+            lastResumeId: resumeId,
+            byKey: {
+              ...s.byKey,
+              [k]: {
+                ...prev,
+                savedJobs: pushSaved(prev.savedJobs ?? [], snap),
               },
             },
           };
@@ -254,7 +361,7 @@ export const useJourneyStore = create<JourneyState>()(
           const prev = s.byKey[k] ?? EMPTY;
           const target = (prev.savedJobs ?? []).find((job) => job.id === jobId);
           if (!target) return s;
-          const snap = snapshotActive(prev);
+          const snap = snapshotActive(prev, resumeId);
           const rest = (prev.savedJobs ?? []).filter((job) => job.id !== jobId);
           return {
             lastUserId: userId,
@@ -272,6 +379,54 @@ export const useJourneyStore = create<JourneyState>()(
             },
           };
         }),
+
+      removeJob: (userId, resumeId, jobId) =>
+        set((s) => {
+          const k = storageKey(userId, resumeId);
+          const prev = s.byKey[k];
+          if (!prev) return s;
+          const activeId = activeJobId(prev);
+          const savedJobs = (prev.savedJobs ?? []).filter(
+            (job) => job.id !== jobId,
+          );
+          const clearingActive = activeId === jobId;
+          if (!clearingActive && savedJobs.length === (prev.savedJobs ?? []).length) {
+            return s;
+          }
+          const next: JourneyDraft = {
+            ...prev,
+            savedJobs,
+            ...(clearingActive
+              ? {
+                  jobText: "",
+                  hasResults: false,
+                  analysis: undefined,
+                  practicedQuestionIds: [],
+                }
+              : {}),
+          };
+          const leftover = reviewableJobsOf(next, resumeId);
+          if (leftover.length === 0) {
+            const byKey = { ...s.byKey };
+            delete byKey[k];
+            return {
+              byKey,
+              lastResumeId:
+                s.lastUserId === userId && s.lastResumeId === resumeId
+                  ? null
+                  : s.lastResumeId,
+            };
+          }
+          return {
+            byKey: {
+              ...s.byKey,
+              [k]: { ...next, step: leftover.length ? next.step : 0 },
+            },
+          };
+        }),
+
+      clearResumeJobs: (userId, resumeId) =>
+        get().forgetResume(userId, resumeId),
     }),
     { name: "resumate-journey", version: 2, migrate: (persisted) => persisted },
   ),
@@ -319,7 +474,7 @@ export function isJourneyNavPath(pathname: string) {
   return (
     pathname === "/dashboard" ||
     pathname === "/select-resume" ||
-    pathname.startsWith("/job-match") ||
+    pathname === "/job-match" ||
     pathname === "/job-readiness"
   );
 }

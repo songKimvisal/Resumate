@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { Switch } from "../../components/ui/Switch";
 import { cn } from "../../lib/utils";
+import PageTitle from "../../components/layout/PageTitle";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
@@ -73,7 +74,10 @@ export default function Settings() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <h1 className="text-2xl font-bold">{t("nav.settings")}</h1>
+      <PageTitle
+        text={t("settings.title")}
+        accent={t("settings.titleAccent")}
+      />
       <p className="text-sm text-text-secondary mt-1">
         {t("settings.subtitle")}
       </p>

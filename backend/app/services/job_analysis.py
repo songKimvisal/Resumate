@@ -20,7 +20,7 @@ _PROMPT = """You are a senior interview coach for Cambodian fresh graduates and 
 Given ONE job ad and ONE resume, return a single JSON object. No markdown.
 
 {{
-  "roleTitle": "short job title from the ad",
+  "roleTitle": "short job title. Must match TARGET ROLE when TARGET ROLE is not 'not given'",
   "matchScore": 0,
   "matched": ["skill or keyword already on the resume"],
   "missing": ["required skill missing from the resume"],
@@ -69,13 +69,27 @@ Interview rules (most important):
 - Never use an em dash (—) or en dash (–). Use a period, a comma, or the word "and" or "to".
 - Do not use hard words unless you explain them: stakeholder, ramp, intake, workflow, buzzword, maturity, brief.
 - questions: EXACTLY 20 unique questions. 8 behavioral, 6 technical, 6 situational. ids q1-q20.
-- Behavioral = one past story. Technical = a tool from the ad. Situational = "what would you do if..." for this job.
-- Every question must name something from the job ad or the resume (a tool, company, school, or task).
+- Behavioral = one past story. Technical = a tool from the ad. Situational = "what would you do if..." for THIS role at THIS employer.
+- roleTitle MUST be TARGET ROLE when TARGET ROLE is not "not given".
+- When TARGET EMPLOYER is known, name that employer in at least 8 of the 20 questions (for example "Why Wing Bank" or "as a Java Developer at Wing Bank"). Use the exact TARGET ROLE in questions that mention the job.
+- q1 must be "Tell me about yourself" plus why this TARGET ROLE at this TARGET EMPLOYER (or why this role, if the employer is not given).
+- At least one question must ask why this employer, when TARGET EMPLOYER is known.
+- Situational questions must sound like a day in this role at this employer, using duties and tools from the ad.
+- Do not invent products, teams, offices, tools, or customers that the ad does not mention.
+- You may use plain industry words only when they fit the ad (for a bank: customers, payments, cash, security, branches). Never invent employer-specific products.
+- Every question must name something from the job ad or the resume (a tool, the employer, a school, or a task).
 - Never repeat the same question text.
-- why: 1 short sentence.
+- why: 1 short sentence. Mention the employer or the role when those targets are known.
 - angle: 1 or 2 short sentences. For behavioral, use STAR in plain words.
 - talkingPoints: 2 or 3 very short lines.
-- sampleAnswer: first person ("I"). 2 to 4 short spoken sentences. Name a real company, project, school, or tool from the resume. If a skill is missing, be honest.
+- sampleAnswer: first person ("I"). 2 to 4 short spoken sentences. Name a real company, project, school, or tool from the resume. When TARGET EMPLOYER is known, mention that employer once (why you want to work there) without inventing facts about them. If a skill is missing, be honest.
+- Do not copy resume text that looks like placeholder, keyboard smash, or repeated letters (for example wewewewe, asdf, test, xxxxx). If a project or job name is nonsense, say "a school project" or "my recent work". Never paste that nonsense into sampleAnswer or talkingPoints.
+- sampleAnswer must sound like a person talking. Do not write "practice on [project name]". Say what you did, in plain words.
+- Write TARGET EMPLOYER with normal capitalization (Wing Bank, not wing bank).
+- headline and summary should name TARGET EMPLOYER and TARGET ROLE when known.
+
+TARGET EMPLOYER: {employer}
+TARGET ROLE: {role}
 
 JOB AD:
 \"\"\"{job}\"\"\"
@@ -85,7 +99,9 @@ RESUME:
 """
 
 
-_CACHE_VERSION = "job-analysis-skills-v2"
+_CACHE_VERSION = "job-analysis-plain-talk-v4"
+_COMPANY_LINE = re.compile(r"^Company:\s*(.*)$", re.I)
+_TITLE_LINE = re.compile(r"^Job title:\s*(.*)$", re.I)
 
 _SKILL_FILLER = {
     "spoken",
@@ -133,11 +149,37 @@ def analyze_job(job_text: str, resume_text: str) -> JobAnalysisResult:
     return _cached_analyze(_CACHE_VERSION, job_text.strip(), resume_text.strip())
 
 
+def _split_job_ad(job_text: str) -> tuple[str, str, str]:
+    """Read the optional Company / Job title lines the frontend prepends."""
+    lines = job_text.replace("\r\n", "\n").strip().split("\n")
+    index = 0
+    company = ""
+    title = ""
+    if index < len(lines):
+        hit = _COMPANY_LINE.match(lines[index])
+        if hit:
+            company = hit.group(1).strip()
+            index += 1
+    if index < len(lines):
+        hit = _TITLE_LINE.match(lines[index])
+        if hit:
+            title = hit.group(1).strip()
+            index += 1
+    body = "\n".join(lines[index:]).strip()
+    return company, title, body
+
+
 @lru_cache(maxsize=64)
 def _cached_analyze(_version: str, job_text: str, resume_text: str) -> JobAnalysisResult:
+    company, title, _body = _split_job_ad(job_text)
     try:
         raw = generate_text(
-            _PROMPT.format(job=job_text[:12000], resume=resume_text[:8000]),
+            _PROMPT.format(
+                employer=company or "not given",
+                role=title or "not given",
+                job=job_text[:12000],
+                resume=resume_text[:8000],
+            ),
             json_mode=True,
             temperature=0.55,
             max_output_tokens=8192,
@@ -145,13 +187,15 @@ def _cached_analyze(_version: str, job_text: str, resume_text: str) -> JobAnalys
         )
         data = _parse_json(raw)
         result = _from_payload(data)
+        if title:
+            result = result.model_copy(update={"role_title": title})
         if len(result.questions) < 8:
             raise ValueError("too few interview questions")
         return result
     except Exception:
         logger.exception("Job analysis AI call failed")
         return JobAnalysisResult(
-            role_title="",
+            role_title=title,
             match_score=0,
             matched=[],
             missing=[],

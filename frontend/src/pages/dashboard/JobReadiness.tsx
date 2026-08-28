@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
@@ -31,11 +31,17 @@ const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 export default function JobReadiness() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: "hub" | "saved-jobs" } | null)
+    ?.from;
+  const fromSaved = from === "saved-jobs";
+  const fromHub = from === "hub";
   const { user } = useAuth();
   const { resume, loading } = useJourneyResume();
   const reachStep = useJourneyStore((s) => s.reachStep);
   const saveDraft = useJourneyStore((s) => s.saveDraft);
   const getDraft = useJourneyStore((s) => s.getDraft);
+  const startNewJob = useJourneyStore((s) => s.startNewJob);
   const draft = useJourneyDraft(user?.id, resume.id);
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -59,7 +65,7 @@ export default function JobReadiness() {
 
   const analysis = draft?.analysis;
   const pack = useMemo(() => {
-    if (analysis) return withNormalizedQuestions(analysis, resume);
+    if (analysis) return withNormalizedQuestions(analysis, resume, draft?.jobText);
     if (draft?.jobText && resume.id) {
       return buildFallbackAnalysis(draft.jobText, resume);
     }
@@ -142,6 +148,12 @@ export default function JobReadiness() {
     }
   };
 
+  const handleTryAnotherJob = () => {
+    if (!user || !resume.id) return;
+    startNewJob(user.id, resume.id);
+    navigate("/dashboard");
+  };
+
   if (loading || !resume.id || !pack) {
     return (
       <div className="flex items-center justify-center px-4 py-24 text-text-secondary">
@@ -154,8 +166,24 @@ export default function JobReadiness() {
   return (
     <JourneyLayout
       activeIndex={3}
-      backLabel={t("jobReadiness.back")}
-      onBack={() => navigate("/job-match/interview-prep")}
+      backLabel={
+        fromSaved
+          ? t("interviewPrep.backToSaved")
+          : fromHub
+            ? t("interviewPrep.backToHub")
+            : t("jobReadiness.back")
+      }
+      nextLabel={t("jobReadiness.tryAnotherJob")}
+      onBack={() =>
+        navigate(
+          fromSaved
+            ? "/saved-jobs"
+            : fromHub
+              ? "/interview-prep"
+              : "/job-match/interview-prep",
+        )
+      }
+      onNext={handleTryAnotherJob}
     >
       <section className="min-w-0 rounded-2xl border border-line bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:p-5 lg:p-6">
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">

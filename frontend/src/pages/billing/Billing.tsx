@@ -12,6 +12,7 @@ import { useAiCredits } from "../../hooks/useAiCredits";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { usePacks } from "../../hooks/usePacks";
 import UpgradePlanModal from "./UpgradePlanModal";
+import PageTitle from "../../components/layout/PageTitle";
 import mascot from "../../assets/logo/mascot.png";
 
 type PaymentMethod = "khqr" | "stripe";
@@ -85,10 +86,10 @@ export default function Billing() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <h1 className="text-3xl font-bold">
-        <span className="text-text">{t("billing.title")}</span>{" "}
-        <span className="text-brand italic">{t("billing.titleAccent")}</span>
-      </h1>
+      <PageTitle
+        text={t("billing.title")}
+        accent={t("billing.titleAccent")}
+      />
       <p className="text-sm text-text-secondary mt-2">
         {t("billing.subtitle")}
       </p>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -8,7 +8,7 @@ import { useAuth } from "../../hooks/UseAuth";
 import { useJourneyResume } from "../../hooks/useJourneyResume";
 import { useJourneyStore, useJourneyDraft, practicedIdsOf } from "../../store/journeyStore";
 import type { InterviewCategory, InterviewQuestion } from "../../store/journeyStore";
-import { buildFallbackAnalysis, withNormalizedQuestions } from "../../lib/jobAnalysis";
+import { buildFallbackAnalysis, splitJobAd, withNormalizedQuestions } from "../../lib/jobAnalysis";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/mascot.png";
 
@@ -31,6 +31,13 @@ const CATEGORY_LABEL: Record<InterviewCategory, string> = {
 export default function ProcessInterviewPrep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from =
+    (location.state as { from?: "hub" | "saved-jobs"; fromHub?: boolean } | null)
+      ?.from ??
+    ((location.state as { fromHub?: boolean } | null)?.fromHub
+      ? "hub"
+      : undefined);
   const { user } = useAuth();
   const { resume, loading } = useJourneyResume();
   const reachStep = useJourneyStore((s) => s.reachStep);
@@ -43,7 +50,7 @@ export default function ProcessInterviewPrep() {
     if (draft?.jobText && resume.id && (!analysis || analysis.source === "fallback")) {
       return buildFallbackAnalysis(draft.jobText, resume);
     }
-    if (analysis) return withNormalizedQuestions(analysis, resume);
+    if (analysis) return withNormalizedQuestions(analysis, resume, draft?.jobText);
     if (draft?.jobText && resume.id) {
       return buildFallbackAnalysis(draft.jobText, resume);
     }
@@ -58,7 +65,7 @@ export default function ProcessInterviewPrep() {
     if (loading || !user || !resume.id) return;
     const current = getDraft(user.id, resume.id);
     if (!current.analysis && !current.jobText) {
-      navigate("/job-match", { replace: true });
+      navigate("/interview-prep", { replace: true });
       return;
     }
     if (!current.analysis && current.jobText) {
@@ -103,6 +110,7 @@ export default function ProcessInterviewPrep() {
     pack?.roleTitle ||
     resume.personal.jobTitle ||
     t("interviewPrep.thisRole");
+  const companyName = splitJobAd(draft?.jobText ?? "").company;
 
   const toggleReady = (id: string) => {
     if (!user || !resume.id) return;
@@ -136,10 +144,26 @@ export default function ProcessInterviewPrep() {
   return (
     <JourneyLayout
       activeIndex={2}
-      backLabel={t("interviewPrep.back")}
+      backLabel={
+        from === "hub"
+          ? t("interviewPrep.backToHub")
+          : from === "saved-jobs"
+            ? t("interviewPrep.backToSaved")
+            : t("interviewPrep.back")
+      }
       nextLabel={t("interviewPrep.next")}
-      onBack={() => navigate("/job-match")}
-      onNext={() => navigate("/job-readiness")}
+      onBack={() =>
+        navigate(
+          from === "hub"
+            ? "/interview-prep"
+            : from === "saved-jobs"
+              ? "/saved-jobs"
+              : "/job-match",
+        )
+      }
+      onNext={() =>
+        navigate("/job-readiness", from ? { state: { from } } : undefined)
+      }
     >
       <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-start lg:gap-4">
         <aside className="flex items-center gap-3 rounded-2xl border border-line bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:gap-4 sm:p-5 lg:block">
@@ -173,14 +197,26 @@ export default function ProcessInterviewPrep() {
         <section className="min-w-0 rounded-2xl border border-brand/15 bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:rounded-[20px] sm:p-5 lg:p-6">
           <span className="inline-flex max-w-full rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-semibold text-brand min-[375px]:px-3 min-[375px]:text-[11px]">
             <span className="truncate">
-              {t("interviewPrep.badge", { role: roleTitle })}
+              {t("interviewPrep.badge", {
+                role: companyName
+                  ? t("jobMatch.roleAtCompany", {
+                      role: roleTitle,
+                      company: companyName,
+                    })
+                  : roleTitle,
+              })}
             </span>
           </span>
           <h2 className="mt-2.5 break-words text-base font-extrabold tracking-tight text-text min-[375px]:text-lg sm:text-xl">
             {t("interviewPrep.title")}
           </h2>
           <p className="mt-1 max-w-lg text-sm leading-6 text-text-secondary">
-            {t("interviewPrep.description", { role: roleTitle })}
+            {companyName
+              ? t("interviewPrep.descriptionAtCompany", {
+                  role: roleTitle,
+                  company: companyName,
+                })
+              : t("interviewPrep.description", { role: roleTitle })}
           </p>
 
           <div className="-mx-1 mt-4 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

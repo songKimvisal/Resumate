@@ -14,6 +14,7 @@ import type { DashboardResume } from "../../lib/api";
 import { downloadResumePdf } from "../../lib/downloadResumePdf";
 import { Button } from "../../components/ui/button";
 import ResumeCard from "../../components/ui/dashboard/ResumeCard";
+import PageTitle from "../../components/layout/PageTitle";
 import { useJourneyStore } from "../../store/journeyStore";
 
 export default function MyResumes() {
@@ -135,10 +136,10 @@ export default function MyResumes() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
-            <span className="text-text">{t("myResumes.title")}</span>{" "}
-            <span className="text-brand">{t("myResumes.titleAccent")}</span>
-          </h1>
+          <PageTitle
+            text={t("myResumes.title")}
+            accent={t("myResumes.titleAccent")}
+          />
           <p className="text-sm text-text-secondary mt-2">
             {t("myResumes.subtitle")}{" "}
             <Link to="/billing" className="underline font-medium text-text">

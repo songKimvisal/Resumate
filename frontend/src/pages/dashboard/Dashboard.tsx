@@ -15,6 +15,7 @@ import { Button } from "../../components/ui/button";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
 import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
 import DashboardSteps from "../../components/dashboard/DashboardSteps";
+import PageTitle from "../../components/layout/PageTitle";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { useJourneyStore, journeyContinuePath } from "../../store/journeyStore";
@@ -329,14 +330,7 @@ export default function Dashboard() {
           HEADER
       ============================================================ */}
       <motion.div variants={fadeUpVariants} className="space-y-2 sm:space-y-3">
-        <h1 className="text-2xl font-bold leading-tight min-[375px]:text-[1.65rem] sm:text-3xl">
-          <span className="text-text">
-            {t("dashboard.welcomeTitle", {
-              name: "",
-            })}
-          </span>{" "}
-          <span className="text-brand italic break-words">{fullName}</span>
-        </h1>
+        <PageTitle text={`${t("nav.welcomeBack")},`} accent={fullName} />
 
         <p className="max-w-2xl text-sm leading-6 text-text-secondary sm:text-base">
           {t("dashboard.subtitle")}
@@ -346,10 +340,7 @@ export default function Dashboard() {
       {/* ============================================================
           STEP NAVIGATION
       ============================================================ */}
-      <motion.div
-        variants={fadeUpVariants}
-        className={cn("mt-5 min-w-0 sm:mt-8")}
-      >
+      <motion.div variants={fadeUpVariants} className="mt-5 min-w-0 sm:mt-8">
         <DashboardSteps activeIndex={currentResume ? journeyStep : 0} />
       </motion.div>
 
