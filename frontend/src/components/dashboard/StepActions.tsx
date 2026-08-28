@@ -18,27 +18,40 @@ export default function StepActions({
   className?: string;
 }) {
   return (
-    <div className={cn("mt-4 flex items-center gap-2 sm:mt-5", className)}>
-      <Button
-        variant="ghost"
-        size="compact"
-        className="h-9 max-w-[48%] shrink-0 rounded-full px-2.5 text-text-secondary hover:bg-surface-2 hover:text-text sm:max-w-none sm:px-3"
-        onClick={onBack}
-      >
-        <ArrowLeft size={15} />
-        <span className="truncate">{backLabel}</span>
-      </Button>
-      {nextLabel && onNext ? (
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-0 z-20",
+        "px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2",
+        "min-[375px]:px-4 sm:px-6",
+        "lg:left-[var(--dashboard-sidebar-width,13rem)]",
+        className,
+      )}
+    >
+      <div className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-6xl items-center gap-1.5 overflow-hidden rounded-full border border-line bg-bg/90 p-1.5 shadow-lg backdrop-blur-md min-[375px]:gap-2 min-[375px]:p-2">
         <Button
+          variant="ghost"
           size="compact"
-          className="h-9 min-w-0 flex-1 rounded-full sm:ml-auto sm:flex-none sm:px-5"
-          disabled={nextDisabled}
-          onClick={onNext}
+          className={cn(
+            "h-8 min-w-0 shrink overflow-hidden rounded-full px-2 text-xs text-text-secondary hover:bg-surface-2 hover:text-text min-[375px]:h-9 min-[375px]:px-2.5 min-[375px]:text-sm sm:px-3",
+            nextLabel && onNext ? "max-w-[46%] sm:max-w-none" : "",
+          )}
+          onClick={onBack}
         >
-          <span className="truncate">{nextLabel}</span>
-          <ArrowRight size={15} />
+          <ArrowLeft size={15} />
+          <span className="min-w-0 truncate">{backLabel}</span>
         </Button>
-      ) : null}
+        {nextLabel && onNext ? (
+          <Button
+            size="compact"
+            className="h-8 min-w-0 flex-1 overflow-hidden rounded-full px-2.5 text-xs min-[375px]:h-9 min-[375px]:px-3 min-[375px]:text-sm sm:ml-auto sm:flex-none sm:px-5"
+            disabled={nextDisabled}
+            onClick={onNext}
+          >
+            <span className="min-w-0 truncate">{nextLabel}</span>
+            <ArrowRight size={15} />
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

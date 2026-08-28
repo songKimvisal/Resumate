@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, ChevronLeft, ChevronRight, Sun, Moon } from "lucide-react";
@@ -27,7 +27,14 @@ export default function DashboardShell() {
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-screen bg-bg text-text lg:flex">
+    <div
+      className="min-h-screen bg-bg text-text lg:flex"
+      style={
+        {
+          "--dashboard-sidebar-width": collapsed ? "4rem" : "13rem",
+        } as CSSProperties
+      }
+    >
       {/* ---------- desktop fixed sidebar ---------- */}
       <div
         className={cn(

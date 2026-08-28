@@ -27,7 +27,7 @@ export default function JourneyLayout({
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
 
   return (
-    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7 sm:pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <div className="space-y-1.5 sm:space-y-2">
         <h1 className="break-words text-xl font-bold leading-tight min-[375px]:text-[1.65rem] sm:text-2xl">
           <span className="text-text">
@@ -44,7 +44,7 @@ export default function JourneyLayout({
         <DashboardSteps activeIndex={activeIndex} />
       </div>
 
-      <div className="mt-5">{children}</div>
+      <div className="mt-5 min-w-0">{children}</div>
 
       <StepActions
         backLabel={backLabel}

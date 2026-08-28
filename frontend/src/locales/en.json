@@ -229,7 +229,8 @@
     "analyzePhases": {
       "extract": "Extracting key requirements",
       "detect": "Detecting must-have vs. nice-to-have",
-      "score": "Scoring your resume against the role"
+      "score": "Scoring your resume against the role",
+      "prep": "Drafting interview questions and readiness report"
     },
     "analyzeError": "Something went wrong analyzing this job. Please try again.",
     "now": "Now",
@@ -246,7 +247,7 @@
     },
     "results": {
       "stepBadge": "Step 2 · Analyze & Improve",
-      "title": "How your resume compares to this job.",
+      "title": "How you compare to this job",
       "description": "We checked {{name}} against this posting and found a few ways to strengthen your resume.",
       "currentMatch": "Current resume match",
       "matchWord": "match",
@@ -256,19 +257,85 @@
       "skillsMatch": "Skills you match ({{count}})",
       "missingWeak": "Missing / weak ({{count}})",
       "addKeywords": "Add missing keywords",
-      "addKeywordsHint": "These appear in the job ad but not on your resume. Add one, then set how strong you are at it.",
+      "addKeywordsHint": "These appear in the job ad but not on your resume. Add only skills you actually have. Skip the rest.",
       "add": "Add",
       "remove": "Remove",
       "level": "Level",
       "viewPreview": "Click to preview",
       "closePreview": "Close preview",
-      "rewriteTitle": "Rewrite your bullet points",
-      "applied": "Applied",
-      "suggestionTitle": "Add {{keyword}} to your skills",
-      "suggestionBody": "This posting looks for {{keyword}}. Adding it to your skills makes that match clearer.",
       "backToJob": "Back to job ad",
-      "getSuggestions": "Get improvement suggestions"
+      "getSuggestions": "Continue to interview prep",
+      "weakSections": "Weak sections",
+      "qualificationGaps": "Qualification gaps",
+      "weakSummary": "Summary is empty. Open with the job title and 2 skills from this posting.",
+      "weakExperienceThin": "No job or project yet. Add an internship, class project, or volunteer work.",
+      "weakExperienceProof": "Experience bullets need a number, tool, or result so they match this ad.",
+      "weakSkills": "Your skills list is short. Add tools from this posting that you can actually use.",
+      "gapEducation": "Education is not listed. Many ads still look for a degree or current studies.",
+      "gapLanguage": "This posting asks for {{lang}}. Add it under languages if you speak it."
     }
+  },
+  "interviewPrep": {
+    "badge": "Interview prep · {{role}}",
+    "title": "Walk in ready for this exact role",
+    "description": "AI-generated questions based on both your resume AND the {{role}} job ad. Not generic questions.",
+    "thisRole": "this role",
+    "progressTitle": "Prep progress",
+    "practiced": "{{done}}/{{total}} practiced",
+    "progressHint": "Tap a question to see why it's asked and your best angle.",
+    "whyAsked": "Why they ask this",
+    "howToAnswer": "How to answer",
+    "talkingPoints": "Hit these points",
+    "sampleAnswer": "Your best answer",
+    "copySample": "Copy",
+    "copied": "Copied",
+    "starHint": "Tell one story: what happened, what you did, and what changed.",
+    "filters": {
+      "all": "All",
+      "behavioral": "Behavioral",
+      "technical": "Technical",
+      "situational": "Situational"
+    },
+    "category": {
+      "behavioral": "Behavioral",
+      "technical": "Technical",
+      "situational": "Situational"
+    },
+    "markReady": "Mark as ready",
+    "markedReady": "Ready",
+    "noQuestions": "No questions in this category.",
+    "back": "Back to Improve resume",
+    "next": "Readiness Report",
+    "emptyTitle": "Analyze a job first",
+    "emptyBody": "Paste a job ad and run analysis first. Interview questions and the readiness report come from that same result. No extra AI call.",
+    "startJobMatch": "Paste a job ad"
+  },
+  "jobReadiness": {
+    "strongResume": "Strong resume.",
+    "headlineHigh": "You're in good shape for this role",
+    "headlineMid": "You're close. A few gaps to close",
+    "headlineLow": "There's work to do before you apply",
+    "summaryFallback": "Your resume matches most requirements and your interview practice is solid. Close the skill gaps below to move from almost to fully ready.",
+    "metrics": {
+      "resumeQuality": "Resume quality",
+      "jobMatch": "Job match",
+      "skillGaps": "Skill gaps",
+      "interviewReadiness": "Interview readiness"
+    },
+    "interviewLabels": {
+      "notStarted": "Not started",
+      "gettingStarted": "Getting started",
+      "good": "Good",
+      "ready": "Ready"
+    },
+    "recommended": "Recommended actions",
+    "downloadPdf": "Download PDF",
+    "downloading": "Preparing PDF…",
+    "back": "Back to Interview Prep",
+    "readyWord": "ready",
+    "fallbackActionPractice": "Practice the remaining interview questions for this role.",
+    "fallbackActionSkills": "Add the missing skills from the job ad where you can honestly claim them.",
+    "fallbackActionPdf": "Download a PDF and review it the way a recruiter would."
   },
   "selectResume": {
     "back": "Back",
@@ -550,7 +617,7 @@
             "features": [
               "25 smart writing credits",
               "2 job analyses",
-              "1 interview question set"
+              "1 interview set (20 Q&A)"
             ],
             "cta": "Get Plus",
             "popular": true
@@ -562,7 +629,7 @@
             "features": [
               "60 smart writing credits",
               "5 job analyses",
-              "3 interview sets and a skill gap report"
+              "3 interview sets (20 Q&A each) and a skill gap report"
             ],
             "cta": "Get Pro"
           }

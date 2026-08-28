@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, FileText, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
@@ -31,6 +31,9 @@ const cardVariants: Variants = {
 export default function SelectResume() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const nextPath =
+    (location.state as { next?: string } | null)?.next || "/dashboard";
   const { user } = useAuth();
   const setResume = useResumeStore((s) => s.setResume);
   const resetResume = useResumeStore((s) => s.resetResume);
@@ -63,7 +66,7 @@ export default function SelectResume() {
     fetchResumes(user.id);
   };
 
-  const handleBack = () => navigate("/dashboard");
+  const handleBack = () => navigate(nextPath);
 
   const handleNewResume = () => {
     resetResume();
@@ -73,7 +76,7 @@ export default function SelectResume() {
   const handleSelect = (item: DashboardResume) => {
     setResume(item.resume);
     if (user && item.resume.id) rememberResume(user.id, item.resume.id);
-    navigate("/dashboard");
+    navigate(nextPath);
   };
 
   const isLoading = resumes === null && !loadError;

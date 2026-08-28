@@ -11,13 +11,16 @@ import DashboardSteps from "../../components/dashboard/DashboardSteps";
 import StepActions from "../../components/dashboard/StepActions";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
-import { useJourneyStore, useJourneyHydrated } from "../../store/journeyStore";
+import { useJourneyStore, useJourneyHydrated, useJourneyDraft, savedJobsOf } from "../../store/journeyStore";
 import { getResumesByUser, saveResumeToDashboard } from "../../lib/api";
 import {
   computeJobMatch,
   prettyKeyword,
+  requirementKeywords,
   type JobMatchResult,
 } from "../../lib/jobMatch";
+import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing } from "../../lib/jobAnalysis";
+import { useAiCredits } from "../../hooks/useAiCredits";
 import { cn } from "../../lib/utils";
 import type { Resume } from "../../types/resume";
 
@@ -30,6 +33,7 @@ const ANALYZE_PHASE_KEYS = [
   "jobMatch.analyzePhases.extract",
   "jobMatch.analyzePhases.detect",
   "jobMatch.analyzePhases.score",
+  "jobMatch.analyzePhases.prep",
 ] as const;
 
 export default function JobMatch() {
@@ -65,6 +69,10 @@ export default function JobMatch() {
   const reachStep = useJourneyStore((s) => s.reachStep);
   const saveDraft = useJourneyStore((s) => s.saveDraft);
   const getDraft = useJourneyStore((s) => s.getDraft);
+  const startNewJob = useJourneyStore((s) => s.startNewJob);
+  const activateSavedJob = useJourneyStore((s) => s.activateSavedJob);
+  const { remaining, setCredits } = useAiCredits();
+  const analysisDraft = useJourneyDraft(user?.id, selectedResume?.id);
 
   useEffect(() => {
     if (!user) return;
@@ -106,10 +114,19 @@ export default function JobMatch() {
     if (draft.jobText) {
       setJobText(draft.jobText);
       if (draft.hasResults) {
-        const match = computeJobMatch(draft.jobText, selectedResume);
+        const match = computeJobMatch(
+          draft.jobText,
+          selectedResume,
+          requirementKeywords(draft.jobText, draft.analysis),
+        );
         setKeywordCandidates(match.missing);
         setHasResults(true);
       }
+    } else {
+      setJobText("");
+      setHasResults(false);
+      setKeywordCandidates([]);
+      setAppliedSkills({});
     }
     reachStep(user.id, selectedResume.id, 1);
   }, [journeyHydrated, user, selectedResume, getDraft, reachStep]);
@@ -117,11 +134,43 @@ export default function JobMatch() {
   useEffect(() => {
     if (!user || !selectedResume?.id) return;
     if (restoredForRef.current !== selectedResume.id) return;
+    const draft = getDraft(user.id, selectedResume.id);
+    if (
+      draft.analysis &&
+      jobText.trim() !== (draft.jobText ?? "").trim()
+    ) {
+      saveDraft(user.id, selectedResume.id, { hasResults });
+      return;
+    }
     saveDraft(user.id, selectedResume.id, {
       jobText,
       hasResults,
     });
-  }, [user, selectedResume?.id, jobText, hasResults, saveDraft]);
+  }, [user, selectedResume?.id, jobText, hasResults, saveDraft, getDraft]);
+
+  useEffect(() => {
+    if (!selectedResume?.id) return;
+    if (restoredForRef.current !== selectedResume.id) return;
+    const stored = analysisDraft?.jobText ?? "";
+    if (stored === jobText) return;
+    if (!stored) {
+      setJobText("");
+      setHasResults(false);
+      setKeywordCandidates([]);
+      setAppliedSkills({});
+      return;
+    }
+    if (analysisDraft?.hasResults && analysisDraft.analysis) {
+      setJobText(stored);
+      setHasResults(true);
+      const match = computeJobMatch(
+        stored,
+        selectedResume,
+        requirementKeywords(stored, analysisDraft.analysis),
+      );
+      setKeywordCandidates(match.missing);
+    }
+  }, [analysisDraft?.jobText, analysisDraft?.hasResults, analysisDraft?.analysis, selectedResume]);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -147,8 +196,12 @@ export default function JobMatch() {
   /** Live score against the current resume - rises as keywords are added to skills. */
   const result = useMemo(() => {
     if (!hasResults || !selectedResume || !jobText.trim()) return null;
-    return computeJobMatch(jobText, selectedResume);
-  }, [hasResults, selectedResume, jobText]);
+    return computeJobMatch(
+      jobText,
+      selectedResume,
+      requirementKeywords(jobText, analysisDraft?.analysis),
+    );
+  }, [hasResults, selectedResume, jobText, analysisDraft?.analysis]);
 
   const matchScore = result?.score ?? 0;
 
@@ -236,13 +289,6 @@ export default function JobMatch() {
 
   const handleGetSuggestions = () => {
     if (!result) return;
-    const remaining = keywordCandidates.filter(
-      (token) => !(token in appliedSkills),
-    );
-    if (remaining.length > 0) {
-      applyKeywords(remaining);
-      return;
-    }
     if (user && selectedResume.id) {
       reachStep(user.id, selectedResume.id, 2);
     }
@@ -258,12 +304,67 @@ export default function JobMatch() {
     setAnalyzing(true);
 
     const totalMs = ANALYZE_PHASE_KEYS.length * ANALYZE_PHASE_MS;
-    await new Promise((r) => setTimeout(r, totalMs));
+    const resume = useResumeStore.getState().resume;
+    const draft =
+      user && resume.id ? getDraft(user.id, resume.id) : undefined;
+    const trimmed = jobText.trim();
+    const savedHit = savedJobsOf(draft).find(
+      (job) => job.jobText.trim() === trimmed && job.analysis,
+    );
+    if (user && resume.id && savedHit) {
+      activateSavedJob(user.id, resume.id, savedHit.id);
+      const pack = savedHit.analysis!;
+      const local = computeJobMatch(
+        jobText,
+        resume,
+        requirementKeywords(jobText, pack),
+      );
+      setKeywordCandidates(local.missing);
+      setHasResults(true);
+      setAnalyzing(false);
+      return;
+    }
+
+    if (
+      user &&
+      resume.id &&
+      draft?.analysis &&
+      (draft.jobText ?? "").trim() !== trimmed
+    ) {
+      startNewJob(user.id, resume.id);
+    }
+
+    const fresh = user && resume.id ? getDraft(user.id, resume.id) : draft;
+    const reusePack =
+      fresh?.analysis &&
+      fresh.analysis.questions.length > 0 &&
+      fresh.jobText?.trim() === trimmed &&
+      (fresh.analysis.source === "fallback" ||
+        fresh.analysis.questions.some((q) => (q.sampleAnswer || "").trim().length > 40))
+        ? fresh.analysis
+        : null;
 
     try {
-      const resume = useResumeStore.getState().resume;
-      const match = computeJobMatch(jobText, resume);
-      setKeywordCandidates(match.missing);
+      const [, pack] = await Promise.all([
+        new Promise((r) => setTimeout(r, totalMs)),
+        reusePack
+          ? Promise.resolve(reusePack)
+          : resolveJobAnalysisPack(jobText, resume, remaining, setCredits),
+      ]);
+      const local = computeJobMatch(
+        jobText,
+        resume,
+        requirementKeywords(jobText, pack),
+      );
+      setKeywordCandidates(local.missing);
+      if (user && resume.id) {
+        saveDraft(user.id, resume.id, {
+          jobText,
+          hasResults: true,
+          analysis: pack,
+          ...(reusePack ? {} : { practicedQuestionIds: [] }),
+        });
+      }
       setHasResults(true);
     } catch {
       setError(t("jobMatch.analyzeError"));
@@ -285,7 +386,7 @@ export default function JobMatch() {
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
 
   return (
-    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-3 py-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7 sm:pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <div className="space-y-1.5 sm:space-y-2">
         <h1 className="break-words text-xl font-bold leading-tight min-[375px]:text-[1.65rem] sm:text-2xl">
           <span className="text-text">
@@ -302,7 +403,7 @@ export default function JobMatch() {
         <DashboardSteps activeIndex={1} />
       </div>
 
-      <div className="mt-4 flex items-center gap-4 rounded-xl border border-line bg-surface-2/30 px-3 py-2.5 sm:mt-5 sm:px-4">
+      <div className="mt-4 flex min-w-0 items-center gap-3 rounded-xl border border-line bg-surface-2/30 px-3 py-2.5 sm:mt-5 sm:gap-4 sm:px-4">
         <ProgressStrip
           subStep={subStep}
           pasteLabel={t("jobMatch.subSteps.paste")}
@@ -392,6 +493,11 @@ export default function JobMatch() {
                   <div className="relative min-w-0 h-40 min-[375px]:h-44 sm:h-52 lg:h-[calc(12rem*297/210)]">
                     <textarea
                       value={jobText}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      name="job-ad"
                       onChange={(e) => {
                         setJobText(e.target.value);
                         setError(null);
@@ -515,19 +621,33 @@ function ResultsPanel({
   const { t } = useTranslation();
   const matched = result.matched.slice(0, 6);
   const missingPills = result.missing.slice(0, 6);
-  const suggestions = keywordCandidates.slice(0, 4);
   const skillsById = Object.fromEntries(resume.skills.map((s) => [s.id, s]));
+  const flags = resumeInsightFlags(resume);
+  const liveWeak = [
+    flags.emptySummary ? t("jobMatch.results.weakSummary") : null,
+    flags.thinExperience
+      ? t("jobMatch.results.weakExperienceThin")
+      : t("jobMatch.results.weakExperienceProof"),
+    flags.shortSkills ? t("jobMatch.results.weakSkills") : null,
+  ].filter((item): item is string => Boolean(item));
+  const langGaps = languageGapsFromMissing(result.missing);
+  const liveGaps = [
+    flags.noEducation ? t("jobMatch.results.gapEducation") : null,
+    langGaps.length
+      ? t("jobMatch.results.gapLanguage", { lang: langGaps.join(", ") })
+      : null,
+  ].filter((item): item is string => Boolean(item));
 
   return (
     <div>
-      <span className="inline-flex max-w-full rounded-full bg-brand/10 px-3.5 py-1.5 text-[11px] font-semibold text-brand min-[375px]:px-4 min-[375px]:text-xs">
+      <span className="inline-flex max-w-full rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-semibold text-brand min-[375px]:px-3 min-[375px]:text-[11px]">
         {t("jobMatch.results.stepBadge")}
       </span>
 
-      <h2 className="mt-4 break-words text-xl font-extrabold tracking-tight leading-tight text-text min-[375px]:text-2xl sm:text-3xl">
+      <h2 className="mt-2.5 text-base font-extrabold tracking-tight text-text min-[375px]:text-lg sm:text-xl">
         {t("jobMatch.results.title")}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
+      <p className="mt-1 max-w-lg text-[13px] leading-5 text-text-secondary sm:text-sm sm:leading-6">
         {t("jobMatch.results.description", { name: resumeLabel })}
       </p>
 
@@ -582,6 +702,50 @@ function ResultsPanel({
           </div>
         </div>
       </div>
+
+      {(liveWeak.length > 0 || liveGaps.length > 0) && (
+        <div
+          className={cn(
+            "mt-5 grid min-w-0 gap-3 sm:mt-6",
+            liveGaps.length > 0 && liveWeak.length > 0 && "sm:grid-cols-2",
+          )}
+        >
+          {liveWeak.length > 0 && (
+            <div className="rounded-2xl border border-line bg-surface-2/40 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
+                {t("jobMatch.results.weakSections")}
+              </p>
+              <ul className="mt-3 space-y-2">
+                {liveWeak.map((item, i) => (
+                  <li
+                    key={`weak-${i}`}
+                    className="text-sm leading-5 text-text"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {liveGaps.length > 0 && (
+            <div className="rounded-2xl border border-line bg-surface-2/40 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
+                {t("jobMatch.results.qualificationGaps")}
+              </p>
+              <ul className="mt-3 space-y-2">
+                {liveGaps.map((item, i) => (
+                  <li
+                    key={`gap-${i}`}
+                    className="text-sm leading-5 text-text"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 grid min-w-0 gap-5 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(160px,220px)] lg:items-start">
         <div className="min-w-0 space-y-5">
@@ -660,65 +824,6 @@ function ResultsPanel({
               </ul>
             )}
           </div>
-
-          {suggestions.length > 0 && (
-            <div>
-              <h3 className="text-sm font-bold text-text">
-                {t("jobMatch.results.rewriteTitle")}
-              </h3>
-              <div className="mt-3 space-y-2.5">
-                {suggestions.map((token, i) => {
-                  const applied = token in appliedSkills;
-                  const label = prettyKeyword(token);
-                  return (
-                    <button
-                      key={token || `sug-${i}`}
-                      type="button"
-                      disabled={applied}
-                      onClick={() => onApply(token)}
-                      className={cn(
-                        "w-full rounded-2xl border border-line bg-surface-2/30 p-3.5 text-left transition-colors",
-                        !applied &&
-                          "hover:border-brand/30 hover:bg-brand/[0.03]",
-                      )}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <span
-                          className={cn(
-                            "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full",
-                            applied
-                              ? "bg-success text-white"
-                              : "border border-line text-text-placeholder",
-                          )}
-                        >
-                          <Check size={12} strokeWidth={3} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-text">
-                              {t("jobMatch.results.suggestionTitle", {
-                                keyword: label,
-                              })}
-                            </p>
-                            {applied && (
-                              <span className="rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
-                                {t("jobMatch.results.applied")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-xs leading-5 text-text-secondary">
-                            {t("jobMatch.results.suggestionBody", {
-                              keyword: label,
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="hidden min-w-0 lg:block">

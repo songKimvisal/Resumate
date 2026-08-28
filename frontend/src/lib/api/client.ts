@@ -1,6 +1,10 @@
 import { supabase } from "../supabase";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+/** Prefer the URL in `.env`. In Vite dev, fall back to same-origin `/api` (proxied to the backend). */
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  import.meta.env.VITE_BACKEND_URL ??
+  (import.meta.env.DEV ? "" : "http://localhost:8000");
 
 export class BackendError extends Error {
   status: number;

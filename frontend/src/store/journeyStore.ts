@@ -11,16 +11,125 @@ export const JOURNEY_ROUTES = [
 
 export type JourneyStep = 0 | 1 | 2 | 3;
 
+export type InterviewCategory = "behavioral" | "technical" | "situational";
+
+export type InterviewQuestion = {
+  id: string;
+  category: InterviewCategory;
+  question: string;
+  /** Why an interviewer for THIS job would ask this. */
+  why?: string;
+  /** How to structure the answer using this resume (STAR for behavioral). */
+  angle: string;
+  /** First-person spoken sample grounded in resume facts. */
+  sampleAnswer?: string;
+  talkingPoints?: string[];
+};
+
+export type AnalysisBulletRewrite = {
+  id?: string;
+  role: string;
+  current: string;
+  suggested: string;
+  keyword: string;
+};
+
+export type JobAnalysisPack = {
+  roleTitle: string;
+  matchScore: number;
+  matched: string[];
+  missing: string[];
+  weakSections: string[];
+  qualificationGaps: string[];
+  strengths: string[];
+  bulletRewrites?: AnalysisBulletRewrite[];
+  questions: InterviewQuestion[];
+  readiness: {
+    headline: string;
+    summary: string;
+    actions: string[];
+    readyToApply: boolean;
+  };
+  source: "gemini" | "fallback";
+};
+
+export type SavedJobRun = {
+  id: string;
+  jobText: string;
+  roleTitle: string;
+  matchScore: number;
+  hasResults: boolean;
+  analysis?: JobAnalysisPack;
+  practicedQuestionIds?: string[];
+};
+
 export type JourneyDraft = {
   step: JourneyStep;
   jobText?: string;
   hasResults?: boolean;
+  /** One AI (or local fallback) pack reused by Interview Prep and Readiness. */
+  analysis?: JobAnalysisPack;
+  practicedQuestionIds?: string[];
+  /** Other job ads on this resume. Active job stays in jobText/analysis. Max 2. */
+  savedJobs?: SavedJobRun[];
 };
 
 const EMPTY: JourneyDraft = { step: 0 };
+const EMPTY_IDS: string[] = [];
+const EMPTY_JOBS: SavedJobRun[] = [];
+const MAX_SAVED_JOBS = 2;
 
 function storageKey(userId: string, resumeId: string) {
   return `${userId}:${resumeId}`;
+}
+
+export function jobKey(jobText: string) {
+  const s = jobText.trim();
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return `job-${Math.abs(h).toString(36)}`;
+}
+
+export function savedJobsOf(draft?: JourneyDraft) {
+  return draft?.savedJobs ?? EMPTY_JOBS;
+}
+
+function snapshotActive(draft: JourneyDraft): SavedJobRun | null {
+  const jobText = draft.jobText?.trim();
+  if (!jobText || !draft.analysis) return null;
+  return {
+    id: jobKey(jobText),
+    jobText,
+    roleTitle: draft.analysis.roleTitle || "",
+    matchScore: draft.analysis.matchScore,
+    hasResults: Boolean(draft.hasResults),
+    analysis: draft.analysis,
+    practicedQuestionIds: draft.practicedQuestionIds ?? [],
+  };
+}
+
+function pushSaved(list: SavedJobRun[], item: SavedJobRun) {
+  return [item, ...list.filter((job) => job.id !== item.id)].slice(
+    0,
+    MAX_SAVED_JOBS,
+  );
+}
+
+/** Stable store slice for a user+resume draft. Safe to use as a selector. */
+export function useJourneyDraft(
+  userId?: string | null,
+  resumeId?: string | null,
+) {
+  return useJourneyStore((s) => {
+    if (!userId || !resumeId) return undefined;
+    return s.byKey[storageKey(userId, resumeId)];
+  });
+}
+
+export function practicedIdsOf(draft?: JourneyDraft) {
+  return draft?.practicedQuestionIds ?? EMPTY_IDS;
 }
 
 interface JourneyState {
@@ -40,6 +149,8 @@ interface JourneyState {
     resumeId: string,
     patch: Partial<Omit<JourneyDraft, "step">>,
   ) => void;
+  startNewJob: (userId: string, resumeId: string) => void;
+  activateSavedJob: (userId: string, resumeId: string, jobId: string) => void;
 }
 
 export const useJourneyStore = create<JourneyState>()(
@@ -81,12 +192,20 @@ export const useJourneyStore = create<JourneyState>()(
           const k = storageKey(userId, resumeId);
           const prev = s.byKey[k] ?? EMPTY;
           const nextStep = step > prev.step ? step : prev.step;
+          if (
+            s.lastUserId === userId &&
+            s.lastResumeId === resumeId &&
+            s.byKey[k] &&
+            prev.step === nextStep
+          ) {
+            return s;
+          }
           return {
             lastUserId: userId,
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: { ...prev, step: nextStep },
+              [k]: prev.step === nextStep ? prev : { ...prev, step: nextStep },
             },
           };
         }),
@@ -104,8 +223,57 @@ export const useJourneyStore = create<JourneyState>()(
             },
           };
         }),
+
+      startNewJob: (userId, resumeId) =>
+        set((s) => {
+          const k = storageKey(userId, resumeId);
+          const prev = s.byKey[k] ?? EMPTY;
+          const snap = snapshotActive(prev);
+          return {
+            lastUserId: userId,
+            lastResumeId: resumeId,
+            byKey: {
+              ...s.byKey,
+              [k]: {
+                ...prev,
+                savedJobs: snap
+                  ? pushSaved(prev.savedJobs ?? [], snap)
+                  : prev.savedJobs ?? [],
+                jobText: "",
+                hasResults: false,
+                analysis: undefined,
+                practicedQuestionIds: [],
+              },
+            },
+          };
+        }),
+
+      activateSavedJob: (userId, resumeId, jobId) =>
+        set((s) => {
+          const k = storageKey(userId, resumeId);
+          const prev = s.byKey[k] ?? EMPTY;
+          const target = (prev.savedJobs ?? []).find((job) => job.id === jobId);
+          if (!target) return s;
+          const snap = snapshotActive(prev);
+          const rest = (prev.savedJobs ?? []).filter((job) => job.id !== jobId);
+          return {
+            lastUserId: userId,
+            lastResumeId: resumeId,
+            byKey: {
+              ...s.byKey,
+              [k]: {
+                ...prev,
+                savedJobs: snap ? pushSaved(rest, snap) : rest,
+                jobText: target.jobText,
+                hasResults: target.hasResults,
+                analysis: target.analysis,
+                practicedQuestionIds: target.practicedQuestionIds ?? [],
+              },
+            },
+          };
+        }),
     }),
-    { name: "resumate-journey" },
+    { name: "resumate-journey", version: 2, migrate: (persisted) => persisted },
   ),
 );
 
