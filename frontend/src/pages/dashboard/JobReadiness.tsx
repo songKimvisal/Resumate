@@ -29,11 +29,10 @@ import {
   withNormalizedQuestions,
 } from "../../lib/jobAnalysis";
 import { prettyProperName } from "../../lib/interviewSet";
-import {
-  downloadResumePdf,
-  isDownloadAbort,
-} from "../../lib/downloadResumePdf";
+import { saveResumePdf } from "../../lib/saveResumePdf";
 import { cn } from "../../lib/utils";
+import { usePdfSaves } from "../../hooks/usePdfSaves";
+import UpgradePlanModal from "../billing/UpgradePlanModal";
 
 const GAUGE_RADIUS = 42;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
@@ -64,6 +63,9 @@ export default function JobReadiness() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { remaining, canSave } = usePdfSaves();
+  const blocked = !canSave;
 
   useEffect(() => {
     if (loading || !user || !resume.id) return;
@@ -198,14 +200,17 @@ export default function JobReadiness() {
         ];
 
   const handleDownload = async () => {
+    if (blocked) {
+      setUpgradeOpen(true);
+      return;
+    }
     setDownloading(true);
     setDownloadError(null);
     try {
-      await downloadResumePdf(resume);
-    } catch (err) {
-      if (!isDownloadAbort(err)) {
-        setDownloadError(t("builder.downloadPdfError"));
-      }
+      const result = await saveResumePdf(resume);
+      if (result === "quota") setUpgradeOpen(true);
+    } catch {
+      setDownloadError(t("builder.downloadPdfError"));
     } finally {
       setDownloading(false);
     }
@@ -227,6 +232,7 @@ export default function JobReadiness() {
   }
 
   return (
+    <>
     <JourneyLayout
       activeIndex={3}
       hideIntro={fromSaved || fromHub}
@@ -368,8 +374,15 @@ export default function JobReadiness() {
             <span className="truncate">
               {downloading
                 ? t("jobReadiness.downloading")
-                : t("jobReadiness.downloadPdf")}
+                : blocked
+                  ? t("builder.downloadPdfBuy")
+                  : t("jobReadiness.downloadPdf")}
             </span>
+            {!downloading && !blocked && remaining > 0 && (
+              <span className="tabular-nums rounded-full bg-white/20 px-1.5 py-px text-[10px] font-semibold leading-none">
+                {remaining}
+              </span>
+            )}
           </Button>
           {downloadError && (
             <p className="mt-2 text-xs text-destructive">{downloadError}</p>
@@ -384,6 +397,16 @@ export default function JobReadiness() {
         closeLabel={t("jobMatch.results.closePreview")}
       />
     </JourneyLayout>
+    <UpgradePlanModal
+      open={upgradeOpen}
+      onClose={() => setUpgradeOpen(false)}
+      initialNeed="both"
+      onSelectPack={(packId) => {
+        setUpgradeOpen(false);
+        navigate("/billing/payment", { state: { pack: packId } });
+      }}
+    />
+    </>
   );
 }
 

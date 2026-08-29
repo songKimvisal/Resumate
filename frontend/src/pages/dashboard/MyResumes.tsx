@@ -11,11 +11,13 @@ import {
   renameResume,
 } from "../../lib/api";
 import type { DashboardResume } from "../../lib/api";
-import { downloadResumePdf } from "../../lib/downloadResumePdf";
+import { saveResumePdf } from "../../lib/saveResumePdf";
 import { Button } from "../../components/ui/button";
 import ResumeCard from "../../components/ui/dashboard/ResumeCard";
 import PageTitle from "../../components/layout/PageTitle";
 import { useJourneyStore } from "../../store/journeyStore";
+import { usePdfSaves } from "../../hooks/usePdfSaves";
+import UpgradePlanModal from "../billing/UpgradePlanModal";
 
 export default function MyResumes() {
   const { t } = useTranslation();
@@ -30,6 +32,8 @@ export default function MyResumes() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [confirmingBulk, setConfirmingBulk] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { canSave } = usePdfSaves();
 
   const fetchResumes = useCallback((userId: string) => {
     getResumesByUser(userId)
@@ -71,8 +75,18 @@ export default function MyResumes() {
     navigate("/builder");
   };
 
-  const handleDownload = (item: DashboardResume) =>
-    downloadResumePdf(item.resume);
+  const handleDownload = async (item: DashboardResume) => {
+    if (!canSave) {
+      setUpgradeOpen(true);
+      return;
+    }
+    try {
+      const result = await saveResumePdf(item.resume);
+      if (result === "quota") setUpgradeOpen(true);
+    } catch {
+      // Resume cards have no error line; the picker abort is already ignored.
+    }
+  };
 
   const handleDelete = async (id: string) => {
     await deleteResume(id);
@@ -133,6 +147,7 @@ export default function MyResumes() {
   const showSelect = (resumes?.length ?? 0) > 0;
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -301,5 +316,15 @@ export default function MyResumes() {
         </div>
       )}
     </div>
+    <UpgradePlanModal
+      open={upgradeOpen}
+      onClose={() => setUpgradeOpen(false)}
+      initialNeed="both"
+      onSelectPack={(packId) => {
+        setUpgradeOpen(false);
+        navigate("/billing/payment", { state: { pack: packId } });
+      }}
+    />
+    </>
   );
 }

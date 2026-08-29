@@ -14,13 +14,12 @@ import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
-import {
-  downloadResumePdf,
-  isDownloadAbort,
-} from "../../lib/downloadResumePdf";
+import { saveResumePdf } from "../../lib/saveResumePdf";
 import { saveResumeToDashboard } from "../../lib/api";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
+import { usePdfSaves } from "../../hooks/usePdfSaves";
+import UpgradePlanModal from "../billing/UpgradePlanModal";
 import type { ScoreBand } from "../../lib/resumeCompleteness";
 
 interface Step5ReviewProps {
@@ -61,29 +60,36 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   const { user } = useAuth();
   const resume = useResumeStore((s) => s.resume);
   const markSaved = useResumeStore((s) => s.markSaved);
+  const { remaining, canSave } = usePdfSaves();
   const [downloading, setDownloading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const { score, band, missing } = computeCompleteness(resume);
   const circumference = 2 * Math.PI * 42;
   const BandIcon = BAND_ICON[band];
+
+  const blocked = !canSave;
 
   const handleDownload = async () => {
     if (!user) {
       navigate("/login");
       return;
     }
+    if (blocked) {
+      setUpgradeOpen(true);
+      return;
+    }
     setDownloading(true);
     setDownloadError(null);
     try {
-      await downloadResumePdf(resume);
-    } catch (err) {
-      if (!isDownloadAbort(err)) {
-        setDownloadError(t("builder.downloadPdfError"));
-      }
+      const result = await saveResumePdf(resume);
+      if (result === "quota") setUpgradeOpen(true);
+    } catch {
+      setDownloadError(t("builder.downloadPdfError"));
     } finally {
       setDownloading(false);
     }
@@ -108,6 +114,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   };
 
   return (
+    <>
     <div className="space-y-6 lg:px-6 lg:pr-10">
       <div>
         <h2 className="text-2xl font-bold">{t("builder.review.title")}</h2>
@@ -258,7 +265,14 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
               <Download size={15} strokeWidth={2} />
               {downloading
                 ? t("builder.downloadingPdf")
-                : t("builder.downloadPdf")}
+                : blocked
+                  ? t("builder.downloadPdfBuy")
+                  : t("builder.downloadPdf")}
+              {!downloading && !blocked && remaining > 0 && (
+                <span className="tabular-nums rounded-full bg-white/20 px-1.5 py-px text-[10px] font-semibold leading-none">
+                  {remaining}
+                </span>
+              )}
             </Button>
             <Button
               size="compact"
@@ -291,5 +305,15 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
         </p>
       </div>
     </div>
+    <UpgradePlanModal
+      open={upgradeOpen}
+      onClose={() => setUpgradeOpen(false)}
+      initialNeed="both"
+      onSelectPack={(packId) => {
+        setUpgradeOpen(false);
+        navigate("/billing/payment", { state: { pack: packId } });
+      }}
+    />
+    </>
   );
 }

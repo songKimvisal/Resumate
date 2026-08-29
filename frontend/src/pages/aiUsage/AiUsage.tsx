@@ -1,43 +1,25 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Copy, Leaf, Sparkles } from "lucide-react";
+import { AlertCircle, FileText, Leaf, Sparkles } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
-import { useAuth } from "../../hooks/UseAuth";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
-import { getResumesByUser } from "../../lib/api";
-import type { PackId, PlanId } from "../../types/billing";
 import { usePacks } from "../../hooks/usePacks";
 import { useAiCredits } from "../../hooks/useAiCredits";
+import { usePdfSaves } from "../../hooks/usePdfSaves";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 import PageTitle from "../../components/layout/PageTitle";
-
-const PLAN_LIMITS: Record<PlanId, { resumesSaved: number }> = {
-  free: { resumesSaved: 1 },
-  starter: { resumesSaved: 1 },
-  pro: { resumesSaved: 5 },
-};
-
-const PACK_LIMITS: Partial<Record<PackId, { resumesSaved: number }>> = {
-  design: { resumesSaved: 1 },
-  "ai-basic": { resumesSaved: 1 },
-  "ai-plus": { resumesSaved: 1 },
-  "ai-pro": { resumesSaved: 1 },
-  "both-starter": { resumesSaved: 1 },
-  "both-standard": { resumesSaved: 2 },
-  "both-everything": { resumesSaved: 5 },
-};
 
 export default function AiUsage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const plan = useSubscriptionStore((s) => s.plan);
   const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const { used: aiCreditsUsed, total: aiCreditsTotal } = useAiCredits();
+  const { used: pdfsUsed, total: pdfsTotal } = usePdfSaves();
   const pricingPlans = usePricingPlans();
   const { all: packs } = usePacks();
   const currentPack = packs.find((p) => p.id === lastPackId);
@@ -47,17 +29,7 @@ export default function AiUsage() {
     pricingPlans[0];
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [resumesSavedCount, setResumesSavedCount] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    getResumesByUser(user.id)
-      .then((data) => setResumesSavedCount(data.length))
-      .catch(() => setResumesSavedCount(0));
-  }, [user]);
-
-  const limits =
-    (lastPackId && PACK_LIMITS[lastPackId]) || PLAN_LIMITS[plan];
   const metrics = [
     {
       key: "aiCredits" as const,
@@ -66,10 +38,10 @@ export default function AiUsage() {
       total: aiCreditsTotal,
     },
     {
-      key: "resumesSaved" as const,
-      icon: Copy,
-      used: Math.min(resumesSavedCount, limits.resumesSaved),
-      total: limits.resumesSaved,
+      key: "pdfSaves" as const,
+      icon: FileText,
+      used: Math.min(pdfsUsed, pdfsTotal),
+      total: pdfsTotal,
     },
   ];
 

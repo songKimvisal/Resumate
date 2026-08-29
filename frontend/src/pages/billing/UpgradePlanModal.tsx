@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
@@ -10,14 +10,20 @@ export default function UpgradePlanModal({
   open,
   onClose,
   onSelectPack,
+  initialNeed = "both",
 }: {
   open: boolean;
   onClose: () => void;
   onSelectPack: (packId: PackId) => void;
+  initialNeed?: NeedId;
 }) {
   const { t } = useTranslation();
   const { byNeed } = usePacks();
-  const [need, setNeed] = useState<NeedId>("both");
+  const [need, setNeed] = useState<NeedId>(initialNeed);
+
+  useEffect(() => {
+    if (open) setNeed(initialNeed);
+  }, [open, initialNeed]);
   const packs = byNeed[need];
   const popularBadge = t(
     need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",

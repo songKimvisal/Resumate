@@ -660,6 +660,7 @@
     "downloadPdf": "ទាញយក PDF",
     "downloadingPdf": "កំពុងរៀបចំ...",
     "downloadPdfError": "មិនអាចរក្សាទុក PDF បានទេ។ សូមព្យាយាមម្តងទៀត។",
+    "downloadPdfBuy": "ទិញការរក្សាទុក PDF",
     "accentColor": "ពណ៌ចម្បង",
     "fontSize": "ទំហំអក្សរ",
     "tipsTitle": "គន្លឹះរហ័ស · និស្សិតបញ្ចប់ថ្មី",
@@ -1681,6 +1682,12 @@
       "noCredits": "មិនទាន់មានសមតុល្យសរសេរទេ។ ទិញពេលអ្នកត្រូវការជំនួយសរសេរ។",
       "noPdfs": "អស់ការរក្សាទុក PDF ហើយ។",
       "usageCount": "បានប្រើ {{used}} នៃ {{total}}",
+      "left": "នៅសល់ {{count}}",
+      "noneYet": "មិនទាន់មាន",
+      "readyToUse": "អាចប្រើបាន",
+      "addCredits": "បន្ថែមសមតុល្យ",
+      "addPdfs": "បន្ថែមការរក្សាទុក PDF",
+      "heroNote": "បង់ម្តង។ គ្មានការបន្តជាថ្មីឡើយ។",
       "upgradeCta": "ទិញបន្ថែម",
       "subscribedNote": "កញ្ចប់នេះបានដោះសោគ្រប់មុខងារហើយ។"
     },
@@ -1771,6 +1778,7 @@
     },
     "metrics": {
       "aiCredits": "ក្រេឌីតសរសេរដោយ AI",
+      "pdfSaves": "ការរក្សាទុក PDF",
       "resumesSaved": "ប្រវត្តិរូបសង្ខេបដែលបានរក្សាទុក",
       "left": "នៅសល់ {{count}}",
       "limitReached": "ដល់កម្រិតកំណត់ហើយ"

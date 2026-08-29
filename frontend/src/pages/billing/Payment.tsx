@@ -19,6 +19,7 @@ import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
 import { grantAiCredits } from "../../lib/api/credits";
+import { pdfsForPack } from "../../lib/pdfSaves";
 import { consumePendingTemplateId } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
@@ -52,6 +53,7 @@ export default function Payment() {
   const location = useLocation();
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
   const setCredits = useSubscriptionStore((s) => s.setCredits);
+  const grantPdfs = useSubscriptionStore((s) => s.grantPdfs);
   const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
   const unlockTemplates = useEntitlementStore((s) => s.unlockTemplates);
 
@@ -92,6 +94,7 @@ export default function Payment() {
 
   const fulfillPurchase = async (packId: PackId) => {
     subscribeToPlan(packToPlanId(packId), packId);
+    grantPdfs(pdfsForPack(packId));
     try {
       const credits = await grantAiCredits(packId);
       setCredits(credits.total, credits.used);

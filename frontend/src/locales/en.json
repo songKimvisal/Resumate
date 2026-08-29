@@ -902,6 +902,7 @@
     "downloadPdf": "Download PDF",
     "downloadingPdf": "Preparing…",
     "downloadPdfError": "Could not save the PDF. Please try again.",
+    "downloadPdfBuy": "Buy PDF saves",
     "accentColor": "Accent color",
     "fontSize": "Font size",
     "tipsTitle": "Tip for this page",
@@ -1671,6 +1672,12 @@
       "noCredits": "No smart credits yet. Buy some when you need writing help.",
       "noPdfs": "No PDF saves left.",
       "usageCount": "{{used}} of {{total}} used",
+      "left": "{{count}} left",
+      "noneYet": "None yet",
+      "readyToUse": "Ready to use",
+      "addCredits": "Add credits",
+      "addPdfs": "Add PDF saves",
+      "heroNote": "Pay once. Nothing renews.",
       "upgradeCta": "Buy more",
       "subscribedNote": "Everything is unlocked on this pack."
     },
@@ -1761,6 +1768,7 @@
     },
     "metrics": {
       "aiCredits": "Smart writing assistant credits",
+      "pdfSaves": "PDF saves",
       "resumesSaved": "Resumes saved",
       "left": "{{count}} left",
       "limitReached": "Limit reached"
