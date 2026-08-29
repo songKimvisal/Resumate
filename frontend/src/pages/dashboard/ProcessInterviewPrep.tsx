@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -9,6 +9,7 @@ import { useJourneyResume } from "../../hooks/useJourneyResume";
 import { useJourneyStore, useJourneyDraft, practicedIdsOf } from "../../store/journeyStore";
 import type { InterviewCategory, InterviewQuestion } from "../../store/journeyStore";
 import { buildFallbackAnalysis, splitJobAd, withNormalizedQuestions } from "../../lib/jobAnalysis";
+import { prettyProperName } from "../../lib/interviewSet";
 import { cn } from "../../lib/utils";
 import mascot from "../../assets/logo/mascot.png";
 
@@ -32,12 +33,19 @@ export default function ProcessInterviewPrep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const fromState = (
+    location.state as { from?: "hub" | "saved-jobs"; fromHub?: boolean } | null
+  )?.from;
   const from =
-    (location.state as { from?: "hub" | "saved-jobs"; fromHub?: boolean } | null)
-      ?.from ??
-    ((location.state as { fromHub?: boolean } | null)?.fromHub
-      ? "hub"
-      : undefined);
+    fromParam === "hub" || fromParam === "saved-jobs"
+      ? fromParam
+      : fromState ??
+        ((location.state as { fromHub?: boolean } | null)?.fromHub
+          ? "hub"
+          : undefined);
+  const fromHub = from === "hub";
   const { user } = useAuth();
   const { resume, loading } = useJourneyResume();
   const reachStep = useJourneyStore((s) => s.reachStep);
@@ -73,8 +81,10 @@ export default function ProcessInterviewPrep() {
         analysis: buildFallbackAnalysis(current.jobText, resume),
       });
     }
-    reachStep(user.id, resume.id, 2);
-  }, [loading, user?.id, resume.id, getDraft, saveDraft, reachStep, navigate]);
+    if (!fromHub && from !== "saved-jobs") {
+      reachStep(user.id, resume.id, 2);
+    }
+  }, [loading, user?.id, resume.id, fromHub, from, getDraft, saveDraft, reachStep, navigate]);
 
   const questions = pack?.questions ?? [];
   const visible = useMemo(
@@ -110,7 +120,7 @@ export default function ProcessInterviewPrep() {
     pack?.roleTitle ||
     resume.personal.jobTitle ||
     t("interviewPrep.thisRole");
-  const companyName = splitJobAd(draft?.jobText ?? "").company;
+  const companyName = prettyProperName(splitJobAd(draft?.jobText ?? "").company);
 
   const toggleReady = (id: string) => {
     if (!user || !resume.id) return;
@@ -144,8 +154,9 @@ export default function ProcessInterviewPrep() {
   return (
     <JourneyLayout
       activeIndex={2}
+      hideIntro={fromHub || from === "saved-jobs"}
       backLabel={
-        from === "hub"
+        fromHub
           ? t("interviewPrep.backToHub")
           : from === "saved-jobs"
             ? t("interviewPrep.backToSaved")
@@ -154,7 +165,7 @@ export default function ProcessInterviewPrep() {
       nextLabel={t("interviewPrep.next")}
       onBack={() =>
         navigate(
-          from === "hub"
+          fromHub
             ? "/interview-prep"
             : from === "saved-jobs"
               ? "/saved-jobs"
@@ -162,7 +173,14 @@ export default function ProcessInterviewPrep() {
         )
       }
       onNext={() =>
-        navigate("/job-readiness", from ? { state: { from } } : undefined)
+        navigate(
+          fromHub
+            ? "/job-readiness?from=hub"
+            : from === "saved-jobs"
+              ? "/job-readiness?from=saved-jobs"
+              : "/job-readiness",
+          from ? { state: { from } } : undefined,
+        )
       }
     >
       <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-start lg:gap-4">

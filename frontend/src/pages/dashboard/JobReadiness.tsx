@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Download, FileText, Loader2 } from "lucide-react";
+import {
+  Download,
+  FileText,
+  ListX,
+  Loader2,
+  MessagesSquare,
+  Percent,
+  type LucideIcon,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "../../components/ui/button";
 import JourneyLayout from "../../components/dashboard/JourneyLayout";
@@ -14,10 +22,13 @@ import { computeJobMatch, requirementKeywords } from "../../lib/jobMatch";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
 import {
   buildFallbackAnalysis,
+  displayJobCompany,
+  displayJobTitle,
   interviewReadinessLabel,
   overallReadinessScore,
   withNormalizedQuestions,
 } from "../../lib/jobAnalysis";
+import { prettyProperName } from "../../lib/interviewSet";
 import {
   downloadResumePdf,
   isDownloadAbort,
@@ -32,8 +43,14 @@ export default function JobReadiness() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: "hub" | "saved-jobs" } | null)
+  const [searchParams] = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const fromState = (location.state as { from?: "hub" | "saved-jobs" } | null)
     ?.from;
+  const from =
+    fromParam === "saved-jobs" || fromParam === "hub"
+      ? fromParam
+      : fromState;
   const fromSaved = from === "saved-jobs";
   const fromHub = from === "hub";
   const { user } = useAuth();
@@ -52,7 +69,10 @@ export default function JobReadiness() {
     if (loading || !user || !resume.id) return;
     const current = getDraft(user.id, resume.id);
     if (!current.analysis && !current.jobText) {
-      navigate("/job-match", { replace: true });
+      navigate(
+        fromSaved ? "/saved-jobs" : fromHub ? "/interview-prep" : "/job-match",
+        { replace: true },
+      );
       return;
     }
     if (!current.analysis && current.jobText) {
@@ -60,8 +80,18 @@ export default function JobReadiness() {
         analysis: buildFallbackAnalysis(current.jobText, resume),
       });
     }
-    reachStep(user.id, resume.id, 3);
-  }, [loading, user?.id, resume.id, getDraft, saveDraft, reachStep, navigate]);
+    if (!fromSaved && !fromHub) reachStep(user.id, resume.id, 3);
+  }, [
+    loading,
+    user?.id,
+    resume.id,
+    fromSaved,
+    fromHub,
+    getDraft,
+    saveDraft,
+    reachStep,
+    navigate,
+  ]);
 
   const analysis = draft?.analysis;
   const pack = useMemo(() => {
@@ -113,18 +143,51 @@ export default function JobReadiness() {
     resume.title ||
     resume.personal.fullName ||
     t("dashboard.untitledResume");
+  const roleTitle = displayJobTitle(pack?.roleTitle, jobText);
+  const companyName = prettyProperName(displayJobCompany(jobText));
+  const jobLabel =
+    companyName && roleTitle
+      ? t("jobMatch.roleAtCompany", {
+          role: roleTitle,
+          company: companyName,
+        })
+      : companyName || roleTitle;
 
-  const headline =
-    pack?.readiness.headline ||
-    t(
-      overall >= 70
-        ? "jobReadiness.headlineHigh"
-        : overall >= 40
-          ? "jobReadiness.headlineMid"
-          : "jobReadiness.headlineLow",
+  const headlineKey =
+    overall >= 70
+      ? "jobReadiness.headlineHigh"
+      : overall >= 40
+        ? "jobReadiness.headlineMid"
+        : "jobReadiness.headlineLow";
+  const storedHeadline = pack?.readiness.headline?.trim() || "";
+  const storedSummary = pack?.readiness.summary?.trim() || "";
+  const namesJob = (text: string) => {
+    const lower = text.toLowerCase();
+    return [roleTitle, companyName].some(
+      (part) => part && lower.includes(part.toLowerCase()),
     );
+  };
+  const headline =
+    storedHeadline && namesJob(storedHeadline)
+      ? storedHeadline
+      : companyName && roleTitle
+        ? t(`${headlineKey}AtCompany`, {
+            role: roleTitle,
+            company: companyName,
+          })
+        : roleTitle
+          ? t(`${headlineKey}ForRole`, { role: roleTitle })
+          : storedHeadline || t(headlineKey);
   const summary =
-    pack?.readiness.summary || t("jobReadiness.summaryFallback");
+    storedSummary ||
+    (companyName && roleTitle
+      ? t("jobReadiness.summaryFallbackAtCompany", {
+          role: roleTitle,
+          company: companyName,
+        })
+      : roleTitle
+        ? t("jobReadiness.summaryFallbackForRole", { role: roleTitle })
+        : t("jobReadiness.summaryFallback"));
   const actions =
     pack?.readiness.actions?.length
       ? pack.readiness.actions
@@ -166,6 +229,7 @@ export default function JobReadiness() {
   return (
     <JourneyLayout
       activeIndex={3}
+      hideIntro={fromSaved || fromHub}
       backLabel={
         fromSaved
           ? t("interviewPrep.backToSaved")
@@ -189,8 +253,18 @@ export default function JobReadiness() {
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">
           <ReadyDonut score={overall} />
           <div className="min-w-0 w-full">
+            {jobLabel ? (
+              <span className="inline-flex max-w-full rounded-full bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand">
+                <span className="truncate">{jobLabel}</span>
+              </span>
+            ) : null}
             {resumeQuality >= 80 && (
-              <span className="inline-flex rounded-full bg-success-bg px-2.5 py-1 text-[11px] font-semibold text-success">
+              <span
+                className={cn(
+                  "inline-flex rounded-full bg-success-bg px-2.5 py-1 text-[11px] font-semibold text-success",
+                  jobLabel ? "ml-2" : "",
+                )}
+              >
                 {t("jobReadiness.strongResume")}
               </span>
             )}
@@ -208,18 +282,22 @@ export default function JobReadiness() {
         <MetricCard
           label={t("jobReadiness.metrics.resumeQuality")}
           value={`${resumeQuality}/100`}
+          icon={FileText}
         />
         <MetricCard
           label={t("jobReadiness.metrics.jobMatch")}
           value={`${jobMatchScore}%`}
+          icon={Percent}
         />
         <MetricCard
           label={t("jobReadiness.metrics.skillGaps")}
           value={String(skillGaps)}
+          icon={ListX}
         />
         <MetricCard
           label={t("jobReadiness.metrics.interviewReadiness")}
           value={t(`jobReadiness.interviewLabels.${interviewBand}`)}
+          icon={MessagesSquare}
         />
       </div>
 
@@ -309,16 +387,26 @@ export default function JobReadiness() {
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+}) {
   return (
     <div className="min-w-0 rounded-2xl border border-line bg-bg p-3 shadow-sm min-[375px]:p-3.5 sm:p-4">
       <p className="text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] text-text-secondary min-[375px]:text-[10px] min-[375px]:tracking-[0.12em] sm:text-[11px]">
         {label}
       </p>
       <div className="mt-2 flex min-w-0 items-center gap-1.5 min-[375px]:gap-2">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand min-[375px]:size-7">
-          <FileText size={13} />
-        </span>
+        <Icon
+          size={16}
+          strokeWidth={2}
+          className="shrink-0 text-brand"
+        />
         <p className="min-w-0 break-words text-sm font-extrabold leading-tight text-text min-[375px]:truncate min-[375px]:text-base sm:text-lg">
           {value}
         </p>

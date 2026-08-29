@@ -10,13 +10,17 @@ export default function StepActions({
   nextDisabled,
   className,
 }: {
-  backLabel: string;
+  backLabel?: string;
   nextLabel?: string;
-  onBack: () => void;
+  onBack?: () => void;
   onNext?: () => void;
   nextDisabled?: boolean;
   className?: string;
 }) {
+  const showBack = Boolean(backLabel && onBack);
+  const showNext = Boolean(nextLabel && onNext);
+  if (!showBack && !showNext) return null;
+
   return (
     <div
       className={cn(
@@ -27,23 +31,33 @@ export default function StepActions({
         className,
       )}
     >
-      <div className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-6xl items-center gap-1.5 overflow-hidden rounded-full border border-line bg-bg/90 p-1.5 shadow-lg backdrop-blur-md min-[375px]:gap-2 min-[375px]:p-2">
-        <Button
-          variant="ghost"
-          size="compact"
-          className={cn(
-            "h-8 min-w-0 shrink overflow-hidden rounded-full px-2 text-xs text-text-secondary hover:bg-surface-2 hover:text-text min-[375px]:h-9 min-[375px]:px-2.5 min-[375px]:text-sm sm:px-3",
-            nextLabel && onNext ? "max-w-[46%] sm:max-w-none" : "",
-          )}
-          onClick={onBack}
-        >
-          <ArrowLeft size={15} />
-          <span className="min-w-0 truncate">{backLabel}</span>
-        </Button>
-        {nextLabel && onNext ? (
+      <div
+        className={cn(
+          "pointer-events-auto mx-auto flex w-full min-w-0 max-w-6xl items-center gap-1.5 overflow-hidden rounded-full border border-line bg-bg/90 p-1.5 shadow-lg backdrop-blur-md min-[375px]:gap-2 min-[375px]:p-2",
+          !showBack && showNext ? "justify-end" : "",
+        )}
+      >
+        {showBack ? (
+          <Button
+            variant="ghost"
+            size="compact"
+            className={cn(
+              "h-8 min-w-0 shrink overflow-hidden rounded-full px-2 text-xs text-text-secondary hover:bg-surface-2 hover:text-text min-[375px]:h-9 min-[375px]:px-2.5 min-[375px]:text-sm sm:px-3",
+              showNext ? "max-w-[46%] sm:max-w-none" : "",
+            )}
+            onClick={onBack}
+          >
+            <ArrowLeft size={15} />
+            <span className="min-w-0 truncate">{backLabel}</span>
+          </Button>
+        ) : null}
+        {showNext ? (
           <Button
             size="compact"
-            className="h-8 min-w-0 flex-1 overflow-hidden rounded-full px-2.5 text-xs min-[375px]:h-9 min-[375px]:px-3 min-[375px]:text-sm sm:ml-auto sm:flex-none sm:px-5"
+            className={cn(
+              "h-8 min-w-0 overflow-hidden rounded-full px-2.5 text-xs min-[375px]:h-9 min-[375px]:px-3 min-[375px]:text-sm sm:px-5",
+              showBack ? "flex-1 sm:ml-auto sm:flex-none" : "px-5 sm:flex-none",
+            )}
             disabled={nextDisabled}
             onClick={onNext}
           >

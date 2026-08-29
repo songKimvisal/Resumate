@@ -17,6 +17,7 @@ import {
   completeInterviewSet,
   interviewContextFromResume,
   polishInterviewQuestions,
+  prettyProperName,
 } from "./interviewSet";
 import { buildFallbackBulletRewrites } from "./bulletRewrites";
 
@@ -319,8 +320,12 @@ export function buildFallbackAnalysis(
     ctx.company,
   );
   const readyToApply = local.score >= 70 && qualificationGaps.length === 0;
+  const company = prettyProperName(splitJobAd(jobText).company);
+  const jobBit = company
+    ? `this ${roleTitle} role at ${company}`
+    : `this ${roleTitle} role`;
   const actions = [
-    `Practice the ${questions.length} interview questions written for this ${roleTitle} role.`,
+    `Practice the ${questions.length} interview questions written for ${jobBit}.`,
     ...(topMissing.length
       ? [
           `Add ${topMissing.slice(0, 2).join(" and ")} to your resume where you can honestly claim them.`,
@@ -351,15 +356,15 @@ export function buildFallbackAnalysis(
     questions,
     readiness: {
       headline: readyToApply
-        ? "You're in good shape for this role"
+        ? `You're in good shape for ${jobBit}`
         : local.score >= 40
-          ? "You're close. A few gaps to close"
-          : "There's work to do before you apply",
+          ? `You're close. A few gaps to close for ${jobBit}`
+          : `There's work to do before you apply for ${jobBit}`,
       summary: readyToApply
-        ? "Your resume matches most of this posting. Practice the interview questions, then apply."
+        ? `Your resume matches most of ${jobBit}. Practice the interview questions, then apply.`
         : topMissing.length
-          ? `Your resume matches part of this posting. Close the skill and qualification gaps below, then practice the questions before you apply.`
-          : "Strengthen the weak sections below and practice the interview questions so you can walk in ready.",
+          ? `Your resume matches part of ${jobBit}. Close the skill and qualification gaps below, then practice the questions before you apply.`
+          : `Strengthen the weak sections below and practice the interview questions so you can walk in ready for ${jobBit}.`,
       actions,
       readyToApply,
     },

@@ -18,7 +18,6 @@ import { prettyProperName } from "../../lib/interviewSet";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
 import { cn } from "../../lib/utils";
 import {
-  activeJobId,
   reviewableJobsForUser,
   useJourneyHydrated,
   useJourneyStore,
@@ -39,7 +38,6 @@ export default function SavedJobs() {
   const hydrated = useJourneyHydrated();
   const setResume = useResumeStore((s) => s.setResume);
   const byKey = useJourneyStore((s) => s.byKey);
-  const getDraft = useJourneyStore((s) => s.getDraft);
   const rememberResume = useJourneyStore((s) => s.rememberResume);
   const activateSavedJob = useJourneyStore((s) => s.activateSavedJob);
   const removeJob = useJourneyStore((s) => s.removeJob);
@@ -119,16 +117,15 @@ export default function SavedJobs() {
     if (!user || !resume.id) return false;
     setResume(resume);
     rememberResume(user.id, resume.id);
-    const target = getDraft(user.id, resume.id);
-    if (job.id !== activeJobId(target)) {
-      activateSavedJob(user.id, resume.id, job.id);
-    }
+    activateSavedJob(user.id, resume.id, job.id);
     return true;
   };
 
   const openReport = (resume: Resume, job: ReviewableJob) => {
     if (!activateJob(resume, job)) return;
-    navigate("/job-readiness", { state: { from: "saved-jobs" } });
+    navigate("/job-readiness?from=saved-jobs", {
+      state: { from: "saved-jobs" },
+    });
   };
 
   const handleBulkDelete = () => {
@@ -152,34 +149,36 @@ export default function SavedJobs() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7">
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-        <div className="min-w-0">
+      <div className="min-w-0">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2.5">
           <PageTitle
             text={t("savedJobsPage.hubTitle")}
             accent={t("savedJobsPage.hubTitleAccent")}
           />
-          {cards.length > 0 && !loadError ? (
-            <p className="mt-2 max-w-xl text-sm leading-6 text-text-secondary">
-              {t("savedJobsPage.subtitle")}
-            </p>
+          {cards.length > 0 && !loadError && !selecting ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full px-3.5"
+                onClick={() => setSelecting(true)}
+              >
+                {t("myResumes.select")}
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 rounded-full px-3.5"
+                onClick={() => navigate("/dashboard")}
+              >
+                {t("savedJobsPage.analyzeCta")}
+              </Button>
+            </div>
           ) : null}
         </div>
-        {cards.length > 0 && !loadError && !selecting ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelecting(true)}
-            >
-              {t("myResumes.select")}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate("/dashboard")}
-            >
-              {t("savedJobsPage.analyzeCta")}
-            </Button>
-          </div>
+        {cards.length > 0 && !loadError ? (
+          <p className="mt-2 max-w-xl text-sm leading-6 text-text-secondary">
+            {t("savedJobsPage.subtitle")}
+          </p>
         ) : null}
       </div>
 
@@ -322,34 +321,30 @@ export default function SavedJobs() {
                           })}
                     </p>
                     {!selecting ? (
-                      <div className="mt-3 flex min-w-0 items-center justify-between gap-2">
+                      <div className="mt-auto flex min-w-0 items-center justify-between gap-3 pt-3">
                         <p
                           className={cn(
-                            "shrink-0 text-base font-bold tabular-nums leading-none sm:text-lg",
+                            "shrink-0 text-lg font-bold tabular-nums leading-none",
                             strong ? "text-success" : "text-brand",
                           )}
                         >
                           {overall}%
                         </p>
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          className="h-8 shrink-0 rounded-full px-3.5"
                           onClick={() => openReport(resume, job)}
-                          className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-text-secondary transition-colors hover:text-brand"
                         >
                           <span className="truncate">
                             {t("savedJobsPage.continue")}
                           </span>
-                          <ArrowRight
-                            size={14}
-                            strokeWidth={2.4}
-                            className="shrink-0"
-                          />
-                        </button>
+                          <ArrowRight size={14} strokeWidth={2.4} />
+                        </Button>
                       </div>
                     ) : (
                       <p
                         className={cn(
-                          "mt-3 shrink-0 text-base font-bold tabular-nums leading-none sm:text-lg",
+                          "mt-auto pt-3 shrink-0 text-lg font-bold tabular-nums leading-none",
                           strong ? "text-success" : "text-brand",
                         )}
                       >

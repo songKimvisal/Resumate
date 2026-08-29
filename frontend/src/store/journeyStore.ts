@@ -176,6 +176,20 @@ export function interviewPrepForDraft(draft?: JourneyDraft): {
   return null;
 }
 
+/** How many resumes have an interview set ready, for the sidebar count. */
+export function interviewPrepCountForUser(
+  byKey: Record<string, JourneyDraft>,
+  userId: string,
+) {
+  const prefix = `${userId}:`;
+  let count = 0;
+  for (const [key, draft] of Object.entries(byKey)) {
+    if (!key.startsWith(prefix)) continue;
+    if (interviewPrepForDraft(draft)) count += 1;
+  }
+  return count;
+}
+
 function snapshotActive(
   draft: JourneyDraft,
   resumeId?: string,
@@ -359,9 +373,12 @@ export const useJourneyStore = create<JourneyState>()(
         set((s) => {
           const k = storageKey(userId, resumeId);
           const prev = s.byKey[k] ?? EMPTY;
+          const snap = snapshotActive(prev, resumeId);
+          if (snap?.id === jobId || activeJobId(prev) === jobId) {
+            return { lastUserId: userId, lastResumeId: resumeId };
+          }
           const target = (prev.savedJobs ?? []).find((job) => job.id === jobId);
           if (!target) return s;
-          const snap = snapshotActive(prev, resumeId);
           const rest = (prev.savedJobs ?? []).filter((job) => job.id !== jobId);
           return {
             lastUserId: userId,

@@ -380,9 +380,17 @@
   "jobReadiness": {
     "strongResume": "Strong resume.",
     "headlineHigh": "You're in good shape for this role",
+    "headlineHighForRole": "You're in good shape for this {{role}} role",
+    "headlineHighAtCompany": "You're in good shape for this {{role}} role at {{company}}",
     "headlineMid": "You're close. A few gaps to close",
+    "headlineMidForRole": "You're close. A few gaps to close for this {{role}} role",
+    "headlineMidAtCompany": "You're close. A few gaps to close for this {{role}} role at {{company}}",
     "headlineLow": "There's work to do before you apply",
+    "headlineLowForRole": "There's work to do before you apply for this {{role}} role",
+    "headlineLowAtCompany": "There's work to do before you apply for this {{role}} role at {{company}}",
     "summaryFallback": "Your resume matches most requirements and your interview practice is solid. Close the skill gaps below to move from almost to fully ready.",
+    "summaryFallbackForRole": "Your resume against this {{role}} role matches most requirements and your interview practice is solid. Close the skill gaps below to move from almost to fully ready.",
+    "summaryFallbackAtCompany": "Your resume against this {{role}} role at {{company}} matches most requirements and your interview practice is solid. Close the skill gaps below to move from almost to fully ready.",
     "metrics": {
       "resumeQuality": "Resume quality",
       "jobMatch": "Job match",

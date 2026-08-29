@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/UseAuth";
 import {
   continuePathForUser,
+  interviewPrepCountForUser,
   isJourneyNavPath,
   reviewableJobsForUser,
   useJourneyStore,
@@ -58,6 +59,9 @@ export default function Sidebar({
   const savedCount = useJourneyStore((s) =>
     user?.id ? reviewableJobsForUser(s.byKey, user.id).length : 0,
   );
+  const interviewCount = useJourneyStore((s) =>
+    user?.id ? interviewPrepCountForUser(s.byKey, user.id) : 0,
+  );
 
   return (
     <div
@@ -91,16 +95,28 @@ export default function Sidebar({
       <nav className={cn("flex-1 space-y-0.5 overflow-y-auto", !compact && "space-y-1")}>
         {NAV_ITEMS.map(({ to, icon: Icon, key }) => {
           const href = key === "dashboard" ? dashboardTo : to;
+          const fromQuery = new URLSearchParams(location.search).get("from");
+          const fromSavedReport =
+            location.pathname === "/job-readiness" && fromQuery === "saved-jobs";
+          const fromHubView =
+            fromQuery === "hub" &&
+            (location.pathname === "/job-match/interview-prep" ||
+              location.pathname === "/job-readiness");
           const isActive =
             key === "home"
               ? location.pathname === "/"
               : key === "dashboard"
-                ? isJourneyNavPath(location.pathname)
+                ? isJourneyNavPath(location.pathname) &&
+                  !fromSavedReport &&
+                  !fromHubView
                 : key === "interviewPrep"
                   ? location.pathname === "/interview-prep" ||
-                    location.pathname === "/job-match/interview-prep"
-                  : location.pathname === to ||
-                    location.pathname.startsWith(`${to}/`);
+                    location.pathname === "/job-match/interview-prep" ||
+                    fromHubView
+                  : key === "savedJobs"
+                    ? location.pathname === "/saved-jobs" || fromSavedReport
+                    : location.pathname === to ||
+                      location.pathname.startsWith(`${to}/`);
 
           return (
           <NavLink
@@ -126,6 +142,11 @@ export default function Sidebar({
             {!collapsed && (
               <>
                 <span className="min-w-0 truncate">{t(`nav.${key}`)}</span>
+                {key === "interviewPrep" && interviewCount > 0 && (
+                  <span className="ml-auto min-w-[1.25rem] pr-0.5 text-right tabular-nums text-xs font-semibold">
+                    {interviewCount}
+                  </span>
+                )}
                 {key === "aiUsage" && (
                   <span className="ml-auto min-w-[1.25rem] pr-0.5 text-right tabular-nums text-xs font-semibold">
                     {aiCreditsLeft}
