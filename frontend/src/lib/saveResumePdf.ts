@@ -1,20 +1,45 @@
 import type { Resume } from "../types/resume";
-import { useSubscriptionStore } from "../store/subscriptionStore";
+import { BackendError } from "./api/client";
+import {
+  consumePdfSave,
+  pdfsFromErrorBody,
+  refundPdfSave,
+} from "./api/pdfs";
 import { downloadResumePdf, isDownloadAbort } from "./downloadResumePdf";
+import { useSubscriptionStore } from "../store/subscriptionStore";
 
 export type SaveResumePdfResult = "ok" | "quota" | "abort";
 
-/** Download a resume PDF, consuming a save only after the file is written. */
+function applyPdfBalance(total: number, used: number) {
+  useSubscriptionStore.getState().setPdfs(total, used);
+}
+
+/** Download a resume PDF. The save is consumed on the server before the file is written. */
 export async function saveResumePdf(
   resume: Resume,
 ): Promise<SaveResumePdfResult> {
-  const store = useSubscriptionStore.getState();
-  if (!store.canSavePdf()) return "quota";
+  try {
+    const pdfs = await consumePdfSave();
+    applyPdfBalance(pdfs.total, pdfs.used);
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 402) {
+      const pdfs = pdfsFromErrorBody(err.body);
+      if (pdfs) applyPdfBalance(pdfs.total, pdfs.used);
+      return "quota";
+    }
+    throw err;
+  }
+
   try {
     await downloadResumePdf(resume);
-    if (!store.consumePdfSave()) return "quota";
     return "ok";
   } catch (err) {
+    try {
+      const pdfs = await refundPdfSave();
+      applyPdfBalance(pdfs.total, pdfs.used);
+    } catch {
+      // Keep the consumed balance if refund fails; hydrate will correct it.
+    }
     if (isDownloadAbort(err)) return "abort";
     throw err;
   }

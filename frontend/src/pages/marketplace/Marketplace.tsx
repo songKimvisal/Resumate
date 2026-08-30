@@ -11,8 +11,8 @@ import {
   PopoverTrigger,
 } from "../../components/ui/popover";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
+import { unlockPremiumTemplate } from "../../lib/api/templates";
 import { hasTemplateAccess, remainingTemplateSlots, canUseTemplate } from "../../lib/templateAccess";
 import {
   INDUSTRIES,
@@ -47,12 +47,11 @@ export default function Marketplace() {
   const restyleCurrent = Boolean(
     (location.state as { restyle?: boolean } | null)?.restyle,
   );
-  const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
   const applyingRef = useRef(false);
-  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
+  const templateSlots = useEntitlementStore((s) => s.templateSlots);
   const remainingSlots = remainingTemplateSlots(
-    lastPackId,
+    templateSlots,
     unlockedTemplateIds.length,
   );
 
@@ -89,14 +88,14 @@ export default function Marketplace() {
           tierFilter === "all"
             ? true
             : tierFilter === "available"
-              ? canUseTemplate(p, lastPackId, unlockedTemplateIds)
+              ? canUseTemplate(p, unlockedTemplateIds, templateSlots)
               : p.tier === tierFilter;
         return (
           matchesTier &&
           (industryFilter.length === 0 || industryFilter.includes(p.industry))
         );
       }),
-    [lastPackId, unlockedTemplateIds, tierFilter, industryFilter],
+    [templateSlots, unlockedTemplateIds, tierFilter, industryFilter],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -141,21 +140,23 @@ export default function Marketplace() {
     if (applyingRef.current) return;
     if (
       preset.tier === "premium" &&
-      !hasTemplateAccess(preset.id, lastPackId, unlockedTemplateIds)
+      !hasTemplateAccess(preset.id, unlockedTemplateIds, templateSlots)
     ) {
       if (remainingSlots > 0) {
         applyingRef.current = true;
-        unlockTemplate(preset.id);
         try {
+          const entitlements = await unlockPremiumTemplate(preset.id);
           await applyChosenTemplate(
             preset,
             customization,
             !restyleCurrent,
           );
-          const nextCount = unlockedTemplateIds.includes(preset.id)
-            ? unlockedTemplateIds.length
-            : unlockedTemplateIds.length + 1;
-          if (remainingTemplateSlots(lastPackId, nextCount) <= 0) {
+          if (
+            remainingTemplateSlots(
+              entitlements.templateSlots,
+              entitlements.unlockedTemplateIds.length,
+            ) <= 0
+          ) {
             navigate("/builder");
           }
         } finally {
@@ -181,8 +182,8 @@ export default function Marketplace() {
   const confirmUnlock = async () => {
     if (!pendingUnlock || applyingRef.current) return;
     applyingRef.current = true;
-    unlockTemplate(pendingUnlock.preset.id);
     try {
+      await unlockPremiumTemplate(pendingUnlock.preset.id);
       await applyChosenTemplate(
         pendingUnlock.preset,
         pendingUnlock.customization,

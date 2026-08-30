@@ -15,9 +15,7 @@ interface SubscriptionState {
   pdfsUsed: number;
   subscribeToPlan: (plan: PlanId, packId?: PackId) => void;
   setCredits: (total: number, used: number) => void;
-  grantPdfs: (n: number) => void;
-  canSavePdf: () => boolean;
-  consumePdfSave: () => boolean;
+  setPdfs: (total: number, used: number) => void;
   unsubscribe: () => void;
 }
 
@@ -60,7 +58,7 @@ function pdfsFromPersisted(state: Partial<SubscriptionState>): number {
 
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...DEFAULT_STATE,
       subscribeToPlan: (plan, packId) =>
         set((s) => ({
@@ -73,26 +71,16 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           aiCreditsTotal: Math.max(0, total),
           aiCreditsUsed: Math.max(0, used),
         }),
-      grantPdfs: (n) => {
-        const add = Math.max(0, n);
-        if (add === 0) return;
-        set((s) => ({ pdfsTotal: s.pdfsTotal + add }));
-      },
-      canSavePdf: () => {
-        const s = get();
-        return s.pdfsUsed < s.pdfsTotal;
-      },
-      consumePdfSave: () => {
-        const s = get();
-        if (s.pdfsUsed >= s.pdfsTotal) return false;
-        set({ pdfsUsed: s.pdfsUsed + 1 });
-        return true;
-      },
+      setPdfs: (total, used) =>
+        set({
+          pdfsTotal: Math.max(0, total),
+          pdfsUsed: Math.max(0, used),
+        }),
       unsubscribe: () => set({ ...DEFAULT_STATE }),
     }),
     {
       name: "resumate-subscription",
-      version: 6,
+      version: 7,
       partialize: (s) => ({
         plan: s.plan,
         lastPackId: s.lastPackId,

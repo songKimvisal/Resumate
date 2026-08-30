@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Eye,
   Lightbulb,
+  Plus,
   X,
 } from "lucide-react";
 import { useTheme } from "../../hooks/UseTheme";
@@ -21,6 +22,7 @@ import {
 import { saveResumeToDashboard } from "../../lib/api";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
+import { cn } from "../../lib/utils";
 import Step1Personal from "./Step1Personal";
 import Step2Experience from "./Step2experience";
 import Step3Education from "./Step3Education";
@@ -63,6 +65,68 @@ function experienceTipKey(hasJobs: boolean, hasOther: boolean) {
   return "builder.tipExperienceChoice";
 }
 
+function TipCardContent({
+  title,
+  heading,
+  closeLabel,
+  tip,
+  onClose,
+  bodyClassName,
+  hideHeading,
+}: {
+  title: string;
+  heading: string;
+  closeLabel: string;
+  tip: TipCard;
+  onClose: () => void;
+  bodyClassName?: string;
+  hideHeading?: boolean;
+}) {
+  return (
+    <>
+      <div className="flex items-start gap-2.5 px-4 pt-3 pb-2">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+          <Lightbulb size={16} strokeWidth={2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-brand">
+            {title}
+          </p>
+          {!hideHeading && (
+            <p className="mt-0.5 text-sm font-semibold text-text">{heading}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          className="size-8 shrink-0 rounded-full text-text-secondary hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center transition-colors"
+        >
+          <X size={14} strokeWidth={2} />
+        </button>
+      </div>
+      <div className={cn("px-4 pb-4 overflow-y-auto scrollbar-thin", bodyClassName)}>
+        {tip.lead ? (
+          <p className="text-sm text-text leading-relaxed">{tip.lead}</p>
+        ) : null}
+        {tip.points.length > 0 ? (
+          <ul className="mt-2.5 space-y-2">
+            {tip.points.map((point, i) => (
+              <li
+                key={point || `tip-${i}`}
+                className="flex gap-2.5 text-sm text-text-secondary leading-relaxed"
+              >
+                <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-brand" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 export default function BuilderLayout() {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
@@ -84,6 +148,7 @@ export default function BuilderLayout() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const tipRef = useRef<HTMLDivElement>(null);
 
   const stepLabels = t("builder.steps", { returnObjects: true }) as string[];
@@ -158,9 +223,10 @@ export default function BuilderLayout() {
     };
   }, [user, markSaved]);
 
-  // close the mascot tip when clicking outside of it
+  // close the mascot tip when clicking outside of it on desktop
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
+      if (window.matchMedia("(max-width: 1023px)").matches) return;
       if (tipRef.current && !tipRef.current.contains(e.target as Node)) {
         setTipOpen(false);
       }
@@ -168,6 +234,33 @@ export default function BuilderLayout() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  useEffect(() => {
+    setTipOpen(false);
+    setFabOpen(false);
+  }, [step]);
+
+  useEffect(() => {
+    if (previewOpen || customizeOpen) {
+      setTipOpen(false);
+      setFabOpen(false);
+    }
+  }, [previewOpen, customizeOpen]);
+
+  useEffect(() => {
+    if (tipOpen) setFabOpen(false);
+  }, [tipOpen]);
+
+  useEffect(() => {
+    if (!tipOpen && !fabOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (tipOpen) setTipOpen(false);
+      else setFabOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [tipOpen, fabOpen]);
 
   const formPaneRef = useRef<HTMLDivElement>(null);
 
@@ -311,7 +404,7 @@ export default function BuilderLayout() {
         <div
           ref={formPaneRef}
           data-builder-form-pane
-          className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pt-8 lg:pt-10 pb-28 pr-1"
+          className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pt-8 lg:pt-10 pb-44 lg:pb-28 pr-1"
         >
           <AnimatePresence mode="popLayout">
             {customizeOpen ? (
@@ -422,112 +515,177 @@ export default function BuilderLayout() {
       </AnimatePresence>
 
       {/* ================= floating mascot tip ================= */}
-      <div
-        ref={tipRef}
-        className="fixed bottom-20 left-3 lg:left-auto lg:right-6 z-40"
-      >
-        <AnimatePresence>
-          {tipOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 12 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-full left-0 lg:left-auto lg:right-0 mb-3 w-[min(22rem,calc(100vw-1.5rem))] sm:w-[26rem] rounded-2xl border border-line bg-bg shadow-xl"
-            >
-              <div className="flex items-start gap-2.5 px-4 pt-3.5 pb-2">
-                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-                  <Lightbulb size={16} strokeWidth={2} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold tracking-wider uppercase text-brand">
-                    {t("builder.tipsTitle")}
-                  </p>
-                  <p className="mt-0.5 text-sm font-semibold text-text">
-                    {tipHeading}
-                  </p>
-                </div>
-                <button
-                  type="button"
+      {!customizeOpen && (
+        <>
+          <AnimatePresence>
+            {tipOpen && (
+              <>
+                <motion.div
+                  className="lg:hidden fixed inset-0 z-50 bg-black/40"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   onClick={() => setTipOpen(false)}
-                  aria-label={t("builder.tipClose")}
-                  className="size-7 shrink-0 rounded-full text-text-secondary hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center transition-colors"
+                />
+                <motion.div
+                  role="dialog"
+                  aria-label={t("builder.tipsTitle")}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 24 }}
+                  transition={{ duration: 0.2 }}
+                  className="lg:hidden fixed inset-x-3 bottom-[4.75rem] z-[51] max-h-[min(42dvh,20rem)] overflow-hidden rounded-2xl border border-line bg-bg shadow-xl"
                 >
-                  <X size={14} strokeWidth={2} />
-                </button>
-              </div>
-              <div className="px-4 pb-4 max-h-[min(28rem,calc(100dvh-11rem))] overflow-y-auto scrollbar-thin">
-                {stepTip.lead ? (
-                  <p className="text-sm text-text leading-relaxed">
-                    {stepTip.lead}
-                  </p>
-                ) : null}
-                {stepTip.points.length > 0 ? (
-                  <ul className="mt-2.5 space-y-2">
-                    {stepTip.points.map((point, i) => (
-                      <li
-                        key={point || `tip-${i}`}
-                        className="flex gap-2.5 text-sm text-text-secondary leading-relaxed"
-                      >
-                        <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-brand" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-              <span className="absolute top-full left-6 lg:left-auto lg:right-7 -mt-px size-3 rotate-45 border-b border-r border-line bg-bg" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  <TipCardContent
+                    title={t("builder.tipsTitle")}
+                    heading={tipHeading}
+                    closeLabel={t("builder.tipClose")}
+                    tip={stepTip}
+                    onClose={() => setTipOpen(false)}
+                    hideHeading
+                    bodyClassName="max-h-[min(32dvh,14.5rem)] pb-4"
+                  />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
-        <motion.button
-          type="button"
-          onClick={() => setTipOpen((o) => !o)}
-          aria-label={t("builder.tipsTitle")}
-          aria-expanded={tipOpen}
-          className="block text-center"
-          animate={tipOpen ? { y: 0 } : { y: [0, -6, 0] }}
-          transition={
-            tipOpen
-              ? { duration: 0.2 }
-              : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
-          }
-        >
-          <img src={mascot} alt="" className="w-14 lg:w-16 drop-shadow-lg mx-auto" />
-          {!tipOpen && (
-            <span className="mt-0.5 block text-[11px] font-medium text-brand">
-              {t("builder.tipHint")}
-            </span>
-          )}
-        </motion.button>
-      </div>
-
-      {/* ================= floating preview / customize buttons =================*/}
-      <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3">
-        {!customizeOpen && (
-          <motion.button
-            type="button"
-            onClick={() => openCustomize(true)}
-            aria-label={t("builder.customize")}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
+          <div
+            ref={tipRef}
+            className="fixed z-40 hidden lg:bottom-20 lg:right-6 lg:block"
           >
-            <LayoutGrid size={20} strokeWidth={2} />
-          </motion.button>
-        )}
-        <motion.button
-          type="button"
-          onClick={() => setPreviewOpen(true)}
-          aria-label={t("builder.previewButton")}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
-        >
-          <Eye size={20} strokeWidth={2} />
-        </motion.button>
-      </div>
+            <AnimatePresence>
+              {tipOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.94, y: 12 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute bottom-full right-0 mb-3 hidden w-[26rem] rounded-2xl border border-line bg-bg shadow-xl lg:block"
+                >
+                  <TipCardContent
+                    title={t("builder.tipsTitle")}
+                    heading={tipHeading}
+                    closeLabel={t("builder.tipClose")}
+                    tip={stepTip}
+                    onClose={() => setTipOpen(false)}
+                    bodyClassName="max-h-[min(28rem,calc(100dvh-11rem))]"
+                  />
+                  <span className="absolute top-full right-7 -mt-px size-3 rotate-45 border-b border-r border-line bg-bg" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.button
+              type="button"
+              onClick={() => setTipOpen((o) => !o)}
+              aria-label={t("builder.tipsTitle")}
+              aria-expanded={tipOpen}
+              className="hidden lg:block text-center"
+              animate={tipOpen ? { y: 0 } : { y: [0, -6, 0] }}
+              transition={
+                tipOpen
+                  ? { duration: 0.2 }
+                  : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+              }
+            >
+              <img
+                src={mascot}
+                alt=""
+                className="mx-auto w-16 drop-shadow-lg"
+              />
+              {!tipOpen && (
+                <span className="mt-0.5 block text-[11px] font-medium text-brand">
+                  {t("builder.tipHint")}
+                </span>
+              )}
+            </motion.button>
+          </div>
+        </>
+      )}
+
+      {/* ================= floating tools (mobile speed dial) =================*/}
+      {customizeOpen ? (
+        <div className="lg:hidden fixed bottom-20 right-4 z-40">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            aria-label={t("builder.previewButton")}
+            className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
+          >
+            <Eye size={20} strokeWidth={2} />
+          </button>
+        </div>
+      ) : (
+        <>
+          <AnimatePresence>
+            {fabOpen && (
+              <motion.button
+                key="fab-backdrop"
+                type="button"
+                aria-label={t("builder.closeTools")}
+                className="lg:hidden fixed inset-0 z-[39] bg-black/20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setFabOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+          <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3">
+            <AnimatePresence>
+              {fabOpen && (
+                <motion.div
+                  key="fab-actions"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 12 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex flex-col items-end gap-3"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setTipOpen(true)}
+                    aria-label={t("builder.tipsTitle")}
+                    className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
+                  >
+                    <Lightbulb size={20} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openCustomize(true)}
+                    aria-label={t("builder.customize")}
+                    className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
+                  >
+                    <LayoutGrid size={20} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewOpen(true)}
+                    aria-label={t("builder.previewButton")}
+                    className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
+                  >
+                    <Eye size={20} strokeWidth={2} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={() => setFabOpen((o) => !o)}
+              aria-label={fabOpen ? t("builder.closeTools") : t("builder.openTools")}
+              aria-expanded={fabOpen}
+              className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
+            >
+              <Plus
+                size={22}
+                strokeWidth={2}
+                className={cn("transition-transform duration-200", fabOpen && "rotate-45")}
+              />
+            </button>
+          </div>
+        </>
+      )}
 
       {/* ================= floating bottom bar ================= */}
       {!customizeOpen && (

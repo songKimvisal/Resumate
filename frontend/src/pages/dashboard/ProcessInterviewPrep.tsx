@@ -212,7 +212,7 @@ export default function ProcessInterviewPrep() {
           />
         </aside>
 
-        <section className="min-w-0 rounded-2xl border border-brand/15 bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:rounded-[20px] sm:p-5 lg:p-6">
+        <section className="min-w-0 rounded-2xl border border-line bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:rounded-[20px] sm:p-5 lg:p-6">
           <span className="inline-flex max-w-full rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-semibold text-brand min-[375px]:px-3 min-[375px]:text-[11px]">
             <span className="truncate">
               {t("interviewPrep.badge", {

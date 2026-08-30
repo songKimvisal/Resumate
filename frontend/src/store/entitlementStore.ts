@@ -3,29 +3,40 @@ import { persist } from "zustand/middleware";
 
 interface EntitlementState {
   unlockedTemplateIds: string[];
+  templateSlots: number;
   isUnlocked: (templateId: string) => boolean;
-  unlockTemplate: (templateId: string) => void;
-  unlockTemplates: (templateIds: string[]) => void;
+  setEntitlements: (unlockedTemplateIds: string[], templateSlots: number) => void;
 }
 
 export const useEntitlementStore = create<EntitlementState>()(
   persist(
     (set, get) => ({
       unlockedTemplateIds: [],
+      templateSlots: 0,
       isUnlocked: (templateId) => get().unlockedTemplateIds.includes(templateId),
-      unlockTemplate: (templateId) =>
-        set((s) =>
-          s.unlockedTemplateIds.includes(templateId)
-            ? s
-            : { unlockedTemplateIds: [...s.unlockedTemplateIds, templateId] },
-        ),
-      unlockTemplates: (templateIds) =>
-        set((s) => ({
-          unlockedTemplateIds: [
-            ...new Set([...s.unlockedTemplateIds, ...templateIds]),
-          ],
-        })),
+      setEntitlements: (unlockedTemplateIds, templateSlots) =>
+        set({
+          unlockedTemplateIds,
+          templateSlots,
+        }),
     }),
-    { name: "resumate-entitlements" },
+    {
+      name: "resumate-entitlements",
+      version: 2,
+      partialize: (s) => ({
+        unlockedTemplateIds: s.unlockedTemplateIds,
+        templateSlots: s.templateSlots,
+      }),
+      migrate: (persisted) => {
+        const state = persisted as Partial<EntitlementState> | undefined;
+        return {
+          unlockedTemplateIds: Array.isArray(state?.unlockedTemplateIds)
+            ? state.unlockedTemplateIds
+            : [],
+          templateSlots:
+            typeof state?.templateSlots === "number" ? state.templateSlots : 0,
+        };
+      },
+    },
   ),
 );

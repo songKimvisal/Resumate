@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import me, ai_design, smart_rewrite, credits, job_analysis
+from app.routers import me, ai_design, smart_rewrite, credits, job_analysis, pdfs, templates
 
 app = FastAPI(title="Resumate API")
 
@@ -38,6 +38,8 @@ app.include_router(me.router)
 app.include_router(ai_design.router)
 app.include_router(smart_rewrite.router)
 app.include_router(credits.router)
+app.include_router(pdfs.router)
+app.include_router(templates.router)
 app.include_router(job_analysis.router)
 
 

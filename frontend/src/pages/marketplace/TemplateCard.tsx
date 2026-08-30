@@ -6,7 +6,6 @@ import type { TemplatePreset } from "../../data/templates";
 import { usePacks } from "../../hooks/usePacks";
 import { canClaimTemplateSlot, hasTemplateAccess } from "../../lib/templateAccess";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { useSubscriptionStore } from "../../store/subscriptionStore";
 
 export default function TemplateCard({
   preset,
@@ -18,10 +17,10 @@ export default function TemplateCard({
   const { t } = useTranslation();
   const { design } = usePacks();
   const isPremium = preset.tier === "premium";
-  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const unlockedIds = useEntitlementStore((s) => s.unlockedTemplateIds);
-  const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
-  const canClaim = canClaimTemplateSlot(lastPackId, unlockedIds.length);
+  const templateSlots = useEntitlementStore((s) => s.templateSlots);
+  const hasAccess = hasTemplateAccess(preset.id, unlockedIds, templateSlots);
+  const canClaim = canClaimTemplateSlot(templateSlots, unlockedIds.length);
   const resume = useMemo(
     () => demoResumeForPreset(preset.customization),
     [preset],

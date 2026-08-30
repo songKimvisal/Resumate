@@ -451,7 +451,7 @@ export default function JobMatch() {
       <section
         className={cn(
           "mt-3 min-w-0 rounded-2xl border bg-bg p-3.5 shadow-sm min-[375px]:p-4 sm:mt-4 sm:rounded-[20px] sm:p-5 lg:p-6",
-          result && !analyzing ? "border-brand/40" : "border-brand/15",
+          result && !analyzing ? "border-brand/40" : "border-line",
         )}
       >
           <AnimatePresence mode="wait">

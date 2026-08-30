@@ -17,7 +17,6 @@ import { usePacks } from "../../hooks/usePacks";
 import { setPendingTemplateId } from "../../lib/session";
 import { canClaimTemplateSlot } from "../../lib/templateAccess";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { useSubscriptionStore } from "../../store/subscriptionStore";
 import type { NeedId, PackId } from "../../types/billing";
 
 const UNLOCK_NEEDS: NeedId[] = ["design", "both"];
@@ -31,14 +30,14 @@ export default function UnlockTemplateModal({
   open: boolean;
   preset: TemplatePreset | null;
   onCancel: () => void;
-  onUnlock: () => void;
+  onUnlock: () => void | Promise<void>;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { byNeed } = usePacks();
-  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const unlockedCount = useEntitlementStore((s) => s.unlockedTemplateIds.length);
-  const canClaim = canClaimTemplateSlot(lastPackId, unlockedCount);
+  const templateSlots = useEntitlementStore((s) => s.templateSlots);
+  const canClaim = canClaimTemplateSlot(templateSlots, unlockedCount);
   const [need, setNeed] = useState<NeedId>("design");
   const [previewOpen, setPreviewOpen] = useState(false);
   const packs = byNeed[need];

@@ -160,7 +160,7 @@
     "dashboard": "Dashboard",
     "myResumes": "My Resumes",
     "interviewPrep": "Interview prep",
-    "savedJobs": "Saved jobs",
+    "savedJobs": "Job reports",
     "billing": "Billing",
     "aiUsage": "AI Usage",
     "aiUsageCount": "AI Usage, {{count}} left",
@@ -283,8 +283,8 @@
       "gapLanguage": "This posting asks for {{lang}}. Add it under languages if you speak it."
     },
     "saved": {
-      "title": "Saved jobs",
-      "open": "Saved jobs",
+      "title": "Job reports",
+      "open": "Job reports",
       "openJob": "Review this job",
       "close": "Close",
       "hint": "Save a job, then review its match, interview questions, or report anytime. Free.",
@@ -305,17 +305,17 @@
     }
   },
   "savedJobsPage": {
-      "hubTitle": "Saved",
-      "hubTitleAccent": "jobs",
+      "hubTitle": "Job",
+      "hubTitleAccent": "Reports",
       "subtitle": "Open a readiness report. Each card shows the job, the company, and the resume you used.",
       "interviewPrep": "Interview prep",
       "cardStats": "{{match}}% match · {{done}}/{{total}} ready",
-      "emptyTitle": "No saved jobs yet",
-      "emptyBody": "Analyze a job ad first. Then save it here so you can reopen it even after you change resumes.",
+      "emptyTitle": "No job reports yet",
+      "emptyBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
       "analyzeCta": "Analyze a job",
-      "unlockTitle": "You're almost ready to unlock Saved jobs",
-      "unlockBody": "Analyze a job ad first. The match, interview questions, and readiness report come from that same result. Then the report lives here so you can reopen it even after you change resumes.",
-      "unlockCta": "Go to Resume Optimization",
+      "unlockTitle": "No job reports yet",
+      "unlockBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
+      "unlockCta": "Analyze a job",
       "cardLabel": "Readiness report",
       "continue": "View report",
       "readyScore": "{{score}}% ready",
@@ -324,7 +324,7 @@
       "companyWithResume": "{{company}} · {{name}}",
       "matchScore": "{{score}}% match",
       "selectHint": "Tap jobs to select them",
-      "confirmDeleteSelected": "Delete {{count}} saved jobs? This cannot be undone."
+      "confirmDeleteSelected": "Delete {{count}} job reports? This cannot be undone."
   },
   "interviewPrep": {
     "badge": "Interview prep · {{role}}",
@@ -361,18 +361,18 @@
     "hubTitle": "Interview",
     "hubTitleAccent": "Preparation",
     "hubSubtitle": "Open interview prep. Each card shows the job, the company, and the resume you used.",
-    "unlockTitle": "You're almost ready to unlock Interview Prep",
-    "unlockBody": "We'll analyze your resume against the job description and then generate questions, suggested answers, and key talking points to help you prepare with confidence.",
-    "unlockCta": "Go to Resume Optimization",
+    "unlockTitle": "No interview prep yet",
+    "unlockBody": "Analyze a job ad first. Questions and sample answers come from that same result.",
+    "unlockCta": "Analyze a job",
     "cardLabel": "Interview prep",
     "readyCount": "{{done}} / {{total}} ready",
     "continue": "Continue",
     "moreJobs": "{{count}} other saved job",
     "moreJobs_plural": "{{count}} other saved jobs",
     "selectHint": "Tap resumes to select them",
-    "confirmDeleteSelected": "Delete interview prep for {{count}} resumes? Saved jobs for them go too. The resumes stay.",
+    "confirmDeleteSelected": "Delete interview prep for {{count}} resumes? Job reports for them go too. The resumes stay.",
     "backToHub": "Back to Interview prep",
-    "backToSaved": "Back to Saved jobs",
+    "backToSaved": "Back to Job reports",
     "emptyTitle": "Analyze a job first",
     "emptyBody": "Paste a job ad and run analysis first. Interview questions and the readiness report come from that same result. No extra AI call.",
     "startJobMatch": "Paste a job ad"
@@ -908,6 +908,8 @@
     "tipsTitle": "Tip for this page",
     "tipHint": "Tap for a tip",
     "tipClose": "Close tip",
+    "openTools": "More actions",
+    "closeTools": "Close actions",
     "tips": [
       {
         "lead": "Header & Contact Details Your first impression on employers.",
@@ -1601,7 +1603,7 @@
     "retry": "Retry",
     "empty": {
       "title": "No resumes yet",
-      "subtitle": "Create your first resume to get started.",
+      "subtitle": "Pick a template and fill it in. Your first one is free.",
       "cta": "Create a resume"
     },
     "menu": {

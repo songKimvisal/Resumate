@@ -23,38 +23,42 @@ export function packUnlocksAllTemplates(packId: PackId): boolean {
   return packId === "both-everything";
 }
 
+/** Server slot count: -1 means every premium template is unlocked. */
 export function hasTemplateAccess(
   templateId: string,
-  packId: PackId | null | undefined,
   unlockedIds: string[],
+  slots: number,
 ): boolean {
   if (unlockedIds.includes(templateId)) return true;
-  return templateSlotsForPack(packId) === Number.POSITIVE_INFINITY;
+  return slots < 0;
 }
 
 /** Free templates plus premium ones the user has already unlocked. */
 export function canUseTemplate(
   preset: { id: string; tier: "free" | "premium" },
-  packId: PackId | null | undefined,
   unlockedIds: string[],
+  slots: number,
 ): boolean {
   if (preset.tier === "free") return true;
-  return hasTemplateAccess(preset.id, packId, unlockedIds);
+  return hasTemplateAccess(preset.id, unlockedIds, slots);
 }
 
 export function canClaimTemplateSlot(
-  packId: PackId | null | undefined,
+  slots: number,
   unlockedCount: number,
 ): boolean {
-  return remainingTemplateSlots(packId, unlockedCount) > 0;
+  return remainingTemplateSlots(slots, unlockedCount) > 0;
 }
 
-/** Finite slots still left to pick. 0 if the pack has none or unlocks everything. */
+/** Finite slots still left to pick. 0 if none, or if everything is already unlocked. */
 export function remainingTemplateSlots(
-  packId: PackId | null | undefined,
+  slots: number,
   unlockedCount: number,
 ): number {
-  const slots = templateSlotsForPack(packId);
-  if (slots === 0 || !Number.isFinite(slots)) return 0;
+  if (slots <= 0) return 0;
   return Math.max(0, slots - unlockedCount);
+}
+
+export function hasDesignAccess(slots: number): boolean {
+  return slots !== 0;
 }

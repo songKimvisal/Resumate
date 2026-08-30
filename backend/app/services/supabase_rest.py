@@ -25,7 +25,7 @@ def rest_get(path_with_query: str) -> httpx.Response:
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Could not read credits: {exc}",
+            detail=f"Could not read database: {exc}",
         ) from exc
 
 
@@ -40,5 +40,5 @@ def rest_rpc(fn_name: str, payload: dict) -> object:
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Could not update credits: {exc}",
+            detail=f"Could not update database: {exc}",
         ) from exc

@@ -148,37 +148,33 @@ export default function SavedJobs() {
   }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] min-[375px]:px-4 sm:px-6 sm:py-7">
-      <div className="min-w-0">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2.5">
+    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 sm:px-6 py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
           <PageTitle
             text={t("savedJobsPage.hubTitle")}
             accent={t("savedJobsPage.hubTitleAccent")}
           />
-          {cards.length > 0 && !loadError && !selecting ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-full px-3.5"
-                onClick={() => setSelecting(true)}
-              >
-                {t("myResumes.select")}
-              </Button>
-              <Button
-                size="sm"
-                className="h-8 rounded-full px-3.5"
-                onClick={() => navigate("/dashboard")}
-              >
-                {t("savedJobsPage.analyzeCta")}
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        {cards.length > 0 && !loadError ? (
-          <p className="mt-2 max-w-xl text-sm leading-6 text-text-secondary">
+          <p className="mt-2 text-sm text-text-secondary">
             {t("savedJobsPage.subtitle")}
           </p>
+        </div>
+        {cards.length > 0 && !loadError && !selecting ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelecting(true)}
+            >
+              {t("myResumes.select")}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+            >
+              {t("savedJobsPage.analyzeCta")}
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -211,18 +207,18 @@ export default function SavedJobs() {
           </Button>
         </div>
       ) : cards.length === 0 ? (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-bg sm:mt-8">
-          <div className="flex flex-col items-center gap-5 px-4 py-8 min-[375px]:px-5 sm:flex-row sm:items-center sm:gap-8 sm:px-8 sm:py-10">
+        <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-bg">
+          <div className="flex flex-col items-center gap-5 px-4 py-8 min-[375px]:px-5 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-8 sm:py-8">
             <img
               src={mascot}
               alt=""
-              className="w-20 shrink-0 select-none min-[375px]:w-24 sm:w-28"
+              className="w-24 shrink-0 select-none min-[375px]:w-28 sm:w-36 lg:w-40"
             />
-            <div className="min-w-0 max-w-lg text-center sm:text-left">
+            <div className="min-w-0 flex-1 text-center sm:text-left">
               <h2 className="text-base font-bold tracking-tight text-text sm:text-lg">
                 {t("savedJobsPage.unlockTitle")}
               </h2>
-              <p className="mt-1.5 text-sm leading-6 text-text-secondary">
+              <p className="mt-1.5 max-w-xl text-sm leading-6 text-text-secondary sm:max-w-none">
                 {t("savedJobsPage.unlockBody")}
               </p>
               <Button

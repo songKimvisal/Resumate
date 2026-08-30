@@ -14,7 +14,6 @@ import {
 import { HexColorPicker } from "react-colorful";
 import { useResumeStore } from "../../store/resumeStore";
 import { useEntitlementStore } from "../../store/entitlementStore";
-import { useSubscriptionStore } from "../../store/subscriptionStore";
 import type {
   Customization,
   CustomizationToggles,
@@ -37,10 +36,8 @@ import { TEMPLATE_PRESETS, type TemplatePreset } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
-import {
-  hasTemplateAccess,
-  packIncludesTemplates,
-} from "../../lib/templateAccess";
+import { hasTemplateAccess, hasDesignAccess } from "../../lib/templateAccess";
+import { unlockPremiumTemplate } from "../../lib/api/templates";
 import { usePacks } from "../../hooks/usePacks";
 import { cn, useFieldId } from "../../lib/utils";
 import {
@@ -213,25 +210,22 @@ export default function CustomizePage() {
   const activeTemplatePreset = TEMPLATE_PRESETS.find(
     (p) => p.id === customization.template,
   );
-  const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
-  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
+  const templateSlots = useEntitlementStore((s) => s.templateSlots);
   const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
   const hasActiveTemplateAccess =
     !activeTemplatePreset ||
     activeTemplatePreset.tier !== "premium" ||
     hasTemplateAccess(
       activeTemplatePreset.id,
-      lastPackId,
       unlockedTemplateIds,
+      templateSlots,
     );
   const isLocked =
     activeTemplatePreset?.tier === "premium" && !hasActiveTemplateAccess;
   const hasFullCustomizationAccess =
-    hasActiveTemplateAccess &&
-    !!lastPackId &&
-    packIncludesTemplates(lastPackId);
+    hasActiveTemplateAccess && hasDesignAccess(templateSlots);
   const isPresetUnlocked = (id: string) =>
-    hasTemplateAccess(id, lastPackId, unlockedTemplateIds);
+    hasTemplateAccess(id, unlockedTemplateIds, templateSlots);
   const [unlockTarget, setUnlockTarget] = useState<TemplatePreset | null>(
     null,
   );
@@ -505,9 +499,9 @@ export default function CustomizePage() {
           open={unlockTarget !== null}
           preset={unlockTarget}
           onCancel={() => setUnlockTarget(null)}
-          onUnlock={() => {
+          onUnlock={async () => {
             if (!unlockTarget) return;
-            unlockTemplate(unlockTarget.id);
+            await unlockPremiumTemplate(unlockTarget.id);
             updateCustomization(unlockTarget.customization);
             setUnlockTarget(null);
           }}
@@ -1554,9 +1548,9 @@ export default function CustomizePage() {
         open={unlockTarget !== null}
         preset={unlockTarget}
         onCancel={() => setUnlockTarget(null)}
-        onUnlock={() => {
+        onUnlock={async () => {
           if (!unlockTarget) return;
-          unlockTemplate(unlockTarget.id);
+          await unlockPremiumTemplate(unlockTarget.id);
           updateCustomization(unlockTarget.customization);
           setUnlockTarget(null);
         }}
@@ -1959,9 +1953,9 @@ function TemplateSwitchThumb({
 }) {
   const { t } = useTranslation();
   const { design } = usePacks();
-  const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const unlockedIds = useEntitlementStore((s) => s.unlockedTemplateIds);
-  const hasAccess = hasTemplateAccess(preset.id, lastPackId, unlockedIds);
+  const templateSlots = useEntitlementStore((s) => s.templateSlots);
+  const hasAccess = hasTemplateAccess(preset.id, unlockedIds, templateSlots);
   const isPremiumLocked = preset.tier === "premium" && !hasAccess;
   const resume = useMemo(
     () => demoResumeForPreset(preset.customization),

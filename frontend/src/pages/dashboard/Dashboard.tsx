@@ -478,7 +478,7 @@ export default function Dashboard() {
                 className={cn(
                   "w-full min-w-0 flex-1",
                   "rounded-2xl sm:rounded-[28px] lg:rounded-[32px]",
-                  "border border-brand/15",
+                  "border border-line",
                   "bg-bg",
                   "p-3.5 min-[375px]:p-4 sm:p-6 lg:p-8",
                   "shadow-sm",
@@ -667,10 +667,10 @@ export default function Dashboard() {
             {/* ========================================================
                 CONTINUE BUTTON
             ======================================================== */}
-            <div className="mt-4 flex justify-center sm:mt-6 lg:justify-end">
+            <div className="mt-4 flex justify-end sm:mt-6">
               <Button
                 size="compact"
-                className="h-9 w-full max-w-[16rem] rounded-full sm:w-auto sm:px-6"
+                className="h-9 rounded-full px-6"
                 onClick={handleContinue}
               >
                 {t("dashboard.continue")}

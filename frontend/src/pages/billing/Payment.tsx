@@ -17,9 +17,9 @@ import { cn } from "../../lib/utils";
 import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
 import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
-import { useEntitlementStore } from "../../store/entitlementStore";
 import { grantAiCredits } from "../../lib/api/credits";
-import { pdfsForPack } from "../../lib/pdfSaves";
+import { grantPdfSaves } from "../../lib/api/pdfs";
+import { grantTemplatePack } from "../../lib/api/templates";
 import { consumePendingTemplateId } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
@@ -53,9 +53,7 @@ export default function Payment() {
   const location = useLocation();
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
   const setCredits = useSubscriptionStore((s) => s.setCredits);
-  const grantPdfs = useSubscriptionStore((s) => s.grantPdfs);
-  const unlockTemplate = useEntitlementStore((s) => s.unlockTemplate);
-  const unlockTemplates = useEntitlementStore((s) => s.unlockTemplates);
+  const setPdfs = useSubscriptionStore((s) => s.setPdfs);
 
   const checkout = location.state as
     | { pack?: PackId; plan?: PlanId }
@@ -94,7 +92,12 @@ export default function Payment() {
 
   const fulfillPurchase = async (packId: PackId) => {
     subscribeToPlan(packToPlanId(packId), packId);
-    grantPdfs(pdfsForPack(packId));
+    try {
+      const pdfs = await grantPdfSaves(packId);
+      setPdfs(pdfs.total, pdfs.used);
+    } catch (err) {
+      console.warn("Could not grant PDF saves:", err);
+    }
     try {
       const credits = await grantAiCredits(packId);
       setCredits(credits.total, credits.used);
@@ -109,15 +112,20 @@ export default function Payment() {
       Boolean(pendingPreset) &&
       (packUnlocksAllTemplates(packId) || packIncludesTemplates(packId));
 
+    let unlockedCount = 0;
+    let templateSlots = 0;
+    try {
+      const entitlements = await grantTemplatePack(packId, pendingId);
+      unlockedCount = entitlements.unlockedTemplateIds.length;
+      templateSlots = entitlements.templateSlots;
+    } catch (err) {
+      console.warn("Could not grant templates:", err);
+    }
+
     if (packUnlocksAllTemplates(packId)) {
-      unlockTemplates(
-        TEMPLATE_PRESETS.filter((p) => p.tier === "premium").map((p) => p.id),
-      );
       setAfterPay(pendingPreset ? "builder" : "browse");
     } else if (packIncludesTemplates(packId)) {
-      if (pendingId) unlockTemplate(pendingId);
-      const unlocked = useEntitlementStore.getState().unlockedTemplateIds.length;
-      const remaining = remainingTemplateSlots(packId, unlocked);
+      const remaining = remainingTemplateSlots(templateSlots, unlockedCount);
       if (remaining > 0) setAfterPay("pick");
       else setAfterPay(pendingId ? "builder" : "dashboard");
     } else {

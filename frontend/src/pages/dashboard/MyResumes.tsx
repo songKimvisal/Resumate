@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Plus, FileText, Loader2, Trash2, X } from "lucide-react";
+import { Plus, Loader2, Trash2, X } from "lucide-react";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import {
@@ -18,6 +18,7 @@ import PageTitle from "../../components/layout/PageTitle";
 import { useJourneyStore } from "../../store/journeyStore";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
+import mascot from "../../assets/logo/mascot.png";
 
 export default function MyResumes() {
   const { t } = useTranslation();
@@ -268,10 +269,38 @@ export default function MyResumes() {
         </div>
       )}
 
-      {resumes !== null && !loadError && (
+      {resumes !== null && !loadError && resumes.length === 0 && (
+        <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-bg">
+          <div className="flex flex-col items-center gap-5 px-4 py-8 min-[375px]:px-5 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-8 sm:py-8">
+            <img
+              src={mascot}
+              alt=""
+              className="w-24 shrink-0 select-none min-[375px]:w-28 sm:w-36 lg:w-40"
+            />
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <h2 className="text-base font-bold tracking-tight text-text sm:text-lg">
+                {t("myResumes.empty.title")}
+              </h2>
+              <p className="mt-1.5 max-w-xl text-sm leading-6 text-text-secondary sm:max-w-none">
+                {t("myResumes.empty.subtitle")}
+              </p>
+              <Button
+                className="mt-4 h-9 rounded-full"
+                size="compact"
+                onClick={handleNewResume}
+              >
+                {t("myResumes.empty.cta")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resumes !== null && !loadError && resumes.length > 0 && (
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {!selecting && (
             <button
+              type="button"
               onClick={handleNewResume}
               className="aspect-[210/297] rounded-lg border-2 border-dashed border-line flex flex-col items-center justify-center gap-3 text-text-secondary hover:text-brand hover:border-brand/50 transition-colors"
             >
@@ -301,18 +330,6 @@ export default function MyResumes() {
               />
             );
           })}
-
-          {resumes.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <FileText size={28} className="text-text-secondary" />
-              <div>
-                <p className="font-medium">{t("myResumes.empty.title")}</p>
-                <p className="text-sm text-text-secondary mt-1">
-                  {t("myResumes.empty.subtitle")}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
