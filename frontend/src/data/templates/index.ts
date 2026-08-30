@@ -5,6 +5,7 @@ import type {
   TemplateLayout,
   TemplateVibe,
 } from "./types";
+export { designWithoutHeadingLanguage } from "./types";
 import { BANKING_FREE_TEMPLATES } from "./free/banking";
 import { TECH_FREE_TEMPLATES } from "./free/tech";
 import { FRESHGRAD_FREE_TEMPLATES } from "./free/freshgrad";

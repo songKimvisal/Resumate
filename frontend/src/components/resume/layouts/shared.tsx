@@ -1,3 +1,4 @@
+import { createContext, useContext, type ReactNode } from "react";
 import type {
   Customization,
   EducationItem,
@@ -20,20 +21,49 @@ import { listKey } from "../../../lib/resumeIds";
 import { resumePhotoSrc } from "../../../lib/personAvatar";
 import { hrefFromUrl, linkDisplayLabel, looksLikeUrl } from "../../../lib/contactLinks";
 import { contrastOn } from "../../../lib/color";
+import {
+  headingLang,
+  resumeDateLocale,
+  resumeGpaLabel,
+  resumeHeading,
+  resumeLanguageLevel,
+  resumePresent,
+} from "../../../lib/resumeHeadings";
 
 export { listKey };
+
+const ResumeChromeContext = createContext<Customization | undefined>(undefined);
+
+export function ResumeChromeProvider({
+  value,
+  children,
+}: {
+  value: Customization;
+  children: ReactNode;
+}) {
+  return (
+    <ResumeChromeContext.Provider value={value}>
+      {children}
+    </ResumeChromeContext.Provider>
+  );
+}
+
+function useResumeChrome() {
+  return useContext(ResumeChromeContext);
+}
 
 /** Prefer month+year for ATS parsers (e.g. "Jan 2022 – Present"). */
 export function fmtDate(
   value: string,
   format: Customization["dateFormat"] = "monthYear",
+  customization?: Customization,
 ) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
   if (!y || !m) return value;
   if (format === "yearOnly") return `${y}`;
   if (format === "numeric") return `${String(m).padStart(2, "0")}/${y}`;
-  return new Date(y, m - 1).toLocaleDateString("en-US", {
+  return new Date(y, m - 1).toLocaleDateString(resumeDateLocale(customization), {
     month: "short",
     year: "numeric",
   });
@@ -45,11 +75,15 @@ export function dateRange(
     "startDate" | "endDate" | "current"
   >,
   format: Customization["dateFormat"] = "monthYear",
+  customization?: Customization,
 ) {
   if (!item.startDate && !item.endDate && !item.current) return "";
-  const end = item.current ? "Present" : fmtDate(item.endDate, format);
-  const start = fmtDate(item.startDate, format);
-  if (!start && !end) return "";
+  const end = item.current
+    ? resumePresent(customization)
+    : fmtDate(item.endDate, format, customization);
+  const start = fmtDate(item.startDate, format, customization);
+  if (!start) return end;
+  if (!end) return start;
   return `${start} – ${end}`;
 }
 
@@ -191,9 +225,17 @@ export function ContactInline({
   );
 }
 
-export function languageLabel(level: number) {
-  if (level >= 1 && level <= 5) return LANGUAGE_LEVEL_LABELS[level - 1];
-  return "";
+export function languageLabel(level: number, customization?: Customization) {
+  if (level < 1 || level > 5) return "";
+  return resumeLanguageLevel(
+    level - 1,
+    customization,
+    LANGUAGE_LEVEL_LABELS[level - 1],
+  );
+}
+
+export function gpaText(gpa: string, customization?: Customization) {
+  return `${resumeGpaLabel(customization)}: ${gpa}`;
 }
 
 export function clampedLevel(level: number, max = 5) {
@@ -230,7 +272,10 @@ export function layoutPageStyle(
   return {
     fontFamily: layoutFont(customization),
     fontSize: customization.fontSize,
-    lineHeight: customization.lineHeight || 1.45,
+    lineHeight:
+      headingLang(customization) === "km"
+        ? Math.max(customization.lineHeight || 1.45, 1.6)
+        : customization.lineHeight || 1.45,
     color: customization.bodyTextColor || ATS.ink,
     backgroundColor: customization.bodyBgColor || fallbackBg,
     ["--resume-link-color" as string]: linkColor,
@@ -306,10 +351,11 @@ export function normalizeJobs(
   experience: ExperienceItem[],
   noExperience: NoExperienceItem[],
   order?: string[],
+  customization?: Customization,
 ): JobLike[] {
   const extras: JobLike[] = (noExperience ?? []).map((n, i) => ({
     id: n.id?.trim() ? n.id : `noexp-${i}`,
-    jobTitle: extraExperienceTitle(n),
+    jobTitle: extraExperienceTitle(n, customization),
     company: n.subtitle,
     location: "",
     startDate: n.startDate,
@@ -450,10 +496,11 @@ export function RichHtml({
   );
 }
 
-/** Section-heading text transform from Customize. */
+/** Section-heading text transform from Customize. Khmer has no uppercase. */
 export function headingTextTransform(
   customization?: Customization,
 ): NonNullable<React.CSSProperties["textTransform"]> {
+  if (headingLang(customization) === "km") return "none";
   return customization?.capitalization ?? "uppercase";
 }
 
@@ -461,6 +508,9 @@ export function headingTextTransform(
 export function headingCapStyle(
   customization?: Customization,
 ): React.CSSProperties {
+  if (headingLang(customization) === "km") {
+    return { textTransform: "none", letterSpacing: "0px" };
+  }
   const transform = headingTextTransform(customization);
   const tracking =
     customization?.headingsLetterSpacing ??
@@ -515,6 +565,7 @@ export function AtsHeading({
     rule &&
     showLineToggle &&
     (border === "none" || border === "line");
+  const label = resumeHeading(title, customization);
 
   const titleStyle: React.CSSProperties = {
     fontSize: size,
@@ -531,7 +582,7 @@ export function AtsHeading({
     return (
       <div className="flex items-center gap-2" style={{ marginBottom: gap }}>
         <h2 className="shrink-0 font-bold" style={titleStyle}>
-          {title}
+          {label}
         </h2>
         <span className="h-px min-w-4 flex-1" style={{ backgroundColor: barColor }} />
       </div>
@@ -541,7 +592,7 @@ export function AtsHeading({
   return (
     <div style={{ marginBottom: gap }}>
       <h2 className="font-bold" style={titleStyle}>
-        {title}
+        {label}
       </h2>
       {(isUnderline || showShortRule) && (
         <div
@@ -567,13 +618,16 @@ export function JobBlock({
   muted,
   dateFmt = "monthYear",
   titleFirst = true,
+  customization,
 }: {
   job: JobLike;
   ink: string;
   muted: string;
   dateFmt?: Customization["dateFormat"];
   titleFirst?: boolean;
+  customization?: Customization;
 }) {
+  const c = customization ?? useResumeChrome();
   const primary = titleFirst ? job.jobTitle : job.company || job.jobTitle;
   const secondary = titleFirst
     ? [job.company, job.location].filter(Boolean).join(" · ")
@@ -588,7 +642,7 @@ export function JobBlock({
           className="shrink-0 text-[0.92em] tabular-nums"
           style={{ color: muted }}
         >
-          {dateRange(job, dateFmt)}
+          {dateRange(job, dateFmt, c)}
         </p>
       </div>
       {secondary && (
@@ -612,19 +666,22 @@ export function EducationBlock({
   ink,
   dateFmt = "monthYear",
   accent,
+  customization,
 }: {
   edu: EducationItem;
   muted: string;
   ink?: string;
   dateFmt?: Customization["dateFormat"];
   accent?: string;
+  customization?: Customization;
 }) {
+  const c = customization ?? useResumeChrome();
   return (
     <div className="text-[0.9em]">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-bold">{edu.school}</p>
         <p className="shrink-0 tabular-nums" style={{ color: muted }}>
-          {dateRange(edu, dateFmt)}
+          {dateRange(edu, dateFmt, c)}
         </p>
       </div>
       {(edu.degree || edu.field) && (
@@ -632,7 +689,11 @@ export function EducationBlock({
           {[edu.degree, edu.field].filter(Boolean).join(" - ")}
         </p>
       )}
-      {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+      {edu.gpa && (
+        <p style={{ color: muted }}>
+          {gpaText(edu.gpa, c)}
+        </p>
+      )}
       <RichHtml
         html={edu.description}
         className="rte-content mt-1 text-[0.95em] leading-relaxed"
@@ -647,12 +708,15 @@ export function LanguagesBlock({
   muted,
   light = false,
   showLevel = true,
+  customization,
 }: {
   languages: LanguageItem[];
   muted?: string;
   light?: boolean;
   showLevel?: boolean;
+  customization?: Customization;
 }) {
+  const c = customization ?? useResumeChrome();
   if (languages.length === 0) return null;
   return (
     <ul
@@ -660,7 +724,7 @@ export function LanguagesBlock({
       style={{ color: light ? undefined : muted }}
     >
       {languages.map((l, i) => {
-        const level = showLevel ? languageLabel(l.level) : "";
+        const level = showLevel ? languageLabel(l.level, c) : "";
         return (
           <li key={listKey(l.id, i, "lang")}>
             {l.name}

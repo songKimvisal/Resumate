@@ -13,9 +13,11 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
 /**
@@ -44,7 +46,7 @@ export default function CleanHeaderSplitLayout({
   const ink = customization.bodyTextColor || "#111111";
   const muted = "#6B6B6B";
   const line = "#D4D4D4";
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const contacts = personalContactLines(personal);
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
@@ -127,7 +129,7 @@ export default function CleanHeaderSplitLayout({
                     </p>
                     <p style={{ color: muted }}>{edu.school}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                    {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                    {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                     <RichHtml
                       html={edu.description}
                       className="rte-content mt-1"
@@ -270,7 +272,7 @@ function SectionTitle({
         ...headingCapStyle(customization),
       }}
     >
-      {title}
+      {resumeHeading(title, customization)}
     </h2>
   );
 }

@@ -53,3 +53,11 @@ export function preset(
     },
   };
 }
+
+/** Template looks should not reset the resume's heading language. */
+export function designWithoutHeadingLanguage(
+  customization: Customization | Partial<Customization>,
+): Partial<Customization> {
+  const { headingLanguage: _headingLanguage, ...rest } = customization;
+  return rest;
+}

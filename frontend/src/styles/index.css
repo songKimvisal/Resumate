@@ -210,23 +210,35 @@
     color: var(--text-placeholder);
   }
 
-  :where(:lang(km), :lang(km) *) {
+  :where(:lang(km), :lang(km) *):not(.resume-sheet, .resume-sheet *) {
     --tw-leading: 1.8;
     line-height: 1.8;
   }
 
-  :where(:lang(km) :is(h1, h2, h3, h4, h5, h6)) {
+  :where(:lang(km) :is(h1, h2, h3, h4, h5, h6)):not(.resume-sheet, .resume-sheet *) {
     --tw-leading: 1.55;
     line-height: 1.55;
   }
 
-  :lang(km) * {
+  :lang(km) *:not(.resume-sheet, .resume-sheet *) {
     letter-spacing: normal !important;
   }
 
   :where(:lang(km) [data-slot="button"], :lang(km) [data-slot="button"] *) {
     --tw-leading: 1.2;
     line-height: 1.2;
+  }
+
+  /* Resume page language is independent of the app UI language. */
+  .resume-sheet[lang="km"] {
+    line-break: loose;
+    word-break: break-word;
+  }
+  .resume-sheet[lang="km"] * {
+    line-height: inherit;
+  }
+  .resume-sheet[lang="km"] .uppercase {
+    text-transform: none !important;
   }
 }
 

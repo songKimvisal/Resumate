@@ -16,9 +16,11 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
 /**
@@ -47,7 +49,7 @@ export default function TechSplitLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat || "monthYear";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
@@ -221,7 +223,7 @@ export default function TechSplitLayout({
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
-                  {edu.gpa && <p className="opacity-80">GPA: {edu.gpa}</p>}
+                  {edu.gpa && <p className="opacity-80">{gpaText(edu.gpa, customization)}</p>}
                   {hasText(edu.description) && (
                     <RichHtml
                       html={edu.description}
@@ -257,7 +259,7 @@ function SideHeading({
           ...headingCapStyle(customization),
         }}
       >
-        {title}
+        {resumeHeading(title, customization)}
       </h2>
       <div className="mt-1.5 h-px w-full bg-white/30" />
     </div>

@@ -34,7 +34,20 @@ import {
   orderedMainGroups,
   orderedSidebarKeys,
 } from "../../../lib/sectionOrder";
+import {
+  headingLang,
+  resumeDateLocale,
+  resumeDegreeFallback,
+  resumeDegreeJoin,
+  resumeGpaLabel,
+  resumeHeading,
+  resumeNeedsKhmerFont,
+  resumePresent,
+} from "../../../lib/resumeHeadings";
 import { SpecialPdfDocument } from "./SpecialPdfLayouts";
+import { registerPdfFonts } from "./registerPdfFonts";
+
+registerPdfFonts();
 
 function isSpecialLayout(variant: LayoutVariant | undefined) {
   return !!variant && variant !== "default";
@@ -51,13 +64,14 @@ const PDF_PX_TO_PT = 72 / 96;
 function fmtDate(
   value: string,
   format: Customization["dateFormat"] = "monthYear",
+  customization?: Customization,
 ) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
   if (!y || !m) return value;
   if (format === "yearOnly") return `${y}`;
   if (format === "numeric") return `${String(m).padStart(2, "0")}/${y}`;
-  return new Date(y, m - 1).toLocaleDateString("en-US", {
+  return new Date(y, m - 1).toLocaleDateString(resumeDateLocale(customization), {
     month: "short",
     year: "numeric",
   });
@@ -69,10 +83,13 @@ function dateRange(
     "startDate" | "endDate" | "current"
   >,
   format?: Customization["dateFormat"],
+  customization?: Customization,
 ) {
   if (!item.startDate && !item.endDate && !item.current) return "";
-  const end = item.current ? "Present" : fmtDate(item.endDate, format);
-  return `${fmtDate(item.startDate, format)} – ${end}`;
+  const end = item.current
+    ? resumePresent(customization)
+    : fmtDate(item.endDate, format, customization);
+  return `${fmtDate(item.startDate, format, customization)} – ${end}`;
 }
 
 function photoRadius(shape: Customization["photoShape"], size: number) {
@@ -582,7 +599,11 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   });
   const accent = c.accentColor;
   const base = c.fontSize * PDF_FONT_SIZE_RATIO;
-  const fontFamily = pdfFontFamily(c.fontFamily);
+  const fontFamily = pdfFontFamily(
+    c.fontFamily,
+    c.headingLanguage,
+    resumeNeedsKhmerFont(resume),
+  );
   const variants = pdfFontVariants(fontFamily);
 
   const gapSection = c.elementSpacing * (14 / 12);
@@ -755,8 +776,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     sectionTitle: {
       fontSize: c.headingsSize,
       fontFamily: variants.bold,
-      textTransform: c.capitalization,
-      letterSpacing: 1.5 + c.headingsLetterSpacing,
+      textTransform: headingLang(c) === "km" ? "none" : c.capitalization,
+      letterSpacing: headingLang(c) === "km" ? 0 : 1.5 + c.headingsLetterSpacing,
       paddingBottom: isOutline || isFilled ? 0 : 3,
       marginBottom: 6,
       alignSelf: "flex-start",
@@ -820,6 +841,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   ) => {
     const ink = inkOverride ?? headingsInk;
     const iconKey = SECTION_ICON_KEYS[title];
+    const label = resumeHeading(title, c);
     const showIcon = c.sectionIcon !== "none" && !!iconKey;
     const icon = showIcon ? (
       <SectionPdfIcon
@@ -843,7 +865,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
         >
           {icon}
           <Text style={[styles.sectionTitle, { marginBottom: 0, color: ink }]}>
-            {title}
+            {label}
           </Text>
           <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: ink }} />
         </View>
@@ -859,7 +881,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             <Text
               style={[styles.sectionTitle, { marginBottom: 0, color: ink }]}
             >
-              {title}
+              {label}
             </Text>
           </View>
           <View
@@ -885,7 +907,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             ...(extraStyle ? [extraStyle] : []),
           ]}
         >
-          {title}
+              {label}
         </Text>
       );
     }
@@ -921,7 +943,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             lineHeight: styles.sectionTitle.lineHeight,
           }}
         >
-          {title}
+              {label}
         </Text>
       </View>
     );
@@ -1061,7 +1083,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     )}
                   </Text>
                   <Text style={styles.entryDates}>
-                    {dateRange(entry.item, c.dateFormat)}
+                    {dateRange(entry.item, c.dateFormat, c)}
                   </Text>
                 </View>,
               )}
@@ -1089,10 +1111,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                             : bodyAccentColorEff,
                         }}
                       >
-                        {extraExperienceTitle(entry.item)}
+                        {extraExperienceTitle(entry.item, c)}
                       </Link>
                     ) : (
-                      extraExperienceTitle(entry.item)
+                      extraExperienceTitle(entry.item, c)
                     )}
                     {entry.item.subtitle ? (
                       <Text style={styles.entryMeta}>
@@ -1102,7 +1124,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                     ) : null}
                   </Text>
                   <Text style={styles.entryDates}>
-                    {dateRange(entry.item, c.dateFormat)}
+                    {dateRange(entry.item, c.dateFormat, c)}
                   </Text>
                 </View>,
               )}
@@ -1126,17 +1148,18 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
               <View style={styles.entryHeaderRow} wrap={false}>
                 <View>
                   <Text style={styles.entryTitle}>
-                    {[edu.degree, edu.field].filter(Boolean).join(" in ") ||
-                      "Degree"}
+                    {[edu.degree, edu.field]
+                      .filter(Boolean)
+                      .join(resumeDegreeJoin(c)) || resumeDegreeFallback(c)}
                   </Text>
                   <Text style={styles.entrySubtitle}>
-                    {[edu.school, edu.gpa && `GPA: ${edu.gpa}`]
+                    {[edu.school, edu.gpa && `${resumeGpaLabel(c)}: ${edu.gpa}`]
                       .filter(Boolean)
                       .join(" · ")}
                   </Text>
                 </View>
                 <Text style={styles.entryDates}>
-                  {dateRange(edu, c.dateFormat)}
+                  {dateRange(edu, c.dateFormat, c)}
                 </Text>
               </View>
               {hasVisibleText(edu.description) &&

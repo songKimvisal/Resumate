@@ -23,6 +23,8 @@ import {
 import { extraExperienceTitle } from "../../lib/experienceDisplay";
 import { orderedExperienceEntries } from "../../lib/experienceOrder";
 import { withStableItemIds, listKey } from "../../lib/resumeIds";
+import { resumeHeading, resumePresent, resumeDegreeJoin, resumeDegreeFallback, resumeSheetLang } from "../../lib/resumeHeadings";
+import { ResumeChromeProvider } from "./layouts/shared";
 import { useResumeStore } from "../../store/resumeStore";
 import {
   type Resume,
@@ -51,16 +53,23 @@ import { cn } from "../../lib/utils";
 import { hasSpecialLayout } from "./layouts";
 import { SpecialPaginatedLayout } from "./layouts/SpecialPaginatedLayout";
 
-function fmtDate(value: string, format: Customization["dateFormat"] = "monthYear") {
+function fmtDate(
+  value: string,
+  format: Customization["dateFormat"] = "monthYear",
+  headingLanguage: "en" | "km" = "en",
+) {
   if (!value) return "";
   const [y, m] = value.split("-").map(Number);
   if (!y || !m) return value;
   if (format === "yearOnly") return `${y}`;
   if (format === "numeric") return `${String(m).padStart(2, "0")}/${y}`;
-  return new Date(y, m - 1).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
+  return new Date(y, m - 1).toLocaleDateString(
+    headingLanguage === "km" ? "km-KH" : "en-US",
+    {
+      month: "short",
+      year: "numeric",
+    },
+  );
 }
 
 function hasText(html: string) {
@@ -179,6 +188,7 @@ interface Theme {
   showTimeline: boolean;
   skillsListMode: boolean;
   dateFormat: Customization["dateFormat"];
+  headingLanguage: "en" | "km";
   /** className appended alongside "rte-content" to swap the bullet marker
    *  glyph on rendered lists; empty for the browser-default disc */
   bulletClass: string;
@@ -191,7 +201,10 @@ function useTheme(customization: Customization): Theme {
       accentText: customization.accentColor,
       fontSize: `${customization.fontSize}px`,
       fontFamily: cssFontStack(customization.fontFamily),
-      lineHeight: customization.lineHeight,
+      lineHeight:
+        customization.headingLanguage === "km"
+          ? Math.max(customization.lineHeight, 1.6)
+          : customization.lineHeight,
       gapSection: customization.elementSpacing * (20 / 12),
       gapExpItem: customization.elementSpacing,
       gapEduItem: customization.elementSpacing * (10 / 12),
@@ -218,6 +231,7 @@ function useTheme(customization: Customization): Theme {
       showTimeline: customization.toggles.timeline,
       skillsListMode: customization.skillsDisplay === "list",
       dateFormat: customization.dateFormat,
+      headingLanguage: customization.headingLanguage === "km" ? "km" : "en",
       bulletClass:
         customization.bulletStyle === "disc"
           ? ""
@@ -681,6 +695,7 @@ export default function ResumePreview({
 
   if (useSpecial) {
     return (
+      <ResumeChromeProvider value={customization}>
       <div
         ref={wrapperRef}
         className="w-full min-w-0 text-left"
@@ -699,10 +714,12 @@ export default function ResumePreview({
           accent={accent}
         />
       </div>
+      </ResumeChromeProvider>
     );
   }
 
   return (
+    <ResumeChromeProvider value={customization}>
     <div
       ref={wrapperRef}
       className="w-full min-w-0 space-y-4 text-left"
@@ -757,6 +774,8 @@ export default function ResumePreview({
           >
             <div className="absolute inset-0 overflow-hidden rounded-sm">
               <div
+                className="resume-sheet"
+                lang={resumeSheetLang({ headingLanguage: theme.headingLanguage })}
                 style={{
                   width: realPageWidthPx,
                   height: pageHeightPx,
@@ -892,6 +911,7 @@ export default function ResumePreview({
         </div>
       ))}
     </div>
+    </ResumeChromeProvider>
   );
 }
 
@@ -1763,9 +1783,11 @@ function ExperienceHeader({
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(exp.startDate, theme.dateFormat)}
+        {fmtDate(exp.startDate, theme.dateFormat, theme.headingLanguage)}
         {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate, theme.dateFormat)}
+        {exp.current
+          ? resumePresent({ headingLanguage: theme.headingLanguage })
+          : fmtDate(exp.endDate, theme.dateFormat, theme.headingLanguage)}
       </p>
     </div>
   );
@@ -1805,10 +1827,14 @@ function NoExperienceHeader({
                 : undefined
             }
           >
-            {extraExperienceTitle(exp)}
+            {extraExperienceTitle(exp, {
+              headingLanguage: theme.headingLanguage,
+            })}
           </a>
         ) : (
-          extraExperienceTitle(exp)
+          extraExperienceTitle(exp, {
+            headingLanguage: theme.headingLanguage,
+          })
         )}
         {hasUrl && theme.linkStyle.includes("icon") && (
           <LinkGlyph
@@ -1835,9 +1861,11 @@ function NoExperienceHeader({
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(exp.startDate, theme.dateFormat)}
+        {fmtDate(exp.startDate, theme.dateFormat, theme.headingLanguage)}
         {(exp.startDate || exp.endDate || exp.current) && " – "}
-        {exp.current ? "Present" : fmtDate(exp.endDate, theme.dateFormat)}
+        {exp.current
+          ? resumePresent({ headingLanguage: theme.headingLanguage })
+          : fmtDate(exp.endDate, theme.dateFormat, theme.headingLanguage)}
       </p>
     </div>
   );
@@ -1851,10 +1879,11 @@ function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
           className="font-semibold text-[0.95em]"
           style={{ color: theme.bodyTextColor }}
         >
-          {[edu.degree, edu.field].filter(Boolean).join(" in ") || "Degree"}
+          {[edu.degree, edu.field].filter(Boolean).join(resumeDegreeJoin({ headingLanguage: theme.headingLanguage })) ||
+            resumeDegreeFallback({ headingLanguage: theme.headingLanguage })}
         </p>
         <p className="text-[0.85em]" style={{ color: theme.bodyAccentColor }}>
-          {[edu.school, edu.gpa && `GPA: ${edu.gpa}`]
+          {[edu.school, edu.gpa && `${theme.headingLanguage === "km" ? "មធ្យមភាគ" : "GPA"}: ${edu.gpa}`]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -1867,9 +1896,11 @@ function EducationEntry({ edu, theme }: { edu: EducationItem; theme: Theme }) {
             : theme.bodyTextColor,
         }}
       >
-        {fmtDate(edu.startDate, theme.dateFormat)}
+        {fmtDate(edu.startDate, theme.dateFormat, theme.headingLanguage)}
         {(edu.startDate || edu.endDate || edu.current) && " – "}
-        {edu.current ? "Present" : fmtDate(edu.endDate, theme.dateFormat)}
+        {edu.current
+          ? resumePresent({ headingLanguage: theme.headingLanguage })
+          : fmtDate(edu.endDate, theme.dateFormat, theme.headingLanguage)}
       </p>
     </div>
   );
@@ -1928,6 +1959,10 @@ function Section({
   const isLongUnderline = theme.headingBorder === "underline";
   const Icon = SECTION_ICONS[title];
   const showIcon = theme.sectionIcon !== "none" && !!Icon;
+  const isKm = theme.headingLanguage === "km";
+  const label = resumeHeading(title, {
+    headingLanguage: theme.headingLanguage,
+  });
   const resolvedInk = theme.headingsAccentOn
     ? theme.accentText
     : theme.bodyTextColor;
@@ -1935,13 +1970,20 @@ function Section({
     ? theme.accent
     : theme.bodyTextColor;
   const iconTheme = { ...theme, accent: resolvedFill };
-  const letterSpacing = theme.headingsLetterSpacing
-    ? `calc(0.18em + ${theme.headingsLetterSpacing}px)`
-    : undefined;
+  const textTransform = isKm ? "none" : theme.textTransform;
+  const letterSpacing = isKm
+    ? "0px"
+    : theme.headingsLetterSpacing
+      ? `calc(0.18em + ${theme.headingsLetterSpacing}px)`
+      : undefined;
+  const headingClass = cn(
+    "font-bold",
+    !isKm && "tracking-[0.18em]",
+  );
   const headingStyle: React.CSSProperties = {
     color: isFilled ? "#fff" : resolvedInk,
     fontSize: theme.headingSizePx,
-    textTransform: theme.textTransform,
+    textTransform,
     letterSpacing,
     backgroundColor: isFilled ? resolvedFill : undefined,
     borderColor: resolvedInk,
@@ -1973,15 +2015,15 @@ function Section({
             />
           )}
           <h2
-            className="shrink-0 font-bold tracking-[0.18em]"
+            className={cn("shrink-0", headingClass)}
             style={{
               color: resolvedInk,
               fontSize: theme.headingSizePx,
-              textTransform: theme.textTransform,
+              textTransform,
               letterSpacing,
             }}
           >
-            {title}
+            {label}
           </h2>
           <span
             className="h-px flex-1"
@@ -1999,15 +2041,15 @@ function Section({
               />
             )}
             <h2
-              className="font-bold tracking-[0.18em]"
+              className={headingClass}
               style={{
                 color: resolvedInk,
                 fontSize: theme.headingSizePx,
-                textTransform: theme.textTransform,
+                textTransform,
                 letterSpacing,
               }}
             >
-              {title}
+              {label}
             </h2>
           </div>
           <div
@@ -2017,7 +2059,7 @@ function Section({
         </div>
       ) : (
         <h2
-          className="font-bold tracking-[0.18em] pb-1 mb-2 inline-flex items-center gap-1.5"
+          className={cn(headingClass, "pb-1 mb-2 inline-flex items-center gap-1.5")}
           style={headingStyle}
         >
           {showIcon && (
@@ -2027,7 +2069,7 @@ function Section({
               onAccentBg={isFilled}
             />
           )}
-          {title}
+          {label}
         </h2>
       )}
       {children}

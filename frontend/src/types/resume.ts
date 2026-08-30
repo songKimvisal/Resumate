@@ -159,6 +159,7 @@ export interface Customization {
   headingBorder: "none" | "outline" | "filled" | "line" | "underline";
   headingsLetterSpacing: number;
   capitalization: "capitalize" | "uppercase";
+  headingLanguage: "en" | "km";
   bulletStyle: "disc" | "dash" | "arrow" | "square" | "none";
   dateFormat: "monthYear" | "numeric" | "yearOnly";
   linkStyle: ("underline" | "color" | "icon")[];
@@ -255,6 +256,7 @@ export const emptyResume: Resume = {
     headingBorder: "none",
     headingsLetterSpacing: 0,
     capitalization: "uppercase",
+    headingLanguage: "en",
     bulletStyle: "disc",
     dateFormat: "monthYear",
     linkStyle: ["underline"],

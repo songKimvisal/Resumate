@@ -17,6 +17,7 @@ import {
   listKey,
   FullBleedPhoto,
 } from "./shared";
+import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
 /**
@@ -45,7 +46,7 @@ export default function DesignerBlockLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat || "monthYear";
   const nameColor = contrastOn(
     sidebar,
@@ -104,7 +105,7 @@ export default function DesignerBlockLayout({
                       ...headingCapStyle(customization),
                     }}
                   >
-                    Contact
+                    {resumeHeading("Contact", customization)}
                   </h2>
                   <div className="space-y-2 text-[0.8em] text-white/90">
                     {contacts.map((c, contactIdx) => (
@@ -140,7 +141,7 @@ export default function DesignerBlockLayout({
                       ...headingCapStyle(customization),
                     }}
                   >
-                    Skills
+                    {resumeHeading("Skills", customization)}
                   </h2>
                   <SkillsList
                     skills={skills}
@@ -161,7 +162,7 @@ export default function DesignerBlockLayout({
                       ...headingCapStyle(customization),
                     }}
                   >
-                    Languages
+                    {resumeHeading("Languages", customization)}
                   </h2>
                   <ul className="space-y-1.5 text-[0.85em] text-white/90">
                     {languages.map((l, langIdx) => (

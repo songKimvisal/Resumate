@@ -41,7 +41,7 @@ export default function GraphicProLayout({
   const accent = customization.accentColor || ATS.navy;
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const contacts = personalContactLines(personal);
   const dateFmt = customization.dateFormat;
   const nameParts = (personal.fullName || "").trim().split(/\s+/);

@@ -1,5 +1,6 @@
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
 import { LANGUAGE_LEVEL_LABELS } from "../../../types/resume";
+import { resumeLanguageLevel } from "../../../lib/resumeHeadings";
 import {
   AtsHeading,
   JobBlock,
@@ -14,6 +15,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 
@@ -41,7 +43,7 @@ export default function BankingCleanLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
@@ -114,7 +116,7 @@ export default function BankingCleanLayout({
                       </p>
                       <p style={{ color: muted }}>{edu.school}</p>
                       <p className="tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                      {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                      {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                       {hasText(edu.description) && (
                         <RichHtml
                           html={edu.description}
@@ -146,7 +148,7 @@ export default function BankingCleanLayout({
                     <li key={listKey(l.id, langIdx, "lang")}>
                       {l.name}
                       {l.level >= 1 && l.level <= 5
-                        ? ` - ${LANGUAGE_LEVEL_LABELS[l.level - 1]}`
+                        ? ` - ${resumeLanguageLevel(l.level - 1, customization, LANGUAGE_LEVEL_LABELS[l.level - 1])}`
                         : ""}
                     </li>
                   ))}

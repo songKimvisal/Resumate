@@ -11,6 +11,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 
@@ -37,7 +38,7 @@ export default function GraduateFocusLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
@@ -77,7 +78,7 @@ export default function GraduateFocusLayout({
                 <p className="font-medium" style={{ color: accent }}>
                   {[edu.degree, edu.field].filter(Boolean).join(" - ")}
                 </p>
-                {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                 <RichHtml html={edu.description} className="rte-content mt-1" style={{ color: ink }} />
               </div>
             ))}

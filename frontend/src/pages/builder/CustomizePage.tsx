@@ -32,7 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover";
-import { TEMPLATE_PRESETS, type TemplatePreset } from "../../data/templates";
+import { TEMPLATE_PRESETS, type TemplatePreset, designWithoutHeadingLanguage } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder } from "../../lib/sectionOrder";
@@ -49,6 +49,7 @@ import {
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { demoResumeForPreset } from "../../data/demoResume";
+import { ResumeLanguageToggle } from "./ResumeLanguageToggle";
 
 const ACCENT_COLORS = [
   "#C1121F",
@@ -261,7 +262,7 @@ export default function CustomizePage() {
       setUnlockTarget(preset);
       return;
     }
-    updateCustomization(preset.customization);
+    updateCustomization(designWithoutHeadingLanguage(preset.customization));
   };
 
   const experience = useResumeStore((s) => s.resume.experience);
@@ -502,7 +503,7 @@ export default function CustomizePage() {
           onUnlock={async () => {
             if (!unlockTarget) return;
             await unlockPremiumTemplate(unlockTarget.id);
-            updateCustomization(unlockTarget.customization);
+            updateCustomization(designWithoutHeadingLanguage(unlockTarget.customization));
             setUnlockTarget(null);
           }}
         />
@@ -721,6 +722,11 @@ export default function CustomizePage() {
                   ))}
                 </SelectContent>
               </Select>
+              {customization.headingLanguage === "km" && (
+                <p className="text-xs text-text-secondary">
+                  {t("builder.customizePage.font.khmerHint")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1308,6 +1314,12 @@ export default function CustomizePage() {
               {t("builder.customizePage.nav.sectionHeadings")}
             </p>
 
+            <ResumeLanguageToggle
+              value={customization.headingLanguage === "km" ? "km" : "en"}
+              onChange={(lang) => updateCustomization({ headingLanguage: lang })}
+              showHint
+            />
+
             <PremiumGate
               locked={!hasFullCustomizationAccess}
               onUpgrade={openUpgrade}
@@ -1338,6 +1350,7 @@ export default function CustomizePage() {
               ))}
             </div>
 
+            {customization.headingLanguage !== "km" && (
             <div className="space-y-2.5">
               <p className="text-sm font-medium text-text">
                 {t("builder.customizePage.sectionHeadings.capitalization")}
@@ -1359,6 +1372,7 @@ export default function CustomizePage() {
                 />
               </div>
             </div>
+            )}
 
             {!isSpecialLayout && (
             <div className="space-y-2.5">
@@ -1448,6 +1462,7 @@ export default function CustomizePage() {
               </div>
             </div>
 
+            {customization.headingLanguage !== "km" && (
             <SliderRow
               label={t("builder.customizePage.sectionHeadings.letterSpacing")}
               value={customization.headingsLetterSpacing}
@@ -1459,6 +1474,7 @@ export default function CustomizePage() {
                 updateCustomization({ headingsLetterSpacing: v })
               }
             />
+            )}
             </div>
             </PremiumGate>
           </div>
@@ -1551,7 +1567,7 @@ export default function CustomizePage() {
         onUnlock={async () => {
           if (!unlockTarget) return;
           await unlockPremiumTemplate(unlockTarget.id);
-          updateCustomization(unlockTarget.customization);
+          updateCustomization(designWithoutHeadingLanguage(unlockTarget.customization));
           setUnlockTarget(null);
         }}
       />

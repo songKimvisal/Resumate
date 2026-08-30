@@ -657,6 +657,11 @@
     "previewButton": "មើលជាមុន",
     "closePreview": "បិទទិដ្ឋភាពផ្ទាល់",
     "customize": "កែសម្រួលតាមចិត្ត",
+    "siteLanguage": "ភាសាគេហទំព័រ",
+    "resumeLanguage": "ភាសាប្រវត្តិរូប",
+    "resumeLanguageEn": "English",
+    "resumeLanguageKm": "ខ្មែរ",
+    "resumeLanguageHint": "English ឬ ខ្មែរ លើប្រវត្តិរូប។ អត្ថបទដែលអ្នកវាយនៅដដែល។",
     "downloadPdf": "ទាញយក PDF",
     "downloadingPdf": "កំពុងរៀបចំ...",
     "downloadPdfError": "មិនអាចរក្សាទុក PDF បានទេ។ សូមព្យាយាមម្តងទៀត។",
@@ -910,7 +915,8 @@
         "iconFaded": "ស្រអាប់"
       },
       "font": {
-        "fontFamily": "ក្រុមពុម្ពអក្សរ"
+        "fontFamily": "ក្រុមពុម្ពអក្សរ",
+        "khmerHint": "អក្សរខ្មែរត្រូវបានបង្ហាញជានិច្ច។ Kantumruy Pro ប្រើជាអក្សរបម្រុង និងសម្រាប់ PDF នៅពេលប្រវត្តិរូបជាភាសាខ្មែរ។"
       },
       "fontSize": {
         "fontSize": "ទំហំអក្សរ",
@@ -919,6 +925,10 @@
         "sectionHeadings": "ចំណងជើងផ្នែក"
       },
       "sectionHeadings": {
+        "headingLanguage": "ភាសាប្រវត្តិរូប",
+        "headingLanguageEn": "English",
+        "headingLanguageKm": "ខ្មែរ",
+        "headingLanguageHint": "English ឬ ខ្មែរ លើប្រវត្តិរូប។ អត្ថបទដែលអ្នកវាយនៅដដែល។",
         "capitalization": "ទម្រង់អក្សរធំ-តូច",
         "capitalize": "អក្សរធំដើមពាក្យ",
         "uppercase": "អក្សរធំទាំងអស់",
@@ -984,8 +994,8 @@
     },
     "personal": {
       "title": "ព័ត៌មានផ្ទាល់ខ្លួន",
-      "subtitle": "និយោជកមើលផ្នែកនេះមុនគេ។ បន្ថែមឈ្មោះអង់គ្លេស ការងារចង់បាន និងសេចក្តីសង្ខេបខ្លីពីសមត្ថភាពរបស់អ្នក។",
-      "fullName": "ឈ្មោះពេញ (ភាសាអង់គ្លេស)",
+      "subtitle": "និយោជកមើលផ្នែកនេះមុនគេ។ បន្ថែមឈ្មោះ ការងារចង់បាន និងសេចក្តីសង្ខេបខ្លីពីសមត្ថភាពរបស់អ្នក។",
+      "fullName": "ឈ្មោះពេញ",
       "jobTitle": "មុខតំណែងការងារ",
       "email": "អ៊ីមែល",
       "phone": "លេខទូរស័ព្ទ",

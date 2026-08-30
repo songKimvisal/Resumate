@@ -13,6 +13,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 import { contrastOn } from "../../../lib/color";
@@ -44,7 +45,7 @@ export default function ExecutiveCardLayout({
   const nameParts = (personal.fullName || "").trim().split(/\s+/);
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ");
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
   const nameColor = contrastOn(
@@ -176,7 +177,7 @@ export default function ExecutiveCardLayout({
                     <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
                   </div>
                   <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
-                  {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                  {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                   {hasText(edu.description) && (
                     <RichHtml
                       html={edu.description}

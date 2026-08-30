@@ -7,7 +7,8 @@ import type {
 } from "../../../types/resume";
 import { cn } from "../../../lib/utils";
 import { cssFontStack } from "../../../lib/fonts";
-import { hasText, normalizeJobs, personalContactLines, ContactLink } from "./shared";
+import { hasText, normalizeJobs, personalContactLines, ContactLink, gpaText } from "./shared";
+import { resumeSheetLang } from "../../../lib/resumeHeadings";
 import { SpecialLayout } from "./index";
 
 type JobSlice = {
@@ -169,7 +170,7 @@ function buildUnits(resume: Resume): ContentUnit[] {
     pushSlicedUnits(units, "education", edu.id, edu.description);
   });
 
-  const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder, resume.customization);
   jobs.forEach((job) => {
     pushSlicedUnits(units, "job", job.id, job.description);
   });
@@ -442,7 +443,7 @@ function MeasureBlock({
     customization,
   } = resume;
   const fontSize = customization.fontSize || 14;
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
 
   if (unit.kind === "contact") {
     const lines = personalContactLines(personal);
@@ -477,7 +478,7 @@ function MeasureBlock({
           <>
             <p className="font-bold">{edu.school}</p>
             <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
-            {edu.gpa && <p>GPA: {edu.gpa}</p>}
+            {edu.gpa && <p>{gpaText(edu.gpa, resume.customization)}</p>}
           </>
         )}
         {unit.description && hasText(unit.description) && (
@@ -568,7 +569,7 @@ export function SpecialPaginatedLayout({
 
   const plans = useMemo(() => {
     if (!measured) {
-      const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder);
+      const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder, resume.customization);
       return [
         {
           summaryHtml: resume.personal.summary,
@@ -614,7 +615,8 @@ export function SpecialPaginatedLayout({
       <div
         aria-hidden
         ref={measureRef}
-        className={cn(bulletClass, linkIconClass)}
+        className={cn(bulletClass, linkIconClass, "resume-sheet")}
+        lang={resumeSheetLang(resume.customization)}
         style={{
           position: "fixed",
           top: 0,
@@ -625,7 +627,10 @@ export function SpecialPaginatedLayout({
           width: measureWidth,
           fontFamily: cssFontStack(resume.customization.fontFamily),
           fontSize: resume.customization.fontSize,
-          lineHeight: resume.customization.lineHeight || 1.45,
+          lineHeight:
+            resume.customization.headingLanguage === "km"
+              ? Math.max(resume.customization.lineHeight || 1.45, 1.6)
+              : resume.customization.lineHeight || 1.45,
         }}
       >
         {units.map((unit, unitIdx) => (
@@ -657,7 +662,7 @@ export function SpecialPaginatedLayout({
               outlineOffset: pageBorder ? -(pageBorderWidth || 0) : undefined,
             }}
           >
-            <div className={cn("absolute inset-0 overflow-hidden rounded-sm", bulletClass, linkIconClass)}>
+            <div className={cn("absolute inset-0 overflow-hidden rounded-sm resume-sheet", bulletClass, linkIconClass)} lang={resumeSheetLang(resume.customization)}>
               <div
                 style={{
                   width: pageWidthPx,

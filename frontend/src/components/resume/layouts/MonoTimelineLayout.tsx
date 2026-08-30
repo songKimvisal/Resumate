@@ -11,6 +11,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 
@@ -40,7 +41,7 @@ export default function MonoTimelineLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat || "monthYear";
   const isFirstPage = pageIndex === 0;
 
@@ -112,7 +113,7 @@ export default function MonoTimelineLayout({
                   </p>
                 </div>
                 <p style={{ color: muted }}>{edu.school}</p>
-                {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                 {hasText(edu.description) && (
                   <RichHtml
                     html={edu.description}

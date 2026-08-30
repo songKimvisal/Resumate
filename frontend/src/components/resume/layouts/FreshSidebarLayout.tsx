@@ -14,6 +14,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 import { contrastOn } from "../../../lib/color";
@@ -42,7 +43,7 @@ export default function FreshSidebarLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
   const nameColor = contrastOn(
@@ -181,7 +182,7 @@ export default function FreshSidebarLayout({
                   <p className="font-bold uppercase">{edu.school}</p>
                   <p>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                   <p className="opacity-80">{dateRange(edu, dateFmt)}</p>
-                  {edu.gpa && <p>GPA: {edu.gpa}</p>}
+                  {edu.gpa && <p>{gpaText(edu.gpa, customization)}</p>}
                   {hasText(edu.description) && (
                     <RichHtml
                       html={edu.description}

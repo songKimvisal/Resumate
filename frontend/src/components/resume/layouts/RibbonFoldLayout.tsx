@@ -43,7 +43,7 @@ export default function RibbonFoldLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;

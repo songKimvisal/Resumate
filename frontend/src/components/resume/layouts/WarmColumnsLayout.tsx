@@ -11,6 +11,7 @@ import {
   ATS,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
 } from "./shared";
 
@@ -37,7 +38,7 @@ export default function WarmColumnsLayout({
   const ink = customization.bodyTextColor || ATS.ink;
   const muted = ATS.muted;
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
@@ -87,7 +88,7 @@ export default function WarmColumnsLayout({
                     <p className="font-bold">{edu.school}</p>
                     <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
                     <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                    {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                    {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                     {hasText(edu.description) && (
                       <RichHtml
                         html={edu.description}

@@ -23,10 +23,12 @@ import {
   headingCapStyle,
   type LayoutProps,
   layoutShellStyle,
+  gpaText,
   listKey,
   FullBleedPhoto,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
+import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
 /**
@@ -56,7 +58,7 @@ export default function MonoPillLayout({
   const ink = customization.bodyTextColor || "#1A1A1A";
   const muted = "#5A5A5A";
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder);
+  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
@@ -208,7 +210,7 @@ export default function MonoPillLayout({
                   <p className="italic" style={{ color: muted }}>
                     {edu.school}
                   </p>
-                  {edu.gpa && <p style={{ color: muted }}>GPA: {edu.gpa}</p>}
+                  {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
                   <RichHtml
                     html={edu.description}
                     className="rte-content mt-1"
@@ -296,6 +298,7 @@ function PillHeading({
   customization: Customization;
 }) {
   const border = customization.headingBorder;
+  const label = resumeHeading(title, customization);
   const titleStyle = {
     fontSize: size,
     ...headingCapStyle(customization),
@@ -305,7 +308,7 @@ function PillHeading({
     return (
       <div className="flex items-center gap-2">
         <span className="shrink-0 font-bold" style={{ ...titleStyle, color }}>
-          {title}
+          {label}
         </span>
         <span className="h-px min-w-4 flex-1" style={{ backgroundColor: color }} />
       </div>
@@ -315,7 +318,7 @@ function PillHeading({
     return (
       <div>
         <span className="font-bold" style={{ ...titleStyle, color }}>
-          {title}
+          {label}
         </span>
         <div className="mt-1.5 h-px w-full" style={{ backgroundColor: color }} />
       </div>
@@ -331,7 +334,7 @@ function PillHeading({
           <Icon className="h-3 w-3" strokeWidth={2.2} />
         </span>
         <span className="font-bold" style={titleStyle}>
-          {title}
+          {label}
         </span>
       </div>
     );
@@ -346,7 +349,7 @@ function PillHeading({
         <Icon className="h-3 w-3" strokeWidth={2.2} />
       </span>
       <span className="font-bold" style={titleStyle}>
-        {title}
+        {label}
       </span>
     </div>
   );

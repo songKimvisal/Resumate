@@ -29,6 +29,7 @@ import Step3Education from "./Step3Education";
 import Step4Skills from "./Step4Skills";
 import Step5Review from "./Step5Review";
 import CustomizePage from "./CustomizePage";
+import { ResumeLanguageToggle } from "./ResumeLanguageToggle";
 import logo from "../../assets/logo/logo.png";
 import mascot from "../../assets/logo/tip_mascot.png";
 
@@ -136,6 +137,10 @@ export default function BuilderLayout() {
   const resumeHydrated = useResumeStoreHydrated();
   const resumeId = useResumeStore((s) => s.resume.id);
   const resume = useResumeStore((s) => s.resume);
+  const headingLanguage = useResumeStore(
+    (s) => s.resume.customization.headingLanguage ?? "en",
+  );
+  const updateCustomization = useResumeStore((s) => s.updateCustomization);
   const hasJobs = useResumeStore((s) => s.resume.experience.length > 0);
   const hasOtherExperience = useResumeStore((s) => s.resume.noExperience.length > 0);
   const dirty = useResumeStore((s) => s.dirty);
@@ -307,6 +312,14 @@ export default function BuilderLayout() {
     scrollFormToTop();
   };
 
+  const resumeLang = headingLanguage === "km" ? "km" : "en";
+  const renderResumeLangToggle = () => (
+    <ResumeLanguageToggle
+      value={resumeLang}
+      onChange={(lang) => updateCustomization({ headingLanguage: lang })}
+    />
+  );
+
   if (!resumeHydrated) {
     return <div className="h-dvh bg-bg" />;
   }
@@ -322,7 +335,7 @@ export default function BuilderLayout() {
           <button
             onClick={toggleLanguage}
             className="size-9 rounded-lg text-text-secondary hover:bg-primary hover:text-primary-foreground transition-colors text-sm font-medium"
-            aria-label="Switch language"
+            aria-label={t("builder.siteLanguage")}
           >
             {i18n.language === "en" ? "ខ្មែរ" : "EN"}
           </button>
@@ -360,41 +373,46 @@ export default function BuilderLayout() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-4 lg:px-1.5 pt-2">
-            {stepLabels.map((label, i) => {
-              const n = i + 1;
-              const active = n === step;
-              const done = n < step;
-              return (
-                <button
-                  key={i}
-                  onClick={() => goToStep(n)}
-                  className={`flex flex-col items-center gap-2 pb-3 border-b-2 transition-colors ${
-                    active ? "border-brand" : "border-line"
-                  }`}
-                >
-                  <span
-                    className={`size-7 rounded-full inline-flex items-center justify-center text-xs font-semibold border ${
-                      active
-                        ? "border-brand text-brand"
-                        : done
-                          ? "bg-brand border-brand text-white"
-                          : "border-line text-text-secondary"
+          <>
+            <div className="grid grid-cols-5 max-w-7xl w-full mx-auto px-4 lg:px-1.5 pt-2">
+              {stepLabels.map((label, i) => {
+                const n = i + 1;
+                const active = n === step;
+                const done = n < step;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => goToStep(n)}
+                    className={`flex flex-col items-center gap-2 pb-3 border-b-2 transition-colors ${
+                      active ? "border-brand" : "border-line"
                     }`}
                   >
-                    {done ? "✓" : n}
-                  </span>
-                  <span
-                    className={`hidden sm:block text-sm ${
-                      active ? "text-brand font-medium" : "text-text-secondary"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`size-7 rounded-full inline-flex items-center justify-center text-xs font-semibold border ${
+                        active
+                          ? "border-brand text-brand"
+                          : done
+                            ? "bg-brand border-brand text-white"
+                            : "border-line text-text-secondary"
+                      }`}
+                    >
+                      {done ? "✓" : n}
+                    </span>
+                    <span
+                      className={`hidden sm:block text-sm ${
+                        active ? "text-brand font-medium" : "text-text-secondary"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="lg:hidden flex justify-end max-w-7xl mx-auto px-4 pb-2">
+              {renderResumeLangToggle()}
+            </div>
+          </>
         )}
       </div>
 
@@ -404,6 +422,7 @@ export default function BuilderLayout() {
         <div
           ref={formPaneRef}
           data-builder-form-pane
+          lang={headingLanguage === "km" ? "km" : "en"}
           className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pt-8 lg:pt-10 pb-44 lg:pb-28 pr-1"
         >
           <AnimatePresence mode="popLayout">
@@ -440,7 +459,7 @@ export default function BuilderLayout() {
 
         {/* ---------- right: live preview ---------- */}
         <div className="hidden lg:flex min-h-0 min-w-0 flex-col overflow-hidden pt-8 lg:pt-10 pb-20">
-          <div className="flex items-center justify-between mb-5 shrink-0">
+          <div className="flex items-center justify-between gap-3 mb-5 shrink-0">
             <Button
               size="compact"
               onClick={() => openCustomize(!customizeOpen)}
@@ -457,11 +476,7 @@ export default function BuilderLayout() {
                 </>
               )}
             </Button>
-
-            <span className="flex items-center gap-2 text-sm text-brand font-medium">
-              <span className="size-2 rounded-full bg-brand animate-pulse" />
-              {t("builder.livePreview")}
-            </span>
+            {!customizeOpen && renderResumeLangToggle()}
           </div>
 
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin">
@@ -499,17 +514,24 @@ export default function BuilderLayout() {
                 <ResumePreview pageLabelClassName="text-white/80" />
               </motion.div>
             </motion.div>
-            <motion.button
-              type="button"
-              onClick={() => setPreviewOpen(false)}
-              aria-label={t("builder.closePreview")}
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed top-4 right-4 z-[60] size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
+              className="fixed top-4 left-4 right-4 z-[60] flex items-center justify-between gap-3 pointer-events-none"
             >
-              <X size={18} strokeWidth={2} />
-            </motion.button>
+              <div className="pointer-events-auto rounded-lg bg-bg px-3 py-2 shadow-lg">
+                {renderResumeLangToggle()}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                aria-label={t("builder.closePreview")}
+                className="size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors pointer-events-auto"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </motion.div>
           </>
         )}
       </AnimatePresence>

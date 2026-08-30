@@ -1,5 +1,6 @@
-import type { NoExperienceItem } from "../types/resume";
+import type { Customization, NoExperienceItem } from "../types/resume";
 import { NO_EXPERIENCE_TYPE_LABELS } from "../types/resume";
+import { headingLang, resumeNoExpType } from "./resumeHeadings";
 
 /** ATS-safe title: role/project name plus a plain-text type, without
  *  duplicating words the user already wrote (e.g. "Marketing Intern"). */
@@ -11,11 +12,15 @@ export function formatExperienceTitle(title: string, typeLabel: string): string 
   return `${name} (${label})`;
 }
 
-export function extraExperienceTitle(item: NoExperienceItem): string {
-  return formatExperienceTitle(
-    item.title,
-    NO_EXPERIENCE_TYPE_LABELS[item.type],
-  );
+export function extraExperienceTitle(
+  item: NoExperienceItem,
+  customization?: Pick<Customization, "headingLanguage"> | null,
+): string {
+  const typeLabel =
+    headingLang(customization) === "km"
+      ? resumeNoExpType(item.type, customization)
+      : NO_EXPERIENCE_TYPE_LABELS[item.type];
+  return formatExperienceTitle(item.title, typeLabel);
 }
 
 function titleAlreadyMentionsType(title: string, typeLabel: string): boolean {

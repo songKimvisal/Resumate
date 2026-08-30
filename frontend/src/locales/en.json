@@ -901,6 +901,11 @@
     "previewButton": "Preview",
     "closePreview": "Close preview",
     "customize": "Customize",
+    "siteLanguage": "Website language",
+    "resumeLanguage": "Resume language",
+    "resumeLanguageEn": "English",
+    "resumeLanguageKm": "ខ្មែរ",
+    "resumeLanguageHint": "English or Khmer on the resume. What you type does not change.",
     "downloadPdf": "Download PDF",
     "downloadingPdf": "Preparing…",
     "downloadPdfError": "Could not save the PDF. Please try again.",
@@ -1154,7 +1159,8 @@
         "iconFaded": "Faded"
       },
       "font": {
-        "fontFamily": "Font family"
+        "fontFamily": "Font family",
+        "khmerHint": "Khmer letters always render. Kantumruy Pro is used as a fallback, and for PDFs when the resume is in Khmer."
       },
       "fontSize": {
         "fontSize": "Font size",
@@ -1163,6 +1169,10 @@
         "sectionHeadings": "Section Headings"
       },
       "sectionHeadings": {
+        "headingLanguage": "Resume language",
+        "headingLanguageEn": "English",
+        "headingLanguageKm": "ខ្មែរ",
+        "headingLanguageHint": "English or Khmer on the resume. What you type does not change.",
         "capitalization": "Capitalization",
         "capitalize": "Capitalize",
         "uppercase": "Uppercase",
@@ -1228,8 +1238,8 @@
     },
     "personal": {
       "title": "Personal information",
-      "subtitle": "Employers read this first. Add your English name, target job, and a quick summary of your skills.",
-      "fullName": "Full name (English)",
+      "subtitle": "Employers read this first. Add your name, target job, and a quick summary of your skills.",
+      "fullName": "Full name",
       "jobTitle": "Job title",
       "email": "Email",
       "phone": "Phone",

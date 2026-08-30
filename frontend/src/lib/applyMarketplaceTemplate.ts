@@ -1,4 +1,5 @@
 import { emptyResume, type Customization, type Resume } from "../types/resume";
+import { designWithoutHeadingLanguage } from "../data/templates";
 import { resumeExists, saveResumeToDashboard } from "./api";
 import { supabase } from "./supabase";
 import { useResumeStore } from "../store/resumeStore";
@@ -63,7 +64,9 @@ export async function applyMarketplaceTemplate(opts: {
       .getState()
       .startResumeFromTemplate(opts.customization, opts.title);
   } else {
-    useResumeStore.getState().updateCustomization(opts.customization);
+    useResumeStore.getState().updateCustomization(
+      designWithoutHeadingLanguage(opts.customization),
+    );
     const after = useResumeStore.getState().resume;
     if (!after.title || after.title === emptyResume.title) {
       useResumeStore.getState().setTitle(opts.title);
