@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import {
   motion,
   AnimatePresence,
@@ -29,14 +29,7 @@ const BAND_RING_CLASS: Record<ScoreBand, string> = {
   excellent: "text-success",
   strong: "text-success",
   good: "text-amber-500",
-  needsWork: "text-destructive",
-};
-
-const BAND_FILL_CLASS: Record<ScoreBand, string> = {
-  excellent: "bg-success/10",
-  strong: "bg-success/10",
-  good: "bg-amber-500/10",
-  needsWork: "bg-destructive/10",
+  needsWork: "text-brand",
 };
 
 function ScoreRing({
@@ -44,31 +37,30 @@ function ScoreRing({
   band,
   size,
   showLabel,
+  idle = false,
 }: {
   score: number;
   band: ScoreBand;
   size: "sm" | "lg";
   showLabel?: boolean;
+  idle?: boolean;
 }) {
   const { t } = useTranslation();
   const large = size === "lg";
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
+  const empty = idle || score === 0;
 
   return (
     <div
       className={cn(
-        "relative shrink-0 rounded-full",
-        large ? "size-28" : "size-12",
-        large && BAND_FILL_CLASS[band],
+        "relative shrink-0",
+        large ? "size-24" : "size-12",
       )}
     >
       <svg
         viewBox="0 0 96 96"
-        className={cn(
-          "absolute -rotate-90",
-          large ? "inset-1.5 size-[calc(100%-0.75rem)]" : "inset-0 size-full",
-        )}
+        className="absolute inset-0 size-full -rotate-90"
         aria-hidden
       >
         <circle
@@ -77,41 +69,53 @@ function ScoreRing({
           r={radius}
           fill="none"
           stroke="currentColor"
-          strokeWidth={large ? 7 : 10}
-          className="text-line/80"
+          strokeWidth={large ? 8 : 10}
+          className="text-line"
         />
-        <motion.circle
-          cx="48"
-          cy="48"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={large ? 7 : 10}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{
-            strokeDashoffset: circumference * (1 - score / 100),
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 60,
-            damping: 14,
-          }}
-          className={BAND_RING_CLASS[band]}
-        />
+        {!empty && (
+          <motion.circle
+            cx="48"
+            cy="48"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={large ? 8 : 10}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{
+              strokeDashoffset: circumference * (1 - score / 100),
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 60,
+              damping: 14,
+            }}
+            className={BAND_RING_CLASS[band]}
+          />
+        )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <AnimatedPercent
-          score={score}
-          className={cn(
-            "font-bold leading-none tabular-nums whitespace-nowrap",
-            large ? "text-2xl" : "text-[11px]",
-            BAND_RING_CLASS[band],
-          )}
-        />
+        {idle ? (
+          <span
+            className={cn(
+              "font-bold leading-none text-text-secondary",
+              large ? "text-xl" : "text-[11px]",
+            )}
+          >
+            —
+          </span>
+        ) : (
+          <AnimatedPercent
+            score={score}
+            className={cn(
+              "font-bold leading-none tabular-nums whitespace-nowrap text-text",
+              large ? "text-xl" : "text-[11px]",
+            )}
+          />
+        )}
         {showLabel && (
-          <span className="mt-1 text-[11px] font-medium text-text-secondary">
+          <span className="mt-0.5 text-[11px] font-medium text-text-secondary">
             {t("dashboard.scoreLabel")}
           </span>
         )}
@@ -488,7 +492,9 @@ export default function Dashboard() {
                   className={cn(
                     "grid min-w-0",
                     "gap-4 min-[375px]:gap-5 sm:gap-8",
-                    "lg:grid-cols-[1.3fr_1fr_auto]",
+                    currentResume
+                      ? "lg:grid-cols-[1.3fr_1fr_auto]"
+                      : "lg:grid-cols-[1.3fr_1fr]",
                     "lg:items-center",
                   )}
                 >
@@ -594,72 +600,64 @@ export default function Dashboard() {
                         </p>
                       </button>
                     ) : (
+                      <button
+                        type="button"
+                        onClick={handleFixMissing}
+                        className="group flex aspect-[210/297] w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-line bg-bg px-3 text-center transition-colors hover:border-brand/50 hover:text-brand"
+                        aria-label={t("dashboard.createResume")}
+                      >
+                        <span className="inline-flex size-9 items-center justify-center rounded-full border-2 border-line text-text-secondary transition-colors group-hover:border-brand group-hover:text-brand">
+                          <Plus size={18} strokeWidth={2} />
+                        </span>
+                        <p className="text-xs font-medium leading-5 text-text-secondary group-hover:text-brand">
+                          {t("dashboard.emptyPreview")}
+                        </p>
+                      </button>
+                    )}
+
+                    {currentResume ? (
                       <div
                         className={cn(
-                          "w-full",
-                          "aspect-[210/297]",
-                          "rounded-md",
-                          "border border-dashed border-line",
-                          "bg-surface",
-                          "flex items-center justify-center",
-                          "text-center",
-                          "px-4",
+                          "pointer-events-none absolute right-1 top-1 z-10 lg:hidden",
+                          "rounded-full border border-line bg-bg p-1 shadow-md",
                         )}
                       >
-                        <p className="text-xs leading-5 text-text-secondary">
-                          {t("dashboard.noResumeBody")}
-                        </p>
+                        <ScoreRing score={score} band={band} size="sm" />
                       </div>
-                    )}
+                    ) : null}
+                  </div>
 
-                    {/* Keep the score with the preview on small screens. */}
+                  {currentResume ? (
                     <div
                       className={cn(
-                        "pointer-events-none absolute right-1 top-1 z-10 lg:hidden",
-                        "rounded-full border border-line bg-bg p-1 shadow-md",
+                        "hidden lg:flex flex-col",
+                        "items-center",
+                        "justify-self-center",
+                        "gap-2",
+                        "min-w-[7.5rem]",
                       )}
                     >
-                      <ScoreRing score={score} band={band} size="sm" />
-                    </div>
-                  </div>
+                      <ScoreRing
+                        score={score}
+                        band={band}
+                        size="lg"
+                        showLabel
+                      />
 
-                  {/* ==================================================
-                      COMPLETENESS GAUGE
-                  ================================================== */}
-                  <div
-                    className={cn(
-                      "hidden lg:flex flex-col",
-                      "items-center",
-                      "justify-self-center",
-                      "gap-3",
-                      "min-w-[7.5rem]",
-                    )}
-                  >
-                    <ScoreRing
-                      score={score}
-                      band={band}
-                      size="lg"
-                      showLabel
-                    />
-
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-text">
-                        {t("dashboard.completenessLabel")}
-                      </p>
-                      <p
-                        className={cn(
-                          "mt-0.5 text-xs font-medium",
-                          isComplete ? "text-success" : "text-text-secondary",
-                        )}
-                      >
-                        {isComplete
-                          ? t("dashboard.scoreComplete")
-                          : t("dashboard.scoreCaption", {
-                              count: missingCount,
-                            })}
-                      </p>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-text">
+                          {t("dashboard.completenessLabel")}
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-text-secondary">
+                          {isComplete
+                            ? t("dashboard.scoreComplete")
+                            : t("dashboard.scoreCaption", {
+                                count: missingCount,
+                              })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -1370,6 +1370,8 @@
     "scoreSuffix": "ភាពពេញលេញ",
     "completenessLabel": "ភាពពេញលេញ",
     "scoreComplete": "ពេញលេញ",
+    "scoreEmpty": "មិនទាន់ចាប់ផ្តើម",
+    "emptyPreview": "ទិដ្ឋភាពមើលជាមុននឹងបង្ហាញទីនេះ",
     "scoreCaption": "នៅខ្វះ {{count}}",
     "missingLabel": "ចំណុចដែលខ្វះខាត",
     "missingNone": "រួចរាល់ទាំងអស់។ ប្រវត្តិរូបសង្ខេបរបស់អ្នកមានភាពពេញលេញហើយ។",

@@ -192,6 +192,8 @@
     "scoreSuffix": "completeness",
     "completenessLabel": "Completeness",
     "scoreComplete": "Complete",
+    "scoreEmpty": "Not started",
+    "emptyPreview": "Preview appears here",
     "scoreCaption": "{{count}} missing",
     "scoreCaption_one": "{{count}} missing",
     "missingLabel": "Missing items",
