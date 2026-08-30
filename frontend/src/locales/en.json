@@ -553,7 +553,7 @@
         },
         {
           "title": "Smart design picker",
-          "desc": "Answer 3 questions or describe your vibe. The smart assistant picks the best layout, color, and font for your industry."
+          "desc": "Answer 3 questions or pick your vibe. We match the best layout, color, and font for your industry."
         },
         {
           "title": "Smart writing assistant",
@@ -1462,7 +1462,7 @@
     },
     "aiBanner": {
       "title": "Not sure which template to pick?",
-      "subtitle": "Answer 3 quick questions or mix and match manually. Smart picks the best layout, color, and font for you.",
+      "subtitle": "Answer 3 quick questions or mix and match yourself. We match layout, color, and font to your industry.",
       "cta": "Smart pick for me"
     },
     "filters": {
@@ -1566,7 +1566,7 @@
         "elegantRefined": "Elegant & refined"
       },
       "cancel": "Cancel",
-      "generate": "Generate my design",
+      "generate": "Find my design",
       "loadingStep1": "Looking at your industry...",
       "loadingStep2": "Matching your style...",
       "loadingStep3": "Almost ready..."

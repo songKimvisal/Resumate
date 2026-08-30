@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence } from "motion/react";
 import { Bot, Check, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 import { Button } from "../../components/ui/button";
@@ -17,18 +16,17 @@ import { hasTemplateAccess, remainingTemplateSlots, canUseTemplate } from "../..
 import {
   INDUSTRIES,
   TEMPLATE_PRESETS,
+  recommendTemplates,
   type AiAnswers,
   type AiRecommendation,
   type TemplateIndustry,
   type TemplatePreset,
   type TemplateTier,
 } from "../../data/templates";
-import { recommendTemplatesAI } from "../../lib/api/aiDesign";
 import type { Customization } from "../../types/resume";
 import { cn } from "../../lib/utils";
 import AiDesignModal from "./AiDesignModal";
 import AiDesignResult from "./AiDesignResult";
-import AiGeneratingLoader from "./AiGeneratingLoader";
 import TemplateCard from "./TemplateCard";
 import UnlockTemplateModal from "./UnlockTemplateModal";
 
@@ -77,8 +75,6 @@ export default function Marketplace() {
   const [aiAnswers, setAiAnswers] = useState<AiAnswers | null>(null);
   const [recommendation, setRecommendation] =
     useState<AiRecommendation | null>(null);
-  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [screen, setScreen] = useState<"gallery" | "aiResult">("gallery");
 
   const filtered = useMemo(
@@ -195,18 +191,11 @@ export default function Marketplace() {
     }
   };
 
-  const handleGenerate = async (answers: AiAnswers) => {
+  const handleGenerate = (answers: AiAnswers) => {
     setAiAnswers(answers);
     setAiModalOpen(false);
-    setAiLoading(true);
-    try {
-      const result = await recommendTemplatesAI(answers);
-      setRecommendation(result);
-      setAiReasoning(result.reasoning);
-      setScreen("aiResult");
-    } finally {
-      setAiLoading(false);
-    }
+    setRecommendation(recommendTemplates(answers));
+    setScreen("aiResult");
   };
 
   return (
@@ -424,17 +413,12 @@ export default function Marketplace() {
               key={`${recommendation.primary.id}-${recommendation.sibling.id}`}
               recommendation={recommendation}
               answers={aiAnswers}
-              reasoning={aiReasoning}
               onChangeAnswers={openAiModal}
               onContinue={requestApply}
             />
           )
         )}
       </div>
-
-      <AnimatePresence>
-        {aiLoading && <AiGeneratingLoader key="ai-loading" />}
-      </AnimatePresence>
 
       <AiDesignModal
         key={aiModalKey}

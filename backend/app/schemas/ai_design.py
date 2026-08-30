@@ -15,9 +15,7 @@ class AiAnswers(BaseModel):
 
 
 class TemplateMeta(BaseModel):
-    """Mirrors the shape of a TemplatePreset from the frontend's
-    data/templates - only the fields Gemini needs to reason about, not the
-    full styling/customization payload."""
+    """Mirrors TemplatePreset fields used by the local design scorer."""
 
     id: str
     industry: str
@@ -36,4 +34,4 @@ class AiDesignResponse(BaseModel):
     primary_template_id: str
     sibling_template_id: str
     reasoning: str
-    source: Literal["gemini", "fallback"]
+    source: Literal["local"]
