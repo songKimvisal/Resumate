@@ -4,16 +4,31 @@ This document explains the technology and pipeline behind creating, previewing, 
 
 ## Stack
 
+If a judge asks **what technology did you use**, start with three names:
+
+1. **React + TypeScript + Vite** — website and resume builder
+2. **FastAPI (Python)** — AI, credits, PDF save limits, template unlocks
+3. **Supabase** — login and Postgres (resumes, RLS)
+
+Then fill in:
+
 | Layer | Technology | Role |
 |---|---|---|
 | App | React 19 + TypeScript + Vite | Builder UI, live preview, dashboard |
+| Styling | Tailwind CSS 4 | Website chrome (not the printed page) |
+| Routing | React Router | Public vs logged-in pages |
 | State | Zustand (`useResumeStore`) | Single in-memory resume while editing |
 | Rich text | TipTap | Summary, experience, and education HTML |
-| Styling | Tailwind CSS 4 | Builder chrome (not the printed page) |
-| Auth + DB | Supabase (Postgres + RLS) | Account and saved resume JSON |
+| i18n | i18next | Website EN / Khmer |
+| Auth + DB | Supabase (Postgres + Auth + RLS) | Account and saved resume JSON |
 | Preview | Custom React page engine | A4/Letter pages in the browser |
 | PDF | `@react-pdf/renderer` | Downloadable PDF from the same data |
-| AI rewrite | Backend smart-rewrite API | Alternative wording for text fields |
+| API | FastAPI + Uvicorn | JWT, credits, templates, job analysis |
+| AI | Gemini (`google-genai`); optional Ollama | Rewrite + job match; one `generate_text()` |
+
+Spoken why: the browser is fast for typing and preview. The Python API is trusted for money and AI keys. Supabase is login + database so we did not write our own auth server.
+
+One-line answers per tool: `docs/PRESENTATION.md` → **Technology**.
 
 There is no server-side HTML-to-PDF step. The browser holds the resume object, draws it on screen, and the same object is sent to the PDF renderer.
 

@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/UseAuth";
 import { useHydrateAiCredits } from "../hooks/useAiCredits";
 import { useHydratePdfSaves } from "../hooks/usePdfSaves";
 import { useHydrateTemplateEntitlements } from "../hooks/useTemplateEntitlements";
+import { useHydrateJourneys } from "../hooks/useHydrateJourneys";
 import { markAppEntered } from "../lib/session";
 
 export default function ProtectedRoute() {
@@ -11,6 +12,7 @@ export default function ProtectedRoute() {
   useHydrateAiCredits();
   useHydratePdfSaves();
   useHydrateTemplateEntitlements();
+  useHydrateJourneys();
 
   if (loading) {
     return (

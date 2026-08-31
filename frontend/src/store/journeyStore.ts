@@ -74,6 +74,8 @@ export type JourneyDraft = {
   practicedQuestionIds?: string[];
   /** Other job ads kept on this resume. Active job stays in jobText/analysis. Max 4. */
   savedJobs?: SavedJobRun[];
+  /** ISO time of last local or server write. Used to merge cloud vs this device. */
+  updatedAt?: string;
 };
 
 const EMPTY: JourneyDraft = { step: 0 };
@@ -190,6 +192,27 @@ export function interviewPrepCountForUser(
   return count;
 }
 
+function stamp(draft: JourneyDraft): JourneyDraft {
+  return { ...draft, updatedAt: new Date().toISOString() };
+}
+
+export function isMeaningfulDraft(draft?: JourneyDraft) {
+  if (!draft) return false;
+  return (
+    (draft.step ?? 0) > 0 ||
+    Boolean(draft.jobText?.trim()) ||
+    Boolean(draft.analysis) ||
+    Boolean(draft.hasResults) ||
+    (draft.savedJobs?.length ?? 0) > 0
+  );
+}
+
+export function parseStorageKey(key: string, userId: string) {
+  const prefix = `${userId}:`;
+  if (!key.startsWith(prefix)) return null;
+  return key.slice(prefix.length);
+}
+
 function snapshotActive(
   draft: JourneyDraft,
   resumeId?: string,
@@ -234,9 +257,15 @@ interface JourneyState {
   byKey: Record<string, JourneyDraft>;
   lastUserId: string | null;
   lastResumeId: string | null;
+  /** True after this session tried to load journeys from Supabase. */
+  remoteHydrated: boolean;
   getDraft: (userId?: string | null, resumeId?: string | null) => JourneyDraft;
   rememberResume: (userId: string, resumeId: string) => void;
   forgetResume: (userId: string, resumeId: string) => void;
+  hydrateFromCloud: (
+    userId: string,
+    rows: { resumeId: string; data: JourneyDraft; updatedAt: string }[],
+  ) => void;
   reachStep: (
     userId: string,
     resumeId: string,
@@ -260,6 +289,7 @@ export const useJourneyStore = create<JourneyState>()(
       byKey: {},
       lastUserId: null,
       lastResumeId: null,
+      remoteHydrated: false,
 
       getDraft: (userId, resumeId) => {
         if (!userId || !resumeId) return EMPTY;
@@ -288,6 +318,28 @@ export const useJourneyStore = create<JourneyState>()(
           };
         }),
 
+      hydrateFromCloud: (userId, rows) =>
+        set((s) => {
+          const byKey = { ...s.byKey };
+          for (const row of rows) {
+            const k = storageKey(userId, row.resumeId);
+            const local = byKey[k];
+            const serverDraft: JourneyDraft = {
+              ...row.data,
+              updatedAt: row.data?.updatedAt ?? row.updatedAt,
+            };
+            if (!isMeaningfulDraft(serverDraft) && !local) continue;
+            if (!local) {
+              byKey[k] = serverDraft;
+              continue;
+            }
+            const localTime = Date.parse(local.updatedAt ?? "") || 0;
+            const serverTime = Date.parse(serverDraft.updatedAt ?? "") || 0;
+            if (serverTime >= localTime) byKey[k] = serverDraft;
+          }
+          return { byKey };
+        }),
+
       reachStep: (userId, resumeId, step) =>
         set((s) => {
           const k = storageKey(userId, resumeId);
@@ -306,7 +358,7 @@ export const useJourneyStore = create<JourneyState>()(
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: prev.step === nextStep ? prev : { ...prev, step: nextStep },
+              [k]: prev.step === nextStep ? prev : stamp({ ...prev, step: nextStep }),
             },
           };
         }),
@@ -320,7 +372,7 @@ export const useJourneyStore = create<JourneyState>()(
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: { ...prev, ...patch },
+              [k]: stamp({ ...prev, ...patch }),
             },
           };
         }),
@@ -335,7 +387,7 @@ export const useJourneyStore = create<JourneyState>()(
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: {
+              [k]: stamp({
                 ...prev,
                 savedJobs: snap
                   ? pushSaved(prev.savedJobs ?? [], snap)
@@ -345,7 +397,7 @@ export const useJourneyStore = create<JourneyState>()(
                 analysis: undefined,
                 practicedQuestionIds: [],
                 step: 0,
-              },
+              }),
             },
           };
         }),
@@ -361,10 +413,10 @@ export const useJourneyStore = create<JourneyState>()(
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: {
+                [k]: stamp({
                 ...prev,
                 savedJobs: pushSaved(prev.savedJobs ?? [], snap),
-              },
+              }),
             },
           };
         }),
@@ -385,14 +437,14 @@ export const useJourneyStore = create<JourneyState>()(
             lastResumeId: resumeId,
             byKey: {
               ...s.byKey,
-              [k]: {
+              [k]: stamp({
                 ...prev,
                 savedJobs: snap ? pushSaved(rest, snap) : rest,
                 jobText: target.jobText,
                 hasResults: target.hasResults,
                 analysis: target.analysis,
                 practicedQuestionIds: target.practicedQuestionIds ?? [],
-              },
+              }),
             },
           };
         }),
@@ -437,7 +489,7 @@ export const useJourneyStore = create<JourneyState>()(
           return {
             byKey: {
               ...s.byKey,
-              [k]: { ...next, step: leftover.length ? next.step : 0 },
+              [k]: stamp({ ...next, step: leftover.length ? next.step : 0 }),
             },
           };
         }),
@@ -445,7 +497,16 @@ export const useJourneyStore = create<JourneyState>()(
       clearResumeJobs: (userId, resumeId) =>
         get().forgetResume(userId, resumeId),
     }),
-    { name: "resumate-journey", version: 2, migrate: (persisted) => persisted },
+    {
+      name: "resumate-journey",
+      version: 3,
+      migrate: (persisted) => persisted,
+      partialize: (s) => ({
+        byKey: s.byKey,
+        lastUserId: s.lastUserId,
+        lastResumeId: s.lastResumeId,
+      }),
+    },
   ),
 );
 
@@ -500,6 +561,7 @@ export function useJourneyHydrated() {
   const [hydrated, setHydrated] = useState(() =>
     useJourneyStore.persist.hasHydrated(),
   );
+  const remoteHydrated = useJourneyStore((s) => s.remoteHydrated);
 
   useEffect(() => {
     if (useJourneyStore.persist.hasHydrated()) {
@@ -509,5 +571,5 @@ export function useJourneyHydrated() {
     return useJourneyStore.persist.onFinishHydration(() => setHydrated(true));
   }, []);
 
-  return hydrated;
+  return hydrated && remoteHydrated;
 }
