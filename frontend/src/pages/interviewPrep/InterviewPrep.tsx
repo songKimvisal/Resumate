@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import ScaledResumePreview from "../../components/resume/ScaledResumePreview";
 import SelectBar from "../../components/dashboard/SelectBar";
 import PageTitle from "../../components/layout/PageTitle";
+import UsageQuotaBanner from "../../components/dashboard/UsageQuotaBanner";
 import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { getResumesByUser, type DashboardResume } from "../../lib/api";
@@ -158,7 +159,7 @@ export default function InterviewPrep() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 sm:px-6 py-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <PageTitle
             text={t("interviewPrep.hubTitle")}
@@ -168,15 +169,18 @@ export default function InterviewPrep() {
             {t("interviewPrep.hubSubtitle")}
           </p>
         </div>
-        {cards.length > 0 && !loadError && !selecting ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelecting(true)}
-          >
-            {t("myResumes.select")}
-          </Button>
-        ) : null}
+        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:mt-1">
+          <UsageQuotaBanner kind="interview" />
+          {cards.length > 0 && !loadError && !selecting ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelecting(true)}
+            >
+              {t("myResumes.select")}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {selecting && cards.length > 0 ? (

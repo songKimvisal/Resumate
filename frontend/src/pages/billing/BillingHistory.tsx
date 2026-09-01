@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   ChevronRight,
   LayoutTemplate,
-  RefreshCcw,
+  Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -28,67 +28,57 @@ type Transaction = {
 
 const STATS = {
   memberSince: "Apr 2026",
-  nextCharge: "19 Jul",
+  renewal: "Never",
 };
 
 const TRANSACTIONS: Transaction[] = [
   {
     id: "1",
     category: "plan",
-    title: "Starter Monthly",
+    title: "Everything pack",
     date: "19 Jun 2026",
     time: "14:32",
-    amount: 2.99,
+    amount: 7.99,
     paidVia: "Bakong KHQR",
     transactionId: "KH18F2Q9M4",
   },
   {
     id: "2",
     category: "template",
-    title: "Classic Banking template",
+    title: "Design Only",
     date: "2 Jun 2026",
     time: "09:47",
-    amount: 2.99,
+    amount: 1.99,
     paidVia: "Bakong KHQR",
     transactionId: "TP41K6X3W9",
   },
   {
     id: "3",
     category: "plan",
-    title: "Starter Monthly",
+    title: "AI Plus pack",
     date: "19 May 2026",
-    time: "14:32",
-    amount: 2.99,
-    paidVia: "Bakong KHQR",
+    time: "11:18",
+    amount: 3.99,
+    paidVia: "Stripe",
     transactionId: "KH29A3B7L2",
   },
   {
     id: "4",
     category: "plan",
-    title: "Starter Monthly",
-    date: "19 Apr 2026",
-    time: "14:32",
+    title: "Starter pack",
+    date: "12 Apr 2026",
+    time: "16:05",
     amount: 2.99,
     paidVia: "Bakong KHQR",
     transactionId: "KH07D5N1P8",
   },
   {
     id: "5",
-    category: "template",
-    title: "Modern Tech template",
-    date: "5 Apr 2026",
-    time: "11:05",
-    amount: 2.99,
-    paidVia: "Bakong KHQR",
-    transactionId: "TP82H9Y4Z1",
-  },
-  {
-    id: "6",
     category: "plan",
-    title: "Starter Monthly",
-    date: "19 Mar 2026",
-    time: "14:32",
-    amount: 2.99,
+    title: "AI Basic pack",
+    date: "5 Apr 2026",
+    time: "09:12",
+    amount: 1.99,
     paidVia: "Bakong KHQR",
     transactionId: "KH53Q8R2T6",
   },
@@ -141,10 +131,10 @@ export default function BillingHistory() {
         </div>
         <div className="rounded-xl bg-surface-2 p-4">
           <p className="text-sm text-text-secondary">
-            {t("billingHistory.stats.nextCharge")}
+            {t("billingHistory.stats.renewal")}
           </p>
           <p className="mt-1 text-xl font-bold text-text">
-            {STATS.nextCharge}
+            {STATS.renewal}
           </p>
         </div>
       </div>
@@ -185,7 +175,7 @@ export default function BillingHistory() {
             >
               <span className="text-brand inline-flex items-center justify-center shrink-0">
                 {tx.category === "plan" ? (
-                  <RefreshCcw size={18} strokeWidth={2.5} />
+                  <Sparkles size={18} strokeWidth={2.5} />
                 ) : (
                   <LayoutTemplate size={18} strokeWidth={2.5} />
                 )}

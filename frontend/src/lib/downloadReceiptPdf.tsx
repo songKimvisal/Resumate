@@ -53,7 +53,7 @@ function ReceiptDocument({ receipt }: { receipt: Receipt }) {
         <Text style={styles.amount}>- ${receipt.amount.toFixed(2)}</Text>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Plan</Text>
+          <Text style={styles.label}>Pack</Text>
           <Text style={styles.value}>{receipt.title}</Text>
         </View>
         <View style={styles.row}>

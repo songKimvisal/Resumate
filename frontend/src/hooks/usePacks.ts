@@ -37,7 +37,6 @@ export function usePacks() {
     period: t("home.pricing.design.period"),
     features: [t("home.pricing.design.desc")],
     cta: t("home.pricing.design.cta"),
-    popular: true,
   };
 
   const ai = (

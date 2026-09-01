@@ -87,7 +87,6 @@ export default function UpgradePlanModal({
                   >
                     <PackCard
                       pack={packs[0]}
-                      badge={popularBadge}
                       onSelect={() => onSelectPack("design")}
                     />
                   </motion.div>

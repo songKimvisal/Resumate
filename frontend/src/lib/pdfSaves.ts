@@ -10,7 +10,7 @@ export const PDFS_BY_PACK: Record<PackId, number> = {
   "ai-plus": 0,
   "ai-pro": 0,
   "both-starter": 1,
-  "both-standard": 2,
+  "both-standard": 3,
   "both-everything": 5,
 };
 

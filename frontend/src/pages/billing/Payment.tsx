@@ -19,6 +19,7 @@ import { usePacks } from "../../hooks/usePacks";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { grantAiCredits } from "../../lib/api/credits";
 import { grantPdfSaves } from "../../lib/api/pdfs";
+import { grantJobAnalyses } from "../../lib/api/analyses";
 import { grantTemplatePack } from "../../lib/api/templates";
 import { consumePendingTemplateId } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
@@ -54,6 +55,7 @@ export default function Payment() {
   const subscribeToPlan = useSubscriptionStore((s) => s.subscribeToPlan);
   const setCredits = useSubscriptionStore((s) => s.setCredits);
   const setPdfs = useSubscriptionStore((s) => s.setPdfs);
+  const setAnalyses = useSubscriptionStore((s) => s.setAnalyses);
 
   const checkout = location.state as
     | { pack?: PackId; plan?: PlanId }
@@ -103,6 +105,12 @@ export default function Payment() {
       setCredits(credits.total, credits.used);
     } catch (err) {
       console.warn("Could not grant AI credits:", err);
+    }
+    try {
+      const analyses = await grantJobAnalyses(packId);
+      setAnalyses(analyses.total, analyses.used);
+    } catch (err) {
+      console.warn("Could not grant job analyses:", err);
     }
     const pendingId = consumePendingTemplateId();
     const pendingPreset = pendingId

@@ -162,7 +162,7 @@ export default function UnlockTemplateModal({
                           label={t("marketplace.unlockModal.chooseLabel")}
                           ids={UNLOCK_NEEDS}
                           align="start"
-                          className="w-full lg:max-w-[20.5rem]"
+                          className="w-full lg:max-w-[26rem]"
                         />
                         <p className="mt-2.5 text-sm text-text-secondary">
                           {t(`home.pricing.${need}.label`)}
@@ -182,7 +182,6 @@ export default function UnlockTemplateModal({
                             {packs[0] && (
                               <PackCard
                                 pack={packs[0]}
-                                badge={popularBadge}
                                 compact
                                 onSelect={() => checkout("design")}
                               />

@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.schemas.credits import CreditBalance
+from app.schemas.analyses import AnalysisBalance
 
 InterviewCategory = Literal["behavioral", "technical", "situational"]
 
@@ -51,4 +51,4 @@ class JobAnalysisResult(BaseModel):
 
 
 class JobAnalysisResponse(JobAnalysisResult):
-    credits: CreditBalance
+    analyses: AnalysisBalance

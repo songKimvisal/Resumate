@@ -37,7 +37,7 @@ export function NeedTabs({
     >
       <div
         className={cn(
-          "grid w-full max-w-[20.5rem] rounded-full bg-surface-2 p-[3px]",
+          "grid w-full max-w-[26rem] rounded-full bg-surface-2 p-[3px]",
           ids.length === 2 ? "grid-cols-2" : "grid-cols-3",
         )}
       >

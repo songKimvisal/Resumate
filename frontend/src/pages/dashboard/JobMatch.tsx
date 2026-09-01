@@ -20,7 +20,7 @@ import {
   type JobMatchResult,
 } from "../../lib/jobMatch";
 import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing, composeJobAd, splitJobAd } from "../../lib/jobAnalysis";
-import { useAiCredits } from "../../hooks/useAiCredits";
+import { useJobAnalyses } from "../../hooks/useJobAnalyses";
 import { cn, useFieldId } from "../../lib/utils";
 import type { Resume } from "../../types/resume";
 
@@ -75,7 +75,7 @@ export default function JobMatch() {
   const getDraft = useJourneyStore((s) => s.getDraft);
   const startNewJob = useJourneyStore((s) => s.startNewJob);
   const activateSavedJob = useJourneyStore((s) => s.activateSavedJob);
-  const { remaining, setCredits } = useAiCredits();
+  const { remaining, setAnalyses } = useJobAnalyses();
   const analysisDraft = useJourneyDraft(user?.id, selectedResume?.id);
 
   useEffect(() => {
@@ -378,7 +378,7 @@ export default function JobMatch() {
         new Promise((r) => setTimeout(r, totalMs)),
         reusePack
           ? Promise.resolve(reusePack)
-          : resolveJobAnalysisPack(fullAd, resume, remaining, setCredits),
+          : resolveJobAnalysisPack(fullAd, resume, remaining, setAnalyses),
       ]);
       const local = computeJobMatch(
         fullAd,
@@ -649,7 +649,11 @@ export default function JobMatch() {
 
                 <StepActions
                   backLabel={t("jobMatch.back")}
-                  nextLabel={t("jobMatch.analyze")}
+                  nextLabel={
+                    remaining > 0
+                      ? t("jobMatch.analyzeWithCount", { count: remaining })
+                      : t("jobMatch.analyze")
+                  }
                   onBack={() => navigate("/dashboard")}
                   onNext={handleAnalyze}
                   nextDisabled={!canAnalyze}

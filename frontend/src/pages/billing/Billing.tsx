@@ -15,8 +15,6 @@ import PageTitle from "../../components/layout/PageTitle";
 
 type PaymentMethod = "khqr" | "stripe";
 
-const NEXT_BILLING_DATE = "19 Jul 2026";
-
 export default function Billing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -312,9 +310,7 @@ export default function Billing() {
                       {t("billing.paymentMethod.label")}
                     </p>
                     <p className="mt-0.5 text-sm text-text-secondary">
-                      {t("billing.paymentMethod.nextBilling", {
-                        date: NEXT_BILLING_DATE,
-                      })}
+                      {t("billing.paymentMethod.nextBilling")}
                     </p>
                   </div>
                   <span className="shrink-0 font-medium text-brand">

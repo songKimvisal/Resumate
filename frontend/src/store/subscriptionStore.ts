@@ -4,6 +4,7 @@ import type { PackId, PlanId } from "../types/billing";
 import { isPackId } from "../types/billing";
 import { creditsForPack, creditsForPlan } from "../lib/aiCredits";
 import { FREE_PDF_SAVES, pdfsForPack } from "../lib/pdfSaves";
+import { analysesForPack } from "../lib/jobAnalyses";
 
 interface SubscriptionState {
   plan: PlanId;
@@ -13,9 +14,12 @@ interface SubscriptionState {
   aiCreditsUsed: number;
   pdfsTotal: number;
   pdfsUsed: number;
+  analysesTotal: number;
+  analysesUsed: number;
   subscribeToPlan: (plan: PlanId, packId?: PackId) => void;
   setCredits: (total: number, used: number) => void;
   setPdfs: (total: number, used: number) => void;
+  setAnalyses: (total: number, used: number) => void;
   unsubscribe: () => void;
 }
 
@@ -28,6 +32,8 @@ const DEFAULT_STATE: Pick<
   | "aiCreditsUsed"
   | "pdfsTotal"
   | "pdfsUsed"
+  | "analysesTotal"
+  | "analysesUsed"
 > = {
   plan: "free",
   lastPackId: null,
@@ -36,6 +42,8 @@ const DEFAULT_STATE: Pick<
   aiCreditsUsed: 0,
   pdfsTotal: FREE_PDF_SAVES,
   pdfsUsed: 0,
+  analysesTotal: 0,
+  analysesUsed: 0,
 };
 
 function creditsFromPersisted(state: Partial<SubscriptionState>): number {
@@ -54,6 +62,14 @@ function pdfsFromPersisted(state: Partial<SubscriptionState>): number {
       ? pdfsForPack(state.lastPackId)
       : 0;
   return FREE_PDF_SAVES + fromPack;
+}
+
+function analysesFromPersisted(state: Partial<SubscriptionState>): number {
+  if (typeof state.analysesTotal === "number") return state.analysesTotal;
+  if (state.lastPackId && isPackId(state.lastPackId)) {
+    return analysesForPack(state.lastPackId);
+  }
+  return 0;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -76,11 +92,16 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           pdfsTotal: Math.max(0, total),
           pdfsUsed: Math.max(0, used),
         }),
+      setAnalyses: (total, used) =>
+        set({
+          analysesTotal: Math.max(0, total),
+          analysesUsed: Math.max(0, used),
+        }),
       unsubscribe: () => set({ ...DEFAULT_STATE }),
     }),
     {
       name: "resumate-subscription",
-      version: 7,
+      version: 8,
       partialize: (s) => ({
         plan: s.plan,
         lastPackId: s.lastPackId,
@@ -89,6 +110,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         aiCreditsUsed: s.aiCreditsUsed,
         pdfsTotal: s.pdfsTotal,
         pdfsUsed: s.pdfsUsed,
+        analysesTotal: s.analysesTotal,
+        analysesUsed: s.analysesUsed,
       }),
       migrate: (persisted) => {
         const state = persisted as Partial<SubscriptionState> | undefined;
@@ -104,6 +127,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             typeof state.aiCreditsUsed === "number" ? state.aiCreditsUsed : 0,
           pdfsTotal: pdfsFromPersisted(state),
           pdfsUsed: typeof state.pdfsUsed === "number" ? state.pdfsUsed : 0,
+          analysesTotal: analysesFromPersisted(state),
+          analysesUsed:
+            typeof state.analysesUsed === "number" ? state.analysesUsed : 0,
         };
       },
     },

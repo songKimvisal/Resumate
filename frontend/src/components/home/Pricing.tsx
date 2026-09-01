@@ -62,7 +62,6 @@ export default function Pricing() {
           >
             <PackCard
               pack={byNeed.design[0]}
-              badge={t("home.pricing.mostPopular")}
               loading={loading}
               onSelect={() => handlePackClick("design")}
             />

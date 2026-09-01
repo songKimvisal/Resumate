@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/UseAuth";
 import { useHydrateAiCredits } from "../hooks/useAiCredits";
 import { useHydratePdfSaves } from "../hooks/usePdfSaves";
+import { useHydrateJobAnalyses } from "../hooks/useJobAnalyses";
 import { useHydrateTemplateEntitlements } from "../hooks/useTemplateEntitlements";
 import { useHydrateJourneys } from "../hooks/useHydrateJourneys";
 import { markAppEntered } from "../lib/session";
@@ -11,6 +12,7 @@ export default function ProtectedRoute() {
   const location = useLocation();
   useHydrateAiCredits();
   useHydratePdfSaves();
+  useHydrateJobAnalyses();
   useHydrateTemplateEntitlements();
   useHydrateJourneys();
 

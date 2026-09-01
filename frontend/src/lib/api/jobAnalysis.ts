@@ -1,5 +1,5 @@
 import { callBackend } from "./client";
-import type { CreditBalance } from "./credits";
+import type { AnalysisBalance } from "./analyses";
 import type { InterviewCategory, JobAnalysisPack } from "../../store/journeyStore";
 
 function normalizeCategory(value: string): InterviewCategory {
@@ -52,7 +52,7 @@ interface JobAnalysisApiResponse {
     readyToApply?: boolean;
   };
   source: "gemini" | "fallback";
-  credits: CreditBalance;
+  analyses: AnalysisBalance;
 }
 
 function stringList(value: unknown, max: number) {
@@ -66,7 +66,7 @@ function stringList(value: unknown, max: number) {
 export async function requestJobAnalysis(
   jobText: string,
   resumeText: string,
-): Promise<{ pack: JobAnalysisPack; credits: CreditBalance }> {
+): Promise<{ pack: JobAnalysisPack; analyses: AnalysisBalance }> {
   const data = await callBackend<JobAnalysisApiResponse>("/api/job-analysis", {
     job_text: jobText,
     resume_text: resumeText,
@@ -93,7 +93,7 @@ export async function requestJobAnalysis(
     .filter((item) => item.question);
 
   return {
-    credits: data.credits,
+    analyses: data.analyses ?? { total: 0, used: 0, remaining: 0 },
     pack: {
       roleTitle: (data.role_title || data.roleTitle || "").trim(),
       matchScore: Math.max(0, Math.min(100, data.match_score || data.matchScore || 0)),

@@ -27,7 +27,7 @@ For a plain-language guide to the credits update (what to set up once, why the s
    - `FRONTEND_ORIGIN`: your Vite dev server URL (default `http://localhost:5173`)
    - `GEMINI_API_KEY`: Gemini API key for smart rewrite / AI design
 
-3. Apply the credits migration (`frontend/supabase/migrations/20260826120000_create_ai_credits.sql`) in the Supabase SQL editor, or with the Supabase CLI.
+3. Apply the credits migration (`frontend/supabase/migrations/20260826120000_create_ai_credits.sql`) in the Supabase SQL editor, or with the Supabase CLI. Also apply later entitlement migrations (`pdf_saves`, templates, `job_journeys`, and `job_analyses`).
 
 4. Run the server:
 
@@ -37,13 +37,16 @@ For a plain-language guide to the credits update (what to set up once, why the s
 
 5. Check it's alive: open http://localhost:8000/api/health - should return `{"status": "ok"}`.
 
-## Credits
+## Credits and analyses
 
-Balances live in the `ai_credits` table. The frontend never writes them.
+Writing credits live in `ai_credits`. Job-analysis quota lives in `job_analyses`. The frontend never writes them.
 
-- `GET /api/credits` — current total / used / remaining
-- `POST /api/credits/grant` — `{ "pack_id": "ai-plus" }` after a purchase; the server decides how many credits that pack is worth
-- `POST /api/smart-rewrite` — spends 1 credit first; refunds it if the AI falls back
+- `GET /api/credits` — Smart Rewrite total / used / remaining
+- `POST /api/credits/grant` — `{ "pack_id": "ai-plus" }` after a purchase
+- `POST /api/smart-rewrite` — spends 1 writing credit first; refunds it if the AI falls back
+- `GET /api/analyses` — job-analysis quota (interview + skill-gap included)
+- `POST /api/analyses/grant` — `{ "pack_id": "ai-plus" }` adds 1 / 3 / 5 analyses by pack
+- `POST /api/job-analysis` — spends 1 analysis quota, not a writing credit; refunds on fallback
 
 ## Testing the authenticated endpoint
 

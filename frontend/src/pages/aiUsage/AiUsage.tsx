@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, FileText, Leaf, Sparkles } from "lucide-react";
+import { AlertCircle, FileText, FolderOpen, Leaf, MessagesSquare, Sparkles } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
@@ -9,6 +9,7 @@ import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { usePacks } from "../../hooks/usePacks";
 import { useAiCredits } from "../../hooks/useAiCredits";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
+import { useJobAnalyses } from "../../hooks/useJobAnalyses";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 import PageTitle from "../../components/layout/PageTitle";
 
@@ -20,6 +21,7 @@ export default function AiUsage() {
   const lastPackId = useSubscriptionStore((s) => s.lastPackId);
   const { used: aiCreditsUsed, total: aiCreditsTotal } = useAiCredits();
   const { used: pdfsUsed, total: pdfsTotal } = usePdfSaves();
+  const { used: analysesUsed, total: analysesTotal } = useJobAnalyses();
   const pricingPlans = usePricingPlans();
   const { all: packs } = usePacks();
   const currentPack = packs.find((p) => p.id === lastPackId);
@@ -36,6 +38,18 @@ export default function AiUsage() {
       icon: Sparkles,
       used: Math.min(aiCreditsUsed, aiCreditsTotal),
       total: aiCreditsTotal,
+    },
+    {
+      key: "interviewSets" as const,
+      icon: MessagesSquare,
+      used: Math.min(analysesUsed, analysesTotal),
+      total: analysesTotal,
+    },
+    {
+      key: "jobReports" as const,
+      icon: FolderOpen,
+      used: Math.min(analysesUsed, analysesTotal),
+      total: analysesTotal,
     },
     {
       key: "pdfSaves" as const,
@@ -86,6 +100,8 @@ export default function AiUsage() {
               total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
             const exhausted = total > 0 && used >= total;
             const emptyCredits = key === "aiCredits" && total === 0;
+            const emptyAnalyses =
+              (key === "interviewSets" || key === "jobReports") && total === 0;
 
             return (
               <div key={key}>
@@ -119,9 +135,11 @@ export default function AiUsage() {
                   {exhausted && <AlertCircle size={12} strokeWidth={2} />}
                   {emptyCredits
                     ? t("billing.currentPlan.noCredits")
-                    : exhausted
-                      ? t("aiUsage.metrics.limitReached")
-                      : t("aiUsage.metrics.left", { count: total - used })}
+                    : emptyAnalyses
+                      ? t("billing.currentPlan.noAnalyses")
+                      : exhausted
+                        ? t("aiUsage.metrics.limitReached")
+                        : t("aiUsage.metrics.left", { count: total - used })}
                 </p>
               </div>
             );

@@ -2,7 +2,8 @@
   "common": {
     "loading": "Loading…",
     "comingSoon": "Coming soon",
-    "comingSoonSubtitle": "We're working on this. Check back soon!"
+    "comingSoonSubtitle": "We're working on this. Check back soon!",
+    "leftInPack": "left in pack"
   },
   "refund": {
     "label": "Legal",
@@ -125,7 +126,7 @@
   "contact": {
     "label": "Get in touch",
     "title": "Contact us",
-    "subtitle": "Questions about your resume, a plan, or a bug? We usually reply within one business day.",
+    "subtitle": "Questions about your resume, a pack, or a bug? We usually reply within one business day.",
     "form": {
       "nameLabel": "Your Name",
       "namePlaceholder": "Jane Doe",
@@ -234,6 +235,7 @@
     "comparingAgainst": "Comparing against",
     "back": "Back to Dashboard",
     "analyze": "Analyze this job",
+    "analyzeWithCount": "Analyze this job · {{count}} left",
     "analyzing": "Analyzing…",
     "analyzingTitle": "Analyzing the job description…",
     "analyzePhases": {
@@ -326,7 +328,12 @@
       "companyWithResume": "{{company}} · {{name}}",
       "matchScore": "{{score}}% match",
       "selectHint": "Tap jobs to select them",
-      "confirmDeleteSelected": "Delete {{count}} job reports? This cannot be undone."
+      "confirmDeleteSelected": "Delete {{count}} job reports? This cannot be undone.",
+      "quotaCount": "{{remaining}} of {{total}} left · {{used}} used",
+      "quotaHint": "Each new job analysis also unlocks interview prep and this report.",
+      "quotaNone": "No new job reports left. Saved reports stay open.",
+      "quotaEmpty": "No job report uses yet. Buy a pack, then analyze a job ad.",
+      "quotaBuy": "Buy more"
   },
   "interviewPrep": {
     "badge": "Interview prep · {{role}}",
@@ -377,7 +384,12 @@
     "backToSaved": "Back to Job reports",
     "emptyTitle": "Analyze a job first",
     "emptyBody": "Paste a job ad and run analysis first. Interview questions and the readiness report come from that same result. No extra AI call.",
-    "startJobMatch": "Paste a job ad"
+    "startJobMatch": "Paste a job ad",
+    "quotaCount": "{{remaining}} of {{total}} left · {{used}} used",
+    "quotaHint": "Each new job analysis also unlocks this interview set and the job report.",
+    "quotaNone": "No new interview sets left. Saved prep stays open.",
+    "quotaEmpty": "No interview sets yet. Buy a pack, then analyze a job ad.",
+    "quotaBuy": "Buy more"
   },
   "jobReadiness": {
     "strongResume": "Strong resume.",
@@ -656,10 +668,10 @@
       "needLabel": "What do you need?",
       "needs": {
         "design": {
-          "title": "Templates"
+          "title": "Just templates"
         },
         "ai": {
-          "title": "Writing help"
+          "title": "Just the AI"
         },
         "both": {
           "title": "Both"
@@ -671,21 +683,26 @@
       "mostPopular": "Most popular",
       "bestValue": "Best value",
       "design": {
-        "label": "Design only. No smart credits.",
-        "name": "1 template, fully unlocked",
+        "label": "Just templates. No smart credits.",
+        "name": "Design Only",
         "price": "1.99",
         "period": "one-time",
         "desc": "Pick any template and unlock colors, fonts, and layout.",
         "cta": "Get Design Only"
       },
       "ai": {
-        "label": "Smart credits only. Keep your free template.",
+        "label": "Just the AI. Keep your free template.",
         "packs": [
           {
             "name": "Basic",
-            "price": "1.49",
+            "price": "1.99",
             "period": "one-time",
-            "features": ["8 smart writing credits"],
+            "features": [
+              "8 smart writing credits",
+              "1 job analysis",
+              "1 interview question set",
+              "1 skill gap report"
+            ],
             "cta": "Get Basic"
           },
           {
@@ -694,8 +711,9 @@
             "period": "one-time",
             "features": [
               "25 smart writing credits",
-              "2 job analyses",
-              "1 interview set (20 Q&A)"
+              "3 job analyses",
+              "3 interview question sets",
+              "3 skill gap reports"
             ],
             "cta": "Get Plus",
             "popular": true
@@ -707,14 +725,15 @@
             "features": [
               "60 smart writing credits",
               "5 job analyses",
-              "3 interview sets (20 Q&A each) and a skill gap report"
+              "5 interview question sets",
+              "5 skill gap reports"
             ],
             "cta": "Get Pro"
           }
         ]
       },
       "both": {
-        "label": "Templates + smart credits, bundled",
+        "label": "Templates + AI, bundled. Best value is Everything.",
         "packs": [
           {
             "name": "Starter",
@@ -723,6 +742,9 @@
             "features": [
               "1 template you pick",
               "8 smart writing credits",
+              "1 job analysis",
+              "1 interview question set",
+              "1 skill gap report",
               "Save or download 1 PDF"
             ],
             "cta": "Get Starter"
@@ -734,19 +756,24 @@
             "features": [
               "3 templates you pick",
               "25 smart writing credits",
-              "Save or download 2 PDFs"
+              "3 job analyses",
+              "3 interview question sets",
+              "3 skill gap reports",
+              "Save or download 3 PDFs"
             ],
             "cta": "Get Standard"
           },
           {
             "name": "Everything",
-            "price": "9.99",
+            "price": "7.99",
             "period": "one-time",
             "features": [
               "All templates, unlocked",
               "60 smart writing credits",
-              "Save or download 5 PDFs",
-              "5 job analyses and interview prep"
+              "5 job analyses",
+              "5 interview question sets",
+              "5 skill gap reports",
+              "Save or download 5 PDFs"
             ],
             "cta": "Get Everything",
             "popular": true
@@ -774,23 +801,24 @@
           "features": [
             "1 paid template unlocked",
             "8 smart writing credits",
+            "1 job analysis, interview set, and skill gap report",
             "Save or download 1 PDF"
           ],
-          "cta": "Get Starter",
-          "popular": true
+          "cta": "Get Starter"
         },
         {
           "name": "Everything",
-          "price": "9.99",
+          "price": "7.99",
           "tagline": "The full pack. Pay once. Nothing renews.",
           "includesLabel": "Includes",
           "features": [
             "All templates unlocked",
             "60 smart writing credits",
-            "Save or download 5 PDFs",
-            "Job analyses and interview prep"
+            "5 job analyses, interview sets, and skill gap reports",
+            "Save or download 5 PDFs"
           ],
-          "cta": "Get Everything"
+          "cta": "Get Everything",
+          "popular": true
         }
       ]
     },
@@ -1608,7 +1636,7 @@
     "title": "My",
     "titleAccent": "Resumes",
     "subtitle": "Your first resume is free forever. Need more than one resume?",
-    "upgradeLink": "Upgrade your plan",
+    "upgradeLink": "Buy a pack",
     "newResume": "New resume",
     "untitled": "Untitled resume",
     "loadError": "Couldn't load your resumes. Please try again.",
@@ -1684,6 +1712,7 @@
       "usageLabel": "Smart writing credits",
       "pdfsLabel": "PDF saves",
       "noCredits": "No smart credits yet. Buy some when you need writing help.",
+      "noAnalyses": "No job analyses left. Buy a pack for match, interview, and skill-gap reports.",
       "noPdfs": "No PDF saves left.",
       "usageCount": "{{used}} of {{total}} used",
       "left": "{{count}} left",
@@ -1758,14 +1787,14 @@
       "viewInvoices": "View invoices"
     },
     "cancelSubscription": {
-      "label": "Cancel subscription",
-      "description": "Cancel anytime. Access continues until the current period ends.",
-      "cancel": "Cancel",
-      "confirm": "Your plan stays active until the end of the current billing period, then it won't renew.",
-      "confirmYes": "Yes, cancel",
-      "confirmCancel": "Keep subscription",
-      "cancelling": "Cancelling…",
-      "cancelled": "Your subscription has been cancelled."
+      "label": "Packs do not renew",
+      "description": "Purchases are one-time. Unused credits and PDF saves stay on your account until you use them.",
+      "cancel": "Close",
+      "confirm": "There is no subscription to cancel. Packs do not renew.",
+      "confirmYes": "Got it",
+      "confirmCancel": "Back",
+      "cancelling": "Closing…",
+      "cancelled": "Nothing was cancelled. Packs are one-time."
     }
   },
   "aiUsage": {
@@ -1782,6 +1811,9 @@
     },
     "metrics": {
       "aiCredits": "Smart writing assistant credits",
+      "interviewSets": "Interview question sets",
+      "jobReports": "Job reports",
+      "jobAnalyses": "Job analyses (interview + skill-gap included)",
       "pdfSaves": "PDF saves",
       "resumesSaved": "Resumes saved",
       "left": "{{count}} left",
@@ -1791,11 +1823,11 @@
   "billingHistory": {
     "title": "Billing",
     "titleAccent": "History",
-    "subtitle": "Manage your subscription and payment method.",
+    "subtitle": "One-time packs. Nothing renews.",
     "stats": {
       "totalPaid": "Total paid",
       "memberSince": "Member since",
-      "nextCharge": "Next Charge"
+      "renewal": "Renewal"
     },
     "filters": {
       "all": "All",
@@ -1808,7 +1840,7 @@
       "title": "Receipt",
       "close": "Close",
       "itemLabel": {
-        "plan": "Plan",
+        "plan": "Pack",
         "template": "Template"
       },
       "date": "Date",

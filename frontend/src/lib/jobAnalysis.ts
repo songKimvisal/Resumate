@@ -1,6 +1,6 @@
 import type { Resume } from "../types/resume";
 import { BackendError } from "./api/client";
-import { creditsFromErrorBody, type CreditBalance } from "./api/credits";
+import { analysesFromErrorBody, type AnalysisBalance } from "./api/analyses";
 import { requestJobAnalysis } from "./api/jobAnalysis";
 import {
   computeJobMatch,
@@ -406,24 +406,24 @@ export function isReadyToApply(input: {
   );
 }
 
-/** One credit / one Gemini call / 20 Q&A. Falls back locally so later steps still work. */
+/** One analysis quota / one Gemini call / match + 20 Q&A + skill-gap. Falls back locally so later steps still work. */
 export async function resolveJobAnalysisPack(
   jobText: string,
   resume: Resume,
-  remainingCredits: number,
-  setCredits: (total: number, used: number) => void,
+  remainingAnalyses: number,
+  setAnalyses: (total: number, used: number) => void,
 ): Promise<JobAnalysisPack> {
   const local = computeJobMatch(jobText, resume);
-  if (remainingCredits <= 0) {
+  if (remainingAnalyses <= 0) {
     return buildFallbackAnalysis(jobText, resume, local);
   }
 
   try {
-    const { pack, credits } = await requestJobAnalysis(
+    const { pack, analyses } = await requestJobAnalysis(
       jobText,
       resumePlainText(resume),
     );
-    setCredits(credits.total, credits.used);
+    setAnalyses(analyses.total, analyses.used);
     if (pack.source === "gemini" && pack.questions.length >= 8) {
       const split = computeJobMatch(
         jobText,
@@ -443,8 +443,8 @@ export async function resolveJobAnalysisPack(
     }
   } catch (err) {
     if (err instanceof BackendError) {
-      const credits: CreditBalance | null = creditsFromErrorBody(err.body);
-      if (credits) setCredits(credits.total, credits.used);
+      const analyses: AnalysisBalance | null = analysesFromErrorBody(err.body);
+      if (analyses) setAnalyses(analyses.total, analyses.used);
     }
   }
 
