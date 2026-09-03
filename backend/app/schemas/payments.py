@@ -1,0 +1,32 @@
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from app.schemas.credits import PackId
+
+Provider = Literal["stripe", "khqr"]
+
+
+class RecordPaymentRequest(BaseModel):
+    pack_id: PackId
+    pack_name: str
+    provider: Provider
+    amount_cents: int = Field(ge=0)
+    currency: str = "USD"
+    external_transaction_id: str | None = None
+
+
+class PaymentRecord(BaseModel):
+    id: str
+    pack_id: str
+    pack_name: str
+    provider: Provider
+    amount_cents: int
+    currency: str
+    status: Literal["pending", "succeeded", "failed"]
+    external_transaction_id: str | None
+    created_at: str
+
+
+class PaymentHistory(BaseModel):
+    payments: list[PaymentRecord]

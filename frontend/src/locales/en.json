@@ -16,7 +16,7 @@
       },
       {
         "title": "2. One-time purchases",
-        "body": "Paid options are one-time. You can buy nicer templates, smart writing credits, or both. There is no monthly subscription and nothing renews automatically. Payments are processed via KHQR or Stripe."
+        "body": "Paid options are one-time. You can buy nicer templates, smart writing credits, or both. There is no monthly subscription and nothing renews automatically. Payments are processed via KHQR or Card."
       },
       {
         "title": "3. When we refund",
@@ -35,7 +35,7 @@
       },
       {
         "title": "5. How to request a refund",
-        "body": "Contact us with your account email and the date of the charge. See the Contact page. We aim to respond within 2 business days and send approved refunds to your original payment method (KHQR or Stripe) within 5 to 10 business days."
+        "body": "Contact us with your account email and the date of the charge. See the Contact page. We aim to respond within 2 business days and send approved refunds to your original payment method (KHQR or Card) within 5 to 10 business days."
       }
     ]
   },
@@ -63,7 +63,7 @@
       },
       {
         "title": "4. Data sharing",
-        "body": "We share data only with service providers who help us run Resumate, such as payment processors (Stripe, Bakong/KHQR) and cloud hosting, under confidentiality obligations. We may disclose information if required by law."
+        "body": "We share data only with service providers who help us run Resumate, such as payment processors (Card, Bakong/KHQR) and cloud hosting, under confidentiality obligations. We may disclose information if required by law."
       },
       {
         "title": "5. Data retention & control",
@@ -98,7 +98,7 @@
       },
       {
         "title": "3. Payments",
-        "body": "Paid features are one-time purchases, not subscriptions. They do not renew. Payments are processed via KHQR or Stripe. See our Refund Policy for refund terms.",
+        "body": "Paid features are one-time purchases, not subscriptions. They do not renew. Payments are processed via KHQR or Card. See our Refund Policy for refund terms.",
         "list": [
           "Free includes 3 templates and 1 PDF",
           "You can pay once for templates, smart writing credits, or both",
@@ -309,31 +309,31 @@
     }
   },
   "savedJobsPage": {
-      "hubTitle": "Job",
-      "hubTitleAccent": "Reports",
-      "subtitle": "Open a readiness report. Each card shows the job, the company, and the resume you used.",
-      "interviewPrep": "Interview prep",
-      "cardStats": "{{match}}% match · {{done}}/{{total}} ready",
-      "emptyTitle": "No job reports yet",
-      "emptyBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
-      "analyzeCta": "Analyze a job",
-      "unlockTitle": "No job reports yet",
-      "unlockBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
-      "unlockCta": "Analyze a job",
-      "cardLabel": "Readiness report",
-      "continue": "View report",
-      "readyScore": "{{score}}% ready",
-      "viewing": "Viewing now",
-      "withResume": "Saved with {{name}}",
-      "companyWithResume": "{{company}} · {{name}}",
-      "matchScore": "{{score}}% match",
-      "selectHint": "Tap jobs to select them",
-      "confirmDeleteSelected": "Delete {{count}} job reports? This cannot be undone.",
-      "quotaCount": "{{remaining}} of {{total}} left · {{used}} used",
-      "quotaHint": "Each new job analysis also unlocks interview prep and this report.",
-      "quotaNone": "No new job reports left. Saved reports stay open.",
-      "quotaEmpty": "No job report uses yet. Buy a pack, then analyze a job ad.",
-      "quotaBuy": "Buy more"
+    "hubTitle": "Job",
+    "hubTitleAccent": "Reports",
+    "subtitle": "Open a readiness report. Each card shows the job, the company, and the resume you used.",
+    "interviewPrep": "Interview prep",
+    "cardStats": "{{match}}% match · {{done}}/{{total}} ready",
+    "emptyTitle": "No job reports yet",
+    "emptyBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
+    "analyzeCta": "Analyze a job",
+    "unlockTitle": "No job reports yet",
+    "unlockBody": "Analyze a job ad first. Then it lives here so you can reopen it even after you change resumes.",
+    "unlockCta": "Analyze a job",
+    "cardLabel": "Readiness report",
+    "continue": "View report",
+    "readyScore": "{{score}}% ready",
+    "viewing": "Viewing now",
+    "withResume": "Saved with {{name}}",
+    "companyWithResume": "{{company}} · {{name}}",
+    "matchScore": "{{score}}% match",
+    "selectHint": "Tap jobs to select them",
+    "confirmDeleteSelected": "Delete {{count}} job reports? This cannot be undone.",
+    "quotaCount": "{{remaining}} of {{total}} left · {{used}} used",
+    "quotaHint": "Each new job analysis also unlocks interview prep and this report.",
+    "quotaNone": "No new job reports left. Saved reports stay open.",
+    "quotaEmpty": "No job report uses yet. Buy a pack, then analyze a job ad.",
+    "quotaBuy": "Buy more"
   },
   "interviewPrep": {
     "badge": "Interview prep · {{role}}",
@@ -695,7 +695,7 @@
         "packs": [
           {
             "name": "Basic",
-            "price": "1.99",
+            "price": "2.99",
             "period": "one-time",
             "features": [
               "8 smart writing credits",
@@ -737,7 +737,7 @@
         "packs": [
           {
             "name": "Starter",
-            "price": "2.99",
+            "price": "3.99",
             "period": "one-time",
             "features": [
               "1 template you pick",
@@ -795,7 +795,7 @@
         },
         {
           "name": "Starter",
-          "price": "2.99",
+          "price": "3.99",
           "tagline": "Templates plus smart writing. Pay once.",
           "includesLabel": "Includes",
           "features": [
@@ -882,7 +882,7 @@
         },
         {
           "title": "Built for Cambodia first",
-          "desc": "Every template, price, and payment method (KHQR, Stripe Payment) is built around how Cambodians actually work and pay. One-time. No subscription to remember."
+          "desc": "Every template, price, and payment method (KHQR, Card Payment) is built around how Cambodians actually work and pay. One-time. No subscription to remember."
         },
         {
           "title": "Guidance over judgment",
@@ -948,50 +948,50 @@
     "tips": [
       {
         "lead": "Header & Contact Details Your first impression on employers.",
-          "points": [
-            "Use the full English name you intend to use on official job applications.",
-            "Specify your target job role (e.g., Junior Accountant or Marketing Assistant) rather than 'Student'.",
-            "Provide an active email address and phone number that you monitor daily.",
-            "Include a 2 to 3 sentence summary highlighting your academic background, key strength, and career objective no extensive work history required."
-          ]
-        },
-        {
-          "lead": "Work & Practical Experience Showcasing your career story.",
-          "points": [
-            "List roles in reverse chronological order (most recent first).",
-            "Include job title, company, location, and dates.",
-            "Start each bullet with a strong action verb (e.g. Built, Organized, Coordinated).",
-            "Quantify results where you can (e.g. Collaborated with 3 teammates, Served 20+ clients daily).",
-            "Keep 3 to 5 bullets per role focused on impact, not daily duties."
-          ]
-        },
-        {
-          "lead": "Education & Honors Highlighting your academic background.",
-          "points": [
-            "List your most recent educational institution first.",
-            "State the full degree name and university title.",
-            "Include your GPA if it is 3.5 or higher, or if you graduated with honors.",
-            "Under 'Achievements', highlight scholarship awards, Dean’s List honors, or relevant coursework."
-          ]
-        },
-        {
-          "lead": "Skills & Languages Demonstrating your core capabilities.",
-          "points": [
-            "List 6 to 10 tools or technologies you are proficient in (e.g., Excel, Figma, Python).",
-            "Prioritize accuracy over length be realistic about your proficiency level.",
-            "Include language proficiencies (e.g., Khmer, English), as bilingual ability is highly valued in Cambodia.",
-            "References are optional; you may omit them or state 'Available upon request'."
-          ]
-        },
-        {
-          "lead": "Review & Export Final quality checks before applying.",
-          "points": [
-            "Review your optimization score and address any outstanding checklist items.",
-            "Proofread the live preview carefully to eliminate spelling or grammatical errors.",
-            "Keep your resume to a clean, well-formatted single page.",
-            "Export as a PDF formatted as 'FirstName_LastName_Resume.pdf'."
-          ]
-        }
+        "points": [
+          "Use the full English name you intend to use on official job applications.",
+          "Specify your target job role (e.g., Junior Accountant or Marketing Assistant) rather than 'Student'.",
+          "Provide an active email address and phone number that you monitor daily.",
+          "Include a 2 to 3 sentence summary highlighting your academic background, key strength, and career objective no extensive work history required."
+        ]
+      },
+      {
+        "lead": "Work & Practical Experience Showcasing your career story.",
+        "points": [
+          "List roles in reverse chronological order (most recent first).",
+          "Include job title, company, location, and dates.",
+          "Start each bullet with a strong action verb (e.g. Built, Organized, Coordinated).",
+          "Quantify results where you can (e.g. Collaborated with 3 teammates, Served 20+ clients daily).",
+          "Keep 3 to 5 bullets per role focused on impact, not daily duties."
+        ]
+      },
+      {
+        "lead": "Education & Honors Highlighting your academic background.",
+        "points": [
+          "List your most recent educational institution first.",
+          "State the full degree name and university title.",
+          "Include your GPA if it is 3.5 or higher, or if you graduated with honors.",
+          "Under 'Achievements', highlight scholarship awards, Dean’s List honors, or relevant coursework."
+        ]
+      },
+      {
+        "lead": "Skills & Languages Demonstrating your core capabilities.",
+        "points": [
+          "List 6 to 10 tools or technologies you are proficient in (e.g., Excel, Figma, Python).",
+          "Prioritize accuracy over length be realistic about your proficiency level.",
+          "Include language proficiencies (e.g., Khmer, English), as bilingual ability is highly valued in Cambodia.",
+          "References are optional; you may omit them or state 'Available upon request'."
+        ]
+      },
+      {
+        "lead": "Review & Export Final quality checks before applying.",
+        "points": [
+          "Review your optimization score and address any outstanding checklist items.",
+          "Proofread the live preview carefully to eliminate spelling or grammatical errors.",
+          "Keep your resume to a clean, well-formatted single page.",
+          "Export as a PDF formatted as 'FirstName_LastName_Resume.pdf'."
+        ]
+      }
     ],
     "tipHasExperience": {
       "lead": "Work & Practical Experience Showcasing your career story.",
@@ -1726,7 +1726,7 @@
     },
     "upgradeModal": {
       "title": "Buy more",
-      "subtitle": "Pay once with KHQR or Stripe. Nothing renews.",
+      "subtitle": "Pay once with KHQR or Card. Nothing renews.",
       "close": "Close",
       "currentPlanCta": "Current pack"
     },
@@ -1762,13 +1762,13 @@
     "paymentMethod": {
       "label": "Payment method",
       "nextBilling": "Saved for your next purchase",
-      "chooseSubtitle": "Scan with KHQR, or pay by card via Stripe instant activation.",
+      "chooseSubtitle": "Scan with KHQR, or pay by card via Card instant activation.",
       "khqr": {
         "name": "Bakong KHQR",
         "desc": "Any Cambodian bank app"
       },
       "stripe": {
-        "name": "Stripe",
+        "name": "Card",
         "desc": "Visa, Mastercard, or UnionPay"
       },
       "card": {
@@ -1777,14 +1777,25 @@
         "numberLabel": "Card number",
         "expiryLabel": "Expiry",
         "cvcLabel": "CVC",
-        "secureNote": "Payments are securely processed by Stripe."
+        "secureNote": "Payments are securely processed by Card."
       },
       "save": "Save Method",
       "cancel": "Cancel"
     },
     "billingHistory": {
       "label": "Billing history",
-      "viewInvoices": "View invoices"
+      "viewInvoices": "View invoices",
+      "filters": {
+        "all": "All",
+        "template": "Just templates",
+        "ai": "Just the AI",
+        "both": "Both"
+      },
+      "itemLabel": {
+        "template": "Template",
+        "ai": "AI pack",
+        "both": "Bundle"
+      }
     },
     "cancelSubscription": {
       "label": "Packs do not renew",
@@ -1831,17 +1842,20 @@
     },
     "filters": {
       "all": "All",
-      "plan": "Packs",
-      "template": "Templates"
+      "template": "Just templates",
+      "ai": "Just the AI",
+      "both": "Both"
     },
     "empty": "No transactions in this category yet.",
+    "loading": "Loading your payment history...",
     "back": "Back",
     "receipt": {
       "title": "Receipt",
       "close": "Close",
       "itemLabel": {
-        "plan": "Pack",
-        "template": "Template"
+        "template": "Template",
+        "ai": "AI pack",
+        "both": "Bundle"
       },
       "date": "Date",
       "paid": "Paid",

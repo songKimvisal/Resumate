@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
@@ -6,14 +6,16 @@ import {
   ArrowLeft,
   ChevronRight,
   LayoutTemplate,
+  Layers,
   Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { downloadReceiptPdf } from "../../lib/downloadReceiptPdf";
+import { getPaymentHistory, type PaymentRecord } from "../../lib/api/payments";
 
-type Category = "all" | "plan" | "template";
+type Category = "all" | "template" | "ai" | "both";
 
 type Transaction = {
   id: string;
@@ -31,64 +33,49 @@ const STATS = {
   renewal: "Never",
 };
 
-const TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    category: "plan",
-    title: "Everything pack",
-    date: "19 Jun 2026",
-    time: "14:32",
-    amount: 7.99,
-    paidVia: "Bakong KHQR",
-    transactionId: "KH18F2Q9M4",
-  },
-  {
-    id: "2",
-    category: "template",
-    title: "Design Only",
-    date: "2 Jun 2026",
-    time: "09:47",
-    amount: 1.99,
-    paidVia: "Bakong KHQR",
-    transactionId: "TP41K6X3W9",
-  },
-  {
-    id: "3",
-    category: "plan",
-    title: "AI Plus pack",
-    date: "19 May 2026",
-    time: "11:18",
-    amount: 3.99,
-    paidVia: "Stripe",
-    transactionId: "KH29A3B7L2",
-  },
-  {
-    id: "4",
-    category: "plan",
-    title: "Starter pack",
-    date: "12 Apr 2026",
-    time: "16:05",
-    amount: 2.99,
-    paidVia: "Bakong KHQR",
-    transactionId: "KH07D5N1P8",
-  },
-  {
-    id: "5",
-    category: "plan",
-    title: "AI Basic pack",
-    date: "5 Apr 2026",
-    time: "09:12",
-    amount: 1.99,
-    paidVia: "Bakong KHQR",
-    transactionId: "KH53Q8R2T6",
-  },
-];
+const FILTERS: Category[] = ["all", "template", "ai", "both"];
 
-const FILTERS: Category[] = ["all", "plan", "template"];
+function categoryForPack(packId: string): Exclude<Category, "all"> {
+  if (packId === "design") return "template";
+  if (packId.startsWith("ai-")) return "ai";
+  return "both";
+}
 
-const totalPaid = TRANSACTIONS.reduce((sum, tx) => sum + tx.amount, 0).toFixed(
-  2,
-);
+function formatDateTime(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return { date, time };
+}
+
+function toTransaction(record: PaymentRecord): Transaction {
+  const { date, time } = formatDateTime(record.created_at);
+  return {
+    id: record.id,
+    category: categoryForPack(record.pack_id),
+    title: record.pack_name,
+    date,
+    time,
+    amount: record.amount_cents / 100,
+    paidVia: record.provider === "khqr" ? "Bakong KHQR" : "Stripe",
+    transactionId:
+      record.external_transaction_id ?? record.id.slice(0, 10).toUpperCase(),
+  };
+}
+
+const CATEGORY_ICON: Record<Exclude<Category, "all">, typeof Sparkles> = {
+  template: LayoutTemplate,
+  ai: Sparkles,
+  both: Layers,
+};
 
 export default function BillingHistory() {
   const { t } = useTranslation();
@@ -96,14 +83,37 @@ export default function BillingHistory() {
 
   const [filter, setFilter] = useState<Category>("all");
   const [selected, setSelected] = useState<Transaction | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPaymentHistory()
+      .then((res) => setTransactions(res.payments.map(toTransaction)))
+      .catch((err) => console.warn("Could not load billing history:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered =
     filter === "all"
-      ? TRANSACTIONS
-      : TRANSACTIONS.filter((tx) => tx.category === filter);
+      ? transactions
+      : transactions.filter((tx) => tx.category === filter);
+
+  const totalPaid = transactions
+    .reduce((sum, tx) => sum + tx.amount, 0)
+    .toFixed(2);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <Button
+        size="compact"
+        variant="default"
+        className="mb-6"
+        onClick={() => navigate("/billing")}
+      >
+        <ArrowLeft size={15} strokeWidth={2} />
+        {t("billingHistory.back")}
+      </Button>
+
       <h1 className="text-3xl font-bold">
         <span className="text-text">{t("billingHistory.title")}</span>{" "}
         <span className="text-brand italic">
@@ -133,13 +143,11 @@ export default function BillingHistory() {
           <p className="text-sm text-text-secondary">
             {t("billingHistory.stats.renewal")}
           </p>
-          <p className="mt-1 text-xl font-bold text-text">
-            {STATS.renewal}
-          </p>
+          <p className="mt-1 text-xl font-bold text-text">{STATS.renewal}</p>
         </div>
       </div>
 
-      <div className="mt-6 flex items-center gap-2">
+      <div className="mt-6 flex items-center gap-2 flex-wrap">
         {FILTERS.map((key) => (
           <button
             key={key}
@@ -158,56 +166,48 @@ export default function BillingHistory() {
       </div>
 
       <div className="mt-4 w-full max-w-2xl rounded-2xl border border-line overflow-hidden">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="p-6 text-sm text-text-secondary text-center">
+            {t("billingHistory.loading")}
+          </p>
+        ) : filtered.length === 0 ? (
           <p className="p-6 text-sm text-text-secondary text-center">
             {t("billingHistory.empty")}
           </p>
         ) : (
-          filtered.map((tx, i) => (
-            <button
-              key={tx.id}
-              type="button"
-              onClick={() => setSelected(tx)}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 sm:p-5 text-left hover:bg-surface-2 transition-colors",
-                i > 0 && "border-t border-line",
-              )}
-            >
-              <span className="text-brand inline-flex items-center justify-center shrink-0">
-                {tx.category === "plan" ? (
-                  <Sparkles size={18} strokeWidth={2.5} />
-                ) : (
-                  <LayoutTemplate size={18} strokeWidth={2.5} />
+          filtered.map((tx, i) => {
+            const Icon = CATEGORY_ICON[tx.category];
+            return (
+              <button
+                key={tx.id}
+                type="button"
+                onClick={() => setSelected(tx)}
+                className={cn(
+                  "w-full flex items-center gap-3 p-4 sm:p-5 text-left hover:bg-surface-2 transition-colors",
+                  i > 0 && "border-t border-line",
                 )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-text">{tx.title}</p>
-                <p className="text-sm text-text-secondary mt-0.5">
-                  {tx.date} · {tx.time}
-                </p>
-              </div>
-              <span className="font-bold text-brand shrink-0">
-                - ${tx.amount.toFixed(2)}
-              </span>
-              <ChevronRight
-                size={18}
-                className="text-text-secondary shrink-0"
-              />
-            </button>
-          ))
+              >
+                <span className="text-brand inline-flex items-center justify-center shrink-0">
+                  <Icon size={18} strokeWidth={2.5} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-text">{tx.title}</p>
+                  <p className="text-sm text-text-secondary mt-0.5">
+                    {tx.date} · {tx.time}
+                  </p>
+                </div>
+                <span className="font-bold text-brand shrink-0">
+                  - ${tx.amount.toFixed(2)}
+                </span>
+                <ChevronRight
+                  size={18}
+                  className="text-text-secondary shrink-0"
+                />
+              </button>
+            );
+          })
         )}
       </div>
-
-      <Button
-        size="compact"
-        variant="outline"
-        className="mt-6"
-        onClick={() => navigate("/billing")}
-      >
-        <ArrowLeft size={15} strokeWidth={2} />
-        {t("billingHistory.back")}
-      </Button>
-
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -263,9 +263,7 @@ export default function BillingHistory() {
                     key={label}
                     className="flex items-center justify-between py-2 border-b border-line last:border-b-0"
                   >
-                    <span className="text-sm text-text-secondary">
-                      {label}
-                    </span>
+                    <span className="text-sm text-text-secondary">{label}</span>
                     <span className="text-sm font-medium text-text">
                       {value}
                     </span>
