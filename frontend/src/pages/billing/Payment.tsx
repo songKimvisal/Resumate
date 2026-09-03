@@ -21,6 +21,7 @@ import { grantAiCredits } from "../../lib/api/credits";
 import { grantPdfSaves } from "../../lib/api/pdfs";
 import { grantJobAnalyses } from "../../lib/api/analyses";
 import { grantTemplatePack } from "../../lib/api/templates";
+import { recordPayment } from "../../lib/api/payments";
 import { consumePendingTemplateId } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
@@ -39,8 +40,8 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-const MOCK_KHQR_SUCCESS_DELAY_MS = 5000;
-const MOCK_STRIPE_PROCESSING_MS = 1500;
+const MOCK_KHQR_SUCCESS_DELAY_MS = 500;
+const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -91,25 +92,9 @@ export default function Payment() {
     cardName.trim().length > 0;
 
   const fulfillPurchase = async (packId: PackId) => {
+    if (!planData) return;
     subscribeToPlan(packToPlanId(packId), packId);
-    try {
-      const pdfs = await grantPdfSaves(packId);
-      setPdfs(pdfs.total, pdfs.used);
-    } catch (err) {
-      console.warn("Could not grant PDF saves:", err);
-    }
-    try {
-      const credits = await grantAiCredits(packId);
-      setCredits(credits.total, credits.used);
-    } catch (err) {
-      console.warn("Could not grant AI credits:", err);
-    }
-    try {
-      const analyses = await grantJobAnalyses(packId);
-      setAnalyses(analyses.total, analyses.used);
-    } catch (err) {
-      console.warn("Could not grant job analyses:", err);
-    }
+
     const pendingId = consumePendingTemplateId();
     const pendingPreset = pendingId
       ? TEMPLATE_PRESETS.find((p) => p.id === pendingId)
@@ -117,15 +102,45 @@ export default function Payment() {
     const shouldApplyPending =
       Boolean(pendingPreset) &&
       (packUnlocksAllTemplates(packId) || packIncludesTemplates(packId));
+    const [pdfsResult, creditsResult, analysesResult, templatesResult] =
+      await Promise.allSettled([
+        grantPdfSaves(packId),
+        grantAiCredits(packId),
+        grantJobAnalyses(packId),
+        grantTemplatePack(packId, pendingId),
+        recordPayment({
+          packId,
+          packName: planData.name,
+          provider: paymentMethod === "khqr" ? "khqr" : "stripe",
+          amountCents: Math.round(parseFloat(planData.price) * 100),
+        }),
+      ]);
+
+    if (pdfsResult.status === "fulfilled") {
+      setPdfs(pdfsResult.value.total, pdfsResult.value.used);
+    } else {
+      console.warn("Could not grant PDF saves:", pdfsResult.reason);
+    }
+
+    if (creditsResult.status === "fulfilled") {
+      setCredits(creditsResult.value.total, creditsResult.value.used);
+    } else {
+      console.warn("Could not grant AI credits:", creditsResult.reason);
+    }
+
+    if (analysesResult.status === "fulfilled") {
+      setAnalyses(analysesResult.value.total, analysesResult.value.used);
+    } else {
+      console.warn("Could not grant job analyses:", analysesResult.reason);
+    }
 
     let unlockedCount = 0;
     let templateSlots = 0;
-    try {
-      const entitlements = await grantTemplatePack(packId, pendingId);
-      unlockedCount = entitlements.unlockedTemplateIds.length;
-      templateSlots = entitlements.templateSlots;
-    } catch (err) {
-      console.warn("Could not grant templates:", err);
+    if (templatesResult.status === "fulfilled") {
+      unlockedCount = templatesResult.value.unlockedTemplateIds.length;
+      templateSlots = templatesResult.value.templateSlots;
+    } else {
+      console.warn("Could not grant templates:", templatesResult.reason);
     }
 
     if (packUnlocksAllTemplates(packId)) {
@@ -164,9 +179,6 @@ export default function Payment() {
     }
     navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
   };
-
-  // KHQR: show a live countdown and simulate detecting the payment after a
-  // short delay - there's no backend/webhook in this repo to poll yet.
   useEffect(() => {
     if (!planData || paymentMethod !== "khqr") return;
 
@@ -182,8 +194,6 @@ export default function Payment() {
       clearInterval(interval);
       clearTimeout(successTimeout);
     };
-    // fulfillPurchase is recreated each render; the timeout is reset with paymentMethod/planData.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, planData]);
 
   if (!planData) return null;
