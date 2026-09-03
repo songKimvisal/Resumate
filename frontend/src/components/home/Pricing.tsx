@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/UseAuth";
 import { setPendingPlan } from "../../lib/session";
 import { usePacks } from "../../hooks/usePacks";
 import type { NeedId, PackId } from "../../types/billing";
-import { NeedTabs, PackCard, PackCarousel } from "./PackPicker";
+import { NeedTabs, PackCarousel, TemplateTierCards } from "./PackPicker";
 
 export default function Pricing() {
   const { t } = useTranslation();
@@ -28,6 +28,22 @@ export default function Pricing() {
       setPendingPlan(packId);
       navigate("/login");
     }
+  };
+
+  // A premium template needs to be picked, so send that to the marketplace.
+  // Customization unlock is account-wide (works on any free template, no
+  // resume needed to choose it), so it can go straight to checkout.
+  const handleTierSelect = (tier: 1 | 2) => {
+    if (loading) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (tier === 2) {
+      navigate("/marketplace", { state: { pickTemplates: true } });
+      return;
+    }
+    navigate("/billing/payment", { state: { flat: "customization" } });
   };
 
   return (
@@ -58,13 +74,9 @@ export default function Pricing() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="mx-auto mt-8 max-w-sm sm:mt-10"
+            className="mt-8 sm:mt-10"
           >
-            <PackCard
-              pack={byNeed.design[0]}
-              loading={loading}
-              onSelect={() => handlePackClick("design")}
-            />
+            <TemplateTierCards onSelect={handleTierSelect} />
           </motion.div>
         )}
 
@@ -81,7 +93,7 @@ export default function Pricing() {
               packs={byNeed.ai}
               popularBadge={t("home.pricing.mostPopular")}
               loading={loading}
-              onSelect={handlePackClick}
+              onSelect={(i) => handlePackClick(byNeed.ai[i].id)}
             />
           </motion.div>
         )}
@@ -99,7 +111,7 @@ export default function Pricing() {
               packs={byNeed.both}
               popularBadge={t("home.pricing.bestValue")}
               loading={loading}
-              onSelect={handlePackClick}
+              onSelect={(i) => handlePackClick(byNeed.both[i].id)}
             />
           </motion.div>
         )}

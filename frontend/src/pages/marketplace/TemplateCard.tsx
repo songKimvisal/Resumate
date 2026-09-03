@@ -3,8 +3,11 @@ import { useTranslation } from "react-i18next";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { demoResumeForPreset } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
-import { usePacks } from "../../hooks/usePacks";
-import { canClaimTemplateSlot, hasTemplateAccess } from "../../lib/templateAccess";
+import {
+  canClaimTemplateSlot,
+  hasTemplateAccess,
+  PREMIUM_TEMPLATE_PRICE,
+} from "../../lib/templateAccess";
 import { useEntitlementStore } from "../../store/entitlementStore";
 
 export default function TemplateCard({
@@ -15,11 +18,16 @@ export default function TemplateCard({
   onSelect: (preset: TemplatePreset) => void;
 }) {
   const { t } = useTranslation();
-  const { design } = usePacks();
   const isPremium = preset.tier === "premium";
   const unlockedIds = useEntitlementStore((s) => s.unlockedTemplateIds);
   const templateSlots = useEntitlementStore((s) => s.templateSlots);
-  const hasAccess = hasTemplateAccess(preset.id, unlockedIds, templateSlots);
+  const ownedIds = useEntitlementStore((s) => s.ownedTemplateIds);
+  const hasAccess = hasTemplateAccess(
+    preset.id,
+    unlockedIds,
+    templateSlots,
+    ownedIds,
+  );
   const canClaim = canClaimTemplateSlot(templateSlots, unlockedIds.length);
   const resume = useMemo(
     () => demoResumeForPreset(preset.customization),
@@ -45,7 +53,7 @@ export default function TemplateCard({
                 {canClaim
                   ? t("marketplace.premiumOverlay.claim")
                   : t("marketplace.premiumOverlay.unlockFor", {
-                      price: design.price,
+                      price: PREMIUM_TEMPLATE_PRICE,
                     })}
               </span>
             </div>

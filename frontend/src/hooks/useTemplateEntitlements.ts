@@ -16,7 +16,6 @@ export function useHydrateTemplateEntitlements() {
         if (!cancelled) applyTemplateEntitlements(entitlements);
       })
       .catch(() => {
-        // Keep the cached local entitlements if the API is briefly unavailable.
       });
     return () => {
       cancelled = true;

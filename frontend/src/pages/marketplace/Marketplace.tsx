@@ -48,6 +48,7 @@ export default function Marketplace() {
   const applyingRef = useRef(false);
   const unlockedTemplateIds = useEntitlementStore((s) => s.unlockedTemplateIds);
   const templateSlots = useEntitlementStore((s) => s.templateSlots);
+  const ownedTemplateIds = useEntitlementStore((s) => s.ownedTemplateIds);
   const remainingSlots = remainingTemplateSlots(
     templateSlots,
     unlockedTemplateIds.length,
@@ -84,14 +85,14 @@ export default function Marketplace() {
           tierFilter === "all"
             ? true
             : tierFilter === "available"
-              ? canUseTemplate(p, unlockedTemplateIds, templateSlots)
+              ? canUseTemplate(p, unlockedTemplateIds, templateSlots, ownedTemplateIds)
               : p.tier === tierFilter;
         return (
           matchesTier &&
           (industryFilter.length === 0 || industryFilter.includes(p.industry))
         );
       }),
-    [templateSlots, unlockedTemplateIds, tierFilter, industryFilter],
+    [templateSlots, unlockedTemplateIds, ownedTemplateIds, tierFilter, industryFilter],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -136,7 +137,12 @@ export default function Marketplace() {
     if (applyingRef.current) return;
     if (
       preset.tier === "premium" &&
-      !hasTemplateAccess(preset.id, unlockedTemplateIds, templateSlots)
+      !hasTemplateAccess(
+        preset.id,
+        unlockedTemplateIds,
+        templateSlots,
+        ownedTemplateIds,
+      )
     ) {
       if (remainingSlots > 0) {
         applyingRef.current = true;
@@ -183,6 +189,7 @@ export default function Marketplace() {
       await applyChosenTemplate(
         pendingUnlock.preset,
         pendingUnlock.customization,
+        !restyleCurrent,
       );
       navigate("/builder");
       setPendingUnlock(null);
@@ -433,6 +440,7 @@ export default function Marketplace() {
         preset={pendingUnlock?.preset ?? null}
         onCancel={() => setPendingUnlock(null)}
         onUnlock={confirmUnlock}
+        asNewResume={!restyleCurrent}
       />
     </div>
   );

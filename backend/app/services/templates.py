@@ -49,6 +49,8 @@ def _from_row(row: dict) -> TemplateEntitlements:
         pack_id=pack_id if pack_id in SLOTS_BY_PACK else None,
         template_slots=int(row.get("template_slots", 0) or 0),
         unlocked_template_ids=_parse_ids(row.get("unlocked_template_ids")),
+        customization_unlocked=bool(row.get("customization_unlocked", False)),
+        premium_templates_owned=_parse_ids(row.get("premium_templates_owned")),
     )
 
 
@@ -95,3 +97,27 @@ def unlock_template(user_id: str, template_id: str) -> tuple[bool, TemplateEntit
         return False, get_entitlements(user_id)
     entitlements = _from_row(row)
     return bool(row.get("unlocked")), entitlements
+
+
+def unlock_customization(user_id: str) -> TemplateEntitlements:
+    """Flat $1 purchase: colors/fonts/layout on free templates, account-wide."""
+    row = rest_rpc("unlock_customization", {"p_user_id": user_id})
+    if not isinstance(row, dict) or not row:
+        return get_entitlements(user_id)
+    return _from_row(row)
+
+
+def purchase_premium_template(
+    user_id: str, template_id: str
+) -> tuple[bool, TemplateEntitlements]:
+    """Flat $1.99 purchase: owns this one premium template outright, with its
+    own customization, independent of pack slots."""
+    if template_id not in PREMIUM_TEMPLATE_IDS:
+        return False, get_entitlements(user_id)
+    row = rest_rpc(
+        "purchase_premium_template",
+        {"p_user_id": user_id, "p_template_id": template_id},
+    )
+    if not isinstance(row, dict) or not row:
+        return False, get_entitlements(user_id)
+    return True, _from_row(row)
