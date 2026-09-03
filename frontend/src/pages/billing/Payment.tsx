@@ -57,9 +57,7 @@ export default function Payment() {
   const setPdfs = useSubscriptionStore((s) => s.setPdfs);
   const setAnalyses = useSubscriptionStore((s) => s.setAnalyses);
 
-  const checkout = location.state as
-    | { pack?: PackId; plan?: PlanId }
-    | null;
+  const checkout = location.state as { pack?: PackId; plan?: PlanId } | null;
   const { all: packs } = usePacks();
   const planData =
     (isPackId(checkout?.pack)
@@ -154,7 +152,10 @@ export default function Payment() {
 
   const continueAfterPay = (next: AfterPay) => {
     if (next === "pick") {
-      navigate("/marketplace", { replace: true, state: { pickTemplates: true } });
+      navigate("/marketplace", {
+        replace: true,
+        state: { pickTemplates: true },
+      });
       return;
     }
     if (next === "browse") {
@@ -318,7 +319,9 @@ export default function Payment() {
                       inputMode="numeric"
                       value={cardCvc}
                       onChange={(e) =>
-                        setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
+                        setCardCvc(
+                          e.target.value.replace(/\D/g, "").slice(0, 4),
+                        )
                       }
                       className="flex-1"
                     />
@@ -382,7 +385,7 @@ export default function Payment() {
           </div>
         ) : (
           <div className="rounded-2xl border border-line p-5 sm:p-6">
-            <p className="font-bold text-brand">
+            <p className="font-bold text-brand text-center">
               {t("billing.payment.orderSummary.title")}
             </p>
             <div className="mt-3">{subscriptionHeader}</div>

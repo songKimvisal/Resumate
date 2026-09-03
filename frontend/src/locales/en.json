@@ -625,7 +625,7 @@
           },
           {
             "title": "Check your score",
-            "desc": "0–100% resume strength. Fix missing items. Download as A4 PDF."
+            "desc": "0 to 100% resume strength. Fix missing items. Download as A4 PDF."
           }
         ]
       },
@@ -720,7 +720,7 @@
           },
           {
             "name": "Pro",
-            "price": "6.99",
+            "price": "4.99",
             "period": "one-time",
             "features": [
               "60 smart writing credits",
@@ -765,7 +765,7 @@
           },
           {
             "name": "Everything",
-            "price": "7.99",
+            "price": "6.99",
             "period": "one-time",
             "features": [
               "All templates, unlocked",
@@ -808,7 +808,7 @@
         },
         {
           "name": "Everything",
-          "price": "7.99",
+          "price": "6.99",
           "tagline": "The full pack. Pay once. Nothing renews.",
           "includesLabel": "Includes",
           "features": [

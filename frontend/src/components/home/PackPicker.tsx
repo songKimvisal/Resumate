@@ -126,8 +126,6 @@ export function PackCarousel({
       scrollToIndex(start >= 0 ? start : 0, "auto"),
     );
     return () => cancelAnimationFrame(id);
-    // Mount once per pack set - parent remounts with key={need}.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

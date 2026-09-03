@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useJobAnalyses } from "../../hooks/useJobAnalyses";
 
-/** Remaining interview sets / job reports share the job-analysis quota. */
 export default function UsageQuotaBanner({
   kind,
 }: {

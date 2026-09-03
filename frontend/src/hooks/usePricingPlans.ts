@@ -13,9 +13,6 @@ export interface PricingPlan {
 }
 
 type RawPricingPlan = Omit<PricingPlan, "id">;
-
-// home.pricing.plans is always ordered Free, Starter, Everything in every
-// locale. Those map to free / starter / pro for existing entitlement gates.
 const PLAN_ID_ORDER: PlanId[] = ["free", "starter", "pro"];
 
 export function usePricingPlans(): PricingPlan[] {

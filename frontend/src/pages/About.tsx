@@ -246,7 +246,7 @@ export default function About() {
               className="space-y-3 rounded-xl border border-brand/60 bg-bg p-4 min-[375px]:p-5 sm:space-y-4 sm:p-6"
             >
               <span className="text-brand">{missionIcons[i]}</span>
-              <h3 className="border-b border-line pb-2.5 text-[15px] font-semibold leading-snug sm:pb-3 sm:text-base">
+              <h3 className="border-b border-line pb-2.5 text-[15px] font-semibold leading-snug sm:pb-3 sm:text-base mt-2.5">
                 {card.title}
               </h3>
               <p className={bodyClass}>{card.desc}</p>
