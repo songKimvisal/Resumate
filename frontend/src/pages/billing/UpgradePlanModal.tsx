@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { usePacks } from "../../hooks/usePacks";
-import { NeedTabs, PackCard, PackCarousel } from "../../components/home/PackPicker";
+import {
+  NeedTabs,
+  PackCarousel,
+  TemplateTierCards,
+} from "../../components/home/PackPicker";
 import type { NeedId, PackId } from "../../types/billing";
 
 export default function UpgradePlanModal({
@@ -18,6 +23,7 @@ export default function UpgradePlanModal({
   initialNeed?: NeedId;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { byNeed } = usePacks();
   const [need, setNeed] = useState<NeedId>(initialNeed);
 
@@ -28,6 +34,18 @@ export default function UpgradePlanModal({
   const popularBadge = t(
     need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
   );
+
+  // A premium template needs to be picked, so send that to the marketplace.
+  // Customization unlock is account-wide (works on any free template, no
+  // resume needed to choose it), so it can go straight to checkout.
+  const handleTierSelect = (tier: 1 | 2) => {
+    onClose();
+    if (tier === 2) {
+      navigate("/marketplace", { state: { pickTemplates: true } });
+      return;
+    }
+    navigate("/billing/payment", { state: { flat: "customization" } });
+  };
 
   return (
     <AnimatePresence>
@@ -83,12 +101,9 @@ export default function UpgradePlanModal({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="mx-auto mt-6 max-w-sm"
+                    className="mt-6"
                   >
-                    <PackCard
-                      pack={packs[0]}
-                      onSelect={() => onSelectPack("design")}
-                    />
+                    <TemplateTierCards onSelect={handleTierSelect} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -102,7 +117,7 @@ export default function UpgradePlanModal({
                     <PackCarousel
                       packs={packs}
                       popularBadge={popularBadge}
-                      onSelect={onSelectPack}
+                      onSelect={(i) => onSelectPack(packs[i].id)}
                     />
                   </motion.div>
                 )}

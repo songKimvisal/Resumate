@@ -688,7 +688,32 @@
         "price": "1.99",
         "period": "one-time",
         "desc": "Pick any template and unlock colors, fonts, and layout.",
-        "cta": "Get Design Only"
+        "cta": "Get Design Only",
+        "tiers": [
+          {
+            "name": "Unlock customization",
+            "price": "1.00",
+            "period": "one-time",
+            "features": [
+              "Colors, fonts, and layout",
+              "Works on any free template",
+              "One-time, nothing renews"
+            ],
+            "cta": "Unlock customization"
+          },
+          {
+            "name": "Premium template",
+            "price": "1.99",
+            "period": "one-time",
+            "features": [
+              "One premium template, unlocked",
+              "Its own customization options",
+              "One-time, nothing renews"
+            ],
+            "cta": "Browse premium templates",
+            "popular": true
+          }
+        ]
       },
       "ai": {
         "label": "Just the AI. Keep your free template.",
@@ -1103,6 +1128,12 @@
       "title": "Customize",
       "subtitle": "Start with the basics this appears at the top of your resume.",
       "contentButton": "Content",
+      "customizationUnlock": {
+        "title": "Unlock customization",
+        "description": "Colors, fonts, and layout on any free template. One-time purchase, nothing renews.",
+        "cta": "Unlock for ${{price}}",
+        "cancel": "Cancel"
+      },
       "nav": {
         "layout": "Layout",
         "header": "Header",
@@ -1533,6 +1564,8 @@
       "title": "Unlock {{style}}",
       "description": "One-time. Nothing renews.",
       "claimDescription": "Your pack includes a template slot. Use it on this design.",
+      "buyTemplateCta": "Buy this template - ${{price}}",
+      "orDivider": "or get more with a bundle",
       "chooseLabel": "What do you need?",
       "cancel": "Cancel",
       "claimCta": "Unlock with your pack",

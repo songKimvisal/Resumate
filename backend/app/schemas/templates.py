@@ -17,6 +17,8 @@ class TemplateEntitlements(BaseModel):
     pack_id: PackId | None = None
     template_slots: int = 0
     unlocked_template_ids: list[str] = Field(default_factory=list)
+    customization_unlocked: bool = False
+    premium_templates_owned: list[str] = Field(default_factory=list)
 
 
 class GrantTemplatesRequest(BaseModel):
@@ -25,4 +27,8 @@ class GrantTemplatesRequest(BaseModel):
 
 
 class UnlockTemplateRequest(BaseModel):
+    template_id: str = Field(min_length=1)
+
+
+class PurchaseTemplateRequest(BaseModel):
     template_id: str = Field(min_length=1)

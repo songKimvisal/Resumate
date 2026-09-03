@@ -1,7 +1,10 @@
 import { requestBackend } from "./client";
-import type { PackId } from "../../types/billing";
 
 export type Provider = "stripe" | "khqr";
+
+/** A real pack purchase, or a flat a-la-carte SKU ("customization-unlock",
+ * "template:<template_id>") for the one-time $1/$1.99 purchases. */
+export type PaymentSku = string;
 
 export interface PaymentRecord {
   id: string;
@@ -20,7 +23,7 @@ export function getPaymentHistory() {
 }
 
 export function recordPayment(params: {
-  packId: PackId;
+  packId: PaymentSku;
   packName: string;
   provider: Provider;
   amountCents: number;

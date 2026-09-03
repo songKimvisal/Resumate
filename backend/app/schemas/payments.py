@@ -2,13 +2,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.schemas.credits import PackId
-
 Provider = Literal["stripe", "khqr"]
 
 
 class RecordPaymentRequest(BaseModel):
-    pack_id: PackId
+    # A real PackId for pack purchases, or a flat-purchase SKU string
+    # ("customization-unlock", "template:<template_id>") for the one-time
+    # $1/$1.99 a-la-carte purchases that aren't part of the pack system.
+    pack_id: str = Field(min_length=1)
     pack_name: str
     provider: Provider
     amount_cents: int = Field(ge=0)

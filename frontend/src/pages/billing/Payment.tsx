@@ -20,11 +20,21 @@ import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { grantAiCredits } from "../../lib/api/credits";
 import { grantPdfSaves } from "../../lib/api/pdfs";
 import { grantJobAnalyses } from "../../lib/api/analyses";
-import { grantTemplatePack } from "../../lib/api/templates";
+import {
+  grantTemplatePack,
+  purchasePremiumTemplate,
+  unlockCustomization,
+} from "../../lib/api/templates";
 import { recordPayment } from "../../lib/api/payments";
-import { consumePendingTemplateId } from "../../lib/session";
+import {
+  consumePendingTemplateAsNewResume,
+  consumePendingTemplateId,
+  peekPendingTemplateId,
+} from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
+  CUSTOMIZATION_UNLOCK_PRICE,
+  PREMIUM_TEMPLATE_PRICE,
   packIncludesTemplates,
   packUnlocksAllTemplates,
   remainingTemplateSlots,
@@ -58,9 +68,13 @@ export default function Payment() {
   const setPdfs = useSubscriptionStore((s) => s.setPdfs);
   const setAnalyses = useSubscriptionStore((s) => s.setAnalyses);
 
-  const checkout = location.state as { pack?: PackId; plan?: PlanId } | null;
+  type FlatKind = "customization" | "premium-template";
+  const checkout = location.state as
+    | { pack?: PackId; plan?: PlanId; flat?: undefined }
+    | { flat: FlatKind; pack?: undefined; plan?: undefined }
+    | null;
   const { all: packs } = usePacks();
-  const planData =
+  const packPlanData =
     (isPackId(checkout?.pack)
       ? packs.find((p) => p.id === checkout.pack)
       : undefined) ??
@@ -69,6 +83,39 @@ export default function Payment() {
       : checkout?.plan === "starter"
         ? packs.find((p) => p.id === "both-starter")
         : undefined);
+
+  // The two flat, non-pack a-la-carte purchases: $1 to unlock customization
+  // on free templates, $1.99 to buy one specific premium template outright.
+  // Both reuse the pack checkout UI below (same KHQR/Stripe mock flow) but
+  // skip the pack-quota grants entirely.
+  const pendingTemplateId = peekPendingTemplateId();
+  const pendingTemplatePreset = pendingTemplateId
+    ? TEMPLATE_PRESETS.find((p) => p.id === pendingTemplateId)
+    : undefined;
+  const flatPlanData =
+    checkout?.flat === "customization"
+      ? {
+          id: "customization-unlock",
+          name: t("builder.customizePage.customizationUnlock.title"),
+          price: CUSTOMIZATION_UNLOCK_PRICE,
+          cta: t("builder.customizePage.customizationUnlock.cta", {
+            price: CUSTOMIZATION_UNLOCK_PRICE,
+          }),
+        }
+      : checkout?.flat === "premium-template" && pendingTemplatePreset
+        ? {
+            id: `template:${pendingTemplatePreset.id}`,
+            name: t(
+              `marketplace.styleNames.${pendingTemplatePreset.styleKey}`,
+            ),
+            price: PREMIUM_TEMPLATE_PRICE,
+            cta: t("marketplace.unlockModal.buyTemplateCta", {
+              price: PREMIUM_TEMPLATE_PRICE,
+            }),
+          }
+        : undefined;
+
+  const planData = packPlanData ?? flatPlanData;
 
   useEffect(() => {
     if (!planData) navigate("/billing", { replace: true });
@@ -91,11 +138,63 @@ export default function Payment() {
     cardCvc.length >= 3 &&
     cardName.trim().length > 0;
 
-  const fulfillPurchase = async (packId: PackId) => {
+  const fulfillFlatPurchase = async (flat: FlatKind) => {
+    if (!flatPlanData) return;
+    const provider = paymentMethod === "khqr" ? "khqr" : "stripe";
+    const amountCents = Math.round(parseFloat(flatPlanData.price) * 100);
+
+    try {
+      await recordPayment({
+        packId: flatPlanData.id,
+        packName: flatPlanData.name,
+        provider,
+        amountCents,
+      });
+    } catch (err) {
+      console.warn("Could not record payment:", err);
+    }
+
+    if (flat === "customization") {
+      try {
+        await unlockCustomization();
+      } catch (err) {
+        console.warn("Could not unlock customization:", err);
+      }
+      setAfterPay("builder");
+      setShowSuccess(true);
+      return;
+    }
+
+    const templateId = consumePendingTemplateId();
+    const asNewResume = consumePendingTemplateAsNewResume();
+    const preset = templateId
+      ? TEMPLATE_PRESETS.find((p) => p.id === templateId)
+      : undefined;
+    if (templateId) {
+      try {
+        await purchasePremiumTemplate(templateId);
+      } catch (err) {
+        console.warn("Could not purchase template:", err);
+      }
+    }
+    setAfterPay("builder");
+    if (preset) {
+      await applyMarketplaceTemplate({
+        customization: preset.customization,
+        templateId: preset.id,
+        title: t(`marketplace.styleNames.${preset.styleKey}`),
+        asNewResume,
+      }).catch((err) => console.warn("Could not apply template:", err));
+    }
+    setShowSuccess(true);
+  };
+
+  const fulfillPackPurchase = async (packId: PackId) => {
     if (!planData) return;
     subscribeToPlan(packToPlanId(packId), packId);
 
     const pendingId = consumePendingTemplateId();
+    const pendingAsNewResume = consumePendingTemplateAsNewResume();
     const pendingPreset = pendingId
       ? TEMPLATE_PRESETS.find((p) => p.id === pendingId)
       : undefined;
@@ -159,10 +258,21 @@ export default function Payment() {
         customization: pendingPreset.customization,
         templateId: pendingPreset.id,
         title: t(`marketplace.styleNames.${pendingPreset.styleKey}`),
+        asNewResume: pendingAsNewResume,
       }).finally(showSuccess);
       return;
     }
     showSuccess();
+  };
+
+  const fulfillPurchase = async () => {
+    if (checkout?.flat) {
+      await fulfillFlatPurchase(checkout.flat);
+      return;
+    }
+    if (planData && isPackId(planData.id)) {
+      await fulfillPackPurchase(planData.id);
+    }
   };
 
   const continueAfterPay = (next: AfterPay) => {
@@ -187,7 +297,7 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     const successTimeout = setTimeout(() => {
-      void fulfillPurchase(planData.id);
+      void fulfillPurchase();
     }, MOCK_KHQR_SUCCESS_DELAY_MS);
 
     return () => {
@@ -202,7 +312,7 @@ export default function Payment() {
     if (!isStripeFormValid || processing) return;
     setProcessing(true);
     setTimeout(() => {
-      void fulfillPurchase(planData.id).finally(() => setProcessing(false));
+      void fulfillPurchase().finally(() => setProcessing(false));
     }, MOCK_STRIPE_PROCESSING_MS);
   };
 

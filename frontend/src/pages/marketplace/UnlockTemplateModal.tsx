@@ -8,14 +8,10 @@ import ResumePreview from "../../components/resume/ResumePreview";
 import ResumePreviewOverlay from "../../components/resume/ResumePreviewOverlay";
 import { demoResumeForPreset } from "../../data/demoResume";
 import type { TemplatePreset } from "../../data/templates";
-import {
-  NeedTabs,
-  PackCard,
-  PackCarousel,
-} from "../../components/home/PackPicker";
+import { NeedTabs, PackCard, PackCarousel } from "../../components/home/PackPicker";
 import { usePacks } from "../../hooks/usePacks";
 import { setPendingTemplateId } from "../../lib/session";
-import { canClaimTemplateSlot } from "../../lib/templateAccess";
+import { canClaimTemplateSlot, PREMIUM_TEMPLATE_PRICE } from "../../lib/templateAccess";
 import { useEntitlementStore } from "../../store/entitlementStore";
 import type { NeedId, PackId } from "../../types/billing";
 
@@ -26,11 +22,17 @@ export default function UnlockTemplateModal({
   preset,
   onCancel,
   onUnlock,
+  asNewResume = true,
 }: {
   open: boolean;
   preset: TemplatePreset | null;
   onCancel: () => void;
   onUnlock: () => void | Promise<void>;
+  /** Whether paying for this template (pack checkout or direct buy) should
+   * land on a fresh resume or restyle whatever resume is already open.
+   * Default true (browsing the marketplace for a new resume); pass false
+   * when unlocking the template already applied to a resume in progress. */
+  asNewResume?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -40,10 +42,16 @@ export default function UnlockTemplateModal({
   const canClaim = canClaimTemplateSlot(templateSlots, unlockedCount);
   const [need, setNeed] = useState<NeedId>("design");
   const [previewOpen, setPreviewOpen] = useState(false);
-  const packs = byNeed[need];
-  const popularBadge = t(
-    need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
-  );
+  const packs = byNeed.both;
+  const popularBadge = t("home.pricing.bestValue");
+  const premiumTemplateTier = (
+    t("home.pricing.design.tiers", { returnObjects: true }) as {
+      name: string;
+      price: string;
+      period: string;
+      features: string[];
+    }[]
+  )[1];
 
   const previewResume = useMemo(
     () => (preset ? demoResumeForPreset(preset.customization) : null),
@@ -59,9 +67,16 @@ export default function UnlockTemplateModal({
 
   const checkout = (packId: PackId) => {
     if (!preset) return;
-    setPendingTemplateId(preset.id);
+    setPendingTemplateId(preset.id, asNewResume);
     onCancel();
     navigate("/billing/payment", { state: { pack: packId } });
+  };
+
+  const buyDirect = () => {
+    if (!preset) return;
+    setPendingTemplateId(preset.id, asNewResume);
+    onCancel();
+    navigate("/billing/payment", { state: { flat: "premium-template" } });
   };
 
   const styleName = preset
@@ -162,7 +177,7 @@ export default function UnlockTemplateModal({
                           label={t("marketplace.unlockModal.chooseLabel")}
                           ids={UNLOCK_NEEDS}
                           align="start"
-                          className="w-full lg:max-w-[26rem]"
+                          className="w-full lg:max-w-104"
                         />
                         <p className="mt-2.5 text-sm text-text-secondary">
                           {t(`home.pricing.${need}.label`)}
@@ -179,13 +194,16 @@ export default function UnlockTemplateModal({
                             transition={{ duration: 0.15 }}
                             className="mx-auto mt-5 w-full max-w-sm lg:mx-0"
                           >
-                            {packs[0] && (
-                              <PackCard
-                                pack={packs[0]}
-                                compact
-                                onSelect={() => checkout("design")}
-                              />
-                            )}
+                            <PackCard
+                              pack={{
+                                ...premiumTemplateTier,
+                                cta: t("marketplace.unlockModal.buyTemplateCta", {
+                                  price: PREMIUM_TEMPLATE_PRICE,
+                                }),
+                              }}
+                              compact
+                              onSelect={buyDirect}
+                            />
                           </motion.div>
                         ) : (
                           <motion.div
@@ -199,7 +217,7 @@ export default function UnlockTemplateModal({
                             <PackCarousel
                               packs={packs}
                               popularBadge={popularBadge}
-                              onSelect={checkout}
+                              onSelect={(i) => checkout(packs[i].id)}
                               contained
                             />
                           </motion.div>

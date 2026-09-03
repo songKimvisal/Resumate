@@ -7,12 +7,16 @@ export interface TemplateEntitlements {
   packId: PackId | null;
   templateSlots: number;
   unlockedTemplateIds: string[];
+  ownedTemplateIds: string[];
+  customizationUnlocked: boolean;
 }
 
 type ApiEntitlements = {
   pack_id?: string | null;
   template_slots?: number;
   unlocked_template_ids?: string[];
+  premium_templates_owned?: string[];
+  customization_unlocked?: boolean;
 };
 
 function fromApi(data: ApiEntitlements): TemplateEntitlements {
@@ -25,6 +29,12 @@ function fromApi(data: ApiEntitlements): TemplateEntitlements {
           (id): id is string => typeof id === "string",
         )
       : [],
+    ownedTemplateIds: Array.isArray(data.premium_templates_owned)
+      ? data.premium_templates_owned.filter(
+          (id): id is string => typeof id === "string",
+        )
+      : [],
+    customizationUnlocked: data.customization_unlocked === true,
   };
 }
 
@@ -32,6 +42,8 @@ export function applyTemplateEntitlements(data: TemplateEntitlements) {
   useEntitlementStore.getState().setEntitlements(
     data.unlockedTemplateIds,
     data.templateSlots,
+    data.ownedTemplateIds,
+    data.customizationUnlocked,
   );
   if (data.packId) {
     useSubscriptionStore
@@ -63,6 +75,31 @@ export async function grantTemplatePack(
 
 export async function unlockPremiumTemplate(templateId: string) {
   const data = await requestBackend<ApiEntitlements>("/api/templates/unlock", {
+    method: "POST",
+    body: { template_id: templateId },
+  });
+  const entitlements = fromApi(data);
+  applyTemplateEntitlements(entitlements);
+  return entitlements;
+}
+
+/** Flat $1 purchase: unlocks colors/fonts/layout on free templates. Call
+ * only after the payment has been recorded. */
+export async function unlockCustomization() {
+  const data = await requestBackend<ApiEntitlements>(
+    "/api/templates/unlock-customization",
+    { method: "POST" },
+  );
+  const entitlements = fromApi(data);
+  applyTemplateEntitlements(entitlements);
+  return entitlements;
+}
+
+/** Flat $1.99 purchase: owns this one premium template outright, with its
+ * own customization, independent of pack slots. Call only after the
+ * payment has been recorded. */
+export async function purchasePremiumTemplate(templateId: string) {
+  const data = await requestBackend<ApiEntitlements>("/api/templates/purchase", {
     method: "POST",
     body: { template_id: templateId },
   });

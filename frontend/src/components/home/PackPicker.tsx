@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import type { PurchasePack } from "../../hooks/usePacks";
-import type { NeedId, PackId } from "../../types/billing";
+import type { NeedId } from "../../types/billing";
 
 const NEED_IDS: NeedId[] = ["design", "ai", "both"];
 
@@ -79,12 +79,21 @@ export function PackCarousel({
   loading = false,
   onSelect,
   contained = false,
+  columns = 3,
+  className,
 }: {
-  packs: PurchasePack[];
+  packs: Omit<PurchasePack, "id">[];
   popularBadge: string;
   loading?: boolean;
-  onSelect: (packId: PackId) => void;
+  /** Called with the pack's index in `packs` (not a PackId - some callers,
+   * like the flat template tiers, aren't real packs). */
+  onSelect: (index: number) => void;
   contained?: boolean;
+  /** How many columns the grid settles into once it stops scrolling
+   * (md/lg breakpoint, see `gridMin` below). Most packs come in 3s; the
+   * flat template tiers come in 2s. */
+  columns?: 2 | 3;
+  className?: string;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(() => {
@@ -230,7 +239,7 @@ export function PackCarousel({
   }, [packs]);
 
   return (
-    <div>
+    <div className={className}>
       <div
         ref={scrollerRef}
         className={cn(
@@ -238,13 +247,19 @@ export function PackCarousel({
           "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           "snap-x snap-mandatory cursor-grab touch-pan-x active:cursor-grabbing",
           contained
-            ? "auto-cols-[minmax(15.5rem,calc(100%-1.5rem))] grid-flow-col lg:cursor-auto lg:grid-flow-row lg:grid-cols-3 lg:auto-cols-auto lg:gap-3 lg:overflow-visible lg:snap-none"
-            : "-mx-4 auto-cols-[min(100%,20.5rem)] grid-flow-col px-4 md:mx-0 md:cursor-auto md:grid-flow-row md:grid-cols-3 md:auto-cols-auto md:gap-5 md:overflow-visible md:px-0 md:snap-none",
+            ? cn(
+                "auto-cols-[minmax(15.5rem,calc(100%-1.5rem))] grid-flow-col lg:cursor-auto lg:grid-flow-row lg:auto-cols-auto lg:gap-3 lg:overflow-visible lg:snap-none",
+                columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3",
+              )
+            : cn(
+                "-mx-4 auto-cols-[min(100%,20.5rem)] grid-flow-col px-4 md:mx-0 md:cursor-auto md:grid-flow-row md:auto-cols-auto md:gap-5 md:overflow-visible md:px-0 md:snap-none",
+                columns === 2 ? "md:grid-cols-2" : "md:grid-cols-3",
+              ),
         )}
       >
-        {packs.map((pack) => (
+        {packs.map((pack, i) => (
           <div
-            key={pack.id}
+            key={pack.name}
             className={cn(
               "flex h-full min-h-full snap-center",
               contained
@@ -256,7 +271,7 @@ export function PackCarousel({
               pack={pack}
               badge={pack.popular ? popularBadge : undefined}
               loading={loading}
-              onSelect={() => onSelect(pack.id)}
+              onSelect={() => onSelect(i)}
               compact={contained}
             />
           </div>
@@ -272,7 +287,7 @@ export function PackCarousel({
         >
           {packs.map((pack, i) => (
             <button
-              key={pack.id}
+              key={pack.name}
               type="button"
               aria-label={pack.name}
               aria-current={i === active}
@@ -289,6 +304,44 @@ export function PackCarousel({
   );
 }
 
+/**
+ * "Just templates" tab: the two flat, a-la-carte purchases ($1 customization
+ * unlock, $1.99 premium template) shown as swipeable cards, matching the AI
+ * and Both tabs' carousel. The free tier isn't repeated here - it's already
+ * covered by the "Or start free..." line under the pricing section. Neither
+ * card is an abstract checkout you can complete from this tab: customization
+ * needs a template already picked, a premium template needs to be chosen -
+ * so the CTAs route the viewer into the builder/marketplace instead.
+ */
+export function TemplateTierCards({
+  onSelect,
+}: {
+  onSelect: (tier: 1 | 2) => void;
+}) {
+  const { t } = useTranslation();
+  const tiers = t("home.pricing.design.tiers", {
+    returnObjects: true,
+  }) as {
+    name: string;
+    price: string;
+    period: string;
+    features: string[];
+    cta: string;
+    popular?: boolean;
+  }[];
+  const bestValueBadge = t("home.pricing.bestValue");
+
+  return (
+    <PackCarousel
+      packs={tiers}
+      popularBadge={bestValueBadge}
+      columns={2}
+      className="mx-auto max-w-2xl"
+      onSelect={(i) => onSelect((i + 1) as 1 | 2)}
+    />
+  );
+}
+
 export function PackCard({
   pack,
   badge,
@@ -296,7 +349,7 @@ export function PackCard({
   onSelect,
   compact = false,
 }: {
-  pack: PurchasePack;
+  pack: Omit<PurchasePack, "id">;
   badge?: string;
   loading?: boolean;
   onSelect: () => void;
@@ -347,7 +400,7 @@ export function PackCard({
         )}
       >
         {pack.features.map((feature, i) => (
-          <FeatureCheck key={`${pack.id}-feat-${i}`}>{feature}</FeatureCheck>
+          <FeatureCheck key={`${pack.name}-feat-${i}`}>{feature}</FeatureCheck>
         ))}
       </ul>
 
