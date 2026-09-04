@@ -297,6 +297,29 @@ const SIDEBAR_BG_VARIANTS: LayoutVariant[] = [
   "compactTech",
 ];
 
+/** Special layouts whose content splits into a main region and a second
+ *  (sidebar/rail) region - the Customize "Change Section Layout" control
+ *  offers a two-column drag grid for these instead of a single list. */
+const SPECIAL_TWO_REGION_VARIANTS: LayoutVariant[] = [
+  "designerBlock",
+  "techSplit",
+  "bankingClean",
+  "freshSidebar",
+  "navyAnalyst",
+  "ribbonFold",
+  "graphicPro",
+  "executiveCard",
+  "corporateBand",
+  "monoPill",
+  "compactTech",
+  "cleanHeaderSplit",
+  "warmColumns",
+];
+
+export function usesSpecialSectionColumns(variant: LayoutVariant | undefined) {
+  return !!variant && SPECIAL_TWO_REGION_VARIANTS.includes(variant);
+}
+
 /** Layouts where PhotoBox shape/size/border controls apply. */
 const PHOTO_VARIANTS: LayoutVariant[] = [
   "techSplit",

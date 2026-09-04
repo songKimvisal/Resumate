@@ -311,7 +311,6 @@ function applyPagePlan(
   plan: PagePlan,
   pageIndex: number,
 ): Resume {
-  const useExperience = resume.experience.length > 0;
   const mergedJobs = mergeSlices(plan.jobs);
   const mergedEdu = mergeSlices(plan.education);
 
@@ -368,37 +367,33 @@ function applyPagePlan(
       stackoverflow: plan.showContact ? resume.personal.stackoverflow : [],
       telegram: plan.showContact ? resume.personal.telegram : [],
     },
-    experience: useExperience
-      ? mapJob(resume.experience, (item, slice) => ({
-          ...item,
-          description: slice.description,
-          jobTitle: slice.showMeta
-            ? item.jobTitle
-            : item.jobTitle
-              ? `${item.jobTitle} (continued)`
-              : "Continued",
-          company: slice.showMeta ? item.company : "",
-          location: slice.showMeta ? item.location : "",
-          startDate: slice.showMeta ? item.startDate : "",
-          endDate: slice.showMeta ? item.endDate : "",
-          current: slice.showMeta ? item.current : false,
-        }))
-      : [],
-    noExperience: useExperience
-      ? []
-      : mapJob(resume.noExperience, (item, slice) => ({
-          ...item,
-          description: slice.description,
-          title: slice.showMeta
-            ? item.title
-            : item.title
-              ? `${item.title} (continued)`
-              : "Continued",
-          subtitle: slice.showMeta ? item.subtitle : "",
-          startDate: slice.showMeta ? item.startDate : "",
-          endDate: slice.showMeta ? item.endDate : "",
-          current: slice.showMeta ? item.current : false,
-        })),
+    experience: mapJob(resume.experience, (item, slice) => ({
+      ...item,
+      description: slice.description,
+      jobTitle: slice.showMeta
+        ? item.jobTitle
+        : item.jobTitle
+          ? `${item.jobTitle} (continued)`
+          : "Continued",
+      company: slice.showMeta ? item.company : "",
+      location: slice.showMeta ? item.location : "",
+      startDate: slice.showMeta ? item.startDate : "",
+      endDate: slice.showMeta ? item.endDate : "",
+      current: slice.showMeta ? item.current : false,
+    })),
+    noExperience: mapJob(resume.noExperience, (item, slice) => ({
+      ...item,
+      description: slice.description,
+      title: slice.showMeta
+        ? item.title
+        : item.title
+          ? `${item.title} (continued)`
+          : "Continued",
+      subtitle: slice.showMeta ? item.subtitle : "",
+      startDate: slice.showMeta ? item.startDate : "",
+      endDate: slice.showMeta ? item.endDate : "",
+      current: slice.showMeta ? item.current : false,
+    })),
     education: mergedEdu
       .map((slice) => {
         const item = resume.education.find((e) => e.id === slice.id);

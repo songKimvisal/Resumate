@@ -10,6 +10,8 @@ export const FRESHGRAD_PREMIUM_TEMPLATES = [
     ["cleanMinimal", "modernCreative"],
     {
       layoutVariant: "freshSidebar",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["education", "skills", "language"],
       accentColor: "#12344A",
       sidebarBgColor: "#12344A",
       bodyBgColor: "#FFFFFF",
@@ -52,6 +54,8 @@ export const FRESHGRAD_PREMIUM_TEMPLATES = [
     ["cleanMinimal", "professional"],
     {
       layoutVariant: "graduateFocus",
+      specialSectionOrder: ["education", "experience", "skills", "language", "references"],
+      specialSidebarKeys: [],
       accentColor: "#12344A",
       bodyBgColor: "#F8FAFC",
       bodyTextColor: "#1B2430",

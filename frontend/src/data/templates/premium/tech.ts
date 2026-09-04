@@ -10,6 +10,8 @@ export const TECH_PREMIUM_TEMPLATES = [
     ["modernCreative", "boldConfident"],
     {
       layoutVariant: "monoPill",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["skills", "language"],
       accentColor: "#1A1A1A",
       sidebarBgColor: "#1A1A1A",
       bodyBgColor: "#FFFFFF",
@@ -52,6 +54,8 @@ export const TECH_PREMIUM_TEMPLATES = [
     ["modernCreative", "professional"],
     {
       layoutVariant: "compactTech",
+      specialSectionOrder: ["skills", "language", "education", "experience", "references"],
+      specialSidebarKeys: ["skills", "language", "education"],
       accentColor: "#111827",
       sidebarBgColor: "#F3F4F6",
       bodyBgColor: "#FFFFFF",

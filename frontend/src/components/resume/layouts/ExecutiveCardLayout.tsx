@@ -1,4 +1,7 @@
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
+import type { ReactNode } from "react";
+import type { SpecialSectionKey } from "../../../types/resume";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   AtsHeading,
   JobBlock,
@@ -56,6 +59,85 @@ export default function ExecutiveCardLayout({
     "#FFFFFF",
     customization.toggles.jobTitle ? accent : muted,
   );
+
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    skills: isFirstPage && skills.length > 0 && (
+      <section>
+        <AtsHeading title="Skills" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
+        <SkillsList
+          skills={skills}
+          customization={customization}
+          light
+        />
+      </section>
+    ),
+    language: isFirstPage && languages.length > 0 && (
+      <section>
+        <AtsHeading title="Languages" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
+        <ul className="space-y-1 text-[0.78em] text-white/90">
+          {languages.map((l, langIdx) => (
+            <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
+          ))}
+        </ul>
+      </section>
+    ),
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+          ))}
+        </div>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="space-y-3 text-[0.9em]">
+          {education.map((edu, eduIdx) => (
+            <div key={listKey(edu.id, eduIdx, "edu")}>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="font-bold">{edu.school}</p>
+                <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
+              </div>
+              <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
+              {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
+              {hasText(edu.description) && (
+                <RichHtml
+                  html={edu.description}
+                  className="rte-content mt-1 leading-relaxed"
+                  style={{ color: ink }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    references: includeReferences && references.length > 0 && (
+      <section>
+        <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="grid grid-cols-2 gap-4 text-[0.85em]">
+          {references.slice(0, 4).map((r, refIdx) => (
+            <div key={listKey(r.id, refIdx, "ref")}>
+              <p className="font-bold">{r.name}</p>
+              <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" / ")}</p>
+              {r.phone && <p style={{ color: muted }}>Phone: {r.phone}</p>}
+              {r.email && <p style={{ color: muted }}>Email: {r.email}</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
 
   return (
     <div
@@ -117,26 +199,7 @@ export default function ExecutiveCardLayout({
             </div>
           </section>
         )}
-        {isFirstPage && skills.length > 0 && (
-          <section>
-            <AtsHeading title="Skills" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
-            <SkillsList
-              skills={skills}
-              customization={customization}
-              light
-            />
-          </section>
-        )}
-        {isFirstPage && languages.length > 0 && (
-          <section>
-            <AtsHeading title="Languages" color="#fff" size={customization.headingsSize} ruleColor="rgba(255,255,255,0.35)" customization={customization} />
-            <ul className="space-y-1 text-[0.78em] text-white/90">
-              {languages.map((l, langIdx) => (
-                <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {sidebarBlocks}
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-7 pb-6 pt-8">
@@ -155,56 +218,8 @@ export default function ExecutiveCardLayout({
           </header>
         )}
 
-        {jobs.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-            <div className="space-y-4">
-              {jobs.map((job, jobIdx) => (
-                <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {education.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-            <div className="space-y-3 text-[0.9em]">
-              {education.map((edu, eduIdx) => (
-                <div key={listKey(edu.id, eduIdx, "edu")}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="font-bold">{edu.school}</p>
-                    <p className="shrink-0 tabular-nums" style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                  </div>
-                  <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
-                  {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
-                  {hasText(edu.description) && (
-                    <RichHtml
-                      html={edu.description}
-                      className="rte-content mt-1 leading-relaxed"
-                      style={{ color: ink }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {includeReferences && references.length > 0 && (
-          <section>
-            <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-            <div className="grid grid-cols-2 gap-4 text-[0.85em]">
-              {references.slice(0, 4).map((r, refIdx) => (
-                <div key={listKey(r.id, refIdx, "ref")}>
-                  <p className="font-bold">{r.name}</p>
-                  <p style={{ color: muted }}>{[r.jobTitle, r.company].filter(Boolean).join(" / ")}</p>
-                  {r.phone && <p style={{ color: muted }}>Phone: {r.phone}</p>}
-                  {r.email && <p style={{ color: muted }}>Email: {r.email}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
+        {mainBlocks.length > 0 && (
+          <div className="space-y-5">{mainBlocks}</div>
         )}
       </main>
     </div>

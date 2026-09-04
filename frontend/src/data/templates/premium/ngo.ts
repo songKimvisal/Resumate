@@ -10,6 +10,8 @@ export const NGO_PREMIUM_TEMPLATES = [
     ["friendly", "cleanMinimal"],
     {
       layoutVariant: "ribbonFold",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["skills", "language"],
       accentColor: "#0D7377",
       sidebarBgColor: "#163A4A",
       bodyBgColor: "#FFFFFF",
@@ -51,6 +53,8 @@ export const NGO_PREMIUM_TEMPLATES = [
     ["friendly", "professional"],
     {
       layoutVariant: "navyAnalyst",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["education", "skills", "language"],
       accentColor: "#1B4F72",
       sidebarBgColor: "#0E2438",
       bodyBgColor: "#FFFFFF",
@@ -92,6 +96,8 @@ export const NGO_PREMIUM_TEMPLATES = [
     ["professional", "cleanMinimal"],
     {
       layoutVariant: "monoTimeline",
+      specialSectionOrder: ["experience", "education", "skills", "language", "references"],
+      specialSidebarKeys: [],
       accentColor: "#0D7377",
       bodyBgColor: "#FFFFFF",
       bodyTextColor: "#1B2430",

@@ -1,4 +1,6 @@
 import { Phone, Mail, MapPin, Globe } from "lucide-react";
+import type { ReactNode } from "react";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   PhotoBox,
   RichHtml,
@@ -19,7 +21,7 @@ import {
   gpaText,
   listKey,
 } from "./shared";
-import type { Customization } from "../../../types/resume";
+import type { Customization, SpecialSectionKey } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
@@ -61,6 +63,104 @@ export default function TechSplitLayout({
     navy,
     customization.toggles.jobTitle ? accent : null,
   );
+
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Work Experience"
+          color={navy}
+          size={customization.headingsSize}
+          ruleWidth="full"
+          ruleColor={ATS.line}
+          customization={customization}
+        />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock
+              key={listKey(job.id, jobIdx, "job")}
+              job={job}
+              ink={ink}
+              muted={muted}
+              dateFmt={dateFmt}
+            />
+          ))}
+        </div>
+      </section>
+    ),
+    references: showRefs && (
+      <section>
+        <AtsHeading
+          title="References"
+          color={navy}
+          size={customization.headingsSize}
+          ruleWidth="full"
+          ruleColor={ATS.line}
+          customization={customization}
+        />
+        <ReferencesBlock
+          references={references}
+          includeReferences={includeReferences}
+          muted={muted}
+        />
+      </section>
+    ),
+    skills: isFirstPage && skills.length > 0 && (
+      <section>
+        <SideHeading title="Skills" size={customization.headingsSize} customization={customization} />
+        <div className="mt-2.5">
+          <SkillsList
+            skills={skills}
+            customization={customization}
+            light
+            fill="#fff"
+          />
+        </div>
+      </section>
+    ),
+    language: isFirstPage && languages.length > 0 && (
+      <section>
+        <SideHeading title="Languages" size={customization.headingsSize} customization={customization} />
+        <div className="mt-2.5 text-white/90">
+          <LanguagesBlock languages={languages} light showLevel={false} />
+        </div>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <SideHeading title="Education" size={customization.headingsSize} customization={customization} />
+        <div className="mt-2.5 space-y-3 text-[0.85em]">
+          {education.map((edu, eduIdx) => (
+            <div key={listKey(edu.id, eduIdx, "edu")}>
+              <p className="font-semibold">
+                {edu.degree || edu.field || edu.school}
+              </p>
+              <p className="opacity-90">
+                {[edu.school, dateRange(edu, dateFmt)]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              {edu.gpa && <p className="opacity-80">{gpaText(edu.gpa, customization)}</p>}
+              {hasText(edu.description) && (
+                <RichHtml
+                  html={edu.description}
+                  className="rte-content rte-on-dark mt-1 text-[0.95em] leading-relaxed"
+                  style={{ color: ATS.onDark }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
 
   return (
     <div
@@ -106,47 +206,7 @@ export default function TechSplitLayout({
             </section>
           )}
 
-          {jobs.length > 0 && (
-            <section>
-              <AtsHeading
-                title="Work Experience"
-                color={navy}
-                size={customization.headingsSize}
-                ruleWidth="full"
-                ruleColor={ATS.line}
-                customization={customization}
-              />
-              <div className="space-y-4">
-                {jobs.map((job, jobIdx) => (
-                  <JobBlock
-                    key={listKey(job.id, jobIdx, "job")}
-                    job={job}
-                    ink={ink}
-                    muted={muted}
-                    dateFmt={dateFmt}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {showRefs && (
-            <section>
-              <AtsHeading
-                title="References"
-                color={navy}
-                size={customization.headingsSize}
-                ruleWidth="full"
-                ruleColor={ATS.line}
-                customization={customization}
-              />
-              <ReferencesBlock
-                references={references}
-                includeReferences={includeReferences}
-                muted={muted}
-              />
-            </section>
-          )}
+          {mainBlocks}
         </div>
       </main>
 
@@ -183,59 +243,10 @@ export default function TechSplitLayout({
                 ))}
               </div>
             )}
-
-            {skills.length > 0 && (
-              <section>
-                <SideHeading title="Skills" size={customization.headingsSize} customization={customization} />
-                <div className="mt-2.5">
-                  <SkillsList
-                    skills={skills}
-                    customization={customization}
-                    light
-                    fill="#fff"
-                  />
-                </div>
-              </section>
-            )}
-
-            {languages.length > 0 && (
-              <section>
-                <SideHeading title="Languages" size={customization.headingsSize} customization={customization} />
-                <div className="mt-2.5 text-white/90">
-                  <LanguagesBlock languages={languages} light showLevel={false} />
-                </div>
-              </section>
-            )}
           </>
         )}
 
-        {education.length > 0 && (
-          <section>
-            <SideHeading title="Education" size={customization.headingsSize} customization={customization} />
-            <div className="mt-2.5 space-y-3 text-[0.85em]">
-              {education.map((edu, eduIdx) => (
-                <div key={listKey(edu.id, eduIdx, "edu")}>
-                  <p className="font-semibold">
-                    {edu.degree || edu.field || edu.school}
-                  </p>
-                  <p className="opacity-90">
-                    {[edu.school, dateRange(edu, dateFmt)]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                  {edu.gpa && <p className="opacity-80">{gpaText(edu.gpa, customization)}</p>}
-                  {hasText(edu.description) && (
-                    <RichHtml
-                      html={edu.description}
-                      className="rte-content rte-on-dark mt-1 text-[0.95em] leading-relaxed"
-                      style={{ color: ATS.onDark }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {sidebarBlocks}
       </aside>
     </div>
   );

@@ -1,4 +1,7 @@
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
+import type { ReactNode } from "react";
+import type { SpecialSectionKey } from "../../../types/resume";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   RichHtml,
   hasText,
@@ -58,6 +61,118 @@ export default function DesignerBlockLayout({
   );
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
+
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    skills: skills.length > 0 && (
+      <section>
+        <h2
+          className="mb-2.5 font-bold"
+          style={{
+            fontSize: customization.headingsSize,
+            color: "#fff",
+            ...headingCapStyle(customization),
+          }}
+        >
+          {resumeHeading("Skills", customization)}
+        </h2>
+        <SkillsList
+          skills={skills}
+          customization={customization}
+          light
+          fill="#fff"
+        />
+      </section>
+    ),
+    language: languages.length > 0 && (
+      <section>
+        <h2
+          className="mb-2.5 font-bold"
+          style={{
+            fontSize: customization.headingsSize,
+            color: "#fff",
+            ...headingCapStyle(customization),
+          }}
+        >
+          {resumeHeading("Languages", customization)}
+        </h2>
+        <ul className="space-y-1.5 text-[0.85em] text-white/90">
+          {languages.map((l, langIdx) => (
+            <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
+          ))}
+        </ul>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Education"
+          color={sidebar}
+          size={customization.headingsSize}
+          ruleWidth="full"
+          ruleColor={ATS.line}
+          customization={customization}
+        />
+        <div className="space-y-3">
+          {education.map((edu, eduIdx) => (
+            <EducationBlock
+              key={listKey(edu.id, eduIdx, "edu")}
+              edu={edu}
+              muted={muted}
+              ink={ink}
+              dateFmt={dateFmt}
+            />
+          ))}
+        </div>
+      </section>
+    ),
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Work Experience"
+          color={sidebar}
+          size={customization.headingsSize}
+          ruleWidth="full"
+          ruleColor={ATS.line}
+          customization={customization}
+        />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock
+              key={listKey(job.id, jobIdx, "job")}
+              job={job}
+              ink={ink}
+              muted={muted}
+              dateFmt={dateFmt}
+            />
+          ))}
+        </div>
+      </section>
+    ),
+    references: showRefs && (
+      <section>
+        <AtsHeading
+          title="References"
+          color={sidebar}
+          size={customization.headingsSize}
+          ruleWidth="full"
+          ruleColor={ATS.line}
+          customization={customization}
+        />
+        <ReferencesBlock
+          references={references}
+          includeReferences={includeReferences}
+          muted={muted}
+        />
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
 
   return (
     <div
@@ -131,45 +246,8 @@ export default function DesignerBlockLayout({
                 </section>
               )}
 
-              {skills.length > 0 && (
-                <section>
-                  <h2
-                    className="mb-2.5 font-bold"
-                    style={{
-                      fontSize: customization.headingsSize,
-                      color: "#fff",
-                      ...headingCapStyle(customization),
-                    }}
-                  >
-                    {resumeHeading("Skills", customization)}
-                  </h2>
-                  <SkillsList
-                    skills={skills}
-                    customization={customization}
-                    light
-                    fill="#fff"
-                  />
-                </section>
-              )}
-
-              {languages.length > 0 && (
-                <section>
-                  <h2
-                    className="mb-2.5 font-bold"
-                    style={{
-                      fontSize: customization.headingsSize,
-                      color: "#fff",
-                      ...headingCapStyle(customization),
-                    }}
-                  >
-                    {resumeHeading("Languages", customization)}
-                  </h2>
-                  <ul className="space-y-1.5 text-[0.85em] text-white/90">
-                    {languages.map((l, langIdx) => (
-                      <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
-                    ))}
-                  </ul>
-                </section>
+              {sidebarBlocks.length > 0 && (
+                <div className="flex flex-col gap-6">{sidebarBlocks}</div>
               )}
             </div>
           </>
@@ -195,70 +273,8 @@ export default function DesignerBlockLayout({
           </section>
         )}
 
-        {education.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading
-              title="Education"
-              color={sidebar}
-              size={customization.headingsSize}
-              ruleWidth="full"
-              ruleColor={ATS.line}
-              customization={customization}
-            />
-            <div className="space-y-3">
-              {education.map((edu, eduIdx) => (
-                <EducationBlock
-                  key={listKey(edu.id, eduIdx, "edu")}
-                  edu={edu}
-                  muted={muted}
-                  ink={ink}
-                  dateFmt={dateFmt}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {jobs.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading
-              title="Work Experience"
-              color={sidebar}
-              size={customization.headingsSize}
-              ruleWidth="full"
-              ruleColor={ATS.line}
-              customization={customization}
-            />
-            <div className="space-y-4">
-              {jobs.map((job, jobIdx) => (
-                <JobBlock
-                  key={listKey(job.id, jobIdx, "job")}
-                  job={job}
-                  ink={ink}
-                  muted={muted}
-                  dateFmt={dateFmt}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {showRefs && (
-          <section>
-            <AtsHeading
-              title="References"
-              color={sidebar}
-              size={customization.headingsSize}
-              ruleWidth="full"
-              ruleColor={ATS.line}
-              customization={customization}
-            />
-            <ReferencesBlock
-              references={references}
-              includeReferences={includeReferences}
-              muted={muted}
-            />
-          </section>
+        {mainBlocks.length > 0 && (
+          <div className="space-y-5">{mainBlocks}</div>
         )}
       </div>
     </div>

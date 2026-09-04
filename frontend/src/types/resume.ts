@@ -125,6 +125,16 @@ export type SectionOrderKey =
   | "experience"
   | "references"
   | "language";
+/** Reorderable content blocks inside a "special" (premium designer) layout.
+ *  Unlike the default layout's `SectionOrderKey`, education is its own
+ *  movable block here since premium layouts place it independently of
+ *  work experience (e.g. in a sidebar column). */
+export type SpecialSectionKey =
+  | "experience"
+  | "education"
+  | "skills"
+  | "language"
+  | "references";
 export type LayoutVariant =
   | "default"
   | "designerBlock"
@@ -188,6 +198,11 @@ export interface Customization {
   leftRightMargin: number;
   sectionOrder: SectionOrderKey[];
   sidebarKeys: SectionOrderKey[];
+  /** Section order/placement for "special" (premium designer) layouts only -
+   *  independent of `sectionOrder`/`sidebarKeys`, which the default layout
+   *  owns. Ignored unless `layoutVariant !== "default"`. */
+  specialSectionOrder: SpecialSectionKey[];
+  specialSidebarKeys: SpecialSectionKey[];
   toggles: CustomizationToggles;
 }
 
@@ -285,6 +300,14 @@ export const emptyResume: Resume = {
     leftRightMargin: 6,
     sectionOrder: ["skills", "experience", "references", "language"],
     sidebarKeys: ["skills", "references", "language"],
+    specialSectionOrder: [
+      "experience",
+      "education",
+      "skills",
+      "language",
+      "references",
+    ],
+    specialSidebarKeys: [],
     toggles: {
       fullName: false,
       jobTitle: true,

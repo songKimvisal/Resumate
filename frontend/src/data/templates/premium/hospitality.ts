@@ -37,6 +37,8 @@ export const HOSPITALITY_PREMIUM_TEMPLATES = [
     {
       ...CLEAN,
       layoutVariant: "designerBlock",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["skills", "language"],
       columns: "two",
       headerPosition: "left",
       showPhoto: true,
@@ -57,6 +59,8 @@ export const HOSPITALITY_PREMIUM_TEMPLATES = [
     {
       ...CLEAN,
       layoutVariant: "graphicPro",
+      specialSectionOrder: ["experience", "education", "skills", "language", "references"],
+      specialSidebarKeys: ["language"],
       columns: "two",
       showPhoto: true,
       photoShape: "square",
@@ -76,6 +80,8 @@ export const HOSPITALITY_PREMIUM_TEMPLATES = [
     {
       ...CLEAN,
       layoutVariant: "warmColumns",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["education", "skills", "language"],
       columns: "one",
       showPhoto: false,
       fullNameSize: 28,
