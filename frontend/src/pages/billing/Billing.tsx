@@ -6,10 +6,11 @@ import { Check, CreditCard, Lock, QrCode } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
-import { formatCardNumber, formatExpiry, detectCardBrand } from "../../lib/cardFormat";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { usePaymentMethodStore } from "../../store/paymentMethodStore";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { usePacks } from "../../hooks/usePacks";
+import { useCardForm } from "../../hooks/useCardForm";
 import UpgradePlanModal from "./UpgradePlanModal";
 import PageTitle from "../../components/layout/PageTitle";
 
@@ -31,39 +32,34 @@ export default function Billing() {
     pricingPlans.find((p) => p.id === plan) ??
     pricingPlans[0];
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("khqr");
+  const paymentMethod = usePaymentMethodStore((s) => s.preferredMethod);
+  const savedCard = usePaymentMethodStore((s) => s.savedCard);
+  const setPreferredMethod = usePaymentMethodStore((s) => s.setPreferredMethod);
+  const saveCardToStore = usePaymentMethodStore((s) => s.saveCard);
+  const clearCard = usePaymentMethodStore((s) => s.clearCard);
+
   const [editingMethod, setEditingMethod] = useState(false);
   const [draftMethod, setDraftMethod] = useState<PaymentMethod>(paymentMethod);
+  const [replacingCard, setReplacingCard] = useState(false);
+  const card = useCardForm();
 
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [savedCard, setSavedCard] = useState<{
-    brand: string;
-    last4: string;
-  } | null>(null);
-
-  const isStripeFormValid =
-    cardNumber.replace(/\s/g, "").length === 16 &&
-    /^\d{2}\/\d{2}$/.test(cardExpiry) &&
-    cardCvc.length >= 3 &&
-    cardName.trim().length > 0;
-
-  const canSaveMethod = draftMethod === "khqr" || isStripeFormValid;
+  const needsNewCard = draftMethod === "stripe" && (!savedCard || replacingCard);
+  const canSaveMethod = draftMethod === "khqr" || !needsNewCard || card.isValid;
 
   const openMethodEditor = () => {
     setDraftMethod(paymentMethod);
+    setReplacingCard(false);
+    card.reset();
     setEditingMethod(true);
   };
 
   const saveMethod = () => {
     if (!canSaveMethod) return;
-    if (draftMethod === "stripe") {
-      const digits = cardNumber.replace(/\s/g, "");
-      setSavedCard({ brand: detectCardBrand(digits), last4: digits.slice(-4) });
+    if (draftMethod === "stripe" && needsNewCard) {
+      saveCardToStore(card.toSavedCard());
+    } else {
+      setPreferredMethod(draftMethod);
     }
-    setPaymentMethod(draftMethod);
     setEditingMethod(false);
   };
 
@@ -212,64 +208,133 @@ export default function Billing() {
                         transition={{ duration: 0.22, ease: "easeOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-4 space-y-4 rounded-xl border border-line p-4">
-                          <Input
-                            id="billing-cc-name"
-                            name="ccname"
-                            autoComplete="cc-name"
-                            label={t("billing.paymentMethod.card.nameLabel")}
-                            placeholder={t(
-                              "billing.paymentMethod.card.namePlaceholder",
-                            )}
-                            value={cardName}
-                            onChange={(e) => setCardName(e.target.value)}
-                          />
-                          <Input
-                            id="billing-cc-number"
-                            name="cardnumber"
-                            autoComplete="cc-number"
-                            label={t("billing.paymentMethod.card.numberLabel")}
-                            placeholder="4242 4242 4242 4242"
-                            inputMode="numeric"
-                            value={cardNumber}
-                            onChange={(e) =>
-                              setCardNumber(formatCardNumber(e.target.value))
-                            }
-                          />
-                          <div className="flex gap-4">
-                            <Input
-                              id="billing-cc-exp"
-                              name="cc-exp"
-                              autoComplete="cc-exp"
-                              label={t("billing.paymentMethod.card.expiryLabel")}
-                              placeholder="MM/YY"
-                              inputMode="numeric"
-                              value={cardExpiry}
-                              onChange={(e) =>
-                                setCardExpiry(formatExpiry(e.target.value))
-                              }
-                              className="flex-1"
-                            />
-                            <Input
-                              id="billing-cc-csc"
-                              name="cvc"
-                              autoComplete="cc-csc"
-                              label={t("billing.paymentMethod.card.cvcLabel")}
-                              placeholder="123"
-                              inputMode="numeric"
-                              value={cardCvc}
-                              onChange={(e) =>
-                                setCardCvc(
-                                  e.target.value.replace(/\D/g, "").slice(0, 4),
-                                )
-                              }
-                              className="flex-1"
-                            />
-                          </div>
-                          <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                            <Lock size={12} strokeWidth={2} />
-                            {t("billing.paymentMethod.card.secureNote")}
-                          </p>
+                        <div className="mt-4 rounded-xl border border-line p-4">
+                          {needsNewCard ? (
+                            <div className="space-y-4">
+                              <Input
+                                id="billing-cc-name"
+                                name="ccname"
+                                autoComplete="cc-name"
+                                label={t("billing.paymentMethod.card.nameLabel")}
+                                placeholder={t(
+                                  "billing.paymentMethod.card.namePlaceholder",
+                                )}
+                                value={card.cardName}
+                                onChange={(e) =>
+                                  card.setCardName(e.target.value)
+                                }
+                                onBlur={() => card.touch("name")}
+                                error={card.errors.name}
+                              />
+                              <Input
+                                id="billing-cc-number"
+                                name="cardnumber"
+                                autoComplete="cc-number"
+                                label={t("billing.paymentMethod.card.numberLabel")}
+                                placeholder="4242 4242 4242 4242"
+                                inputMode="numeric"
+                                value={card.cardNumber}
+                                onChange={(e) =>
+                                  card.setCardNumber(e.target.value)
+                                }
+                                onBlur={() => card.touch("number")}
+                                error={card.errors.number}
+                                trailing={
+                                  card.brand !== "Card" ? card.brand : undefined
+                                }
+                              />
+                              <div className="flex gap-4">
+                                <Input
+                                  id="billing-cc-exp"
+                                  name="cc-exp"
+                                  autoComplete="cc-exp"
+                                  label={t(
+                                    "billing.paymentMethod.card.expiryLabel",
+                                  )}
+                                  placeholder="MM/YY"
+                                  inputMode="numeric"
+                                  value={card.cardExpiry}
+                                  onChange={(e) =>
+                                    card.setCardExpiry(e.target.value)
+                                  }
+                                  onBlur={() => card.touch("expiry")}
+                                  error={card.errors.expiry}
+                                  className="flex-1"
+                                />
+                                <Input
+                                  id="billing-cc-csc"
+                                  name="cvc"
+                                  type="password"
+                                  autoComplete="cc-csc"
+                                  label={t("billing.paymentMethod.card.cvcLabel")}
+                                  placeholder="123"
+                                  inputMode="numeric"
+                                  value={card.cardCvc}
+                                  onChange={(e) =>
+                                    card.setCardCvc(e.target.value)
+                                  }
+                                  onBlur={() => card.touch("cvc")}
+                                  error={card.errors.cvc}
+                                  className="flex-1"
+                                />
+                              </div>
+                              <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                                <Lock size={12} strokeWidth={2} />
+                                {t("billing.paymentMethod.card.secureNote")}
+                              </p>
+                              {savedCard && (
+                                <button
+                                  type="button"
+                                  onClick={() => setReplacingCard(false)}
+                                  className="text-sm font-medium text-brand hover:underline"
+                                >
+                                  {t("billing.paymentMethod.card.useSaved", {
+                                    brand: savedCard.brand,
+                                    last4: savedCard.last4,
+                                  })}
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <CreditCard
+                                size={20}
+                                className="shrink-0 text-text-secondary"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-text">
+                                  {savedCard!.brand} •••• {savedCard!.last4}
+                                </p>
+                                <p className="text-sm text-text-secondary">
+                                  {t("billing.paymentMethod.card.expires", {
+                                    expiry: savedCard!.expiry,
+                                  })}
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 flex-col items-end gap-1 text-sm font-medium">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    card.reset();
+                                    setReplacingCard(true);
+                                  }}
+                                  className="text-brand hover:underline"
+                                >
+                                  {t("billing.paymentMethod.card.replace")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    clearCard();
+                                    setDraftMethod("khqr");
+                                  }}
+                                  className="text-text-secondary hover:underline"
+                                >
+                                  {t("billing.paymentMethod.card.remove")}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

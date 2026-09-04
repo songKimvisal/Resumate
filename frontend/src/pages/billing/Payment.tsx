@@ -14,9 +14,10 @@ import {
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
-import { formatCardNumber, formatExpiry } from "../../lib/cardFormat";
 import { usePacks } from "../../hooks/usePacks";
+import { useCardForm } from "../../hooks/useCardForm";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
+import { usePaymentMethodStore } from "../../store/paymentMethodStore";
 import { grantAiCredits } from "../../lib/api/credits";
 import { grantPdfSaves } from "../../lib/api/pdfs";
 import { grantJobAnalyses } from "../../lib/api/analyses";
@@ -50,7 +51,7 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-const MOCK_KHQR_SUCCESS_DELAY_MS = 500;
+const MOCK_KHQR_VERIFY_DELAY_MS = 900;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -121,22 +122,30 @@ export default function Payment() {
     if (!planData) navigate("/billing", { replace: true });
   }, [planData, navigate]);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentProvider>("khqr");
+  const savedCard = usePaymentMethodStore((s) => s.savedCard);
+  const preferredMethod = usePaymentMethodStore((s) => s.preferredMethod);
+  const saveCardToStore = usePaymentMethodStore((s) => s.saveCard);
+
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentProvider>(preferredMethod);
   const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
+  const [verifyingKhqr, setVerifyingKhqr] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
-  const [cardName, setCardName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
+  const [useNewCard, setUseNewCard] = useState(!savedCard);
+  const card = useCardForm();
+  // The CVC is never stored (real processors don't allow it), so even a
+  // saved card must be re-verified with it at the moment of payment -
+  // otherwise checkout would silently charge a card with no confirmation.
+  const [savedCardCvc, setSavedCardCvc] = useState("");
   const [processing, setProcessing] = useState(false);
 
+  const usingSavedCard = paymentMethod === "stripe" && !!savedCard && !useNewCard;
+  const savedCardCvcValid = savedCardCvc.length >= 3 && savedCardCvc.length <= 4;
+
   const isStripeFormValid =
-    cardNumber.replace(/\s/g, "").length === 16 &&
-    /^\d{2}\/\d{2}$/.test(cardExpiry) &&
-    cardCvc.length >= 3 &&
-    cardName.trim().length > 0;
+    (usingSavedCard && savedCardCvcValid) || card.isValid;
 
   const fulfillFlatPurchase = async (flat: FlatKind) => {
     if (!flatPlanData) return;
@@ -296,23 +305,36 @@ export default function Payment() {
     const interval = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
-    const successTimeout = setTimeout(() => {
-      void fulfillPurchase();
-    }, MOCK_KHQR_SUCCESS_DELAY_MS);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(successTimeout);
-    };
+    return () => clearInterval(interval);
   }, [paymentMethod, planData]);
 
   if (!planData) return null;
+
+  // KHQR only ever completes when the shopper confirms they actually paid
+  // in their banking app - a real webhook would drive this in production,
+  // but nothing here should ever fire on a timer by itself.
+  const handleConfirmKhqr = () => {
+    if (verifyingKhqr || secondsLeft <= 0) return;
+    setVerifyingKhqr(true);
+    setTimeout(() => {
+      void fulfillPurchase().finally(() => setVerifyingKhqr(false));
+    }, MOCK_KHQR_VERIFY_DELAY_MS);
+  };
+
+  const regenerateKhqrCode = () => setSecondsLeft(QR_EXPIRY_SECONDS);
 
   const handlePay = () => {
     if (!isStripeFormValid || processing) return;
     setProcessing(true);
     setTimeout(() => {
-      void fulfillPurchase().finally(() => setProcessing(false));
+      void fulfillPurchase()
+        .then(() => {
+          if (!usingSavedCard) {
+            saveCardToStore(card.toSavedCard());
+          }
+        })
+        .finally(() => setProcessing(false));
     }, MOCK_STRIPE_PROCESSING_MS);
   };
 
@@ -392,64 +414,133 @@ export default function Payment() {
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 rounded-xl border border-line p-4 space-y-4">
-                  <Input
-                    id="cc-name"
-                    name="ccname"
-                    autoComplete="cc-name"
-                    label={t("billing.paymentMethod.card.nameLabel")}
-                    placeholder={t(
-                      "billing.paymentMethod.card.namePlaceholder",
-                    )}
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                  />
-                  <Input
-                    id="cc-number"
-                    name="cardnumber"
-                    autoComplete="cc-number"
-                    label={t("billing.paymentMethod.card.numberLabel")}
-                    placeholder="4242 4242 4242 4242"
-                    inputMode="numeric"
-                    value={cardNumber}
-                    onChange={(e) =>
-                      setCardNumber(formatCardNumber(e.target.value))
-                    }
-                  />
-                  <div className="flex gap-4">
-                    <Input
-                      id="cc-exp"
-                      name="cc-exp"
-                      autoComplete="cc-exp"
-                      label={t("billing.paymentMethod.card.expiryLabel")}
-                      placeholder="MM/YY"
-                      inputMode="numeric"
-                      value={cardExpiry}
-                      onChange={(e) =>
-                        setCardExpiry(formatExpiry(e.target.value))
-                      }
-                      className="flex-1"
-                    />
-                    <Input
-                      id="cc-csc"
-                      name="cvc"
-                      autoComplete="cc-csc"
-                      label={t("billing.paymentMethod.card.cvcLabel")}
-                      placeholder="123"
-                      inputMode="numeric"
-                      value={cardCvc}
-                      onChange={(e) =>
-                        setCardCvc(
-                          e.target.value.replace(/\D/g, "").slice(0, 4),
-                        )
-                      }
-                      className="flex-1"
-                    />
-                  </div>
-                  <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <Lock size={12} strokeWidth={2} />
-                    {t("billing.paymentMethod.card.secureNote")}
-                  </p>
+                <div className="mt-4 rounded-xl border border-line p-4">
+                  {savedCard && !useNewCard ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <CreditCard
+                          size={20}
+                          className="shrink-0 text-text-secondary"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-text">
+                            {savedCard.brand} •••• {savedCard.last4}
+                          </p>
+                          <p className="text-sm text-text-secondary">
+                            {t("billing.paymentMethod.card.expires", {
+                              expiry: savedCard.expiry,
+                            })}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            card.reset();
+                            setUseNewCard(true);
+                          }}
+                          className="shrink-0 text-sm font-medium text-brand hover:underline"
+                        >
+                          {t("billing.paymentMethod.card.replace")}
+                        </button>
+                      </div>
+                      <Input
+                        id="cc-saved-csc"
+                        name="cvc"
+                        type="password"
+                        autoComplete="cc-csc"
+                        label={t("billing.paymentMethod.card.cvcLabel")}
+                        placeholder="123"
+                        inputMode="numeric"
+                        className="max-w-28"
+                        value={savedCardCvc}
+                        onChange={(e) =>
+                          setSavedCardCvc(
+                            e.target.value.replace(/\D/g, "").slice(0, 4),
+                          )
+                        }
+                      />
+                      <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                        <Lock size={12} strokeWidth={2} />
+                        {t("billing.paymentMethod.card.reverifyNote")}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <Input
+                        id="cc-name"
+                        name="ccname"
+                        autoComplete="cc-name"
+                        label={t("billing.paymentMethod.card.nameLabel")}
+                        placeholder={t(
+                          "billing.paymentMethod.card.namePlaceholder",
+                        )}
+                        value={card.cardName}
+                        onChange={(e) => card.setCardName(e.target.value)}
+                        onBlur={() => card.touch("name")}
+                        error={card.errors.name}
+                      />
+                      <Input
+                        id="cc-number"
+                        name="cardnumber"
+                        autoComplete="cc-number"
+                        label={t("billing.paymentMethod.card.numberLabel")}
+                        placeholder="4242 4242 4242 4242"
+                        inputMode="numeric"
+                        value={card.cardNumber}
+                        onChange={(e) => card.setCardNumber(e.target.value)}
+                        onBlur={() => card.touch("number")}
+                        error={card.errors.number}
+                        trailing={
+                          card.brand !== "Card" ? card.brand : undefined
+                        }
+                      />
+                      <div className="flex gap-4">
+                        <Input
+                          id="cc-exp"
+                          name="cc-exp"
+                          autoComplete="cc-exp"
+                          label={t("billing.paymentMethod.card.expiryLabel")}
+                          placeholder="MM/YY"
+                          inputMode="numeric"
+                          value={card.cardExpiry}
+                          onChange={(e) => card.setCardExpiry(e.target.value)}
+                          onBlur={() => card.touch("expiry")}
+                          error={card.errors.expiry}
+                          className="flex-1"
+                        />
+                        <Input
+                          id="cc-csc"
+                          name="cvc"
+                          type="password"
+                          autoComplete="cc-csc"
+                          label={t("billing.paymentMethod.card.cvcLabel")}
+                          placeholder="123"
+                          inputMode="numeric"
+                          value={card.cardCvc}
+                          onChange={(e) => card.setCardCvc(e.target.value)}
+                          onBlur={() => card.touch("cvc")}
+                          error={card.errors.cvc}
+                          className="flex-1"
+                        />
+                      </div>
+                      <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                        <Lock size={12} strokeWidth={2} />
+                        {t("billing.paymentMethod.card.secureNote")}
+                      </p>
+                      {savedCard && (
+                        <button
+                          type="button"
+                          onClick={() => setUseNewCard(false)}
+                          className="text-sm font-medium text-brand hover:underline"
+                        >
+                          {t("billing.paymentMethod.card.useSaved", {
+                            brand: savedCard.brand,
+                            last4: savedCard.last4,
+                          })}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -483,21 +574,54 @@ export default function Payment() {
               </div>
             </div>
 
-            <p className="flex items-center justify-center gap-1.5 text-sm mt-4">
-              <Timer size={15} className="text-text-secondary" />
-              <span className="text-text-secondary">
-                {t("billing.payment.khqr.expiresIn")}
-              </span>
-              <span className="font-semibold text-brand">
-                {formatCountdown(secondsLeft)}
-              </span>
+            {secondsLeft > 0 ? (
+              <p className="flex items-center justify-center gap-1.5 text-sm mt-4">
+                <Timer size={15} className="text-text-secondary" />
+                <span className="text-text-secondary">
+                  {t("billing.payment.khqr.expiresIn")}
+                </span>
+                <span className="font-semibold text-brand">
+                  {formatCountdown(secondsLeft)}
+                </span>
+              </p>
+            ) : (
+              <p className="flex items-center justify-center gap-1.5 text-sm mt-4 text-destructive">
+                <Timer size={15} />
+                <span>{t("billing.payment.khqr.expired")}</span>
+              </p>
+            )}
+
+            <p className="text-center text-xs text-text-secondary mt-3 px-5">
+              {t("billing.payment.khqr.instructions")}
             </p>
 
             <div className="px-5 pb-5">
-              <Button className="mt-4 h-9 w-full" size="compact" disabled>
-                <Loader2 size={15} className="animate-spin" />
-                {t("billing.payment.khqr.waitingForPayment")}
-              </Button>
+              {secondsLeft > 0 ? (
+                <Button
+                  className="mt-3 h-9 w-full"
+                  size="compact"
+                  disabled={verifyingKhqr}
+                  onClick={handleConfirmKhqr}
+                >
+                  {verifyingKhqr ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      {t("billing.payment.khqr.verifying")}
+                    </>
+                  ) : (
+                    t("billing.payment.khqr.confirmCta")
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  className="mt-3 h-9 w-full"
+                  size="compact"
+                  variant="outline"
+                  onClick={regenerateKhqrCode}
+                >
+                  {t("billing.payment.khqr.regenerate")}
+                </Button>
+              )}
               <p className="text-center text-xs text-text-secondary mt-3">
                 {t("billing.payment.khqr.poweredBy")}
               </p>

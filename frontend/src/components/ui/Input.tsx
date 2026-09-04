@@ -5,12 +5,15 @@ interface FieldProps {
   label?: string;
   hint?: string;
   error?: string;
+  /** Optional adornment pinned to the input's right edge (e.g. a detected
+   *  card brand badge). Purely visual - doesn't affect the input's value. */
+  trailing?: React.ReactNode;
 }
 
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement> & FieldProps
->(({ label, hint, error, className, id, ...props }, ref) => {
+>(({ label, hint, error, trailing, className, id, ...props }, ref) => {
   const inputId = useFieldId(id);
   return (
     <div className="space-y-1.5">
@@ -22,22 +25,30 @@ export const Input = React.forwardRef<
           {label}
         </label>
       )}
-      <input
-        ref={ref}
-        aria-invalid={!!error}
-        className={cn(
-          "w-full h-10 px-3 rounded-lg border bg-bg text-sm text-text",
-          "placeholder:text-text-placeholder",
-          "focus:outline-none focus:ring-2 focus:ring-ring/50",
-          "transition-colors",
-          error
-            ? "border-destructive focus:border-destructive"
-            : "border-line focus:border-ring",
-          className,
+      <div className="relative">
+        <input
+          ref={ref}
+          aria-invalid={!!error}
+          className={cn(
+            "w-full h-10 px-3 rounded-lg border bg-bg text-sm text-text",
+            "placeholder:text-text-placeholder",
+            "focus:outline-none focus:ring-2 focus:ring-ring/50",
+            "transition-colors",
+            trailing && "pr-14",
+            error
+              ? "border-destructive focus:border-destructive"
+              : "border-line focus:border-ring",
+            className,
+          )}
+          {...props}
+          id={inputId}
+        />
+        {trailing && (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            {trailing}
+          </span>
         )}
-        {...props}
-        id={inputId}
-      />
+      </div>
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
       ) : (
