@@ -1,13 +1,3 @@
-"""
-Smart Rewrite: takes text the user already wrote (a summary, a job
-achievement, an education note) and asks Gemini to rewrite it to sound
-more professional and impactful, while keeping the same facts.
-
-If Gemini fails, we fall back to returning the user's original text
-unchanged (source="fallback") rather than showing an error - editing text
-is not critical enough to block the user over.
-"""
-
 import json
 import logging
 import re

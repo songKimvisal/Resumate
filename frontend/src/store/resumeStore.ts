@@ -18,12 +18,7 @@ import {
   moveIdBefore,
   resolveExperienceOrder,
 } from "../lib/experienceOrder";
-
-/** Generates ids for list items (experience entries, skills, ...) */
 export const uid = () => crypto.randomUUID();
-
-// resumes saved before fontSize became a plain px number stored it as this
-// enum - convert on load so old saves don't end up with a non-numeric size
 const LEGACY_FONT_SIZE_PX: Record<string, number> = {
   small: 13,
   medium: 14.5,
@@ -37,7 +32,6 @@ function normalizeFontSize(fontSize: unknown): number | undefined {
 
 interface ResumeState {
   resume: Resume;
-  /** true when there are changes not yet saved to Supabase */
   dirty: boolean;
 
   setResume: (resume: Resume) => void;
@@ -48,7 +42,6 @@ interface ResumeState {
 
   updatePersonal: (patch: Partial<PersonalInfo>) => void;
   updateCustomization: (patch: Partial<Customization>) => void;
-  /** Start a blank resume on a new template. Does not copy previous content. */
   startResumeFromTemplate: (
     customization: Partial<Customization>,
     title: string,
@@ -57,9 +50,7 @@ interface ResumeState {
   addExperience: () => void;
   updateExperience: (id: string, patch: Partial<ExperienceItem>) => void;
   removeExperience: (id: string) => void;
-  /** Move the entry with dragId to the position of overId */
   reorderExperience: (dragId: string, overId: string) => void;
-  /** Reorder jobs and internships/projects as one list. */
   reorderExperienceList: (dragId: string, overId: string) => void;
   setExperienceChoice: (choice: Resume["experienceChoice"]) => void;
 
@@ -100,10 +91,6 @@ export const useResumeStore = create<ResumeState>()(
     (set) => ({
   resume: emptyResume,
   dirty: false,
-
-  // backfills any customization fields missing from resumes saved before
-  // they existed, so older resumes don't silently break newer styling
-  // options (e.g. a saved pageBorder=true with no pageBorderWidth yet)
   setResume: (resume) =>
     set({
       resume: {

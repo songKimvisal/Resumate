@@ -198,9 +198,6 @@ export interface Customization {
   leftRightMargin: number;
   sectionOrder: SectionOrderKey[];
   sidebarKeys: SectionOrderKey[];
-  /** Section order/placement for "special" (premium designer) layouts only -
-   *  independent of `sectionOrder`/`sidebarKeys`, which the default layout
-   *  owns. Ignored unless `layoutVariant !== "default"`. */
   specialSectionOrder: SpecialSectionKey[];
   specialSidebarKeys: SpecialSectionKey[];
   toggles: CustomizationToggles;

@@ -23,7 +23,7 @@ import {
 import { extraExperienceTitle } from "../../lib/experienceDisplay";
 import { orderedExperienceEntries } from "../../lib/experienceOrder";
 import { withStableItemIds, listKey } from "../../lib/resumeIds";
-import { resumeHeading, resumePresent, resumeDegreeJoin, resumeDegreeFallback, resumeSheetLang } from "../../lib/resumeHeadings";
+import { resumeHeading, resumePresent, resumeDegreeJoin, resumeDegreeFallback, resumeSheetLang, resumeNameFallback, resumeTitleFallback } from "../../lib/resumeHeadings";
 import { ResumeChromeProvider } from "./layouts/shared";
 import { useResumeStore } from "../../store/resumeStore";
 import {
@@ -1418,7 +1418,7 @@ function HeaderBlock({
           color: customization.toggles.fullName ? theme.accentText : textColor,
         }}
       >
-        {personal.fullName || "Your Name"}
+        {personal.fullName || resumeNameFallback(customization)}
       </h1>
       <p
         className="font-medium"
@@ -1427,7 +1427,7 @@ function HeaderBlock({
           color: customization.toggles.jobTitle ? theme.accentText : textColor,
         }}
       >
-        {personal.jobTitle || "Job Title"}
+        {personal.jobTitle || resumeTitleFallback(customization)}
       </p>
       <div
         className={cn(
@@ -1503,7 +1503,7 @@ function SidebarHeaderBlock({
           color: customization.toggles.fullName ? theme.accentText : textColor,
         }}
       >
-        {personal.fullName || "Your Name"}
+        {personal.fullName || resumeNameFallback(customization)}
       </h1>
       <p
         className="font-medium"
@@ -1512,7 +1512,7 @@ function SidebarHeaderBlock({
           color: customization.toggles.jobTitle ? theme.accentText : textColor,
         }}
       >
-        {personal.jobTitle || "Job Title"}
+        {personal.jobTitle || resumeTitleFallback(customization)}
       </p>
       <div
         className="flex flex-col items-start gap-1.5 text-[0.8em] pt-1 text-left"

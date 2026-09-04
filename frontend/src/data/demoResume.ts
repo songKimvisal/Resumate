@@ -10,7 +10,7 @@ export const DEMO_RESUME: Resume = {
   title: "Demo resume",
   personal: {
     ...emptyResume.personal,
-    fullName: "Sokha Chan",
+    fullName: "Song Kimvisal",
     jobTitle: "Marketing Executive",
     email: "sokha.chan@email.com",
     phone: "+855 12 345 678",

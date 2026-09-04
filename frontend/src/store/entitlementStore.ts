@@ -3,10 +3,8 @@ import { persist } from "zustand/middleware";
 
 interface EntitlementState {
   unlockedTemplateIds: string[];
-  /** Templates bought directly for $1.99, outside the pack-slot system. */
   ownedTemplateIds: string[];
   templateSlots: number;
-  /** Flat $1 purchase: colors/fonts/layout on free templates, account-wide. */
   customizationUnlocked: boolean;
   isUnlocked: (templateId: string) => boolean;
   setEntitlements: (

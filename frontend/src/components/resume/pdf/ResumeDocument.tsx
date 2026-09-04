@@ -41,8 +41,10 @@ import {
   resumeDegreeJoin,
   resumeGpaLabel,
   resumeHeading,
+  resumeNameFallback,
   resumeNeedsKhmerFont,
   resumePresent,
+  resumeTitleFallback,
 } from "../../../lib/resumeHeadings";
 import { SpecialPdfDocument } from "./SpecialPdfLayouts";
 import { registerPdfFonts } from "./registerPdfFonts";
@@ -1333,10 +1335,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                   <Image src={personal.photoUrl} style={styles.photo} />
                 )}
                 <Text style={[styles.name, { textAlign: "center" }]}>
-                  {personal.fullName || "Your Name"}
+                  {personal.fullName || resumeNameFallback(c)}
                 </Text>
                 <Text style={[styles.jobTitle, { textAlign: "center" }]}>
-                  {personal.jobTitle || "Job Title"}
+                  {personal.jobTitle || resumeTitleFallback(c)}
                 </Text>
                 <ContactRow
                   items={contactItems}
@@ -1433,10 +1435,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
             <Image src={personal.photoUrl} style={styles.photoRow} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>
-                {personal.fullName || "Your Name"}
+                {personal.fullName || resumeNameFallback(c)}
               </Text>
               <Text style={styles.jobTitle}>
-                {personal.jobTitle || "Job Title"}
+                {personal.jobTitle || resumeTitleFallback(c)}
               </Text>
               <ContactRow
                 items={contactItems}
@@ -1456,10 +1458,10 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
                 <Image src={personal.photoUrl} style={styles.photo} />
               )}
               <Text style={styles.name}>
-                {personal.fullName || "Your Name"}
+                {personal.fullName || resumeNameFallback(c)}
               </Text>
               <Text style={styles.jobTitle}>
-                {personal.jobTitle || "Job Title"}
+                {personal.jobTitle || resumeTitleFallback(c)}
               </Text>
               <ContactRow
                 items={contactItems}

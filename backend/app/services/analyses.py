@@ -1,9 +1,5 @@
-"""Job-analysis quota: one consume unlocks match, interview set, and skill-gap report."""
-
 from app.schemas.analyses import PackId, AnalysisBalance
 from app.services.supabase_rest import rest_rpc
-
-# Same counts as the published pack tables. Design packs add none.
 ANALYSES_BY_PACK: dict[PackId, int] = {
     "design": 0,
     "ai-basic": 1,

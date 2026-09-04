@@ -1,5 +1,3 @@
-"""PostgREST helpers using the Supabase service role key."""
-
 import httpx
 from fastapi import HTTPException, status
 

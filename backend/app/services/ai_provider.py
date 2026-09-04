@@ -1,18 +1,3 @@
-"""
-Every AI feature (AI Design, Smart Rewrite, and future ones) calls
-generate_text() from here instead of talking to Gemini or Ollama directly.
-That means there's exactly one place that decides which AI provider is
-actually used - controlled by AI_PROVIDER in .env:
-
-  AI_PROVIDER=gemini  -> real Gemini API (used for the live/production site)
-  AI_PROVIDER=ollama  -> free local AI on your own computer via Ollama
-                          (unlimited requests, no daily limit, but requires
-                          Ollama running locally with a model pulled)
-
-Feature files just call generate_text(prompt, json_mode=True, ...) and get
-back plain text - they don't need to know or care which provider answered.
-"""
-
 import httpx
 from google import genai
 from google.genai import types
@@ -31,9 +16,6 @@ def generate_text(
     max_output_tokens: int = 1500,
     thinking_budget: int | None = None,
 ) -> str:
-    """Returns the AI's raw text response, from whichever provider is
-    configured. Callers that need JSON should pass json_mode=True and
-    parse the returned string themselves (e.g. json.loads(...))."""
     if settings.ai_provider == "ollama":
         return _generate_ollama(prompt, json_mode=json_mode, temperature=temperature)
     return _generate_gemini(

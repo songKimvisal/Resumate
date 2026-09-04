@@ -1,16 +1,3 @@
-"""
-Verifies the Supabase-issued JWT sent by the frontend as:
-    Authorization: Bearer <access_token>
-
-This project's Supabase instance uses the newer *JWT Signing Keys* system
-(asymmetric ECC/RSA keys), not the old shared HS256 secret. That means there
-is no secret to copy into .env at all - instead, Supabase publishes its
-current *public* key at a JWKS endpoint, and we verify the token's signature
-against that. PyJWT's PyJWKClient fetches + caches that key set for us and
-picks the right key by the token's `kid` header automatically, including
-handling key rotation (e.g. when a "standby key" becomes current).
-"""
-
 from functools import lru_cache
 
 import jwt

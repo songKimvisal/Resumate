@@ -33,7 +33,6 @@ const PHOTO_FIT_MODES = ["fill", "fit", "crop"] as const;
 const clamp = (v: number, min: number, max: number) =>
   Math.min(max, Math.max(min, v));
 
-/** Fields that let a user list more than one entry (e.g. two portfolio links) */
 const LINK_FIELD_KEYS = new Set<keyof PersonalInfo>([
   "portfolio",
   "website",
@@ -72,31 +71,31 @@ const DETAIL_FIELDS: {
   {
     key: "portfolio",
     labelKey: "portfolio",
-    placeholder: "behance.net/sokdara",
+    placeholder: "behance.net/songkimvisal",
     icon: Briefcase,
   },
   {
     key: "website",
     labelKey: "website",
-    placeholder: "sokdara.com",
+    placeholder: "songkimvisal.com",
     icon: Globe,
   },
   {
     key: "linkedin",
     labelKey: "linkedin",
-    placeholder: "linkedin.com/in/sokdara",
+    placeholder: "linkedin.com/in/songkimvisal",
     icon: Contact,
   },
   {
     key: "github",
     labelKey: "github",
-    placeholder: "github.com/sokdara",
+    placeholder: "github.com/songkimvisal",
     icon: SquareCode,
   },
   {
     key: "gitlab",
     labelKey: "gitlab",
-    placeholder: "gitlab.com/sokdara",
+    placeholder: "gitlab.com/songkimvisal",
     icon: GitBranch,
   },
   {
@@ -108,7 +107,7 @@ const DETAIL_FIELDS: {
   {
     key: "telegram",
     labelKey: "telegram",
-    placeholder: "@sokdara",
+    placeholder: "@songkimvisal",
     icon: Send,
   },
 ];
@@ -290,13 +289,13 @@ export default function Step1Personal() {
         <div className="order-2 sm:order-1 space-y-4">
           <Input
             label={t("builder.personal.fullName")}
-            placeholder="Sok Dara"
+            placeholder="Song Kimvisal"
             value={personal.fullName}
             onChange={(e) => updatePersonal({ fullName: e.target.value })}
           />
           <Input
             label={t("builder.personal.jobTitle")}
-            placeholder="Junior Accountant"
+            placeholder="Software Engineer"
             value={personal.jobTitle}
             onChange={(e) => updatePersonal({ jobTitle: e.target.value })}
           />
@@ -310,99 +309,99 @@ export default function Step1Personal() {
 
         {/* photo upload - hidden when the selected template has no photo slot */}
         {showPhoto && (
-        <div className="order-1 sm:order-2 space-y-2 text-center">
-          <p className="text-sm font-medium text-text">
-            {t("builder.personal.image")}
-          </p>
-          <div ref={photoBoxRef} className="size-36 mx-auto">
-            <button
-              onClick={onPhotoClick}
-              onPointerDown={onPhotoPointerDown}
-              onPointerMove={onPhotoPointerMove}
-              onPointerUp={onPhotoPointerUp}
-              onPointerLeave={onPhotoPointerUp}
-              className={cn(
-                "size-36 rounded-full bg-surface-2 border border-line overflow-hidden inline-flex items-center justify-center text-text-secondary hover:border-brand hover:text-brand transition-colors touch-none",
-                personal.photoUrl &&
-                  personal.photoFit === "crop" &&
-                  "cursor-grab active:cursor-grabbing",
-              )}
-              aria-label={t("builder.personal.uploadPhoto")}
-            >
-              {personal.photoUrl ? (
-                <img
-                  src={personal.photoUrl}
-                  alt=""
-                  draggable={false}
-                  style={photoImgStyle(personal)}
-                />
-              ) : (
-                <ImagePlus size={34} strokeWidth={1.6} />
-              )}
-            </button>
-          </div>
-
-          {personal.photoUrl && (
-            <>
-              <div className="flex items-center justify-center gap-1">
-                {PHOTO_FIT_MODES.map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => updatePersonal({ photoFit: mode })}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-medium border transition-colors",
-                      personal.photoFit === mode
-                        ? "border-brand text-brand"
-                        : "border-line text-text-secondary hover:bg-primary hover:text-primary-foreground",
-                    )}
-                  >
-                    {t(`builder.personal.photoFit.${mode}`)}
-                  </button>
-                ))}
-              </div>
-
-              {personal.photoFit === "crop" && (
-                <div className="space-y-1">
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.05}
-                    value={personal.photoZoom}
-                    onChange={(e) =>
-                      updatePersonal({ photoZoom: Number(e.target.value) })
-                    }
-                    className="w-32 accent-brand"
-                  />
-                  <p className="text-[11px] text-text-placeholder">
-                    {t("builder.personal.dragToReposition")}
-                  </p>
-                </div>
-              )}
-
+          <div className="order-1 sm:order-2 space-y-2 text-center">
+            <p className="text-sm font-medium text-text">
+              {t("builder.personal.image")}
+            </p>
+            <div ref={photoBoxRef} className="size-36 mx-auto">
               <button
-                onClick={() =>
-                  updatePersonal({
-                    photoUrl: "",
-                    photoFit: "fill",
-                    photoZoom: 1,
-                    photoPosition: { x: 0, y: 0 },
-                  })
-                }
-                className="block mx-auto text-xs text-brand hover:underline"
+                onClick={onPhotoClick}
+                onPointerDown={onPhotoPointerDown}
+                onPointerMove={onPhotoPointerMove}
+                onPointerUp={onPhotoPointerUp}
+                onPointerLeave={onPhotoPointerUp}
+                className={cn(
+                  "size-36 rounded-full bg-surface-2 border border-line overflow-hidden inline-flex items-center justify-center text-text-secondary hover:border-brand hover:text-brand transition-colors touch-none",
+                  personal.photoUrl &&
+                    personal.photoFit === "crop" &&
+                    "cursor-grab active:cursor-grabbing",
+                )}
+                aria-label={t("builder.personal.uploadPhoto")}
               >
-                {t("builder.personal.removePhoto")}
+                {personal.photoUrl ? (
+                  <img
+                    src={personal.photoUrl}
+                    alt=""
+                    draggable={false}
+                    style={photoImgStyle(personal)}
+                  />
+                ) : (
+                  <ImagePlus size={34} strokeWidth={1.6} />
+                )}
               </button>
-            </>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => onPhotoPick(e.target.files?.[0])}
-          />
-        </div>
+            </div>
+
+            {personal.photoUrl && (
+              <>
+                <div className="flex items-center justify-center gap-1">
+                  {PHOTO_FIT_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => updatePersonal({ photoFit: mode })}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-xs font-medium border transition-colors",
+                        personal.photoFit === mode
+                          ? "border-brand text-brand"
+                          : "border-line text-text-secondary hover:bg-primary hover:text-primary-foreground",
+                      )}
+                    >
+                      {t(`builder.personal.photoFit.${mode}`)}
+                    </button>
+                  ))}
+                </div>
+
+                {personal.photoFit === "crop" && (
+                  <div className="space-y-1">
+                    <input
+                      type="range"
+                      min={1}
+                      max={3}
+                      step={0.05}
+                      value={personal.photoZoom}
+                      onChange={(e) =>
+                        updatePersonal({ photoZoom: Number(e.target.value) })
+                      }
+                      className="w-32 accent-brand"
+                    />
+                    <p className="text-[11px] text-text-placeholder">
+                      {t("builder.personal.dragToReposition")}
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() =>
+                    updatePersonal({
+                      photoUrl: "",
+                      photoFit: "fill",
+                      photoZoom: 1,
+                      photoPosition: { x: 0, y: 0 },
+                    })
+                  }
+                  className="block mx-auto text-xs text-brand hover:underline"
+                >
+                  {t("builder.personal.removePhoto")}
+                </button>
+              </>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onPhotoPick(e.target.files?.[0])}
+            />
+          </div>
         )}
       </div>
 
@@ -411,7 +410,7 @@ export default function Step1Personal() {
           label={t("builder.personal.email")}
           type="email"
           required
-          placeholder="sokdara@gmail.com"
+          placeholder="songkimvisal@gmail.com"
           value={personal.email}
           onChange={(e) => updatePersonal({ email: e.target.value })}
           error={

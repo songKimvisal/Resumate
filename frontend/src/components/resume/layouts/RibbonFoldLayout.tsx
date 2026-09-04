@@ -21,6 +21,7 @@ import {
   listKey,
 } from "./shared";
 import { contrastOn } from "../../../lib/color";
+import { resumeNameFallback } from "../../../lib/resumeHeadings";
 
 /** Professional charcoal sidebar - ATS-safe (no decorative ribbons). */
 export default function RibbonFoldLayout({
@@ -232,7 +233,7 @@ export default function RibbonFoldLayout({
               className="font-bold leading-none tracking-tight"
               style={{ fontSize: customization.fullNameSize, color: nameColor }}
             >
-              {personal.fullName || "Your Name"}
+              {personal.fullName || resumeNameFallback(customization)}
             </h1>
             {personal.jobTitle && (
               <p

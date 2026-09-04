@@ -1,6 +1,3 @@
-"""One Gemini call for job match, interview questions, and the
-readiness report. Later screens reuse the JSON instead of paying again."""
-
 import json
 import logging
 import re

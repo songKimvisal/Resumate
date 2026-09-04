@@ -110,6 +110,18 @@ export function resumeDegreeFallback(
   return headingLang(customization) === "km" ? "សញ្ញាបត្រ" : "Degree";
 }
 
+export function resumeNameFallback(
+  customization?: Pick<Customization, "headingLanguage"> | null,
+): string {
+  return headingLang(customization) === "km" ? "ឈ្មោះរបស់អ្នក" : "Your Name";
+}
+
+export function resumeTitleFallback(
+  customization?: Pick<Customization, "headingLanguage"> | null,
+): string {
+  return headingLang(customization) === "km" ? "តួនាទីការងារ" : "Job Title";
+}
+
 /** True when headings are Khmer or any resume field contains Khmer letters. */
 export function resumeNeedsKhmerFont(resume: {
   customization?: Pick<Customization, "headingLanguage"> | null;

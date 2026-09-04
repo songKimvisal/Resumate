@@ -17,11 +17,8 @@ export type InterviewQuestion = {
   id: string;
   category: InterviewCategory;
   question: string;
-  /** Why an interviewer for THIS job would ask this. */
   why?: string;
-  /** How to structure the answer using this resume (STAR for behavioral). */
   angle: string;
-  /** First-person spoken sample grounded in resume facts. */
   sampleAnswer?: string;
   talkingPoints?: string[];
 };
@@ -61,7 +58,6 @@ export type SavedJobRun = {
   hasResults: boolean;
   analysis?: JobAnalysisPack;
   practicedQuestionIds?: string[];
-  /** Resume this analysis belongs to. Required to review after switching resumes. */
   resumeId?: string;
 };
 
@@ -69,12 +65,9 @@ export type JourneyDraft = {
   step: JourneyStep;
   jobText?: string;
   hasResults?: boolean;
-  /** One AI (or local fallback) pack reused by Interview Prep and Readiness. */
   analysis?: JobAnalysisPack;
   practicedQuestionIds?: string[];
-  /** Other job ads kept on this resume. Active job stays in jobText/analysis. Max 4. */
   savedJobs?: SavedJobRun[];
-  /** ISO time of last local or server write. Used to merge cloud vs this device. */
   updatedAt?: string;
 };
 
@@ -102,7 +95,6 @@ export function savedJobsOf(draft?: JourneyDraft) {
 
 export type ReviewableJob = SavedJobRun & { resumeId: string };
 
-/** Active analysis first, then other stored jobs on this resume. */
 export function reviewableJobsOf(
   draft?: JourneyDraft,
   resumeId?: string,
@@ -113,7 +105,6 @@ export function reviewableJobsOf(
   return [snap, ...saved.filter((job) => job.id !== snap.id)];
 }
 
-/** Saved and in-progress jobs across every resume for this user. */
 export function reviewableJobsForUser(
   byKey: Record<string, JourneyDraft>,
   userId: string,
@@ -140,7 +131,6 @@ export function activeJobId(draft?: JourneyDraft) {
   return text && draft?.analysis ? jobKey(text) : null;
 }
 
-/** Best interview set on a resume: active analysis, else the latest saved job. */
 export function interviewPrepForDraft(draft?: JourneyDraft): {
   practiced: number;
   total: number;
@@ -178,7 +168,6 @@ export function interviewPrepForDraft(draft?: JourneyDraft): {
   return null;
 }
 
-/** How many resumes have an interview set ready, for the sidebar count. */
 export function interviewPrepCountForUser(
   byKey: Record<string, JourneyDraft>,
   userId: string,
@@ -238,7 +227,6 @@ function pushSaved(list: SavedJobRun[], item: SavedJobRun) {
   );
 }
 
-/** Stable store slice for a user+resume draft. Safe to use as a selector. */
 export function useJourneyDraft(
   userId?: string | null,
   resumeId?: string | null,
@@ -510,7 +498,6 @@ export const useJourneyStore = create<JourneyState>()(
   ),
 );
 
-/** Continue from dashboard into the furthest saved process step. */
 export function journeyContinuePath(step: JourneyStep) {
   return JOURNEY_ROUTES[Math.max(step, 1)];
 }

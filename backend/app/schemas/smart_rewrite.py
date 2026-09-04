@@ -1,12 +1,7 @@
 from typing import Literal
-
 from pydantic import BaseModel, Field
-
 from app.schemas.credits import CreditBalance
 
-# The "kind" of text being rewritten - lets us tailor the AI's instructions
-# slightly per field, since a resume summary and a bullet-point achievement
-# should be rewritten differently.
 RewriteFieldType = Literal["summary", "experience", "education"]
 
 
