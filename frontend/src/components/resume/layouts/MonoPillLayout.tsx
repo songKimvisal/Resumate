@@ -10,6 +10,8 @@ import {
   Contact,
   Languages,
 } from "lucide-react";
+import type { ReactNode } from "react";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   RichHtml,
   dateRange,
@@ -27,7 +29,7 @@ import {
   listKey,
   FullBleedPhoto,
 } from "./shared";
-import type { Customization } from "../../../types/resume";
+import type { Customization, SpecialSectionKey } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
@@ -62,6 +64,144 @@ export default function MonoPillLayout({
   const dateFmt = customization.dateFormat || "yearOnly";
   const showRefs = includeReferences && references.length > 0;
   const isFirstPage = pageIndex === 0;
+
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    skills: skills.length > 0 && (
+      <section>
+        <PillHeading
+          title="Skills"
+          icon={Sparkles}
+          color={charcoal}
+          size={customization.headingsSize}
+          customization={customization}
+        />
+        <div className="mt-3">
+          <SkillsList
+            skills={skills}
+            customization={customization}
+            muted={ink}
+            fill={charcoal}
+          />
+        </div>
+      </section>
+    ),
+    language: languages.length > 0 && (
+      <section>
+        <PillHeading
+          title="Languages"
+          icon={Languages}
+          color={charcoal}
+          size={customization.headingsSize}
+          customization={customization}
+        />
+        <div className="mt-3">
+          <LanguagesBlock languages={languages} muted={muted} />
+        </div>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <PillHeading
+          title="Education"
+          icon={GraduationCap}
+          color={charcoal}
+          size={customization.headingsSize}
+          customization={customization}
+        />
+        <div className="relative mt-3 space-y-4 pl-4">
+          <div
+            className="absolute bottom-1 left-[3px] top-1 w-px"
+            style={{ backgroundColor: charcoal }}
+          />
+          {education.map((edu, eduIdx) => (
+            <div key={listKey(edu.id, eduIdx, "edu")} className="relative text-[0.88em]">
+              <span
+                className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
+                style={{ backgroundColor: charcoal }}
+              />
+              <p className="font-bold">
+                {[edu.degree, edu.field].filter(Boolean).join(" ") ||
+                  edu.school}
+              </p>
+              <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
+              <p className="italic" style={{ color: muted }}>
+                {edu.school}
+              </p>
+              {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
+              <RichHtml
+                html={edu.description}
+                className="rte-content mt-1"
+                style={{ color: ink }}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    experience: jobs.length > 0 && (
+      <section>
+        <PillHeading
+          title="Work Experience"
+          icon={Briefcase}
+          color={charcoal}
+          size={customization.headingsSize}
+          customization={customization}
+        />
+        <div className="relative mt-3 space-y-4 pl-4">
+          <div
+            className="absolute bottom-1 left-[3px] top-1 w-px"
+            style={{ backgroundColor: charcoal }}
+          />
+          {jobs.map((job, jobIdx) => (
+            <div key={listKey(job.id, jobIdx, "job")} className="relative text-[0.88em]">
+              <span
+                className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
+                style={{ backgroundColor: charcoal }}
+              />
+              <p className="font-bold">{job.company || job.jobTitle}</p>
+              <p style={{ color: muted }}>{dateRange(job, dateFmt)}</p>
+              {job.company && job.jobTitle && (
+                <p className="font-semibold">{job.jobTitle}</p>
+              )}
+              {job.location && (
+                <p style={{ color: muted }}>{job.location}</p>
+              )}
+              <RichHtml
+                html={job.description}
+                className="rte-content mt-1 leading-relaxed"
+                style={{ color: ink }}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    references: showRefs && (
+      <section>
+        <PillHeading
+          title="References"
+          icon={Contact}
+          color={charcoal}
+          size={customization.headingsSize}
+          customization={customization}
+        />
+        <div className="mt-3">
+          <ReferencesBlock
+            references={references}
+            includeReferences={includeReferences}
+            muted={muted}
+          />
+        </div>
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
 
   return (
     <div
@@ -126,40 +266,7 @@ export default function MonoPillLayout({
               </section>
             )}
 
-            {skills.length > 0 && (
-              <section>
-                <PillHeading
-                  title="Skills"
-                  icon={Sparkles}
-                  color={charcoal}
-                  size={customization.headingsSize}
-                  customization={customization}
-                />
-                <div className="mt-3">
-                  <SkillsList
-                    skills={skills}
-                    customization={customization}
-                    muted={ink}
-                    fill={charcoal}
-                  />
-                </div>
-              </section>
-            )}
-
-            {languages.length > 0 && (
-              <section>
-                <PillHeading
-                  title="Languages"
-                  icon={Languages}
-                  color={charcoal}
-                  size={customization.headingsSize}
-                  customization={customization}
-                />
-                <div className="mt-3">
-                  <LanguagesBlock languages={languages} muted={muted} />
-                </div>
-              </section>
-            )}
+            {sidebarBlocks}
           </>
         )}
       </aside>
@@ -182,103 +289,7 @@ export default function MonoPillLayout({
           </section>
         )}
 
-        {education.length > 0 && (
-          <section>
-            <PillHeading
-              title="Education"
-              icon={GraduationCap}
-              color={charcoal}
-              size={customization.headingsSize}
-              customization={customization}
-            />
-            <div className="relative mt-3 space-y-4 pl-4">
-              <div
-                className="absolute bottom-1 left-[3px] top-1 w-px"
-                style={{ backgroundColor: charcoal }}
-              />
-              {education.map((edu, eduIdx) => (
-                <div key={listKey(edu.id, eduIdx, "edu")} className="relative text-[0.88em]">
-                  <span
-                    className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
-                    style={{ backgroundColor: charcoal }}
-                  />
-                  <p className="font-bold">
-                    {[edu.degree, edu.field].filter(Boolean).join(" ") ||
-                      edu.school}
-                  </p>
-                  <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                  <p className="italic" style={{ color: muted }}>
-                    {edu.school}
-                  </p>
-                  {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
-                  <RichHtml
-                    html={edu.description}
-                    className="rte-content mt-1"
-                    style={{ color: ink }}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {jobs.length > 0 && (
-          <section>
-            <PillHeading
-              title="Work Experience"
-              icon={Briefcase}
-              color={charcoal}
-              size={customization.headingsSize}
-              customization={customization}
-            />
-            <div className="relative mt-3 space-y-4 pl-4">
-              <div
-                className="absolute bottom-1 left-[3px] top-1 w-px"
-                style={{ backgroundColor: charcoal }}
-              />
-              {jobs.map((job, jobIdx) => (
-                <div key={listKey(job.id, jobIdx, "job")} className="relative text-[0.88em]">
-                  <span
-                    className="absolute -left-4 top-1.5 h-2 w-2 rounded-full"
-                    style={{ backgroundColor: charcoal }}
-                  />
-                  <p className="font-bold">{job.company || job.jobTitle}</p>
-                  <p style={{ color: muted }}>{dateRange(job, dateFmt)}</p>
-                  {job.company && job.jobTitle && (
-                    <p className="font-semibold">{job.jobTitle}</p>
-                  )}
-                  {job.location && (
-                    <p style={{ color: muted }}>{job.location}</p>
-                  )}
-                  <RichHtml
-                    html={job.description}
-                    className="rte-content mt-1 leading-relaxed"
-                    style={{ color: ink }}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {showRefs && (
-          <section>
-            <PillHeading
-              title="References"
-              icon={Contact}
-              color={charcoal}
-              size={customization.headingsSize}
-              customization={customization}
-            />
-            <div className="mt-3">
-              <ReferencesBlock
-                references={references}
-                includeReferences={includeReferences}
-                muted={muted}
-              />
-            </div>
-          </section>
-        )}
+        {mainBlocks}
       </main>
     </div>
   );

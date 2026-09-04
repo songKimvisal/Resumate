@@ -10,6 +10,8 @@ export const BANKING_PREMIUM_TEMPLATES = [
     ["professional", "elegantRefined"],
     {
       layoutVariant: "bankingClean",
+      specialSectionOrder: ["education", "skills", "language", "experience", "references"],
+      specialSidebarKeys: ["education", "skills", "language"],
       accentColor: "#0F6E82",
       sidebarBgColor: "#0B2438",
       bodyBgColor: "#FFFFFF",
@@ -54,6 +56,8 @@ export const BANKING_PREMIUM_TEMPLATES = [
     ["professional", "cleanMinimal"],
     {
       layoutVariant: "corporateBand",
+      specialSectionOrder: ["experience", "education", "skills", "language", "references"],
+      specialSidebarKeys: ["education", "skills", "language", "references"],
       accentColor: "#0F2942",
       sidebarBgColor: "#0B2438",
       bodyBgColor: "#FFFFFF",

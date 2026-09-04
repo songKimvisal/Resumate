@@ -1,4 +1,7 @@
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
+import type { ReactNode } from "react";
+import type { SpecialSectionKey } from "../../../types/resume";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   AtsHeading,
   JobBlock,
@@ -56,6 +59,103 @@ export default function RibbonFoldLayout({
     customization.toggles.jobTitle ? accent : muted,
   );
 
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    skills: isFirstPage && skills.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Skills"
+          color="#fff"
+          size={customization.headingsSize}
+          ruleColor="rgba(255,255,255,0.4)"
+          customization={customization}
+        />
+        <SkillsList
+          skills={skills}
+          customization={customization}
+          light
+        />
+      </section>
+    ),
+    language: isFirstPage && languages.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Languages"
+          color="#fff"
+          size={customization.headingsSize}
+          ruleColor="rgba(255,255,255,0.4)"
+          customization={customization}
+        />
+        <div className="text-white/90">
+          <LanguagesBlock languages={languages} light />
+        </div>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Education"
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
+        <div className="space-y-3">
+          {education.map((edu, eduIdx) => (
+            <EducationBlock
+              key={listKey(edu.id, eduIdx, "edu")}
+              edu={edu}
+              muted={muted}
+              ink={ink}
+              dateFmt={dateFmt}
+            />
+          ))}
+        </div>
+      </section>
+    ),
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading
+          title="Work Experience"
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock
+              key={listKey(job.id, jobIdx, "job")}
+              job={job}
+              ink={ink}
+              muted={muted}
+              dateFmt={dateFmt}
+            />
+          ))}
+        </div>
+      </section>
+    ),
+    references: showRefs && (
+      <section>
+        <AtsHeading
+          title="References"
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
+        <ReferencesBlock
+          references={references}
+          includeReferences={includeReferences}
+          muted={muted}
+        />
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
+
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
@@ -92,36 +192,7 @@ export default function RibbonFoldLayout({
               />
             </section>
           )}
-          {isFirstPage && skills.length > 0 && (
-            <section>
-              <AtsHeading
-                title="Skills"
-                color="#fff"
-                size={customization.headingsSize}
-                ruleColor="rgba(255,255,255,0.4)"
-                customization={customization}
-              />
-              <SkillsList
-                skills={skills}
-                customization={customization}
-                light
-              />
-            </section>
-          )}
-          {isFirstPage && languages.length > 0 && (
-            <section>
-              <AtsHeading
-                title="Languages"
-                color="#fff"
-                size={customization.headingsSize}
-                ruleColor="rgba(255,255,255,0.4)"
-                customization={customization}
-              />
-              <div className="text-white/90">
-                <LanguagesBlock languages={languages} light />
-              </div>
-            </section>
-          )}
+          {sidebarBlocks}
           {isFirstPage && contacts.length > 0 && (
             <section>
               <AtsHeading
@@ -181,64 +252,8 @@ export default function RibbonFoldLayout({
           </header>
         )}
 
-        {education.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading
-              title="Education"
-              size={customization.headingsSize}
-              ruleColor={accent}
-              customization={customization}
-            />
-            <div className="space-y-3">
-              {education.map((edu, eduIdx) => (
-                <EducationBlock
-                  key={listKey(edu.id, eduIdx, "edu")}
-                  edu={edu}
-                  muted={muted}
-                  ink={ink}
-                  dateFmt={dateFmt}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {jobs.length > 0 && (
-          <section className="mb-5">
-            <AtsHeading
-              title="Work Experience"
-              size={customization.headingsSize}
-              ruleColor={accent}
-              customization={customization}
-            />
-            <div className="space-y-4">
-              {jobs.map((job, jobIdx) => (
-                <JobBlock
-                  key={listKey(job.id, jobIdx, "job")}
-                  job={job}
-                  ink={ink}
-                  muted={muted}
-                  dateFmt={dateFmt}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {showRefs && (
-          <section>
-            <AtsHeading
-              title="References"
-              size={customization.headingsSize}
-              ruleColor={accent}
-              customization={customization}
-            />
-            <ReferencesBlock
-              references={references}
-              includeReferences={includeReferences}
-              muted={muted}
-            />
-          </section>
+        {mainBlocks.length > 0 && (
+          <div className="space-y-5">{mainBlocks}</div>
         )}
       </main>
     </div>

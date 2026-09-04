@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import type { SpecialSectionKey } from "../../../types/resume";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   AtsHeading,
   JobBlock,
@@ -44,6 +47,82 @@ export default function CompactTechLayout({
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    skills: isFirstPage && skills.length > 0 && (
+      <section>
+        <AtsHeading title="Technical Skills" color={accent} size={customization.headingsSize} customization={customization} />
+        <SkillsList
+          skills={skills}
+          customization={customization}
+          muted={muted}
+          fill={accent}
+        />
+      </section>
+    ),
+    language: isFirstPage && languages.length > 0 && (
+      <section>
+        <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
+        <ul className="space-y-1 text-[0.85em]" style={{ color: muted }}>
+          {languages.map((l, langIdx) => (
+            <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
+          ))}
+        </ul>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
+        <div className="space-y-3 text-[0.85em]">
+          {education.map((edu, eduIdx) => (
+            <div key={listKey(edu.id, eduIdx, "edu")}>
+              <p className="font-bold">{edu.school}</p>
+              <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
+              <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
+              {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
+              {hasText(edu.description) && (
+                <RichHtml
+                  html={edu.description}
+                  className="rte-content mt-1 leading-relaxed"
+                  style={{ color: ink }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+          ))}
+        </div>
+      </section>
+    ),
+    references: includeReferences && references.length > 0 && (
+      <section>
+        <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
+        <div className="grid grid-cols-2 gap-3 text-[0.85em]">
+          {references.slice(0, 4).map((r, refIdx) => (
+            <div key={listKey(r.id, refIdx, "ref")}>
+              <p className="font-bold">{r.name}</p>
+              <p style={{ color: muted }}>{r.company}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
+
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full flex-col ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
@@ -69,49 +148,7 @@ export default function CompactTechLayout({
 
       <div className={`flex ${expandHeight ? "" : "min-h-0"} flex-1 gap-0`}>
         <aside className="w-[32%] shrink-0 space-y-5 overflow-hidden px-6 py-6" style={{ backgroundColor: customization.sidebarBgColor || "#F1F5F9" }}>
-          {isFirstPage && skills.length > 0 && (
-            <section>
-              <AtsHeading title="Technical Skills" color={accent} size={customization.headingsSize} customization={customization} />
-              <SkillsList
-                skills={skills}
-                customization={customization}
-                muted={muted}
-                fill={accent}
-              />
-            </section>
-          )}
-          {isFirstPage && languages.length > 0 && (
-            <section>
-              <AtsHeading title="Languages" color={accent} size={customization.headingsSize} customization={customization} />
-              <ul className="space-y-1 text-[0.85em]" style={{ color: muted }}>
-                {languages.map((l, langIdx) => (
-                  <li key={listKey(l.id, langIdx, "lang")}>{l.name}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-          {education.length > 0 && (
-            <section>
-              <AtsHeading title="Education" color={accent} size={customization.headingsSize} customization={customization} />
-              <div className="space-y-3 text-[0.85em]">
-                {education.map((edu, eduIdx) => (
-                  <div key={listKey(edu.id, eduIdx, "edu")}>
-                    <p className="font-bold">{edu.school}</p>
-                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
-                    <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                    {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
-                    {hasText(edu.description) && (
-                      <RichHtml
-                        html={edu.description}
-                        className="rte-content mt-1 leading-relaxed"
-                        style={{ color: ink }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          {sidebarBlocks}
         </aside>
 
         <main className="min-w-0 flex-1 space-y-5 overflow-hidden px-7 py-6">
@@ -121,29 +158,7 @@ export default function CompactTechLayout({
               <RichHtml html={personal.summary} className="rte-content text-[0.9em] leading-relaxed" style={{ color: muted }} />
             </section>
           )}
-          {jobs.length > 0 && (
-            <section>
-              <AtsHeading title="Work Experience" color={accent} size={customization.headingsSize} customization={customization} />
-              <div className="space-y-4">
-                {jobs.map((job, jobIdx) => (
-                  <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
-                ))}
-              </div>
-            </section>
-          )}
-          {includeReferences && references.length > 0 && (
-            <section>
-              <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
-              <div className="grid grid-cols-2 gap-3 text-[0.85em]">
-                {references.slice(0, 4).map((r, refIdx) => (
-                  <div key={listKey(r.id, refIdx, "ref")}>
-                    <p className="font-bold">{r.name}</p>
-                    <p style={{ color: muted }}>{r.company}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          {mainBlocks}
         </main>
       </div>
     </div>

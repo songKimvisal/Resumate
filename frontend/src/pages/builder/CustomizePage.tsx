@@ -18,6 +18,7 @@ import type {
   Customization,
   CustomizationToggles,
   SectionOrderKey,
+  SpecialSectionKey,
 } from "../../types/resume";
 import { Switch } from "../../components/ui/Switch";
 import {
@@ -35,7 +36,7 @@ import {
 import { TEMPLATE_PRESETS, type TemplatePreset, designWithoutHeadingLanguage } from "../../data/templates";
 import { FONT_FAMILIES } from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
-import { partitionSectionOrder } from "../../lib/sectionOrder";
+import { partitionSectionOrder, partitionSpecialSectionOrder } from "../../lib/sectionOrder";
 import {
   hasCustomizationAccess,
   hasTemplateAccess,
@@ -48,6 +49,7 @@ import {
   usesPhotoControls,
   usesPhotoSlot,
   usesSidebarBg,
+  usesSpecialSectionColumns,
 } from "../../components/resume/layouts/shared";
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import UnlockCustomizationModal from "./UnlockCustomizationModal";
@@ -294,6 +296,13 @@ export default function CustomizePage() {
     language: languages.length > 0,
     references: includeReferences && references.length > 0,
   };
+  const specialSectionHasContent: Record<SpecialSectionKey, boolean> = {
+    experience: experience.length > 0 || noExperience.length > 0,
+    education: education.length > 0,
+    skills: skills.length > 0,
+    language: languages.length > 0,
+    references: includeReferences && references.length > 0,
+  };
 
   const patchToggle = (key: keyof CustomizationToggles) =>
     updateCustomization({
@@ -359,6 +368,67 @@ export default function CustomizePage() {
     updateCustomization({
       sectionOrder: order,
       sidebarKeys: assignSectionColumn(dragKey, toSidebar),
+    });
+  };
+
+  // ---- section layout drag-and-drop (special/premium layouts) ----
+  const [dragSpecialKey, setDragSpecialKey] = useState<SpecialSectionKey | null>(
+    null,
+  );
+  const specialSidebarKeys = customization.specialSidebarKeys ?? [];
+  const moveSpecialSectionOrder = (
+    dragKey: SpecialSectionKey,
+    overKey: SpecialSectionKey,
+  ) => {
+    if (dragKey === overKey) return;
+    const order = [...customization.specialSectionOrder];
+    const from = order.indexOf(dragKey);
+    const to = order.indexOf(overKey);
+    if (from === -1 || to === -1) return;
+    order.splice(from, 1);
+    order.splice(to, 0, dragKey);
+    updateCustomization({ specialSectionOrder: order });
+  };
+  const assignSpecialSectionColumn = (
+    dragKey: SpecialSectionKey,
+    toSidebar: boolean,
+  ) =>
+    toSidebar
+      ? specialSidebarKeys.includes(dragKey)
+        ? specialSidebarKeys
+        : [...specialSidebarKeys, dragKey]
+      : specialSidebarKeys.filter((k) => k !== dragKey);
+  const dropSpecialSectionOnRow = (
+    dragKey: SpecialSectionKey,
+    overKey: SpecialSectionKey,
+  ) => {
+    if (dragKey === overKey) return;
+    const order = [...customization.specialSectionOrder];
+    const from = order.indexOf(dragKey);
+    const to = order.indexOf(overKey);
+    if (from !== -1 && to !== -1) {
+      order.splice(from, 1);
+      order.splice(to, 0, dragKey);
+    }
+    updateCustomization({
+      specialSectionOrder: order,
+      specialSidebarKeys: assignSpecialSectionColumn(
+        dragKey,
+        specialSidebarKeys.includes(overKey),
+      ),
+    });
+  };
+  const dropSpecialSectionInColumn = (
+    dragKey: SpecialSectionKey,
+    toSidebar: boolean,
+  ) => {
+    const order = customization.specialSectionOrder.filter(
+      (k) => k !== dragKey,
+    );
+    order.push(dragKey);
+    updateCustomization({
+      specialSectionOrder: order,
+      specialSidebarKeys: assignSpecialSectionColumn(dragKey, toSidebar),
     });
   };
 
@@ -435,6 +505,14 @@ export default function CustomizePage() {
       customization.sectionOrder,
       customization.sidebarKeys,
     );
+  const { main: specialMainKeys, sidebar: specialSidebarSectionKeys } =
+    partitionSpecialSectionOrder(
+      customization.specialSectionOrder,
+      customization.specialSidebarKeys,
+    );
+  const specialLayoutHasColumns = usesSpecialSectionColumns(
+    customization.layoutVariant,
+  );
   const headerIsBanner =
     !isSpecialLayout &&
     (customization.columns === "one" ||
@@ -797,9 +875,102 @@ export default function CustomizePage() {
             </p>
 
             {isSpecialLayout ? (
-              <p className="text-xs text-text-secondary -mt-1">
-                {t("builder.customizePage.layout.specialLayoutHint")}
-              </p>
+              <>
+                <p className="text-xs text-text-secondary -mt-1">
+                  {t("builder.customizePage.layout.specialLayoutHint")}
+                </p>
+                <div className="space-y-2.5">
+                  <p className="text-sm font-medium text-text">
+                    {t("builder.customizePage.layout.sectionLayout")}
+                  </p>
+                  {specialLayoutHasColumns ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div
+                        className="space-y-2 min-h-8"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragSpecialKey)
+                            dropSpecialSectionInColumn(dragSpecialKey, false);
+                          setDragSpecialKey(null);
+                        }}
+                      >
+                        <DragRow
+                          label={t(
+                            "builder.customizePage.layout.personalDetails",
+                          )}
+                          pinned
+                        />
+                        {specialMainKeys
+                          .filter((key) => specialSectionHasContent[key])
+                          .map((key) => (
+                            <DragRow
+                              key={key}
+                              label={t(`builder.customizePage.layout.${key}`)}
+                              draggable
+                              onDragStart={() => setDragSpecialKey(key)}
+                              onDropOn={() => {
+                                if (dragSpecialKey)
+                                  dropSpecialSectionOnRow(dragSpecialKey, key);
+                                setDragSpecialKey(null);
+                              }}
+                            />
+                          ))}
+                      </div>
+                      <div
+                        className="space-y-2 min-h-8"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragSpecialKey)
+                            dropSpecialSectionInColumn(dragSpecialKey, true);
+                          setDragSpecialKey(null);
+                        }}
+                      >
+                        {specialSidebarSectionKeys
+                          .filter((key) => specialSectionHasContent[key])
+                          .map((key) => (
+                            <DragRow
+                              key={key}
+                              label={t(`builder.customizePage.layout.${key}`)}
+                              draggable
+                              onDragStart={() => setDragSpecialKey(key)}
+                              onDropOn={() => {
+                                if (dragSpecialKey)
+                                  dropSpecialSectionOnRow(dragSpecialKey, key);
+                                setDragSpecialKey(null);
+                              }}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <DragRow
+                        label={t(
+                          "builder.customizePage.layout.personalDetails",
+                        )}
+                        pinned
+                      />
+                      {customization.specialSectionOrder
+                        .filter((key) => specialSectionHasContent[key])
+                        .map((key) => (
+                          <DragRow
+                            key={key}
+                            label={t(`builder.customizePage.layout.${key}`)}
+                            draggable
+                            onDragStart={() => setDragSpecialKey(key)}
+                            onDropOn={() => {
+                              if (dragSpecialKey)
+                                moveSpecialSectionOrder(dragSpecialKey, key);
+                              setDragSpecialKey(null);
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <>
                 <div className="space-y-2.5">

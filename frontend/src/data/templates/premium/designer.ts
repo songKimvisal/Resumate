@@ -10,6 +10,8 @@ export const DESIGNER_PREMIUM_TEMPLATES = [
     ["modernCreative", "cleanMinimal"],
     {
       layoutVariant: "techSplit",
+      specialSectionOrder: ["experience", "skills", "language", "education", "references"],
+      specialSidebarKeys: ["skills", "language", "education"],
       accentColor: "#0F2942",
       sidebarBgColor: "#0F2942",
       bodyBgColor: "#FFFFFF",
@@ -52,6 +54,8 @@ export const DESIGNER_PREMIUM_TEMPLATES = [
     ["modernCreative", "cleanMinimal"],
     {
       layoutVariant: "editorialClassic",
+      specialSectionOrder: ["experience", "education", "skills", "language", "references"],
+      specialSidebarKeys: [],
       accentColor: "#1C1917",
       bodyBgColor: "#FFFFFF",
       bodyTextColor: "#1C1917",

@@ -1,4 +1,4 @@
-import type { SectionOrderKey } from "../types/resume";
+import type { SectionOrderKey, SpecialSectionKey } from "../types/resume";
 
 export function orderedMainGroups(
   order: SectionOrderKey[],
@@ -62,6 +62,39 @@ export function partitionSectionOrder(
     (sidebarSet.has(key) ? sidebar : main).push(key);
   }
   ALL_SECTION_KEYS.forEach((key) => {
+    if (!seen.has(key)) main.push(key);
+  });
+  return { main, sidebar };
+}
+
+const ALL_SPECIAL_SECTION_KEYS: SpecialSectionKey[] = [
+  "experience",
+  "education",
+  "skills",
+  "language",
+  "references",
+];
+
+/** Same idea as `partitionSectionOrder`, for premium/"special" layouts -
+ *  splits the 5 movable blocks (experience, education, skills, language,
+ *  references) into a main list and a sidebar list, each in relative order.
+ *  Layouts that render both regions read the split; single-column layouts
+ *  can just flatten `main` + `sidebar` back into one sequence. */
+export function partitionSpecialSectionOrder(
+  order: SpecialSectionKey[] | undefined,
+  sidebarKeys: SpecialSectionKey[] | undefined,
+): { main: SpecialSectionKey[]; sidebar: SpecialSectionKey[] } {
+  const source = order?.length ? order : ALL_SPECIAL_SECTION_KEYS;
+  const sidebarSet = new Set(sidebarKeys ?? []);
+  const seen = new Set<string>();
+  const main: SpecialSectionKey[] = [];
+  const sidebar: SpecialSectionKey[] = [];
+  for (const key of source) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    (sidebarSet.has(key) ? sidebar : main).push(key);
+  }
+  ALL_SPECIAL_SECTION_KEYS.forEach((key) => {
     if (!seen.has(key)) main.push(key);
   });
   return { main, sidebar };

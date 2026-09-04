@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import type { SpecialSectionKey } from "../../../types/resume";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
   AtsHeading,
   JobBlock,
@@ -45,6 +48,80 @@ export default function CorporateBandLayout({
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
+  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
+    customization.specialSectionOrder,
+    customization.specialSidebarKeys,
+  );
+
+  const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
+    experience: jobs.length > 0 && (
+      <section>
+        <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="space-y-4">
+          {jobs.map((job, jobIdx) => (
+            <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+          ))}
+        </div>
+      </section>
+    ),
+    education: education.length > 0 && (
+      <section>
+        <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="space-y-3 text-[0.85em]">
+          {education.map((edu, eduIdx) => (
+            <div key={listKey(edu.id, eduIdx, "edu")}>
+              <p className="font-bold">{edu.school}</p>
+              <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
+              <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
+              {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
+              {hasText(edu.description) && (
+                <RichHtml
+                  html={edu.description}
+                  className="rte-content mt-1 leading-relaxed"
+                  style={{ color: ink }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    skills: skills.length > 0 && (
+      <section>
+        <AtsHeading title="Core Skills" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <SkillsList
+          skills={skills}
+          customization={customization}
+          muted={muted}
+          fill={accent}
+        />
+      </section>
+    ),
+    language: languages.length > 0 && (
+      <section>
+        <AtsHeading title="Languages" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <p className="text-[0.85em]" style={{ color: muted }}>
+          {languages.map((l, langIdx) => l.name).join(" · ")}
+        </p>
+      </section>
+    ),
+    references: includeReferences && references.length > 0 && (
+      <section>
+        <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <div className="space-y-2 text-[0.82em]">
+          {references.slice(0, 2).map((r, refIdx) => (
+            <div key={listKey(r.id, refIdx, "ref")}>
+              <p className="font-bold">{r.name}</p>
+              <p style={{ color: muted }}>{r.company}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+  };
+  const mainBlocks = mainOrder.map((key) => blocks[key]).filter(Boolean);
+  const sidebarBlocks = sidebarOrder.map((key) => blocks[key]).filter(Boolean);
+
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full flex-col ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
@@ -88,73 +165,11 @@ export default function CorporateBandLayout({
               <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: ink }} />
             </section>
           )}
-          {jobs.length > 0 && (
-            <section>
-              <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <div className="space-y-4">
-                {jobs.map((job, jobIdx) => (
-                  <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
-                ))}
-              </div>
-            </section>
-          )}
+          {mainBlocks}
         </main>
 
         <aside className="w-[34%] shrink-0 space-y-5 border-l pl-6" style={{ borderColor: ATS.line }}>
-          {education.length > 0 && (
-            <section>
-              <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <div className="space-y-3 text-[0.85em]">
-                {education.map((edu, eduIdx) => (
-                  <div key={listKey(edu.id, eduIdx, "edu")}>
-                    <p className="font-bold">{edu.school}</p>
-                    <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
-                    <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-                    {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
-                    {hasText(edu.description) && (
-                      <RichHtml
-                        html={edu.description}
-                        className="rte-content mt-1 leading-relaxed"
-                        style={{ color: ink }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-          {skills.length > 0 && (
-            <section>
-              <AtsHeading title="Core Skills" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <SkillsList
-                skills={skills}
-                customization={customization}
-                muted={muted}
-                fill={accent}
-              />
-            </section>
-          )}
-          {languages.length > 0 && (
-            <section>
-              <AtsHeading title="Languages" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <p className="text-[0.85em]" style={{ color: muted }}>
-                {languages.map((l, langIdx) => l.name).join(" · ")}
-              </p>
-            </section>
-          )}
-          {includeReferences && references.length > 0 && (
-            <section>
-              <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <div className="space-y-2 text-[0.82em]">
-                {references.slice(0, 2).map((r, refIdx) => (
-                  <div key={listKey(r.id, refIdx, "ref")}>
-                    <p className="font-bold">{r.name}</p>
-                    <p style={{ color: muted }}>{r.company}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          {sidebarBlocks}
         </aside>
       </div>
     </div>

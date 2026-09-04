@@ -15,7 +15,10 @@ export const Input = React.forwardRef<
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-text">
+        <label
+          htmlFor={inputId}
+          className="block text-sm font-medium text-text"
+        >
           {label}
         </label>
       )}
@@ -53,7 +56,10 @@ export const Textarea = React.forwardRef<
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-text">
+        <label
+          htmlFor={inputId}
+          className="block text-sm font-medium text-text"
+        >
           {label}
         </label>
       )}
