@@ -4,8 +4,6 @@ import { useAuth } from "./UseAuth";
 import { useResumeStore } from "../store/resumeStore";
 import { useJourneyStore, useJourneyHydrated } from "../store/journeyStore";
 import { getResumesByUser } from "../lib/api";
-
-/** Loads the journey resume into the store (needed after a refresh on later steps). */
 export function useJourneyResume() {
   const navigate = useNavigate();
   const { user } = useAuth();

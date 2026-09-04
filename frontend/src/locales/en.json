@@ -1778,7 +1778,11 @@
       "khqr": {
         "merchantLabel": "Resumate",
         "expiresIn": "QR code expires in",
-        "waitingForPayment": "Waiting for payment…",
+        "expired": "This code has expired",
+        "instructions": "Scan the code with your banking app, complete the payment there, then confirm below.",
+        "confirmCta": "I've completed the payment",
+        "verifying": "Verifying with your bank…",
+        "regenerate": "Get a new code",
         "poweredBy": "Powered by Bakong, National Bank of Cambodia"
       },
       "success": {
@@ -1811,7 +1815,16 @@
         "numberLabel": "Card number",
         "expiryLabel": "Expiry",
         "cvcLabel": "CVC",
-        "secureNote": "Payments are securely processed by Card."
+        "secureNote": "Payments are securely processed by Card.",
+        "expires": "Expires {{expiry}}",
+        "replace": "Use a different card",
+        "remove": "Remove card",
+        "useSaved": "Use {{brand}} •••• {{last4}} instead",
+        "invalidNumber": "That card number doesn't look right.",
+        "invalidExpiry": "Enter a valid, non-expired date.",
+        "invalidName": "Enter the name as it appears on the card.",
+        "invalidCvc": "Enter the 3 or 4 digit security code.",
+        "reverifyNote": "We don't store your CVC, so please re-enter it to confirm this charge."
       },
       "save": "Save Method",
       "cancel": "Cancel"
