@@ -20,10 +20,6 @@ import type { Customization } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
-/**
- * Denise Henderson–style layout:
- * name + contact header, then education/skills left and profile/experience timeline right.
- */
 export default function CleanHeaderSplitLayout({
   resume,
   pageWidthPx,

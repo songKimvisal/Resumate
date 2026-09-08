@@ -44,36 +44,66 @@ export default function CorporateBandLayout({
   const muted = ATS.muted;
   const headerInk = contrastOn(navy);
   const contacts = personalContactLines(personal);
-  const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
+  const jobs = normalizeJobs(
+    experience,
+    noExperience,
+    resume.experienceOrder,
+    customization,
+  );
   const dateFmt = customization.dateFormat;
   const isFirstPage = pageIndex === 0;
 
-  const { main: mainOrder, sidebar: sidebarOrder } = partitionSpecialSectionOrder(
-    customization.specialSectionOrder,
-    customization.specialSidebarKeys,
-  );
+  const { main: mainOrder, sidebar: sidebarOrder } =
+    partitionSpecialSectionOrder(
+      customization.specialSectionOrder,
+      customization.specialSidebarKeys,
+    );
 
   const blocks: Partial<Record<SpecialSectionKey, ReactNode>> = {
     experience: jobs.length > 0 && (
       <section>
-        <AtsHeading title="Work Experience" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <AtsHeading
+          title="Work Experience"
+          color={navy}
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
         <div className="space-y-4">
           {jobs.map((job, jobIdx) => (
-            <JobBlock key={listKey(job.id, jobIdx, "job")} job={job} ink={ink} muted={muted} dateFmt={dateFmt} />
+            <JobBlock
+              key={listKey(job.id, jobIdx, "job")}
+              job={job}
+              ink={ink}
+              muted={muted}
+              dateFmt={dateFmt}
+            />
           ))}
         </div>
       </section>
     ),
     education: education.length > 0 && (
       <section>
-        <AtsHeading title="Education" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <AtsHeading
+          title="Education"
+          color={navy}
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
         <div className="space-y-3 text-[0.85em]">
           {education.map((edu, eduIdx) => (
             <div key={listKey(edu.id, eduIdx, "edu")}>
               <p className="font-bold">{edu.school}</p>
-              <p style={{ color: muted }}>{[edu.degree, edu.field].filter(Boolean).join(" - ")}</p>
+              <p style={{ color: muted }}>
+                {[edu.degree, edu.field].filter(Boolean).join(" - ")}
+              </p>
               <p style={{ color: muted }}>{dateRange(edu, dateFmt)}</p>
-              {edu.gpa && <p style={{ color: muted }}>{gpaText(edu.gpa, customization)}</p>}
+              {edu.gpa && (
+                <p style={{ color: muted }}>
+                  {gpaText(edu.gpa, customization)}
+                </p>
+              )}
               {hasText(edu.description) && (
                 <RichHtml
                   html={edu.description}
@@ -88,7 +118,13 @@ export default function CorporateBandLayout({
     ),
     skills: skills.length > 0 && (
       <section>
-        <AtsHeading title="Core Skills" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <AtsHeading
+          title="Core Skills"
+          color={navy}
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
         <SkillsList
           skills={skills}
           customization={customization}
@@ -99,15 +135,27 @@ export default function CorporateBandLayout({
     ),
     language: languages.length > 0 && (
       <section>
-        <AtsHeading title="Languages" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <AtsHeading
+          title="Languages"
+          color={navy}
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
         <p className="text-[0.85em]" style={{ color: muted }}>
-          {languages.map((l, langIdx) => l.name).join(" · ")}
+          {languages.map((l) => l.name).join(" · ")}
         </p>
       </section>
     ),
     references: includeReferences && references.length > 0 && (
       <section>
-        <AtsHeading title="References" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
+        <AtsHeading
+          title="References"
+          color={navy}
+          size={customization.headingsSize}
+          ruleColor={accent}
+          customization={customization}
+        />
         <div className="space-y-2 text-[0.82em]">
           {references.slice(0, 2).map((r, refIdx) => (
             <div key={listKey(r.id, refIdx, "ref")}>
@@ -125,17 +173,32 @@ export default function CorporateBandLayout({
   return (
     <div
       className={`flex ${expandHeight ? "min-h-full" : "h-full"} w-full flex-col ${expandHeight ? "overflow-visible" : "overflow-hidden"}`}
-      style={layoutShellStyle(customization, pageWidthPx, pageHeightPx, expandHeight, "#FFFFFF")}
+      style={layoutShellStyle(
+        customization,
+        pageWidthPx,
+        pageHeightPx,
+        expandHeight,
+        "#FFFFFF",
+      )}
     >
       {isFirstPage && (
-        <header className="px-10 py-8" style={{ backgroundColor: navy, color: headerInk }}>
+        <header
+          className="px-10 py-8"
+          style={{ backgroundColor: navy, color: headerInk }}
+        >
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="font-bold uppercase tracking-[0.16em]" style={{ fontSize: customization.fullNameSize }}>
+              <h1
+                className="font-bold uppercase tracking-[0.16em]"
+                style={{ fontSize: customization.fullNameSize }}
+              >
                 {personal.fullName}
               </h1>
               {personal.jobTitle && (
-                <p className="mt-2 uppercase tracking-[0.2em] opacity-90" style={{ fontSize: customization.titleSize }}>
+                <p
+                  className="mt-2 uppercase tracking-[0.2em] opacity-90"
+                  style={{ fontSize: customization.titleSize }}
+                >
                   {personal.jobTitle}
                 </p>
               )}
@@ -145,7 +208,9 @@ export default function CorporateBandLayout({
                 <p
                   key={listKey(c.id, contactIdx, "contact")}
                   className={
-                    c.kind === "email" || c.kind === "link" ? "break-all" : undefined
+                    c.kind === "email" || c.kind === "link"
+                      ? "break-all"
+                      : undefined
                   }
                 >
                   <ContactLink item={c} />
@@ -153,22 +218,40 @@ export default function CorporateBandLayout({
               ))}
             </div>
           </div>
-          <div className="mt-5 h-[2px] w-12 rounded-full" style={{ backgroundColor: accent }} />
+          <div
+            className="mt-5 h-[2px] w-12 rounded-full"
+            style={{ backgroundColor: accent }}
+          />
         </header>
       )}
 
-      <div className={`flex ${expandHeight ? "" : "min-h-0"} flex-1 gap-8 ${expandHeight ? "overflow-visible" : "overflow-hidden"} px-9 py-6`}>
+      <div
+        className={`flex ${expandHeight ? "" : "min-h-0"} flex-1 gap-8 ${expandHeight ? "overflow-visible" : "overflow-hidden"} px-9 py-6`}
+      >
         <main className="min-w-0 flex-[1.4] space-y-5">
           {hasText(personal.summary) && (
             <section>
-              <AtsHeading title="Professional Summary" color={navy} size={customization.headingsSize} ruleColor={accent} customization={customization} />
-              <RichHtml html={personal.summary} className="rte-content text-[0.9em]" style={{ color: ink }} />
+              <AtsHeading
+                title="Professional Summary"
+                color={navy}
+                size={customization.headingsSize}
+                ruleColor={accent}
+                customization={customization}
+              />
+              <RichHtml
+                html={personal.summary}
+                className="rte-content text-[0.9em]"
+                style={{ color: ink }}
+              />
             </section>
           )}
           {mainBlocks}
         </main>
 
-        <aside className="w-[34%] shrink-0 space-y-5 border-l pl-6" style={{ borderColor: ATS.line }}>
+        <aside
+          className="w-[34%] shrink-0 space-y-5 border-l pl-6"
+          style={{ borderColor: ATS.line }}
+        >
           {sidebarBlocks}
         </aside>
       </div>

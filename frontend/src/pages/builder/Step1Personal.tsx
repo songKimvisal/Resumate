@@ -21,7 +21,6 @@ import {
 import { useResumeStore, uid } from "../../store/resumeStore";
 import type { LinkItem, PersonalInfo } from "../../types/resume";
 import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/button";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { cn } from "../../lib/utils";
 import { photoImgStyle } from "../../lib/photoFit";
