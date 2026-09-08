@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"
 
+    bakong_token: str = ""
+    bakong_account_id: str = ""
+    bakong_merchant_name: str = ""
+    bakong_merchant_city: str = "Phnom Penh"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

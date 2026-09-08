@@ -28,3 +28,20 @@ class PaymentRecord(BaseModel):
 
 class PaymentHistory(BaseModel):
     payments: list[PaymentRecord]
+
+
+class CreateKhqrRequest(BaseModel):
+    pack_id: str = Field(min_length=1)
+    pack_name: str
+    amount_cents: int = Field(ge=1)
+    currency: str = "USD"
+
+
+class CreateKhqrResponse(BaseModel):
+    qr_string: str
+    md5: str
+
+
+class KhqrStatusResponse(BaseModel):
+    status: Literal["pending", "paid"]
+    next_delay_seconds: int

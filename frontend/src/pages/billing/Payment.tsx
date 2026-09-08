@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
@@ -27,6 +27,7 @@ import {
   unlockCustomization,
 } from "../../lib/api/templates";
 import { recordPayment } from "../../lib/api/payments";
+import { createKhqrPayment, getKhqrStatus } from "../../lib/api/khqr";
 import {
   consumePendingTemplateAsNewResume,
   consumePendingTemplateId,
@@ -51,7 +52,9 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-const MOCK_KHQR_VERIFY_DELAY_MS = 900;
+// Used for the very first check and as a fallback after a failed request -
+// every check after that uses the delay Bakong itself recommends.
+const KHQR_POLL_FALLBACK_SECONDS = 5;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -130,6 +133,13 @@ export default function Payment() {
     useState<PaymentProvider>(preferredMethod);
   const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
   const [verifyingKhqr, setVerifyingKhqr] = useState(false);
+  const [khqr, setKhqr] = useState<{
+    qrString: string;
+    md5: string;
+    createdAt: number;
+  } | null>(null);
+  const [khqrLoadError, setKhqrLoadError] = useState(false);
+  const khqrFulfilledRef = useRef(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
@@ -298,31 +308,111 @@ export default function Payment() {
     }
     navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
   };
+  // Asks the backend for a real, scannable Bakong KHQR code for this
+  // purchase's amount. Called on mount/method switch and again whenever the
+  // shopper asks for a fresh code after the old one expires.
+  const loadKhqr = () => {
+    if (!planData) return;
+    khqrFulfilledRef.current = false;
+    setKhqr(null);
+    setKhqrLoadError(false);
+    setSecondsLeft(QR_EXPIRY_SECONDS);
+    createKhqrPayment({
+      packId: planData.id,
+      packName: planData.name,
+      amountCents: Math.round(parseFloat(planData.price) * 100),
+    })
+      .then((res) =>
+        setKhqr({
+          qrString: res.qr_string,
+          md5: res.md5,
+          createdAt: Date.now() / 1000,
+        }),
+      )
+      .catch((err) => {
+        console.warn("Could not create KHQR payment:", err);
+        setKhqrLoadError(true);
+      });
+  };
+
   useEffect(() => {
     if (!planData || paymentMethod !== "khqr") return;
-
-    setSecondsLeft(QR_EXPIRY_SECONDS);
+    loadKhqr();
     const interval = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [paymentMethod, planData]);
+    // planData is recreated on every render (usePacks() builds fresh pack
+    // objects each call), so depending on it directly would re-trigger this
+    // effect - and re-request a brand-new QR - on every countdown tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, planData?.id]);
+
+  // Asks Bakong (via our backend) whether this QR's code was actually paid.
+  // Reports paid=true only the first time it sees "paid", so a slow poll and
+  // the manual "I've completed the payment" click can't both trigger
+  // fulfillment. nextDelaySeconds comes from Bakong's own dynamic delay
+  // matrix (short checks early, widening the longer a code sits unpaid).
+  const checkKhqrPaid = async (md5: string, createdAt: number) => {
+    if (khqrFulfilledRef.current) {
+      return { paid: false, nextDelaySeconds: KHQR_POLL_FALLBACK_SECONDS };
+    }
+    const { status, next_delay_seconds } = await getKhqrStatus(md5, createdAt);
+    const paid = status === "paid" && !khqrFulfilledRef.current;
+    if (paid) khqrFulfilledRef.current = true;
+    return { paid, nextDelaySeconds: next_delay_seconds };
+  };
+
+  // Background poll: a self-rescheduling chain rather than a fixed interval,
+  // so it can honor Bakong's recommended delay instead of hammering the API
+  // at a flat rate for however long the shopper leaves the QR open.
+  useEffect(() => {
+    if (!khqr || secondsLeft <= 0) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const poll = () => {
+      checkKhqrPaid(khqr.md5, khqr.createdAt)
+        .then(({ paid, nextDelaySeconds }) => {
+          if (cancelled) return;
+          if (paid) {
+            void fulfillPurchase();
+            return;
+          }
+          timeoutId = setTimeout(poll, nextDelaySeconds * 1000);
+        })
+        .catch((err) => {
+          console.warn("KHQR status check failed:", err);
+          if (!cancelled) {
+            timeoutId = setTimeout(poll, KHQR_POLL_FALLBACK_SECONDS * 1000);
+          }
+        });
+    };
+
+    timeoutId = setTimeout(poll, KHQR_POLL_FALLBACK_SECONDS * 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+    // Depending on (secondsLeft > 0) rather than secondsLeft itself avoids
+    // tearing the poll chain down every second (it ticks independently).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [khqr, secondsLeft > 0]);
 
   if (!planData) return null;
 
-  // KHQR only ever completes when the shopper confirms they actually paid
-  // in their banking app - a real webhook would drive this in production,
-  // but nothing here should ever fire on a timer by itself.
+  // Manual "I've completed the payment" check - an immediate poll on top of
+  // the background one above, for shoppers who don't want to wait it out.
   const handleConfirmKhqr = () => {
-    if (verifyingKhqr || secondsLeft <= 0) return;
+    if (verifyingKhqr || secondsLeft <= 0 || !khqr) return;
     setVerifyingKhqr(true);
-    setTimeout(() => {
-      void fulfillPurchase().finally(() => setVerifyingKhqr(false));
-    }, MOCK_KHQR_VERIFY_DELAY_MS);
+    checkKhqrPaid(khqr.md5, khqr.createdAt)
+      .then(({ paid }) => paid && fulfillPurchase())
+      .catch((err) => console.warn("Could not check KHQR status:", err))
+      .finally(() => setVerifyingKhqr(false));
   };
 
-  const regenerateKhqrCode = () => setSecondsLeft(QR_EXPIRY_SECONDS);
+  const regenerateKhqrCode = () => loadKhqr();
 
   const handlePay = () => {
     if (!isStripeFormValid || processing) return;
@@ -566,11 +656,19 @@ export default function Payment() {
                   </span>
                 </p>
               </div>
-              <div className="flex justify-center pb-5">
-                <QRCodeSVG
-                  value={`KHQR|RESUMATE|${planData.id}|${planData.price}|USD`}
-                  size={180}
-                />
+              <div
+                className="flex items-center justify-center pb-5"
+                style={{ minHeight: 180 }}
+              >
+                {khqrLoadError ? (
+                  <p className="max-w-45 text-center text-xs text-destructive">
+                    {t("billing.payment.khqr.unavailable")}
+                  </p>
+                ) : khqr ? (
+                  <QRCodeSVG value={khqr.qrString} size={180} />
+                ) : (
+                  <Loader2 size={24} className="animate-spin text-text-secondary" />
+                )}
               </div>
             </div>
 
@@ -596,11 +694,20 @@ export default function Payment() {
             </p>
 
             <div className="px-5 pb-5">
-              {secondsLeft > 0 ? (
+              {khqrLoadError ? (
                 <Button
                   className="mt-3 h-9 w-full"
                   size="compact"
-                  disabled={verifyingKhqr}
+                  variant="outline"
+                  onClick={regenerateKhqrCode}
+                >
+                  {t("billing.payment.khqr.regenerate")}
+                </Button>
+              ) : secondsLeft > 0 ? (
+                <Button
+                  className="mt-3 h-9 w-full"
+                  size="compact"
+                  disabled={verifyingKhqr || !khqr}
                   onClick={handleConfirmKhqr}
                 >
                   {verifyingKhqr ? (

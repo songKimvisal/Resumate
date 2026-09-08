@@ -28,6 +28,8 @@ Then fill in:
 
 Spoken why: the browser is fast for typing and preview. The Python API is trusted for money and AI keys. Supabase is login + database so we did not write our own auth server.
 
+Two separate language switches exist, easy to conflate: i18next (above) is the **website's** language (buttons, labels, the builder form itself). The **resume document's** own language — section headings ("Experience" vs "បទពិសោធន៍ការងារ"), date words like "Present", and empty-field placeholders like "Your Name" — is a second, independent setting: `customization.headingLanguage`, resolved through `frontend/src/lib/resumeHeadings.ts`. A judge can switch the app to Khmer without touching a single resume, or write an English-UI resume that renders its headings in Khmer, because these two are decoupled on purpose (a Khmer-speaking user may still want an English resume for an international employer).
+
 One-line answers per tool: `docs/PRESENTATION.md` → **Technology**.
 
 There is no server-side HTML-to-PDF step. The browser holds the resume object, draws it on screen, and the same object is sent to the PDF renderer.
@@ -159,6 +161,7 @@ User types in builder
 | `frontend/src/store/resumeStore.ts` | Edit API and dirty/saved flags |
 | `frontend/src/pages/builder/` | Wizard steps, customize, autosave layout |
 | `frontend/src/components/resume/ResumePreview.tsx` | Default live pagination |
+| `frontend/src/lib/resumeHeadings.ts` | Resume-content Khmer strings (headings, dates, "Present", empty-field placeholders) driven by `customization.headingLanguage` |
 | `frontend/src/components/resume/layouts/` | Special visual templates |
 | `frontend/src/components/resume/layouts/SpecialPaginatedLayout.tsx` | Special-layout page packing |
 | `frontend/src/components/resume/pdf/ResumeDocument.tsx` | Default PDF |
