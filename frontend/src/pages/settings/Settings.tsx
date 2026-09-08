@@ -73,7 +73,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <PageTitle
         text={t("settings.title")}
         accent={t("settings.titleAccent")}
@@ -84,18 +84,18 @@ export default function Settings() {
 
       <form
         onSubmit={handleSave}
-        className="mt-8 w-full max-w-lg rounded-2xl border border-line p-4 sm:p-6 space-y-5"
+        className="mt-6 sm:mt-8 w-full max-w-lg rounded-2xl border border-line p-4 sm:p-6 space-y-5"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={trimmedName || user?.email || ""}
               referrerPolicy="no-referrer"
-              className="size-14 rounded-full object-cover shrink-0"
+              className="size-12 sm:size-14 rounded-full object-cover shrink-0"
             />
           ) : (
-            <span className="size-14 rounded-full bg-brand text-white inline-flex items-center justify-center text-lg font-semibold shrink-0">
+            <span className="size-12 sm:size-14 rounded-full bg-brand text-white inline-flex items-center justify-center text-base sm:text-lg font-semibold shrink-0">
               {(trimmedName || user?.email || "?").charAt(0).toUpperCase()}
             </span>
           )}
@@ -103,9 +103,11 @@ export default function Settings() {
             <p className="font-medium text-text truncate">
               {trimmedName || user?.email}
             </p>
-            <p className="text-sm text-text-secondary truncate">
-              {user?.email}
-            </p>
+            {trimmedName && (
+              <p className="text-sm text-text-secondary truncate">
+                {user?.email}
+              </p>
+            )}
           </div>
         </div>
 
@@ -143,55 +145,59 @@ export default function Settings() {
         </div>
       </form>
 
-      <div className="mt-6 w-full max-w-lg rounded-2xl border border-line p-4 sm:p-6 space-y-5">
+      <div className="mt-5 sm:mt-6 w-full max-w-lg rounded-2xl border border-line p-4 sm:p-6">
         <h2 className="font-bold">{t("settings.preference.title")}</h2>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-text">
-              {t("settings.preference.languageLabel")}
-            </p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              {t("settings.preference.languageDesc")}
-            </p>
+        <div className="mt-3 divide-y divide-line">
+          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-text">
+                {t("settings.preference.languageLabel")}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {t("settings.preference.languageDesc")}
+              </p>
+            </div>
+            <div className="inline-flex shrink-0 rounded-full bg-surface-2 p-1">
+              {(["en", "km"] as const).map((lng) => (
+                <button
+                  key={lng}
+                  type="button"
+                  onClick={() => i18n.changeLanguage(lng)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                    i18n.language === lng
+                      ? "bg-bg text-text shadow-sm"
+                      : "text-text-secondary",
+                  )}
+                >
+                  {lng === "en" ? "EN" : "ខ្មែរ"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="inline-flex self-start sm:self-auto shrink-0 rounded-full bg-surface-2 p-1">
-            {(["en", "km"] as const).map((lng) => (
-              <button
-                key={lng}
-                type="button"
-                onClick={() => i18n.changeLanguage(lng)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                  i18n.language === lng
-                    ? "bg-bg text-text shadow-sm"
-                    : "text-text-secondary",
-                )}
-              >
-                {lng === "en" ? "EN" : "ខ្មែរ"}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-text">
-              {t("settings.preference.themeLabel")}
-            </p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              {t("settings.preference.themeDesc")}
-            </p>
+          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-text">
+                {t("settings.preference.themeLabel")}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {t("settings.preference.themeDesc")}
+              </p>
+            </div>
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={(checked) =>
+                setTheme(checked ? "dark" : "light")
+              }
+              ariaLabel={t("settings.preference.themeLabel")}
+            />
           </div>
-          <Switch
-            checked={theme === "dark"}
-            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-            ariaLabel={t("settings.preference.themeLabel")}
-          />
         </div>
       </div>
 
-      <div className="mt-6 w-full max-w-lg rounded-2xl border border-destructive/30 p-4 sm:p-6">
+      <div className="mt-5 sm:mt-6 w-full max-w-lg rounded-2xl border border-destructive/30 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="min-w-0">
             <p className="font-bold text-destructive">

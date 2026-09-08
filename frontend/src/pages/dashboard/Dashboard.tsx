@@ -560,9 +560,9 @@ export default function Dashboard() {
                     {/* ==================================================
                         ACTION BUTTONS
                     ================================================== */}
-                    <div className="grid grid-cols-2 gap-2 pt-0.5 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-2.5 lg:justify-start">
+                    <div className="grid grid-cols-2 gap-2 pt-0.5 sm:gap-3 lg:flex lg:flex-wrap lg:items-center lg:justify-start">
                       <Button
-                        className="h-9 w-full rounded-full px-3 text-[13px] sm:w-auto sm:px-4"
+                        className="h-9 w-full rounded-full px-3 text-[13px] sm:px-4 lg:w-auto"
                         onClick={handleFixMissing}
                         size="compact"
                       >
@@ -575,7 +575,7 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         size="compact"
-                        className="h-9 w-full rounded-full px-3 text-[13px] sm:w-auto sm:px-4"
+                        className="h-9 w-full rounded-full px-3 text-[13px] sm:px-4 lg:w-auto"
                         onClick={handleChangeResume}
                       >
                         {t("dashboard.changeResume")}
@@ -668,7 +668,7 @@ export default function Dashboard() {
             <div className="mt-4 flex justify-end sm:mt-6">
               <Button
                 size="compact"
-                className="h-9 rounded-full px-6"
+                className="h-8 rounded-full px-4 text-[13px] sm:h-9 sm:px-6 sm:text-sm"
                 onClick={handleContinue}
               >
                 {t("dashboard.continue")}
