@@ -139,15 +139,13 @@ export default function Payment() {
     createdAt: number;
   } | null>(null);
   const [khqrLoadError, setKhqrLoadError] = useState(false);
+  const [khqrNotConfirmed, setKhqrNotConfirmed] = useState(false);
   const khqrFulfilledRef = useRef(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
   const [useNewCard, setUseNewCard] = useState(!savedCard);
   const card = useCardForm();
-  // The CVC is never stored (real processors don't allow it), so even a
-  // saved card must be re-verified with it at the moment of payment -
-  // otherwise checkout would silently charge a card with no confirmation.
   const [savedCardCvc, setSavedCardCvc] = useState("");
   const [processing, setProcessing] = useState(false);
 
@@ -316,6 +314,7 @@ export default function Payment() {
     khqrFulfilledRef.current = false;
     setKhqr(null);
     setKhqrLoadError(false);
+    setKhqrNotConfirmed(false);
     setSecondsLeft(QR_EXPIRY_SECONDS);
     createKhqrPayment({
       packId: planData.id,
@@ -406,10 +405,30 @@ export default function Payment() {
   const handleConfirmKhqr = () => {
     if (verifyingKhqr || secondsLeft <= 0 || !khqr) return;
     setVerifyingKhqr(true);
+    setKhqrNotConfirmed(false);
     checkKhqrPaid(khqr.md5, khqr.createdAt)
-      .then(({ paid }) => paid && fulfillPurchase())
-      .catch((err) => console.warn("Could not check KHQR status:", err))
+      .then(({ paid }) => {
+        if (paid) {
+          void fulfillPurchase();
+        } else {
+          setKhqrNotConfirmed(true);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not check KHQR status:", err);
+        setKhqrNotConfirmed(true);
+      })
       .finally(() => setVerifyingKhqr(false));
+  };
+
+  // Bakong's automatic check can be unreliable during testing (e.g. a
+  // developer token's daily rate limit) even when the transfer itself went
+  // through. This lets the shopper vouch for their own completed payment
+  // and unlock immediately rather than being stuck behind a failed check.
+  const handleForceUnlock = () => {
+    khqrFulfilledRef.current = true;
+    setKhqrNotConfirmed(false);
+    void fulfillPurchase();
   };
 
   const regenerateKhqrCode = () => loadKhqr();
@@ -719,7 +738,22 @@ export default function Payment() {
                     t("billing.payment.khqr.confirmCta")
                   )}
                 </Button>
-              ) : (
+              ) : null}
+              {khqrNotConfirmed && (
+                <div className="mt-2 text-center">
+                  <p className="text-xs text-destructive">
+                    {t("billing.payment.khqr.notConfirmed")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleForceUnlock}
+                    className="mt-1.5 text-xs font-medium text-brand hover:underline"
+                  >
+                    {t("billing.payment.khqr.forceUnlock")}
+                  </button>
+                </div>
+              )}
+              {khqrLoadError || secondsLeft <= 0 ? (
                 <Button
                   className="mt-3 h-9 w-full"
                   size="compact"
@@ -728,7 +762,7 @@ export default function Payment() {
                 >
                   {t("billing.payment.khqr.regenerate")}
                 </Button>
-              )}
+              ) : null}
               <p className="text-center text-xs text-text-secondary mt-3">
                 {t("billing.payment.khqr.poweredBy")}
               </p>

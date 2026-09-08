@@ -13,7 +13,8 @@ class KhqrNotConfigured(RuntimeError):
 def _client() -> KHQR:
     if not settings.bakong_token or not settings.bakong_account_id:
         raise KhqrNotConfigured(
-           
+            "BAKONG_TOKEN and BAKONG_ACCOUNT_ID must be set in the backend "
+            "environment before real KHQR payments can be created."
         )
     return KHQR(settings.bakong_token)
 
@@ -34,14 +35,16 @@ def create_khqr_payment(
     return qr_string, khqr.generate_md5(qr_string)
 
 
-DEFAULT_POLL_DELAY_SECONDS = 5
+# Bakong's own suggested cadence (5s for the whole QR-expiry window) would
+# burn through a developer token's 100-requests/day quota in a single
+# checkout. Poll far less often instead - still responsive, but leaves room
+# for more than one test checkout per day.
+POLL_DELAY_SECONDS = 15
 
 
 def check_khqr_payment(
     md5: str, start_time: float | None = None
 ) -> tuple[bool, int]:
     khqr = _client()
-    if start_time is None:
-        return khqr.check_payment(md5) == "PAID", DEFAULT_POLL_DELAY_SECONDS
-    status, next_delay = khqr.check_payment(md5, start_time=start_time)
-    return status == "PAID", next_delay
+    paid = khqr.check_payment(md5) == "PAID"
+    return paid, 0 if paid else POLL_DELAY_SECONDS
