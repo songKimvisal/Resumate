@@ -409,7 +409,7 @@ export default function BuilderLayout() {
                 );
               })}
             </div>
-            <div className="lg:hidden flex justify-end max-w-7xl mx-auto px-4 pb-2">
+            <div className="lg:hidden flex justify-end max-w-7xl mx-auto px-4 pt-4 pb-3">
               {renderResumeLangToggle()}
             </div>
           </>
@@ -423,8 +423,9 @@ export default function BuilderLayout() {
           ref={formPaneRef}
           data-builder-form-pane
           lang={headingLanguage === "km" ? "km" : "en"}
-          className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pt-8 lg:pt-10 pb-44 lg:pb-28 pr-1"
+          className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin pb-44 lg:pb-28 pr-1"
         >
+          <div className="h-8 lg:h-10" />
           <AnimatePresence mode="popLayout">
             {customizeOpen ? (
               <motion.div
@@ -496,42 +497,38 @@ export default function BuilderLayout() {
         {previewOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-8"
+              className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setPreviewOpen(false)}
             >
-              <motion.div
-                className="relative w-full"
-                style={{ maxWidth: A4_WIDTH_PX }}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ResumePreview pageLabelClassName="text-white/80" />
-              </motion.div>
+              {/* min-h-full centres the page when it fits and still scrolls when it doesn't */}
+              <div className="flex min-h-full items-center justify-center p-3 sm:p-8">
+                <motion.div
+                  className="relative w-full"
+                  style={{ maxWidth: A4_WIDTH_PX }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ResumePreview pageLabelClassName="text-white/80" />
+                </motion.div>
+              </div>
             </motion.div>
-            <motion.div
+            <motion.button
+              type="button"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed top-4 left-4 right-4 z-[60] flex items-center justify-between gap-3 pointer-events-none"
+              onClick={() => setPreviewOpen(false)}
+              aria-label={t("builder.closePreview")}
+              className="fixed top-4 right-4 z-60 size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
             >
-              <div className="pointer-events-auto rounded-lg bg-bg px-3 py-2 shadow-lg">
-                {renderResumeLangToggle()}
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewOpen(false)}
-                aria-label={t("builder.closePreview")}
-                className="size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors pointer-events-auto"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            </motion.div>
+              <X size={18} strokeWidth={2} />
+            </motion.button>
           </>
         )}
       </AnimatePresence>
