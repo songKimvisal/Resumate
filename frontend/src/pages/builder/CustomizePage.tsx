@@ -40,7 +40,6 @@ import { partitionSectionOrder, partitionSpecialSectionOrder } from "../../lib/s
 import {
   hasCustomizationAccess,
   hasTemplateAccess,
-  PREMIUM_TEMPLATE_PRICE,
 } from "../../lib/templateAccess";
 import { unlockPremiumTemplate } from "../../lib/api/templates";
 import { cn, useFieldId } from "../../lib/utils";
@@ -54,6 +53,7 @@ import {
 import UnlockTemplateModal from "../marketplace/UnlockTemplateModal";
 import UnlockCustomizationModal from "./UnlockCustomizationModal";
 import ResumePreview from "../../components/resume/ResumePreview";
+import PremiumLockOverlay from "../../components/resume/PremiumLockOverlay";
 import { demoResumeForPreset } from "../../data/demoResume";
 import { ResumeLanguageToggle } from "./ResumeLanguageToggle";
 
@@ -539,26 +539,14 @@ export default function CustomizePage() {
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-line bg-bg p-6 sm:p-8 text-center">
-          <div className="relative w-full max-w-xs overflow-hidden rounded-lg shadow-sm">
+          <div className="group relative w-full max-w-xs overflow-hidden rounded-lg shadow-sm">
             <div className="pointer-events-none">
               <ResumePreview singlePage resume={lockedPreviewResume} />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="mx-5 flex max-w-[85%] flex-col items-center gap-2.5 rounded-2xl bg-white/60 px-5 py-5 text-center shadow-[0_8px_24px_-6px_rgba(0,0,0,0.3)] ring-1 ring-black/6 backdrop-blur-lg backdrop-saturate-150">
-                <span className="text-sm leading-snug font-bold uppercase tracking-wide text-brand-dark">
-                  {t("marketplace.premiumOverlay.title")}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setUnlockTarget(activeTemplatePreset)}
-                  className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-md shadow-brand/30"
-                >
-                  {t("marketplace.premiumOverlay.unlockFor", {
-                    price: PREMIUM_TEMPLATE_PRICE,
-                  })}
-                </button>
-              </div>
-            </div>
+            <PremiumLockOverlay
+              interactive
+              onUnlock={() => setUnlockTarget(activeTemplatePreset)}
+            />
           </div>
           <div>
             <p className="font-semibold text-text">
@@ -2178,20 +2166,7 @@ function TemplateSwitchThumb({
       <div className="pointer-events-none">
         <ResumePreview singlePage resume={resume} />
       </div>
-      {isPremiumLocked && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="mx-1.5 flex max-w-[88%] flex-col items-center gap-1 rounded-lg bg-white/70 px-1.5 py-1.5 text-center shadow-[0_4px_12px_-3px_rgba(0,0,0,0.3)] ring-1 ring-black/6 backdrop-blur-sm transition-transform duration-200 group-hover:scale-[1.04]">
-            <span className="text-[6px] leading-tight font-bold uppercase tracking-wide text-brand-dark">
-              {t("marketplace.premiumOverlay.title")}
-            </span>
-            <span className="rounded-full bg-linear-to-r from-brand to-brand-secondary px-1.5 py-0.5 text-[6px] leading-none font-bold uppercase tracking-wide text-white shadow-sm shadow-brand/30">
-              {t("marketplace.premiumOverlay.unlockFor", {
-                price: PREMIUM_TEMPLATE_PRICE,
-              })}
-            </span>
-          </div>
-        </div>
-      )}
+      {isPremiumLocked && <PremiumLockOverlay size="sm" />}
     </button>
   );
 }

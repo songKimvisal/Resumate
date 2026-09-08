@@ -1558,6 +1558,7 @@
     "premiumOverlay": {
       "title": "Premium Template",
       "unlockFor": "Unlock for ${{price}}",
+      "unlockShort": "Unlock ${{price}}",
       "claim": "Tap to unlock",
       "claimBadge": "Unlock"
     },
@@ -1659,6 +1660,7 @@
       "typefaceLabel": "Typeface",
       "note": "This is just a starting point you can adjust the layout, colors, or fonts at any step using the Customize button",
       "switchHint": "Tap a layout to switch adjust the accent and color on the left",
+      "backToTemplates": "Back to all templates",
       "changeAnswers": "← Change my answer",
       "continue": "Continue editing →",
       "layoutClassic": "Classic",

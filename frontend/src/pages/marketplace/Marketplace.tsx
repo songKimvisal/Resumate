@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Bot, Check, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
@@ -39,6 +39,7 @@ export default function Marketplace() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const pickFromCheckout = Boolean(
     (location.state as { pickTemplates?: boolean } | null)?.pickTemplates,
   );
@@ -75,7 +76,12 @@ export default function Marketplace() {
   const [aiAnswers, setAiAnswers] = useState<AiAnswers | null>(null);
   const [recommendation, setRecommendation] =
     useState<AiRecommendation | null>(null);
-  const [screen, setScreen] = useState<"gallery" | "aiResult">("gallery");
+  // kept in the URL so the navbar's Templates link (and browser back) return
+  // to the gallery instead of leaving the result screen up
+  const screen =
+    searchParams.get("view") === "ai" && recommendation && aiAnswers
+      ? "aiResult"
+      : "gallery";
 
   const filtered = useMemo(
     () =>
@@ -201,7 +207,7 @@ export default function Marketplace() {
     setAiAnswers(answers);
     setAiModalOpen(false);
     setRecommendation(recommendTemplates(answers));
-    setScreen("aiResult");
+    setSearchParams({ view: "ai" });
   };
 
   return (
