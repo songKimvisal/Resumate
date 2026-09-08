@@ -124,7 +124,7 @@ function splitRichHtml(html: string): string[] {
     }
   });
 
-  // Deduplicate identical consecutive chunks (guards against wrapper quirks).
+  // dedupe consecutive identical chunks
   const deduped: string[] = [];
   for (const part of parts) {
     if (deduped[deduped.length - 1] !== part) deduped.push(part);
@@ -189,8 +189,7 @@ function packUnits(
   heights: Record<string, number>,
   pageHeightPx: number,
 ): PagePlan[] {
-  // Main column sits beside the sidebar, so most of the page height is usable.
-  // (Old 0.42 budget left page 1 half-empty.)
+  // 0.42 left page 1 half-empty since the sidebar leaves most height usable
   const firstBudget = pageHeightPx * 0.86;
   const nextBudget = pageHeightPx * 0.92;
   const gap = 8;
@@ -212,9 +211,8 @@ function packUnits(
   const pages: ContentUnit[][] = [[]];
   let used = 0;
 
+  // discount for the probe column wrapping more than the real layout
   const unitHeight = (unit: ContentUnit) =>
-    // Slightly discount measured height so we don't leave large empty gaps
-    // when the probe column wraps more aggressively than the real layout.
     Math.max(18, Math.ceil((heights[unit.key] ?? 36) * 0.92));
 
   for (const unit of units) {
@@ -324,7 +322,7 @@ function applyPagePlan(
       // One entry per job id per page (merged description).
       if (usedIds.has(slice.id)) continue;
       usedIds.add(slice.id);
-      // Re-merge all slices for this id in order (in case non-adjacent - shouldn't happen).
+      // re-merge slices for this id, in order
       const combined = mergedJobs
         .filter((s) => s.id === slice.id)
         .reduce(

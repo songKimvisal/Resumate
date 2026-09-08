@@ -52,9 +52,7 @@ def unlock_template_route(
 def unlock_customization_route(
     user: CurrentUser = Depends(get_current_user),
 ) -> TemplateEntitlements:
-    """Call only after the $1 flat purchase has been recorded (see
-    /api/payments/record) - payment is verified client-side by the mock
-    KHQR/Stripe flow, same as pack grants."""
+    """Payment is verified client-side, call only after it's recorded."""
     return unlock_customization(user.id)
 
 

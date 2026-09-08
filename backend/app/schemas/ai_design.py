@@ -25,8 +25,7 @@ class TemplateMeta(BaseModel):
 
 class AiDesignRequest(BaseModel):
     answers: AiAnswers
-    # Only premium templates should be sent - free ones aren't valid picks
-    # for this feature, matching the frontend's recommendTemplates() logic.
+    # premium templates only, matches frontend's recommendTemplates()
     templates: list[TemplateMeta] = Field(min_length=1)
 
 

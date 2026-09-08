@@ -66,8 +66,7 @@ export default function Marketplace() {
   const [page, setPage] = useState(1);
 
   const [aiModalOpen, setAiModalOpen] = useState(false);
-  // bumped every time the modal opens, so it remounts fresh from
-  // `aiAnswers` instead of needing an effect to reset its fields
+  // bump on open to remount the modal fresh from aiAnswers
   const [aiModalKey, setAiModalKey] = useState(0);
   const openAiModal = () => {
     setAiModalKey((k) => k + 1);

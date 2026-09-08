@@ -110,8 +110,7 @@ def unlock_customization(user_id: str) -> TemplateEntitlements:
 def purchase_premium_template(
     user_id: str, template_id: str
 ) -> tuple[bool, TemplateEntitlements]:
-    """Flat $1.99 purchase: owns this one premium template outright, with its
-    own customization, independent of pack slots."""
+    """Flat $1.99 purchase: owns this template outright, own customization."""
     if template_id not in PREMIUM_TEMPLATE_IDS:
         return False, get_entitlements(user_id)
     row = rest_rpc(

@@ -208,9 +208,7 @@ export default function CustomizePage() {
   const showPhotoStyleControls =
     !isSpecialLayout || usesPhotoControls(customization.layoutVariant);
 
-  // a premium template applied from the marketplace/AI picker leaves its
-  // preset id in customization.template; while it's not unlocked, Customize
-  // stays locked so a free user can't dial a free template to match it.
+  // locked until the applied premium template is unlocked
   const activeTemplatePreset = TEMPLATE_PRESETS.find(
     (p) => p.id === customization.template,
   );
@@ -231,9 +229,7 @@ export default function CustomizePage() {
     );
   const isLocked =
     activeTemplatePreset?.tier === "premium" && !hasActiveTemplateAccess;
-  // a directly-bought premium template ($1.99) bundles its own
-  // customization; a free template needs the standalone $1 flat unlock
-  // (or an old pack that already granted it account-wide)
+  // premium templates bundle their own customization; free ones need the flat unlock
   const hasFullCustomizationAccess = hasCustomizationAccess(
     activeTemplatePreset?.tier,
     hasActiveTemplateAccess,
@@ -246,9 +242,7 @@ export default function CustomizePage() {
   );
   const [customizationUnlockOpen, setCustomizationUnlockOpen] =
     useState(false);
-  // CTA for any premium-gated control: unlock the active template if it's
-  // premium and not yet owned, otherwise offer the flat $1 customization
-  // unlock (the only other reason this gate can be locked)
+  // unlock the template if premium, else offer the flat customization unlock
   const openUpgrade = () => {
     if (activeTemplatePreset?.tier === "premium" && !hasActiveTemplateAccess) {
       setUnlockTarget(activeTemplatePreset);
@@ -257,9 +251,7 @@ export default function CustomizePage() {
     }
   };
 
-  // suggestions for the inline template switcher: same-industry templates
-  // first (closest match to what's already applied), then the rest, minus
-  // whatever is currently active
+  // same-industry templates first, then the rest, minus the active one
   const templateSuggestions = useMemo(() => {
     const others = TEMPLATE_PRESETS.filter(
       (p) => p.id !== customization.template,

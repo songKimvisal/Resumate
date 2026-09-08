@@ -85,7 +85,6 @@ export default function MyResumes() {
       const result = await saveResumePdf(item.resume);
       if (result === "quota") setUpgradeOpen(true);
     } catch {
-      // Resume cards have no error line; the picker abort is already ignored.
     }
   };
 

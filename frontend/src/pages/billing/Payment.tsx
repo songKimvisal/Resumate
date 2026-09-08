@@ -52,8 +52,7 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-// Used for the very first check and as a fallback after a failed request -
-// every check after that uses the delay Bakong itself recommends.
+// fallback delay before Bakong gives us its own recommended delay
 const KHQR_POLL_FALLBACK_SECONDS = 5;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
@@ -301,9 +300,6 @@ export default function Payment() {
     }
     navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
   };
-  // Asks the backend for a real, scannable Bakong KHQR code for this
-  // purchase's amount. Called on mount/method switch and again whenever the
-  // shopper asks for a fresh code after the old one expires.
   const loadKhqr = () => {
     if (!planData) return;
     khqrFulfilledRef.current = false;
@@ -336,17 +332,11 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-    // planData is recreated on every render (usePacks() builds fresh pack
-    // objects each call), so depending on it directly would re-trigger this
-    // effect - and re-request a brand-new QR - on every countdown tick.
+    // planData is a new object every render, don't retrigger on it
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, planData?.id]);
 
-  // Asks Bakong (via our backend) whether this QR's code was actually paid.
-  // Reports paid=true only the first time it sees "paid", so a slow poll and
-  // the manual "I've completed the payment" click can't both trigger
-  // fulfillment. nextDelaySeconds comes from Bakong's own dynamic delay
-  // matrix (short checks early, widening the longer a code sits unpaid).
+  // only report paid once, so poll + manual check can't both fire fulfillment
   const checkKhqrPaid = async (md5: string, createdAt: number) => {
     if (khqrFulfilledRef.current) {
       return { paid: false, nextDelaySeconds: KHQR_POLL_FALLBACK_SECONDS };
@@ -357,9 +347,6 @@ export default function Payment() {
     return { paid, nextDelaySeconds: next_delay_seconds };
   };
 
-  // Background poll: a self-rescheduling chain rather than a fixed interval,
-  // so it can honor Bakong's recommended delay instead of hammering the API
-  // at a flat rate for however long the shopper leaves the QR open.
   useEffect(() => {
     if (!khqr || secondsLeft <= 0) return;
     let cancelled = false;
@@ -388,15 +375,11 @@ export default function Payment() {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-    // Depending on (secondsLeft > 0) rather than secondsLeft itself avoids
-    // tearing the poll chain down every second (it ticks independently).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
 
   if (!planData) return null;
 
-  // Manual "I've completed the payment" check - an immediate poll on top of
-  // the background one above, for shoppers who don't want to wait it out.
   const handleConfirmKhqr = () => {
     if (verifyingKhqr || secondsLeft <= 0 || !khqr) return;
     setVerifyingKhqr(true);
@@ -416,10 +399,7 @@ export default function Payment() {
       .finally(() => setVerifyingKhqr(false));
   };
 
-  // Bakong's automatic check can be unreliable during testing (e.g. a
-  // developer token's daily rate limit) even when the transfer itself went
-  // through. This lets the shopper vouch for their own completed payment
-  // and unlock immediately rather than being stuck behind a failed check.
+  // lets the shopper confirm manually if the auto-check is stuck/rate-limited
   const handleForceUnlock = () => {
     khqrFulfilledRef.current = true;
     setKhqrNotConfirmed(false);

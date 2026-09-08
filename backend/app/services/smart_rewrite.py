@@ -68,11 +68,7 @@ _FIELD_INSTRUCTIONS: dict[RewriteFieldType, str] = {
 
 
 def _strip_html(html: str) -> str:
-    """Removes HTML tags, leaving plain text. We send the AI plain text
-    only - asking it to preserve/reproduce HTML tags is unreliable,
-    especially for smaller local models, which can generate broken/
-    unclosed tags. The chosen result gets wrapped in a simple <p> when
-    sent back to the frontend instead."""
+    """Strip HTML tags - local models don't reproduce them reliably."""
     text = re.sub(r"<[^>]*>", " ", html)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -107,13 +103,8 @@ Respond with ONLY strict JSON, no markdown fences, in this exact shape:
 
 
 def _parse_variations(raw_variations: list) -> list[RewriteVariation]:
-    """Parses the AI's 'variations' list into RewriteVariation objects.
-
-    Handles two shapes gracefully, since smaller/local models don't always
-    follow formatting instructions as precisely as Gemini does:
-      - the requested shape: [{"label": "...", "text": "..."}, ...]
-      - a simpler shape some models fall back to: ["plain text", ...]
-    """
+    """Handles both the requested [{label, text}] shape and a plain list
+    of strings, since local models don't always follow the format."""
     parsed: list[RewriteVariation] = []
     default_labels = ["Concise", "Detailed", "Results-focused"]
 
@@ -129,9 +120,7 @@ def _parse_variations(raw_variations: list) -> list[RewriteVariation]:
         else:
             continue
 
-        # Safety net: strip any stray/broken HTML the AI might still add
-        # despite being asked for plain text, then wrap cleanly in <p> so
-        # it displays correctly in the rich text editor.
+        # strip stray HTML the model might still add, wrap in <p> for the editor
         clean_text = _strip_html(text)
         if clean_text:
             parsed.append(RewriteVariation(label=label, text=f"<p>{clean_text}</p>"))
@@ -147,10 +136,7 @@ def rewrite_text(field_type: RewriteFieldType, text: str) -> RewriteResult:
 def _cached_rewrite_text(
     field_type: RewriteFieldType, text: str
 ) -> RewriteResult:
-    """Cached so re-testing the exact same text doesn't burn extra Gemini
-    quota - handy while developing/free-tier testing. Cache lives only in
-    memory, so it resets whenever the server restarts, and only kicks in
-    for byte-for-byte identical (field_type, text) pairs."""
+    """In-memory cache to avoid re-spending quota on identical requests."""
     try:
         raw_text = generate_text(
             _build_prompt(field_type, text),

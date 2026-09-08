@@ -55,13 +55,9 @@ function isSpecialLayout(variant: LayoutVariant | undefined) {
   return !!variant && variant !== "default";
 }
 
-// PDF points render smaller than browser px for the same visual size on the
-// page; this ratio keeps the exported PDF matching the live preview (it's
-// the small/medium/large -> 9/10/11pt mapping this replaced, as a ratio).
+// PDF points render smaller than browser px, scale font size to match preview
 const PDF_FONT_SIZE_RATIO = 10 / 14.5;
-// the live preview measures the page in CSS px (96/inch); PDF pages are laid
-// out in points (72/inch) - this keeps a border set to Npx look the same
-// physical thickness in the exported PDF as it does in the preview.
+// px (96/inch) to pt (72/inch), keeps border thickness matching the preview
 const PDF_PX_TO_PT = 72 / 96;
 function fmtDate(
   value: string,
@@ -338,10 +334,7 @@ function SectionPdfIcon({
   sectionIcon: Customization["sectionIcon"];
 }) {
   const isFilled = sectionIcon === "filled";
-  // "filled"'s bg/icon are an inverted pair for contrast; "outline" has no
-  // fill, so its border and icon both just take the "ink" color (white on
-  // an accent-filled heading, accent otherwise) - mirrors SectionHeadingIcon
-  // in ResumePreview.tsx
+  // mirrors SectionHeadingIcon in ResumePreview.tsx
   const badgeBg = onAccentBg ? "#fff" : accent;
   const filledIconColor = onAccentBg ? accent : "#fff";
   const boxSize = size * 1.5;
@@ -666,11 +659,8 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
   const isLongUnderline = c.headingBorder === "underline";
 
   const styles = StyleSheet.create({
-    // NOTE: `lineHeight` is only ever set alongside an explicit `fontSize`
-    // on the same style object. @react-pdf/renderer doesn't recompute an
-    // inherited lineHeight as a multiplier of each descendant's own font
-    // size - it reuses the literal inherited value as an absolute line-box
-    // height, which collapses larger text (e.g. the name) into an overlap.
+    // lineHeight only ever paired with fontSize - react-pdf inherits it as a
+    // literal value, not a multiplier, so bigger text elsewhere would overlap
     page: {
       paddingVertical: `${marginVerticalPct}%`,
       paddingLeft: `${hasSidebar && sidebarSide === "left" ? marginHorizontalPct + SIDEBAR_WIDTH_PCT : marginHorizontalPct}%`,
@@ -1025,9 +1015,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
     );
   };
 
-  // self-contained per-entry dot + short line - deliberately NOT a
-  // continuous line across entries, since entries can land on different
-  // auto-paginated pages
+  // per-entry dot, not a continuous line - entries can land on different pages
   const timelineWrap = (node: React.ReactNode) =>
     c.toggles.timeline ? (
       <View style={{ position: "relative", paddingLeft: 10 }}>
@@ -1059,9 +1047,7 @@ export function ResumeDocument({ resume }: { resume: Resume }) {
       node
     );
 
-  // experience/education, skills+languages, and references render as
-  // independent groups here, then get concatenated below in whatever order
-  // `sectionOrder` specifies (mirrors ResumePreview.tsx's block grouping)
+  // groups get concatenated below per sectionOrder (mirrors ResumePreview.tsx)
   const expEduNode = (
     <>
       {(experience.length > 0 || noExperience.length > 0) && (

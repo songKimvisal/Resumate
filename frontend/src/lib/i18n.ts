@@ -16,7 +16,7 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
-// Keep <html lang="..."> in sync so the Khmer font rules in index.css apply
+// keep <html lang> in sync for the Khmer font CSS rules
 i18n.on("languageChanged", (lng) => {
   document.documentElement.lang = lng;
   localStorage.setItem(STORAGE_KEY, lng);

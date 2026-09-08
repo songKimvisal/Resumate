@@ -6,9 +6,7 @@ import type { Resume } from "../types/resume";
 export async function downloadResumePdf(resume: Resume) {
   const filename = `${personalFileName(resume) || "resume"}.pdf`;
 
-  // Open the Save dialog while we still have the click gesture. Waiting
-  // until after react-pdf finishes often makes Chrome drop the download,
-  // so the file only appears after a refresh / second try.
+  // open Save dialog now, before the click gesture expires
   const fileHandle = await requestSaveHandle(filename);
 
   const blob = await renderPdfBlob(resume);
@@ -25,7 +23,7 @@ export async function downloadResumePdf(resume: Resume) {
 
 async function renderPdfBlob(resume: Resume) {
   const instance = pdf(<ResumeDocument resume={resume} />);
-  // First pass can finish before images/layout settle; the second blob is complete.
+  // first pass can be incomplete, second one is the real render
   await instance.toBlob();
   return instance.toBlob();
 }

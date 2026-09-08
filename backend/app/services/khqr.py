@@ -35,10 +35,7 @@ def create_khqr_payment(
     return qr_string, khqr.generate_md5(qr_string)
 
 
-# Bakong's own suggested cadence (5s for the whole QR-expiry window) would
-# burn through a developer token's 100-requests/day quota in a single
-# checkout. Poll far less often instead - still responsive, but leaves room
-# for more than one test checkout per day.
+# keep well under the 100 requests/day developer token limit
 POLL_DELAY_SECONDS = 15
 
 

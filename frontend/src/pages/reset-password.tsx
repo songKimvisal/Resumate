@@ -27,7 +27,7 @@ export default function ResetPassword() {
     );
   }
 
-  // No recovery session - the link was invalid, expired, or already used.
+  // link was invalid, expired, or already used
   if (!session && !done) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center p-4">

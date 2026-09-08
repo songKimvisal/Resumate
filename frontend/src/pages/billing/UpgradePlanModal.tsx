@@ -35,9 +35,7 @@ export default function UpgradePlanModal({
     need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
   );
 
-  // A premium template needs to be picked, so send that to the marketplace.
-  // Customization unlock is account-wide (works on any free template, no
-  // resume needed to choose it), so it can go straight to checkout.
+  // template tier needs picking in marketplace; customization goes straight to checkout
   const handleTierSelect = (tier: 1 | 2) => {
     onClose();
     if (tier === 2) {

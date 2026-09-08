@@ -324,9 +324,7 @@ export default function ResumePreview({
       ? sidebarTextColor
       : customization.bodyTextColor;
   const pageBackgroundColor = customization.bodyBgColor;
-  // sections placed in the sidebar (Section/SkillsBody/etc. all key their
-  // ink off `theme.bodyTextColor`) need to swap to a contrast-safe color
-  // when the sidebar has its own fill, independently of the main column
+  // sidebar sections need their own text color when the sidebar has a fill
   const sidebarTheme: Theme = sidebarBgColor
     ? { ...theme, bodyTextColor: sidebarTextColor }
     : theme;
@@ -513,9 +511,7 @@ export default function ResumePreview({
         list.push(...groups[g]),
       );
     } else {
-      // two-column mode: each of the 4 movable sections is independently
-      // placed, so only the ones the user left in the main column land here
-      // - whatever's in `sidebarSectionKeys` renders inside SidebarColumn
+      // only main-column sections here, sidebar ones render in SidebarColumn
       const skillsBlocks: Block[] = [];
       skills
         .filter((s) => s.name)
