@@ -87,12 +87,7 @@ export default function Payment() {
       : checkout?.plan === "starter"
         ? packs.find((p) => p.id === "both-starter")
         : undefined);
-
-  // The two flat, non-pack a-la-carte purchases: $1 to unlock customization
-  // on free templates, $1.99 to buy one specific premium template outright.
-  // Both reuse the pack checkout UI below (same KHQR/Stripe mock flow) but
-  // skip the pack-quota grants entirely.
-  const pendingTemplateId = peekPendingTemplateId();
+  const [pendingTemplateId] = useState(() => peekPendingTemplateId());
   const pendingTemplatePreset = pendingTemplateId
     ? TEMPLATE_PRESETS.find((p) => p.id === pendingTemplateId)
     : undefined;
