@@ -362,7 +362,7 @@ export default function About() {
         </motion.p>
         <motion.div
           {...fadeUp}
-          className="mx-auto mt-7 flex w-full max-w-sm flex-col gap-2.5 sm:mt-8 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3"
+          className="mx-auto mt-7 flex w-full max-w-sm flex-row flex-wrap justify-center gap-2.5 sm:mt-8 sm:max-w-none sm:gap-3"
         >
           {user ? (
             <Link to="/dashboard" className="w-full sm:w-auto">
@@ -372,7 +372,7 @@ export default function About() {
             </Link>
           ) : (
             <>
-              <Link to="/login" className="w-full sm:w-auto">
+              <Link to="/login" className="flex-1 sm:flex-none sm:w-auto">
                 <Button size="default" className="w-full sm:w-auto">
                   {t("about.cta.primary")}
                 </Button>
@@ -380,7 +380,7 @@ export default function About() {
               <Link
                 to="/"
                 state={{ scrollTo: "templates" }}
-                className="w-full sm:w-auto"
+                className="flex-1 sm:flex-none sm:w-auto"
               >
                 <Button size="default" variant="outline" className="w-full sm:w-auto">
                   {t("about.cta.secondary")}
