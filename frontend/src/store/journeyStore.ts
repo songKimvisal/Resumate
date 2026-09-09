@@ -245,7 +245,6 @@ interface JourneyState {
   byKey: Record<string, JourneyDraft>;
   lastUserId: string | null;
   lastResumeId: string | null;
-  /** True after this session tried to load journeys from Supabase. */
   remoteHydrated: boolean;
   getDraft: (userId?: string | null, resumeId?: string | null) => JourneyDraft;
   rememberResume: (userId: string, resumeId: string) => void;

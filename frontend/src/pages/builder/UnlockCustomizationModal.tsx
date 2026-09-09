@@ -4,9 +4,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { CUSTOMIZATION_UNLOCK_PRICE } from "../../lib/templateAccess";
-
-/** Flat $1 purchase: colors/fonts/layout on the current free template,
- * account-wide (covers every free template, not just this one). */
 export default function UnlockCustomizationModal({
   open,
   onCancel,

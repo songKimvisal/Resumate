@@ -255,10 +255,10 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 mt-4">
+          <div className="flex items-stretch gap-2 sm:gap-3 mt-4">
             <Button
               size="compact"
-              className="flex-1 min-w-[200px] justify-center"
+              className="flex-1 basis-0 min-w-0 justify-center gap-1.5 px-2.5 text-xs whitespace-normal break-words text-center leading-tight sm:min-w-[200px] sm:gap-2 sm:px-[14px] sm:text-sm sm:whitespace-nowrap"
               onClick={handleDownload}
               disabled={downloading}
             >
@@ -277,7 +277,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
             <Button
               size="compact"
               variant="outline"
-              className="hover:bg-primary hover:text-primary-foreground"
+              className="flex-1 basis-0 min-w-0 justify-center gap-1.5 px-2.5 text-xs whitespace-normal break-words text-center leading-tight hover:bg-primary hover:text-primary-foreground sm:flex-none sm:basis-auto sm:gap-2 sm:px-[14px] sm:text-sm sm:whitespace-nowrap"
               onClick={saved ? () => navigate("/my-resumes") : handleSave}
               disabled={saving}
             >

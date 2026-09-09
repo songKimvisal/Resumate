@@ -118,7 +118,6 @@ export default function Step1Personal() {
   const showPhoto = useResumeStore((s) => s.resume.customization.showPhoto);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoBoxRef = useRef<HTMLDivElement>(null);
-  // in-progress drag-to-reposition of the photo in "crop" mode
   const photoDragRef = useRef<{
     x: number;
     y: number;
@@ -127,14 +126,11 @@ export default function Step1Personal() {
   } | null>(null);
   const photoDraggedRef = useRef(false);
 
-  // chips clicked this session (fields with values are always visible)
   const [opened, setOpened] = useState<Set<string>>(new Set());
-  // which link entry's URL popover is currently open
   const [urlPopover, setUrlPopover] = useState<{
     key: keyof PersonalInfo;
     id: string;
   } | null>(null);
-  // in-progress drag for reordering a link field's entries
   const [dragId, setDragId] = useState<string | null>(null);
   const summaryRewrite = useSmartRewrite("summary");
 
@@ -426,7 +422,6 @@ export default function Step1Personal() {
         />
       </div>
 
-      {/* summary with AI rewrite, vertically centered on the same row as the label */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label
@@ -463,8 +458,7 @@ export default function Step1Personal() {
         )}
       </div>
 
-      {/* optional detail fields currently visible: short text fields pair up
-          two-per-row, repeatable link fields stack full-width below them */}
+     
       {textDetails.length > 0 && (
         <div className="grid sm:grid-cols-2 gap-4">
           {textDetails.map((f) => (
