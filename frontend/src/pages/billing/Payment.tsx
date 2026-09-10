@@ -137,6 +137,9 @@ export default function Payment() {
     createdAt: number;
   } | null>(null);
   const [khqrLoadError, setKhqrLoadError] = useState(false);
+  // Why it failed, shown on screen: a blank QR on a deployed site is almost
+  // always configuration, and the status code says which.
+  const [khqrErrorCode, setKhqrErrorCode] = useState<string | null>(null);
   const [khqrNotConfirmed, setKhqrNotConfirmed] = useState(false);
   const khqrFulfilledRef = useRef(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -348,6 +351,7 @@ export default function Payment() {
     khqrFulfilledRef.current = false;
     setKhqr(null);
     setKhqrLoadError(false);
+    setKhqrErrorCode(null);
     setKhqrNotConfirmed(false);
     setSecondsLeft(QR_EXPIRY_SECONDS);
     createKhqrPayment({
@@ -381,6 +385,7 @@ export default function Payment() {
           `KHQR code could not be created for "${planData.id}": ${why}`,
           detail,
         );
+        setKhqrErrorCode(status === 0 ? "no connection" : `HTTP ${status}`);
         setKhqrLoadError(true);
       });
   };
@@ -726,9 +731,16 @@ export default function Payment() {
                 style={{ minHeight: 180 }}
               >
                 {khqrLoadError ? (
-                  <p className="max-w-45 text-center text-xs text-destructive">
-                    {t("billing.payment.khqr.unavailable")}
-                  </p>
+                  <div className="max-w-45 text-center">
+                    <p className="text-xs text-destructive">
+                      {t("billing.payment.khqr.unavailable")}
+                    </p>
+                    {khqrErrorCode ? (
+                      <p className="mt-1 font-mono text-[10px] text-text-secondary">
+                        {khqrErrorCode}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : khqr ? (
                   <QRCodeSVG value={khqr.qrString} size={180} />
                 ) : (
