@@ -30,6 +30,7 @@ import {
   unlockPremiumTemplate,
 } from "../../lib/api/templates";
 import { recordPayment } from "../../lib/api/payments";
+import { BackendError } from "../../lib/api/client";
 import { createKhqrPayment, getKhqrStatus } from "../../lib/api/khqr";
 import {
   consumePendingTemplateAsNewResume,
@@ -361,7 +362,25 @@ export default function Payment() {
         }),
       )
       .catch((err) => {
-        console.warn("Could not create KHQR payment:", err);
+        const status = err instanceof BackendError ? err.status : 0;
+        const detail =
+          err instanceof BackendError ? JSON.stringify(err.body) : String(err);
+        const why =
+          status === 503
+            ? "the server has no BAKONG_TOKEN / BAKONG_ACCOUNT_ID configured"
+            : status === 400
+              ? "the server does not sell this SKU"
+              : status === 422
+                ? "the backend is older than this frontend - redeploy it"
+                : status === 401
+                  ? "the session token was rejected"
+                  : status === 0
+                    ? "the backend could not be reached (URL or CORS)"
+                    : `HTTP ${status}`;
+        console.warn(
+          `KHQR code could not be created for "${planData.id}": ${why}`,
+          detail,
+        );
         setKhqrLoadError(true);
       });
   };
@@ -740,16 +759,7 @@ export default function Payment() {
             </p>
 
             <div className="px-5 pb-5">
-              {khqrLoadError ? (
-                <Button
-                  className="mt-3 h-9 w-full"
-                  size="compact"
-                  variant="outline"
-                  onClick={regenerateKhqrCode}
-                >
-                  {t("billing.payment.khqr.regenerate")}
-                </Button>
-              ) : secondsLeft > 0 ? (
+              {!khqrLoadError && secondsLeft > 0 ? (
                 <Button
                   className="mt-3 h-9 w-full"
                   size="compact"

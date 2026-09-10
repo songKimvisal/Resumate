@@ -61,6 +61,14 @@ def create_khqr(
         )
     except KhqrNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        # The Bakong SDK rejects an out-of-spec merchant name (>25 chars),
+        # city (>15) or currency. Say so instead of a bare 500.
+        logger.error("Bakong rejected the QR details: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Bakong rejected the QR details: {exc}",
+        ) from exc
 
     try:
         create_khqr_intent(
