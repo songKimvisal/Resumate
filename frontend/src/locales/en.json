@@ -1785,7 +1785,6 @@
         "confirmCta": "I've completed the payment",
         "verifying": "Verifying with your bank…",
         "notConfirmed": "We couldn't confirm this payment yet. If you've already paid, please wait a moment and try again.",
-        "forceUnlock": "Already sent the money? Unlock anyway",
         "regenerate": "Get a new code",
         "unavailable": "KHQR payment isn't available right now.",
         "poweredBy": "Powered by Bakong, National Bank of Cambodia"

@@ -475,13 +475,6 @@ export default function Payment() {
       .finally(() => setVerifyingKhqr(false));
   };
 
-  // lets the shopper confirm manually if the auto-check is stuck/rate-limited
-  const handleForceUnlock = () => {
-    khqrFulfilledRef.current = true;
-    setKhqrNotConfirmed(false);
-    void fulfillPurchase();
-  };
-
   const regenerateKhqrCode = () => loadKhqr();
 
   const handlePay = () => {
@@ -789,18 +782,9 @@ export default function Payment() {
                 </Button>
               ) : null}
               {khqrNotConfirmed && (
-                <div className="mt-2 text-center">
-                  <p className="text-xs text-destructive">
-                    {t("billing.payment.khqr.notConfirmed")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleForceUnlock}
-                    className="mt-1.5 text-xs font-medium text-brand hover:underline"
-                  >
-                    {t("billing.payment.khqr.forceUnlock")}
-                  </button>
-                </div>
+                <p className="mt-2 text-center text-xs text-destructive">
+                  {t("billing.payment.khqr.notConfirmed")}
+                </p>
               )}
               {khqrLoadError || secondsLeft <= 0 ? (
                 <Button
