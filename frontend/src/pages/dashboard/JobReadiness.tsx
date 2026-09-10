@@ -21,7 +21,6 @@ import { useJourneyStore, useJourneyDraft, practicedIdsOf } from "../../store/jo
 import { computeJobMatch, requirementKeywords } from "../../lib/jobMatch";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
 import {
-  buildFallbackAnalysis,
   displayJobCompany,
   displayJobTitle,
   interviewReadinessLabel,
@@ -55,7 +54,6 @@ export default function JobReadiness() {
   const { user } = useAuth();
   const { resume, loading } = useJourneyResume();
   const reachStep = useJourneyStore((s) => s.reachStep);
-  const saveDraft = useJourneyStore((s) => s.saveDraft);
   const getDraft = useJourneyStore((s) => s.getDraft);
   const startNewJob = useJourneyStore((s) => s.startNewJob);
   const draft = useJourneyDraft(user?.id, resume.id);
@@ -70,17 +68,14 @@ export default function JobReadiness() {
   useEffect(() => {
     if (loading || !user || !resume.id) return;
     const current = getDraft(user.id, resume.id);
-    if (!current.analysis && !current.jobText) {
+    // Job text alone is not a report. Without an analysis the shopper has not
+    // run one yet, so send them back to do it rather than building one here.
+    if (!current.analysis) {
       navigate(
         fromSaved ? "/saved-jobs" : fromHub ? "/interview-prep" : "/job-match",
         { replace: true },
       );
       return;
-    }
-    if (!current.analysis && current.jobText) {
-      saveDraft(user.id, resume.id, {
-        analysis: buildFallbackAnalysis(current.jobText, resume),
-      });
     }
     if (!fromSaved && !fromHub) reachStep(user.id, resume.id, 3);
   }, [
@@ -90,7 +85,6 @@ export default function JobReadiness() {
     fromSaved,
     fromHub,
     getDraft,
-    saveDraft,
     reachStep,
     navigate,
   ]);
@@ -98,9 +92,6 @@ export default function JobReadiness() {
   const analysis = draft?.analysis;
   const pack = useMemo(() => {
     if (analysis) return withNormalizedQuestions(analysis, resume, draft?.jobText);
-    if (draft?.jobText && resume.id) {
-      return buildFallbackAnalysis(draft.jobText, resume);
-    }
     return undefined;
   }, [analysis, draft?.jobText, resume]);
   const jobText = draft?.jobText ?? "";

@@ -245,6 +245,7 @@
       "prep": "Drafting interview questions and readiness report"
     },
     "analyzeError": "Something went wrong analyzing this job. Please try again.",
+    "analyzeQuotaEmpty": "You have no job analyses left. Get a pack to analyze this job.",
     "now": "Now",
     "done": "Done",
     "progressLabel": "Progress",
@@ -1667,11 +1668,10 @@
       "layoutSidebar": "Sidebar"
     }
   },
-
   "myResumes": {
     "title": "My",
     "titleAccent": "Resumes",
-    "subtitle": "Your first resume is free forever. Need more than one resume?",
+    "subtitle": "{{used}} of {{limit}} resumes used. Need another?",
     "upgradeLink": "Buy a pack",
     "newResume": "New resume",
     "untitled": "Untitled resume",

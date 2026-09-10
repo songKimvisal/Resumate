@@ -18,13 +18,16 @@ import { usePacks } from "../../hooks/usePacks";
 import { useCardForm } from "../../hooks/useCardForm";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePaymentMethodStore } from "../../store/paymentMethodStore";
-import { grantAiCredits } from "../../lib/api/credits";
-import { grantPdfSaves } from "../../lib/api/pdfs";
-import { grantJobAnalyses } from "../../lib/api/analyses";
+import { getAiCredits, grantAiCredits } from "../../lib/api/credits";
+import { getPdfSaves, grantPdfSaves } from "../../lib/api/pdfs";
+import { getJobAnalyses, grantJobAnalyses } from "../../lib/api/analyses";
 import {
+  applyTemplateEntitlements,
+  getTemplateEntitlements,
   grantTemplatePack,
   purchasePremiumTemplate,
   unlockCustomization,
+  unlockPremiumTemplate,
 } from "../../lib/api/templates";
 import { recordPayment } from "../../lib/api/payments";
 import { createKhqrPayment, getKhqrStatus } from "../../lib/api/khqr";
@@ -149,25 +152,34 @@ export default function Payment() {
   const isStripeFormValid =
     (usingSavedCard && savedCardCvcValid) || card.isValid;
 
-  const fulfillFlatPurchase = async (flat: FlatKind) => {
+  const fulfillFlatPurchase = async (
+    flat: FlatKind,
+    alreadyGranted = false,
+  ) => {
     if (!flatPlanData) return;
     const provider = paymentMethod === "khqr" ? "khqr" : "stripe";
-    const amountCents = Math.round(parseFloat(flatPlanData.price) * 100);
 
-    try {
-      await recordPayment({
-        packId: flatPlanData.id,
-        packName: flatPlanData.name,
-        provider,
-        amountCents,
-      });
-    } catch (err) {
-      console.warn("Could not record payment:", err);
+    // On the verified KHQR path the server granted this and wrote its own
+    // payment row the moment Bakong confirmed the money, so we only read back.
+    if (!alreadyGranted) {
+      try {
+        await recordPayment({
+          packId: flatPlanData.id,
+          packName: flatPlanData.name,
+          provider,
+        });
+      } catch (err) {
+        console.warn("Could not record payment:", err);
+      }
     }
 
     if (flat === "customization") {
       try {
-        await unlockCustomization();
+        if (alreadyGranted) {
+          applyTemplateEntitlements(await getTemplateEntitlements());
+        } else {
+          await unlockCustomization();
+        }
       } catch (err) {
         console.warn("Could not unlock customization:", err);
       }
@@ -183,7 +195,11 @@ export default function Payment() {
       : undefined;
     if (templateId) {
       try {
-        await purchasePremiumTemplate(templateId);
+        if (alreadyGranted) {
+          applyTemplateEntitlements(await getTemplateEntitlements());
+        } else {
+          await purchasePremiumTemplate(templateId);
+        }
       } catch (err) {
         console.warn("Could not purchase template:", err);
       }
@@ -200,7 +216,18 @@ export default function Payment() {
     setShowSuccess(true);
   };
 
-  const fulfillPackPurchase = async (packId: PackId) => {
+  /**
+   * Turn a completed checkout into entitlements.
+   *
+   * `alreadyGranted` is the verified KHQR path: Bakong confirmed the money,
+   * so the server granted the pack and recorded the payment itself and we
+   * only read the result back. Otherwise - the mocked Stripe card form - the
+   * browser still asks for the grant, the way it always has.
+   */
+  const fulfillPackPurchase = async (
+    packId: PackId,
+    { alreadyGranted = false }: { alreadyGranted?: boolean } = {},
+  ) => {
     if (!planData) return;
     subscribeToPlan(packToPlanId(packId), packId);
 
@@ -212,36 +239,51 @@ export default function Payment() {
     const shouldApplyPending =
       Boolean(pendingPreset) &&
       (packUnlocksAllTemplates(packId) || packIncludesTemplates(packId));
+    if (!alreadyGranted) {
+      recordPayment({
+        packId,
+        packName: planData.name,
+        provider: paymentMethod === "khqr" ? "khqr" : "stripe",
+      }).catch((err) => console.warn("Could not record payment:", err));
+    }
+
+    // A pack pays for template *slots*; which template fills one is a
+    // separate, slot-gated call, so claiming the pending pick here is safe
+    // even though the server did the granting.
+    const claimTemplates = () =>
+      pendingId && packIncludesTemplates(packId)
+        ? unlockPremiumTemplate(pendingId)
+        : getTemplateEntitlements().then((entitlements) => {
+            applyTemplateEntitlements(entitlements);
+            return entitlements;
+          });
+
     const [pdfsResult, creditsResult, analysesResult, templatesResult] =
       await Promise.allSettled([
-        grantPdfSaves(packId),
-        grantAiCredits(packId),
-        grantJobAnalyses(packId),
-        grantTemplatePack(packId, pendingId),
-        recordPayment({
-          packId,
-          packName: planData.name,
-          provider: paymentMethod === "khqr" ? "khqr" : "stripe",
-          amountCents: Math.round(parseFloat(planData.price) * 100),
-        }),
+        alreadyGranted ? getPdfSaves() : grantPdfSaves(packId),
+        alreadyGranted ? getAiCredits() : grantAiCredits(packId),
+        alreadyGranted ? getJobAnalyses() : grantJobAnalyses(packId),
+        alreadyGranted ? claimTemplates() : grantTemplatePack(packId, pendingId),
       ]);
+
+    const verb = alreadyGranted ? "load" : "grant";
 
     if (pdfsResult.status === "fulfilled") {
       setPdfs(pdfsResult.value.total, pdfsResult.value.used);
     } else {
-      console.warn("Could not grant PDF saves:", pdfsResult.reason);
+      console.warn(`Could not ${verb} PDF saves:`, pdfsResult.reason);
     }
 
     if (creditsResult.status === "fulfilled") {
       setCredits(creditsResult.value.total, creditsResult.value.used);
     } else {
-      console.warn("Could not grant AI credits:", creditsResult.reason);
+      console.warn(`Could not ${verb} AI credits:`, creditsResult.reason);
     }
 
     if (analysesResult.status === "fulfilled") {
       setAnalyses(analysesResult.value.total, analysesResult.value.used);
     } else {
-      console.warn("Could not grant job analyses:", analysesResult.reason);
+      console.warn(`Could not ${verb} job analyses:`, analysesResult.reason);
     }
 
     let unlockedCount = 0;
@@ -250,7 +292,7 @@ export default function Payment() {
       unlockedCount = templatesResult.value.unlockedTemplateIds.length;
       templateSlots = templatesResult.value.templateSlots;
     } else {
-      console.warn("Could not grant templates:", templatesResult.reason);
+      console.warn(`Could not ${verb} templates:`, templatesResult.reason);
     }
 
     if (packUnlocksAllTemplates(packId)) {
@@ -276,13 +318,13 @@ export default function Payment() {
     showSuccess();
   };
 
-  const fulfillPurchase = async () => {
+  const fulfillPurchase = async (alreadyGranted = false) => {
     if (checkout?.flat) {
-      await fulfillFlatPurchase(checkout.flat);
+      await fulfillFlatPurchase(checkout.flat, alreadyGranted);
       return;
     }
     if (planData && isPackId(planData.id)) {
-      await fulfillPackPurchase(planData.id);
+      await fulfillPackPurchase(planData.id, { alreadyGranted });
     }
   };
 
@@ -310,7 +352,6 @@ export default function Payment() {
     createKhqrPayment({
       packId: planData.id,
       packName: planData.name,
-      amountCents: Math.round(parseFloat(planData.price) * 100),
     })
       .then((res) =>
         setKhqr({
@@ -339,12 +380,23 @@ export default function Payment() {
   // only report paid once, so poll + manual check can't both fire fulfillment
   const checkKhqrPaid = async (md5: string, createdAt: number) => {
     if (khqrFulfilledRef.current) {
-      return { paid: false, nextDelaySeconds: KHQR_POLL_FALLBACK_SECONDS };
+      return {
+        paid: false,
+        granted: false,
+        nextDelaySeconds: KHQR_POLL_FALLBACK_SECONDS,
+      };
     }
-    const { status, next_delay_seconds } = await getKhqrStatus(md5, createdAt);
+    const { status, next_delay_seconds, fulfilled } = await getKhqrStatus(
+      md5,
+      createdAt,
+    );
     const paid = status === "paid" && !khqrFulfilledRef.current;
     if (paid) khqrFulfilledRef.current = true;
-    return { paid, nextDelaySeconds: next_delay_seconds };
+    return {
+      paid,
+      granted: fulfilled === true,
+      nextDelaySeconds: next_delay_seconds,
+    };
   };
 
   useEffect(() => {
@@ -354,10 +406,10 @@ export default function Payment() {
 
     const poll = () => {
       checkKhqrPaid(khqr.md5, khqr.createdAt)
-        .then(({ paid, nextDelaySeconds }) => {
+        .then(({ paid, granted, nextDelaySeconds }) => {
           if (cancelled) return;
           if (paid) {
-            void fulfillPurchase();
+            void fulfillPurchase(granted);
             return;
           }
           timeoutId = setTimeout(poll, nextDelaySeconds * 1000);
@@ -385,9 +437,9 @@ export default function Payment() {
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
     checkKhqrPaid(khqr.md5, khqr.createdAt)
-      .then(({ paid }) => {
+      .then(({ paid, granted }) => {
         if (paid) {
-          void fulfillPurchase();
+          void fulfillPurchase(granted);
         } else {
           setKhqrNotConfirmed(true);
         }

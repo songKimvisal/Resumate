@@ -55,13 +55,13 @@ export default function ProcessInterviewPrep() {
   const practicedQuestionIds = practicedIdsOf(draft);
   const analysis = draft?.analysis;
   const pack = useMemo(() => {
-    if (draft?.jobText && resume.id && (!analysis || analysis.source === "fallback")) {
+    // A stored "fallback" analysis is a run that was paid for but whose AI
+    // call failed; rebuilding it locally is fine. No analysis at all means no
+    // run happened, and a job ad on its own does not earn a question set.
+    if (draft?.jobText && resume.id && analysis?.source === "fallback") {
       return buildFallbackAnalysis(draft.jobText, resume);
     }
     if (analysis) return withNormalizedQuestions(analysis, resume, draft?.jobText);
-    if (draft?.jobText && resume.id) {
-      return buildFallbackAnalysis(draft.jobText, resume);
-    }
     return undefined;
   }, [analysis, draft?.jobText, resume]);
 
@@ -72,14 +72,9 @@ export default function ProcessInterviewPrep() {
   useEffect(() => {
     if (loading || !user || !resume.id) return;
     const current = getDraft(user.id, resume.id);
-    if (!current.analysis && !current.jobText) {
+    if (!current.analysis) {
       navigate("/interview-prep", { replace: true });
       return;
-    }
-    if (!current.analysis && current.jobText) {
-      saveDraft(user.id, resume.id, {
-        analysis: buildFallbackAnalysis(current.jobText, resume),
-      });
     }
     if (!fromHub && from !== "saved-jobs") {
       reachStep(user.id, resume.id, 2);

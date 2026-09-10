@@ -406,6 +406,16 @@ export function isReadyToApply(input: {
   );
 }
 
+/** Thrown when the user has no job analyses to spend. The local fallback pack
+ * is a degraded result for a *paid* run whose AI call failed - it is not a
+ * free tier, so a user with an empty quota gets nothing to fall back to. */
+export class OutOfAnalysesError extends Error {
+  constructor() {
+    super("No job analyses remaining");
+    this.name = "OutOfAnalysesError";
+  }
+}
+
 /** One analysis quota / one Gemini call / match + 20 Q&A + skill-gap. Falls back locally so later steps still work. */
 export async function resolveJobAnalysisPack(
   jobText: string,
@@ -415,7 +425,7 @@ export async function resolveJobAnalysisPack(
 ): Promise<JobAnalysisPack> {
   const local = computeJobMatch(jobText, resume);
   if (remainingAnalyses <= 0) {
-    return buildFallbackAnalysis(jobText, resume, local);
+    throw new OutOfAnalysesError();
   }
 
   try {
@@ -445,6 +455,9 @@ export async function resolveJobAnalysisPack(
     if (err instanceof BackendError) {
       const analyses: AnalysisBalance | null = analysesFromErrorBody(err.body);
       if (analyses) setAnalyses(analyses.total, analyses.used);
+      // The server is the real gate. If it says the quota is empty, the
+      // cached count was stale - do not hand out a pack anyway.
+      if (err.status === 402) throw new OutOfAnalysesError();
     }
   }
 

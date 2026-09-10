@@ -27,6 +27,7 @@ backend/.env
 # ---------- Private notes (your machine only) ----------
 docs/
 test.txt
+test.sql
 # ---------- Editor / OS ----------
 .vscode/*
 !.vscode/extensions.json

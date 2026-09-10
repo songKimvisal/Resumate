@@ -21,3 +21,13 @@ export function pdfsForPack(packId: PackId): number {
 export function remainingPdfs(total: number, used: number): number {
   return Math.max(0, total - used);
 }
+
+/**
+ * How many resumes an account may keep: one per PDF save it can download.
+ * Free is 1 of each, and a pack that adds PDF saves adds resume slots to
+ * match. Uses the *total* allowance, not what is left - downloading a PDF
+ * must never make a resume you already wrote un-keepable.
+ */
+export function resumeLimitFromPdfs(pdfsTotal: number): number {
+  return Math.max(FREE_PDF_SAVES, pdfsTotal);
+}

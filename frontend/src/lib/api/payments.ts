@@ -22,12 +22,11 @@ export function getPaymentHistory() {
   return requestBackend<{ payments: PaymentRecord[] }>("/api/payments");
 }
 
+/** The server prices the SKU itself - the browser cannot name an amount. */
 export function recordPayment(params: {
   packId: PaymentSku;
   packName: string;
   provider: Provider;
-  amountCents: number;
-  currency?: string;
   externalTransactionId?: string;
 }) {
   return requestBackend<PaymentRecord>("/api/payments/record", {
@@ -36,8 +35,6 @@ export function recordPayment(params: {
       pack_id: params.packId,
       pack_name: params.packName,
       provider: params.provider,
-      amount_cents: params.amountCents,
-      currency: params.currency ?? "USD",
       external_transaction_id: params.externalTransactionId ?? null,
     },
   });

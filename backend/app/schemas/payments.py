@@ -6,11 +6,11 @@ Provider = Literal["stripe", "khqr"]
 
 
 class RecordPaymentRequest(BaseModel):
+    """The amount is not accepted from the browser - the server prices the SKU."""
+
     pack_id: str = Field(min_length=1)
     pack_name: str
     provider: Provider
-    amount_cents: int = Field(ge=0)
-    currency: str = "USD"
     external_transaction_id: str | None = None
 
 
@@ -31,17 +31,24 @@ class PaymentHistory(BaseModel):
 
 
 class CreateKhqrRequest(BaseModel):
+    """Same rule as above: the QR is generated for the server's price."""
+
     pack_id: str = Field(min_length=1)
     pack_name: str
-    amount_cents: int = Field(ge=1)
-    currency: str = "USD"
 
 
 class CreateKhqrResponse(BaseModel):
     qr_string: str
     md5: str
+    amount_cents: int
+    currency: str
 
 
 class KhqrStatusResponse(BaseModel):
+    """`fulfilled` means the server has already granted this checkout. When it
+    is False on a paid QR, this server could not fulfil it (no intent row) and
+    the browser falls back to the older client-driven grant."""
+
     status: Literal["pending", "paid"]
     next_delay_seconds: int
+    fulfilled: bool = False

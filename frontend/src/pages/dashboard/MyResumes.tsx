@@ -17,6 +17,7 @@ import ResumeCard from "../../components/ui/dashboard/ResumeCard";
 import PageTitle from "../../components/layout/PageTitle";
 import { useJourneyStore } from "../../store/journeyStore";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
+import { resumeLimitFromPdfs } from "../../lib/pdfSaves";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 import mascot from "../../assets/logo/mascot.png";
 
@@ -34,7 +35,13 @@ export default function MyResumes() {
   const [confirmingBulk, setConfirmingBulk] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const { canSave } = usePdfSaves();
+  const { total: pdfsTotal, canSave } = usePdfSaves();
+  // One resume per PDF save the account can download.
+  const resumeLimit = resumeLimitFromPdfs(pdfsTotal);
+  const resumeCount = resumes?.length ?? 0;
+  // Only block once the list has actually loaded, so a slow fetch never
+  // locks someone out of a resume they are entitled to.
+  const atResumeLimit = resumes !== null && resumeCount >= resumeLimit;
 
   const fetchResumes = useCallback((userId: string) => {
     getResumesByUser(userId)
@@ -67,6 +74,10 @@ export default function MyResumes() {
   };
 
   const handleNewResume = () => {
+    if (atResumeLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
     resetResume();
     navigate("/marketplace");
   };
@@ -156,7 +167,10 @@ export default function MyResumes() {
             accent={t("myResumes.titleAccent")}
           />
           <p className="text-sm text-text-secondary mt-2">
-            {t("myResumes.subtitle")}{" "}
+            {t("myResumes.subtitle", {
+              used: resumeCount,
+              limit: resumeLimit,
+            })}{" "}
             <Link to="/billing" className="underline font-medium text-text">
               {t("myResumes.upgradeLink")}
             </Link>

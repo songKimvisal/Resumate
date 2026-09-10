@@ -19,7 +19,8 @@ import {
   requirementKeywords,
   type JobMatchResult,
 } from "../../lib/jobMatch";
-import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing, composeJobAd, splitJobAd } from "../../lib/jobAnalysis";
+import { resolveJobAnalysisPack, resumeInsightFlags, languageGapsFromMissing, composeJobAd, splitJobAd, OutOfAnalysesError } from "../../lib/jobAnalysis";
+import UpgradePlanModal from "../billing/UpgradePlanModal";
 import { useJobAnalyses } from "../../hooks/useJobAnalyses";
 import { cn, useFieldId } from "../../lib/utils";
 import type { Resume } from "../../types/resume";
@@ -64,6 +65,7 @@ export default function JobMatch() {
   >({});
   const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const persistTimerRef = useRef<number | null>(null);
   const restoredForRef = useRef<string | null>(null);
   const journeyHydrated = useJourneyHydrated();
@@ -373,6 +375,15 @@ export default function JobMatch() {
         ? fresh.analysis
         : null;
 
+    // A new analysis costs one from the pack. Re-opening one already paid for
+    // (reusePack) stays free, but the free tier does not get a fresh run.
+    if (!reusePack && remaining <= 0) {
+      setAnalyzing(false);
+      setError(t("jobMatch.analyzeQuotaEmpty"));
+      setUpgradeOpen(true);
+      return;
+    }
+
     try {
       const [, pack] = await Promise.all([
         new Promise((r) => setTimeout(r, totalMs)),
@@ -395,8 +406,13 @@ export default function JobMatch() {
         });
       }
       setHasResults(true);
-    } catch {
-      setError(t("jobMatch.analyzeError"));
+    } catch (err) {
+      if (err instanceof OutOfAnalysesError) {
+        setError(t("jobMatch.analyzeQuotaEmpty"));
+        setUpgradeOpen(true);
+      } else {
+        setError(t("jobMatch.analyzeError"));
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -668,6 +684,16 @@ export default function JobMatch() {
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         closeLabel={t("jobMatch.results.closePreview")}
+      />
+
+      <UpgradePlanModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        initialNeed="ai"
+        onSelectPack={(packId) => {
+          setUpgradeOpen(false);
+          navigate("/billing/payment", { state: { pack: packId } });
+        }}
       />
     </div>
   );
