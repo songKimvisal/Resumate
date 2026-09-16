@@ -56,8 +56,8 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-// fallback delay before Bakong gives us its own recommended delay
 const KHQR_POLL_FALLBACK_SECONDS = 5;
+const KHQR_POLL_RETRY_SECONDS = 15;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -107,9 +107,7 @@ export default function Payment() {
       : checkout?.flat === "premium-template" && pendingTemplatePreset
         ? {
             id: `template:${pendingTemplatePreset.id}`,
-            name: t(
-              `marketplace.styleNames.${pendingTemplatePreset.styleKey}`,
-            ),
+            name: t(`marketplace.styleNames.${pendingTemplatePreset.styleKey}`),
             price: PREMIUM_TEMPLATE_PRICE,
             cta: t("marketplace.unlockModal.buyTemplateCta", {
               price: PREMIUM_TEMPLATE_PRICE,
@@ -137,11 +135,11 @@ export default function Payment() {
     createdAt: number;
   } | null>(null);
   const [khqrLoadError, setKhqrLoadError] = useState(false);
-  // Why it failed, shown on screen: a blank QR on a deployed site is almost
-  // always configuration, and the status code says which.
   const [khqrErrorCode, setKhqrErrorCode] = useState<string | null>(null);
   const [khqrNotConfirmed, setKhqrNotConfirmed] = useState(false);
+  const [khqrCheckUnavailable, setKhqrCheckUnavailable] = useState(false);
   const khqrFulfilledRef = useRef(false);
+  const khqrLoadingRef = useRef<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
@@ -150,8 +148,10 @@ export default function Payment() {
   const [savedCardCvc, setSavedCardCvc] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  const usingSavedCard = paymentMethod === "stripe" && !!savedCard && !useNewCard;
-  const savedCardCvcValid = savedCardCvc.length >= 3 && savedCardCvc.length <= 4;
+  const usingSavedCard =
+    paymentMethod === "stripe" && !!savedCard && !useNewCard;
+  const savedCardCvcValid =
+    savedCardCvc.length >= 3 && savedCardCvc.length <= 4;
 
   const isStripeFormValid =
     (usingSavedCard && savedCardCvcValid) || card.isValid;
@@ -162,9 +162,6 @@ export default function Payment() {
   ) => {
     if (!flatPlanData) return;
     const provider = paymentMethod === "khqr" ? "khqr" : "stripe";
-
-    // On the verified KHQR path the server granted this and wrote its own
-    // payment row the moment Bakong confirmed the money, so we only read back.
     if (!alreadyGranted) {
       try {
         await recordPayment({
@@ -219,15 +216,6 @@ export default function Payment() {
     }
     setShowSuccess(true);
   };
-
-  /**
-   * Turn a completed checkout into entitlements.
-   *
-   * `alreadyGranted` is the verified KHQR path: Bakong confirmed the money,
-   * so the server granted the pack and recorded the payment itself and we
-   * only read the result back. Otherwise - the mocked Stripe card form - the
-   * browser still asks for the grant, the way it always has.
-   */
   const fulfillPackPurchase = async (
     packId: PackId,
     { alreadyGranted = false }: { alreadyGranted?: boolean } = {},
@@ -267,7 +255,9 @@ export default function Payment() {
         alreadyGranted ? getPdfSaves() : grantPdfSaves(packId),
         alreadyGranted ? getAiCredits() : grantAiCredits(packId),
         alreadyGranted ? getJobAnalyses() : grantJobAnalyses(packId),
-        alreadyGranted ? claimTemplates() : grantTemplatePack(packId, pendingId),
+        alreadyGranted
+          ? claimTemplates()
+          : grantTemplatePack(packId, pendingId),
       ]);
 
     const verb = alreadyGranted ? "load" : "grant";
@@ -346,13 +336,16 @@ export default function Payment() {
     }
     navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
   };
-  const loadKhqr = () => {
+  const loadKhqr = (force = false) => {
     if (!planData) return;
+    if (!force && khqrLoadingRef.current === planData.id) return;
+    khqrLoadingRef.current = planData.id;
     khqrFulfilledRef.current = false;
     setKhqr(null);
     setKhqrLoadError(false);
     setKhqrErrorCode(null);
     setKhqrNotConfirmed(false);
+    setKhqrCheckUnavailable(false);
     setSecondsLeft(QR_EXPIRY_SECONDS);
     createKhqrPayment({
       packId: planData.id,
@@ -387,6 +380,7 @@ export default function Payment() {
         );
         setKhqrErrorCode(status === 0 ? "no connection" : `HTTP ${status}`);
         setKhqrLoadError(true);
+        khqrLoadingRef.current = null;
       });
   };
 
@@ -397,11 +391,8 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-    // planData is a new object every render, don't retrigger on it
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, planData?.id]);
 
-  // only report paid once, so poll + manual check can't both fire fulfillment
   const checkKhqrPaid = async (md5: string, createdAt: number) => {
     if (khqrFulfilledRef.current) {
       return {
@@ -429,9 +420,11 @@ export default function Payment() {
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const poll = () => {
+      if (khqrFulfilledRef.current) return;
       checkKhqrPaid(khqr.md5, khqr.createdAt)
         .then(({ paid, granted, nextDelaySeconds }) => {
           if (cancelled) return;
+          setKhqrCheckUnavailable(false);
           if (paid) {
             void fulfillPurchase(granted);
             return;
@@ -440,9 +433,10 @@ export default function Payment() {
         })
         .catch((err) => {
           console.warn("KHQR status check failed:", err);
-          if (!cancelled) {
-            timeoutId = setTimeout(poll, KHQR_POLL_FALLBACK_SECONDS * 1000);
-          }
+          if (cancelled) return;
+          const status = err instanceof BackendError ? err.status : 0;
+          setKhqrCheckUnavailable(status === 502 || status === 503);
+          timeoutId = setTimeout(poll, KHQR_POLL_RETRY_SECONDS * 1000);
         });
     };
 
@@ -451,7 +445,6 @@ export default function Payment() {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
 
   if (!planData) return null;
@@ -460,6 +453,7 @@ export default function Payment() {
     if (verifyingKhqr || secondsLeft <= 0 || !khqr) return;
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
+    setKhqrCheckUnavailable(false);
     checkKhqrPaid(khqr.md5, khqr.createdAt)
       .then(({ paid, granted }) => {
         if (paid) {
@@ -470,12 +464,14 @@ export default function Payment() {
       })
       .catch((err) => {
         console.warn("Could not check KHQR status:", err);
-        setKhqrNotConfirmed(true);
+        const status = err instanceof BackendError ? err.status : 0;
+        if (status === 502 || status === 503) setKhqrCheckUnavailable(true);
+        else setKhqrNotConfirmed(true);
       })
       .finally(() => setVerifyingKhqr(false));
   };
 
-  const regenerateKhqrCode = () => loadKhqr();
+  const regenerateKhqrCode = () => loadKhqr(true);
 
   const handlePay = () => {
     if (!isStripeFormValid || processing) return;
@@ -737,7 +733,10 @@ export default function Payment() {
                 ) : khqr ? (
                   <QRCodeSVG value={khqr.qrString} size={180} />
                 ) : (
-                  <Loader2 size={24} className="animate-spin text-text-secondary" />
+                  <Loader2
+                    size={24}
+                    className="animate-spin text-text-secondary"
+                  />
                 )}
               </div>
             </div>
@@ -784,6 +783,11 @@ export default function Payment() {
               {khqrNotConfirmed && (
                 <p className="mt-2 text-center text-xs text-destructive">
                   {t("billing.payment.khqr.notConfirmed")}
+                </p>
+              )}
+              {khqrCheckUnavailable && (
+                <p className="mt-2 text-center text-xs text-destructive">
+                  {t("billing.payment.khqr.checkUnavailable")}
                 </p>
               )}
               {khqrLoadError || secondsLeft <= 0 ? (

@@ -12,7 +12,12 @@ from app.schemas.payments import (
     RecordPaymentRequest,
 )
 from app.services.fulfilment import FulfilmentFailed, fulfil_sku
-from app.services.khqr import KhqrNotConfigured, check_khqr_payment, create_khqr_payment
+from app.services.khqr import (
+    KhqrCheckUnavailable,
+    KhqrNotConfigured,
+    check_khqr_payment,
+    create_khqr_payment,
+)
 from app.services.payments import (
     claim_khqr_payment,
     create_khqr_intent,
@@ -62,8 +67,6 @@ def create_khqr(
     except KhqrNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
-        # The Bakong SDK rejects an out-of-spec merchant name (>25 chars),
-        # city (>15) or currency. Say so instead of a bare 500.
         logger.error("Bakong rejected the QR details: %s", exc)
         raise HTTPException(
             status_code=502,
@@ -80,8 +83,6 @@ def create_khqr(
             md5=md5,
         )
     except HTTPException as exc:
-        # No intent row means this server cannot fulfil the payment itself.
-        # Checkout still works; the browser falls back to its own grant call.
         logger.warning("Could not record KHQR intent %s: %s", md5, exc.detail)
 
     return CreateKhqrResponse(
@@ -102,6 +103,8 @@ def get_khqr_status(
         paid, next_delay = check_khqr_payment(md5, start_time)
     except KhqrNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except KhqrCheckUnavailable as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return KhqrStatusResponse(
         status="paid" if paid else "pending",
@@ -127,14 +130,12 @@ def _fulfil_confirmed_payment(user_id: str, md5: str) -> bool:
     if not claim.known:
         return False
     if not claim.claimed:
-        return True  # an earlier poll already granted this one
+        return True  
 
     sku = claim.sku or ""
     try:
         fulfil_sku(user_id, sku)
     except UnknownSku:
-        # Real money for something we cannot grant. Keep the claim so this
-        # does not loop, and shout - it needs a human.
         logger.error("Paid KHQR checkout %s has ungrantable SKU %r", md5, sku)
         return False
     except (FulfilmentFailed, HTTPException) as exc:

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     bakong_account_id: str = ""
     bakong_merchant_name: str = ""
     bakong_merchant_city: str = "Phnom Penh"
+    bakong_proxy_url: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

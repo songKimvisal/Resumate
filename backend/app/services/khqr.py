@@ -1,12 +1,51 @@
+import logging
+import time
 from functools import lru_cache
 
+import httpx
 from bakong_khqr import KHQR
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class KhqrNotConfigured(RuntimeError):
     pass
+
+
+class KhqrCheckUnavailable(RuntimeError):
+    """Bakong refused to say whether this md5 was paid.
+
+    This is deliberately NOT the same as "not paid yet". The bakong-khqr SDK
+    collapses the two: any response whose ``responseCode`` is not 0 becomes
+    ``UNPAID``, and for a non-2xx reply that still carries a ``responseCode``
+    it never raises at all. An expired token, a non-Cambodian egress IP or an
+    exhausted daily quota therefore looked exactly like an unpaid QR, so the
+    browser polled a QR that had already been paid, forever, against a
+    backend answering 200 OK. Checking the HTTP status first is what keeps
+    those apart.
+    """
+
+
+BAKONG_API = "https://api-bakong.nbc.gov.kh/v1"
+
+_HTTP_REASONS = {
+    401: (
+        "BAKONG_TOKEN is wrong or expired - renew it at "
+        "https://api-bakong.nbc.gov.kh/register/"
+    ),
+    403: (
+        "Bakong only answers requests from Cambodian IP addresses, and this "
+        "host's egress is not one. Set BAKONG_PROXY_URL to a Cambodian proxy "
+        "or move the backend to a Cambodian host."
+    ),
+    429: "Bakong's daily quota for this token is used up.",
+    500: "Bakong had an internal error.",
+    502: "Bakong is unreachable.",
+    503: "Bakong is unavailable.",
+    504: "Bakong timed out on its own side.",
+}
 
 
 @lru_cache
@@ -34,14 +73,103 @@ def create_khqr_payment(
     )
     return qr_string, khqr.generate_md5(qr_string)
 
+MIN_POLL_DELAY_SECONDS = 15
 
-# keep well under the 100 requests/day developer token limit
-POLL_DELAY_SECONDS = 15
+
+def _next_delay_seconds(start_time: float | None) -> int:
+    """How long the browser should wait before asking again.
+
+    Bakong's published matrix is 5s for the first 5 minutes, 10s to 15
+    minutes, 15s to an hour and 300s after that. We take the wider of that and
+    MIN_POLL_DELAY_SECONDS so a long-abandoned QR backs off the way Bakong
+    wants without a fresh one burning the daily quota in five minutes.
+    """
+    elapsed = time.time() - start_time if start_time else 0.0
+    if elapsed < 5 * 60:
+        bakong_delay = 5
+    elif elapsed < 15 * 60:
+        bakong_delay = 10
+    elif elapsed < 60 * 60:
+        bakong_delay = 15
+    else:
+        bakong_delay = 300
+    return max(bakong_delay, MIN_POLL_DELAY_SECONDS)
+
+
+def _post_check(md5: str) -> httpx.Response:
+    kwargs: dict[str, object] = {"timeout": 15.0}
+    if settings.bakong_proxy_url:
+        kwargs["proxy"] = settings.bakong_proxy_url
+    with httpx.Client(**kwargs) as client:
+        return client.post(
+            f"{BAKONG_API}/check_transaction_by_md5",
+            json={"md5": md5},
+            headers={
+                "Authorization": f"Bearer {settings.bakong_token}",
+                "Content-Type": "application/json",
+            },
+        )
 
 
 def check_khqr_payment(
     md5: str, start_time: float | None = None
 ) -> tuple[bool, int]:
-    khqr = _client()
-    paid = khqr.check_payment(md5) == "PAID"
-    return paid, 0 if paid else POLL_DELAY_SECONDS
+    """Ask Bakong whether `md5` was paid.
+
+    Returns (paid, next_delay_seconds). Raises KhqrCheckUnavailable when
+    Bakong did not answer the question, so the caller can say so instead of
+    reporting a paid QR as still pending.
+    """
+    if not settings.bakong_token or not settings.bakong_account_id:
+        raise KhqrNotConfigured(
+            "BAKONG_TOKEN and BAKONG_ACCOUNT_ID must be set in the backend "
+            "environment before real KHQR payments can be checked."
+        )
+
+    try:
+        response = _post_check(md5)
+    except httpx.HTTPError as exc:
+        logger.error("Bakong check for %s could not be sent: %s", md5, exc)
+        raise KhqrCheckUnavailable(f"Could not reach Bakong: {exc}") from exc
+
+    if response.status_code not in (200, 201):
+        reason = _HTTP_REASONS.get(
+            response.status_code, f"Bakong replied HTTP {response.status_code}."
+        )
+        logger.error(
+            "Bakong check for %s failed: HTTP %s - %s | body=%s",
+            md5,
+            response.status_code,
+            reason,
+            response.text[:300],
+        )
+        raise KhqrCheckUnavailable(reason)
+
+    try:
+        body = response.json()
+    except ValueError as exc:
+        logger.error("Bakong check for %s returned non-JSON: %s", md5, response.text[:300])
+        raise KhqrCheckUnavailable("Bakong returned a response we cannot read.") from exc
+
+    if not isinstance(body, dict):
+        logger.error("Bakong check for %s returned %r, not an object", md5, body)
+        raise KhqrCheckUnavailable("Bakong returned a response we cannot read.")
+
+    code = body.get("responseCode")
+    message = str(body.get("responseMessage") or "")
+
+    if code == 0:
+        logger.info("Bakong confirmed KHQR %s is paid", md5)
+        return True, 0
+    if body.get("errorCode") == 1 or "could not be found" in message.lower():
+        logger.debug("KHQR %s still unpaid: %s", md5, message)
+    else:
+        logger.warning(
+            "Bakong check for %s: unexpected responseCode=%r errorCode=%r message=%r",
+            md5,
+            code,
+            body.get("errorCode"),
+            message,
+        )
+
+    return False, _next_delay_seconds(start_time)
