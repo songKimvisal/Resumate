@@ -73,7 +73,7 @@ def create_khqr_payment(
     )
     return qr_string, khqr.generate_md5(qr_string)
 
-MIN_POLL_DELAY_SECONDS = 15
+MIN_POLL_DELAY_SECONDS = 60
 
 
 def _next_delay_seconds(start_time: float | None) -> int:
@@ -94,6 +94,26 @@ def _next_delay_seconds(start_time: float | None) -> int:
     else:
         bakong_delay = 300
     return max(bakong_delay, MIN_POLL_DELAY_SECONDS)
+
+QUOTA_ERROR_CODE = 17
+QUOTA_MESSAGE = (
+    "Bakong's daily request limit of 100 for this token is used up. "
+    "It resets tomorrow."
+)
+QUOTA_RETRY_AFTER_SECONDS = 10 * 60
+PAID_CACHE_SECONDS = 60 * 60
+UNPAID_CACHE_SECONDS = 15
+_result_cache: dict[str, tuple[float, bool, int]] = {}
+_quota_blocked_until = 0.0
+
+
+def _prune_cache(now: float) -> None:
+    for md5 in [
+        key
+        for key, (cached_at, _, _) in _result_cache.items()
+        if now - cached_at > PAID_CACHE_SECONDS
+    ]:
+        del _result_cache[md5]
 
 
 def _post_check(md5: str) -> httpx.Response:
@@ -120,11 +140,28 @@ def check_khqr_payment(
     Bakong did not answer the question, so the caller can say so instead of
     reporting a paid QR as still pending.
     """
+    global _quota_blocked_until
+
     if not settings.bakong_token or not settings.bakong_account_id:
         raise KhqrNotConfigured(
             "BAKONG_TOKEN and BAKONG_ACCOUNT_ID must be set in the backend "
             "environment before real KHQR payments can be checked."
         )
+
+    now = time.time()
+    _prune_cache(now)
+
+    cached = _result_cache.get(md5)
+    if cached is not None:
+        cached_at, cached_paid, cached_delay = cached
+        if cached_paid or now - cached_at < UNPAID_CACHE_SECONDS:
+            logger.debug("KHQR %s answered from cache: paid=%s", md5, cached_paid)
+            return cached_paid, cached_delay
+
+    if now < _quota_blocked_until:
+        # Spending a refused request to be told again would be pointless.
+        logger.warning("Skipping Bakong check for %s: %s", md5, QUOTA_MESSAGE)
+        raise KhqrCheckUnavailable(QUOTA_MESSAGE)
 
     try:
         response = _post_check(md5)
@@ -158,18 +195,29 @@ def check_khqr_payment(
     code = body.get("responseCode")
     message = str(body.get("responseMessage") or "")
 
+    error_code = body.get("errorCode")
+
     if code == 0:
         logger.info("Bakong confirmed KHQR %s is paid", md5)
+        _result_cache[md5] = (now, True, 0)
         return True, 0
-    if body.get("errorCode") == 1 or "could not be found" in message.lower():
+
+    if error_code == QUOTA_ERROR_CODE or "daily request limit" in message.lower():
+        _quota_blocked_until = now + QUOTA_RETRY_AFTER_SECONDS
+        logger.error("Bakong daily request limit reached: %s", message)
+        raise KhqrCheckUnavailable(QUOTA_MESSAGE)
+
+    if error_code == 1 or "could not be found" in message.lower():
         logger.debug("KHQR %s still unpaid: %s", md5, message)
     else:
         logger.warning(
             "Bakong check for %s: unexpected responseCode=%r errorCode=%r message=%r",
             md5,
             code,
-            body.get("errorCode"),
+            error_code,
             message,
         )
 
-    return False, _next_delay_seconds(start_time)
+    delay = _next_delay_seconds(start_time)
+    _result_cache[md5] = (now, False, delay)
+    return False, delay

@@ -56,8 +56,15 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-const KHQR_POLL_FALLBACK_SECONDS = 5;
-const KHQR_POLL_RETRY_SECONDS = 15;
+// A Bakong developer token allows 100 checks a DAY, and an exhausted
+// allowance comes back looking like a plain "unpaid", so overspending it
+// silently breaks checkout for everyone until midnight. There is therefore no
+// background polling at all. A payment costs one request, spent at the only
+// two moments that can mean money moved: the shopper coming back to this tab
+// from their banking app, and the shopper pressing the confirm button.
+const KHQR_UNPAID_POLL_SECONDS = 60;
+const KHQR_MIN_CHECK_GAP_MS = 15000;
+const KHQR_MIN_AWAY_MS = 5000;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -140,6 +147,11 @@ export default function Payment() {
   const [khqrCheckUnavailable, setKhqrCheckUnavailable] = useState(false);
   const khqrFulfilledRef = useRef(false);
   const khqrLoadingRef = useRef<string | null>(null);
+  // One check at a time, and never two for the same wake-up.
+  const khqrCheckInFlightRef = useRef(false);
+  const khqrLastCheckAtRef = useRef(0);
+  // When this tab lost the shopper's attention, or 0 while it still has it.
+  const khqrAwaySinceRef = useRef(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
@@ -341,6 +353,9 @@ export default function Payment() {
     if (!force && khqrLoadingRef.current === planData.id) return;
     khqrLoadingRef.current = planData.id;
     khqrFulfilledRef.current = false;
+    khqrCheckInFlightRef.current = false;
+    khqrLastCheckAtRef.current = 0;
+    khqrAwaySinceRef.current = 0;
     setKhqr(null);
     setKhqrLoadError(false);
     setKhqrErrorCode(null);
@@ -391,6 +406,8 @@ export default function Payment() {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
+    // planData is a new object every render, don't retrigger on it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, planData?.id]);
 
   const checkKhqrPaid = async (md5: string, createdAt: number) => {
@@ -398,7 +415,7 @@ export default function Payment() {
       return {
         paid: false,
         granted: false,
-        nextDelaySeconds: KHQR_POLL_FALLBACK_SECONDS,
+        nextDelaySeconds: KHQR_UNPAID_POLL_SECONDS,
       };
     }
     const { status, next_delay_seconds, fulfilled } = await getKhqrStatus(
@@ -413,38 +430,68 @@ export default function Payment() {
       nextDelaySeconds: next_delay_seconds,
     };
   };
-
+  /**
+   * Ask Bakong once. A button press bypasses the throttles, because a shopper
+   * who taps it deserves an answer and `khqrFulfilledRef` already stops a
+   * double grant. Everything else is rate limited, so no sequence of browser
+   * events can turn one payment into several Bakong requests.
+   */
+  const runKhqrCheck = async (
+    reason: "return" | "manual",
+  ): Promise<void> => {
+    if (!khqr || khqrFulfilledRef.current) return;
+    if (reason !== "manual") {
+      if (khqrCheckInFlightRef.current) return;
+      if (Date.now() - khqrLastCheckAtRef.current < KHQR_MIN_CHECK_GAP_MS) {
+        return;
+      }
+    }
+    khqrCheckInFlightRef.current = true;
+    khqrLastCheckAtRef.current = Date.now();
+    try {
+      const { paid, granted } = await checkKhqrPaid(khqr.md5, khqr.createdAt);
+      setKhqrCheckUnavailable(false);
+      if (paid) {
+        void fulfillPurchase(granted);
+        return;
+      }
+      if (reason === "manual") setKhqrNotConfirmed(true);
+    } finally {
+      khqrCheckInFlightRef.current = false;
+    }
+  };
   useEffect(() => {
     if (!khqr || secondsLeft <= 0) return;
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout>;
 
-    const poll = () => {
-      if (khqrFulfilledRef.current) return;
-      checkKhqrPaid(khqr.md5, khqr.createdAt)
-        .then(({ paid, granted, nextDelaySeconds }) => {
-          if (cancelled) return;
-          setKhqrCheckUnavailable(false);
-          if (paid) {
-            void fulfillPurchase(granted);
-            return;
-          }
-          timeoutId = setTimeout(poll, nextDelaySeconds * 1000);
-        })
-        .catch((err) => {
-          console.warn("KHQR status check failed:", err);
-          if (cancelled) return;
-          const status = err instanceof BackendError ? err.status : 0;
-          setKhqrCheckUnavailable(status === 502 || status === 503);
-          timeoutId = setTimeout(poll, KHQR_POLL_RETRY_SECONDS * 1000);
-        });
+    const markAway = () => {
+      if (khqrAwaySinceRef.current === 0) khqrAwaySinceRef.current = Date.now();
     };
 
-    timeoutId = setTimeout(poll, KHQR_POLL_FALLBACK_SECONDS * 1000);
+    const checkOnReturn = () => {
+      if (document.visibilityState !== "visible") return;
+      const awaySince = khqrAwaySinceRef.current;
+      khqrAwaySinceRef.current = 0;
+      if (awaySince === 0 || Date.now() - awaySince < KHQR_MIN_AWAY_MS) return;
+      runKhqrCheck("return").catch((err) => {
+        console.warn("KHQR status check failed:", err);
+        const status = err instanceof BackendError ? err.status : 0;
+        setKhqrCheckUnavailable(status === 502 || status === 503);
+      });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") markAway();
+      else checkOnReturn();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", markAway);
+    window.addEventListener("focus", checkOnReturn);
     return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", markAway);
+      window.removeEventListener("focus", checkOnReturn);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
 
   if (!planData) return null;
@@ -454,14 +501,7 @@ export default function Payment() {
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
-    checkKhqrPaid(khqr.md5, khqr.createdAt)
-      .then(({ paid, granted }) => {
-        if (paid) {
-          void fulfillPurchase(granted);
-        } else {
-          setKhqrNotConfirmed(true);
-        }
-      })
+    runKhqrCheck("manual")
       .catch((err) => {
         console.warn("Could not check KHQR status:", err);
         const status = err instanceof BackendError ? err.status : 0;
