@@ -1,4 +1,3 @@
-import { Phone, Mail, MapPin, Link2, Globe } from "lucide-react";
 import {
   RichHtml,
   dateRange,
@@ -15,6 +14,8 @@ import {
   layoutShellStyle,
   gpaText,
   listKey,
+  ContactIcon,
+  type ContactLineItem,
 } from "./shared";
 import type { Customization } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
@@ -88,19 +89,7 @@ export default function CleanHeaderSplitLayout({
               {contacts.map((c, contactIdx) => (
                 <HeaderContact
                   key={listKey(c.id, contactIdx, "contact")}
-                  icon={
-                    c.kind === "phone"
-                      ? Phone
-                      : c.kind === "email"
-                        ? Mail
-                        : c.kind === "location"
-                          ? MapPin
-                          : c.kind === "link"
-                            ? Link2
-                            : Globe
-                  }
-                  text={c.text}
-                  href={c.href}
+                  item={c}
                   accent={accent}
                 />
               ))}
@@ -223,14 +212,10 @@ export default function CleanHeaderSplitLayout({
 }
 
 function HeaderContact({
-  icon: Icon,
-  text,
-  href,
+  item,
   accent,
 }: {
-  icon: typeof Phone;
-  text: string;
-  href?: string;
+  item: ContactLineItem;
   accent: string;
 }) {
   return (
@@ -239,10 +224,10 @@ function HeaderContact({
         className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-white"
         style={{ backgroundColor: accent }}
       >
-        <Icon className="h-2.5 w-2.5" strokeWidth={2.4} />
+        <ContactIcon item={item} className="h-2.5 w-2.5" strokeWidth={2.4} />
       </span>
       <span className="break-all leading-snug">
-        <ContactLink item={{ id: text, text, kind: "link", href }} />
+        <ContactLink item={item} />
       </span>
     </div>
   );

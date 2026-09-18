@@ -1,4 +1,3 @@
-import { Phone, Mail, MapPin, Globe } from "lucide-react";
 import type { ReactNode } from "react";
 import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
@@ -20,6 +19,7 @@ import {
   layoutShellStyle,
   gpaText,
   listKey,
+  ContactIcon,
 } from "./shared";
 import type { Customization, SpecialSectionKey } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
@@ -227,15 +227,7 @@ export default function TechSplitLayout({
                     key={listKey(c.id, contactIdx, "contact")}
                     className="flex gap-2"
                   >
-                    {c.kind === "phone" ? (
-                      <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                    ) : c.kind === "email" ? (
-                      <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                    ) : c.kind === "location" ? (
-                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                    ) : (
-                      <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                    )}
+                    <ContactIcon item={c} className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                     <span className="break-all leading-snug">
                       <ContactLink item={c} />
                     </span>

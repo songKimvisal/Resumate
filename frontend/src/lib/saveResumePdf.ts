@@ -5,16 +5,15 @@ import {
   pdfsFromErrorBody,
   refundPdfSave,
 } from "./api/pdfs";
-import { downloadResumePdf, isDownloadAbort } from "./downloadResumePdf";
+import { downloadResumePdf } from "./downloadResumePdf";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 
-export type SaveResumePdfResult = "ok" | "quota" | "abort";
+export type SaveResumePdfResult = "ok" | "quota";
 
 function applyPdfBalance(total: number, used: number) {
   useSubscriptionStore.getState().setPdfs(total, used);
 }
 
-/** Download a resume PDF. The save is consumed on the server before the file is written. */
 export async function saveResumePdf(
   resume: Resume,
 ): Promise<SaveResumePdfResult> {
@@ -38,9 +37,7 @@ export async function saveResumePdf(
       const pdfs = await refundPdfSave();
       applyPdfBalance(pdfs.total, pdfs.used);
     } catch {
-      // Keep the consumed balance if refund fails; hydrate will correct it.
     }
-    if (isDownloadAbort(err)) return "abort";
     throw err;
   }
 }

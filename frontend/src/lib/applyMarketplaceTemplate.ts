@@ -4,10 +4,6 @@ import { resumeExists, saveResumeToDashboard } from "./api";
 import { supabase } from "./supabase";
 import { useResumeStore } from "../store/resumeStore";
 
-/**
- * Keep the current document and start a blank one when applying a different
- * template — unless this is still a first draft (no saved id, default look).
- */
 export function shouldKeepCurrentResume(
   resume: Resume,
   nextTemplateId: string,
@@ -65,7 +61,10 @@ export async function applyMarketplaceTemplate(opts: {
       .startResumeFromTemplate(opts.customization, opts.title);
   } else {
     useResumeStore.getState().updateCustomization(
-      designWithoutHeadingLanguage(opts.customization),
+      designWithoutHeadingLanguage(
+        opts.customization,
+        useResumeStore.getState().resume.customization.headingLanguage,
+      ),
     );
     const after = useResumeStore.getState().resume;
     if (!after.title || after.title === emptyResume.title) {

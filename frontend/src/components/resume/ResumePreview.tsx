@@ -23,7 +23,7 @@ import {
 import { extraExperienceTitle } from "../../lib/experienceDisplay";
 import { orderedExperienceEntries } from "../../lib/experienceOrder";
 import { withStableItemIds, listKey } from "../../lib/resumeIds";
-import { resumeHeading, resumePresent, resumeDegreeJoin, resumeDegreeFallback, resumeSheetLang, resumeNameFallback, resumeTitleFallback } from "../../lib/resumeHeadings";
+import { headingBoxMetrics, resumeHeading, resumePresent, resumeDegreeJoin, resumeDegreeFallback, resumeSheetLang, resumeNameFallback, resumeTitleFallback } from "../../lib/resumeHeadings";
 import { ResumeChromeProvider } from "./layouts/shared";
 import { useResumeStore } from "../../store/resumeStore";
 import {
@@ -248,9 +248,7 @@ export default function ResumePreview({
 }: {
   resume?: Resume;
   pageLabelClassName?: string;
-  /** Render only the first page, with no "Page X of Y" label - used for small thumbnails. */
   singlePage?: boolean;
-  /** Keep the page at native A4/Letter px and let a parent scale it (ScaledResumePreview). */
   lockNativeSize?: boolean;
 }) {
   const storeResume = useResumeStore((s) => s.resume);
@@ -1976,6 +1974,9 @@ function Section({
     "font-bold",
     !isKm && "tracking-[0.18em]",
   );
+  const headingBox = headingBoxMetrics(theme.headingSizePx, {
+    headingLanguage: theme.headingLanguage,
+  });
   const headingStyle: React.CSSProperties = {
     color: isFilled ? "#fff" : resolvedInk,
     fontSize: theme.headingSizePx,
@@ -1995,8 +1996,11 @@ function Section({
           ? 1
           : 0
         : undefined,
-    padding: isOutline || isFilled ? "3px 8px" : undefined,
-    borderRadius: isFilled ? 4 : undefined,
+    padding:
+      isOutline || isFilled
+        ? `${headingBox.paddingY}px ${headingBox.paddingX}px`
+        : undefined,
+    borderRadius: isFilled || isOutline ? headingBox.radius : undefined,
   };
 
   return (

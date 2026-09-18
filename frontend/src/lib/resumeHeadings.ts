@@ -152,3 +152,15 @@ export function resumeSheetLang(
 ): "km" | "en" {
   return headingLang(customization);
 }
+export function headingBoxMetrics(
+  headingSizePx: number,
+  customization?: Pick<Customization, "headingLanguage"> | null,
+) {
+  const km = headingLang(customization) === "km";
+  return {
+    paddingY: headingSizePx * (km ? 0.42 : 0.3),
+    paddingX: headingSizePx * 0.7,
+    radius: headingSizePx * 0.34,
+    borderWidth: 1,
+  };
+}
