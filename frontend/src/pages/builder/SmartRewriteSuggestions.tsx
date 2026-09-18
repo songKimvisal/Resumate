@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
@@ -20,15 +21,23 @@ export function SmartRewriteSuggestions({
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [variations]);
 
   return (
     <AnimatePresence>
       <motion.div
+        ref={panelRef}
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: 0.2 }}
-        className="overflow-hidden"
+        className="overflow-hidden scroll-mt-4 scroll-mb-24"
       >
         <div className="mt-3 rounded-2xl border border-line/70 bg-surface-1 p-4">
           <div className="mb-3 flex items-center justify-between">

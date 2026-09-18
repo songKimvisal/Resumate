@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, LogOut } from "lucide-react";
 import { useAuth } from "../../hooks/UseAuth";
 import { useTheme } from "../../hooks/UseTheme";
 import { supabase } from "../../lib/supabase";
@@ -50,6 +50,14 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await signOut();
+    navigate("/");
   };
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -109,6 +117,20 @@ export default function Settings() {
               </p>
             )}
           </div>
+          <Button
+            type="button"
+            size="compact"
+            className="shrink-0"
+            disabled={signingOut}
+            onClick={handleSignOut}
+          >
+            {signingOut ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <LogOut size={15} strokeWidth={2} />
+            )}
+            {t("nav.logout")}
+          </Button>
         </div>
 
         <Input

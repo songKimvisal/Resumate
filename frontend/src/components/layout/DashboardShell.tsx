@@ -93,10 +93,10 @@ export default function DashboardShell() {
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
-              className="lg:hidden fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(17.5rem,86vw)] min-w-0 flex-col bg-bg shadow-xl"
-              initial={{ x: "-100%" }}
+              className="lg:hidden fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(17.5rem,86vw)] min-w-0 flex-col bg-bg shadow-xl"
+              initial={{ x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              exit={{ x: "100%" }}
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
               <button
