@@ -1,4 +1,5 @@
 import type { Customization } from "../../types/resume";
+import { fontForLanguage } from "../../lib/fonts";
 import { emptyResume } from "../../types/resume";
 export type TemplateIndustry =
   | "banking"
@@ -54,10 +55,18 @@ export function preset(
   };
 }
 
-/** Template looks should not reset the resume's heading language. */
+/** Template looks should not reset the resume's heading language, nor leave a
+ *  Latin font on a Khmer resume - pass the current language to keep both. */
 export function designWithoutHeadingLanguage(
   customization: Customization | Partial<Customization>,
+  currentHeadingLanguage?: Customization["headingLanguage"],
 ): Partial<Customization> {
   const { headingLanguage: _headingLanguage, ...rest } = customization;
+  if (rest.fontFamily && currentHeadingLanguage) {
+    rest.fontFamily = fontForLanguage(
+      rest.fontFamily,
+      currentHeadingLanguage === "km" ? "km" : "en",
+    );
+  }
   return rest;
 }

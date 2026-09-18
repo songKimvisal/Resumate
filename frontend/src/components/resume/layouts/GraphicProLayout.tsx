@@ -1,4 +1,3 @@
-import { Phone, Mail, MapPin, Globe } from "lucide-react";
 import type { ReactNode } from "react";
 import type { SpecialSectionKey } from "../../../types/resume";
 import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
@@ -18,6 +17,7 @@ import {
   layoutShellStyle,
   listKey,
   FullBleedPhoto,
+  ContactIcon,
 } from "./shared";
 import { contrastOn } from "../../../lib/color";
 
@@ -226,15 +226,7 @@ export default function GraphicProLayout({
                   <div className="space-y-2 text-[0.8em] text-white/90">
                     {contacts.map((c, contactIdx) => (
                       <p key={listKey(c.id, contactIdx, "contact")} className="flex gap-2">
-                        {c.kind === "phone" ? (
-                          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                        ) : c.kind === "email" ? (
-                          <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                        ) : c.kind === "location" ? (
-                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                        ) : (
-                          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-                        )}
+                        <ContactIcon item={c} className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                         <span className="break-all">
                           <ContactLink item={c} />
                         </span>

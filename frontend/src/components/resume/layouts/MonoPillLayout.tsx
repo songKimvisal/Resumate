@@ -1,15 +1,3 @@
-import {
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-  User,
-  GraduationCap,
-  Briefcase,
-  Sparkles,
-  Contact,
-  Languages,
-} from "lucide-react";
 import type { ReactNode } from "react";
 import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
 import {
@@ -28,8 +16,12 @@ import {
   gpaText,
   listKey,
   FullBleedPhoto,
+  ContactIcon,
+  type ContactLineItem,
 } from "./shared";
 import type { Customization, SpecialSectionKey } from "../../../types/resume";
+import type { IconKey } from "../../../lib/resumeIcons";
+import { ResumeIcon } from "../ResumeIcon";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
@@ -75,7 +67,7 @@ export default function MonoPillLayout({
       <section>
         <PillHeading
           title="Skills"
-          icon={Sparkles}
+          icon="sparkles"
           color={charcoal}
           size={customization.headingsSize}
           customization={customization}
@@ -94,7 +86,7 @@ export default function MonoPillLayout({
       <section>
         <PillHeading
           title="Languages"
-          icon={Languages}
+          icon="languages"
           color={charcoal}
           size={customization.headingsSize}
           customization={customization}
@@ -108,7 +100,7 @@ export default function MonoPillLayout({
       <section>
         <PillHeading
           title="Education"
-          icon={GraduationCap}
+          icon="graduationCap"
           color={charcoal}
           size={customization.headingsSize}
           customization={customization}
@@ -147,7 +139,7 @@ export default function MonoPillLayout({
       <section>
         <PillHeading
           title="Work Experience"
-          icon={Briefcase}
+          icon="briefcase"
           color={charcoal}
           size={customization.headingsSize}
           customization={customization}
@@ -185,7 +177,7 @@ export default function MonoPillLayout({
       <section>
         <PillHeading
           title="References"
-          icon={Contact}
+          icon="contact"
           color={charcoal}
           size={customization.headingsSize}
           customization={customization}
@@ -240,7 +232,7 @@ export default function MonoPillLayout({
               <section>
                 <PillHeading
                   title="Contact"
-                  icon={Contact}
+                  icon="contact"
                   color={charcoal}
                   size={customization.headingsSize}
                   customization={customization}
@@ -249,17 +241,7 @@ export default function MonoPillLayout({
                   {contacts.map((c, contactIdx) => (
                     <ContactLine
                       key={listKey(c.id, contactIdx, "contact")}
-                      icon={
-                        c.kind === "phone"
-                          ? Phone
-                          : c.kind === "email"
-                            ? Mail
-                            : c.kind === "location"
-                              ? MapPin
-                              : Globe
-                      }
-                      text={c.text}
-                      href={c.href}
+                      item={c}
                     />
                   ))}
                 </div>
@@ -276,7 +258,7 @@ export default function MonoPillLayout({
           <section>
             <PillHeading
               title="About Me"
-              icon={User}
+              icon="user"
               color={charcoal}
               size={customization.headingsSize}
               customization={customization}
@@ -297,13 +279,13 @@ export default function MonoPillLayout({
 
 function PillHeading({
   title,
-  icon: Icon,
+  icon,
   color,
   size,
   customization,
 }: {
   title: string;
-  icon: typeof User;
+  icon: IconKey;
   color: string;
   size: number;
   customization: Customization;
@@ -342,7 +324,7 @@ function PillHeading({
         style={{ border: `1.5px solid ${color}`, color }}
       >
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/5">
-          <Icon className="h-3 w-3" strokeWidth={2.2} />
+          <ResumeIcon icon={icon} className="h-3 w-3" strokeWidth={2.2} />
         </span>
         <span className="font-bold" style={titleStyle}>
           {label}
@@ -357,7 +339,7 @@ function PillHeading({
       style={{ backgroundColor: color, color: contrastOn(color) }}
     >
       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15">
-        <Icon className="h-3 w-3" strokeWidth={2.2} />
+        <ResumeIcon icon={icon} className="h-3 w-3" strokeWidth={2.2} />
       </span>
       <span className="font-bold" style={titleStyle}>
         {label}
@@ -366,20 +348,12 @@ function PillHeading({
   );
 }
 
-function ContactLine({
-  icon: Icon,
-  text,
-  href,
-}: {
-  icon: typeof Phone;
-  text: string;
-  href?: string;
-}) {
+function ContactLine({ item }: { item: ContactLineItem }) {
   return (
     <div className="flex items-start gap-2">
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+      <ContactIcon item={item} />
       <span className="break-all leading-snug">
-        <ContactLink item={{ id: text, text, kind: "link", href }} />
+        <ContactLink item={item} />
       </span>
     </div>
   );

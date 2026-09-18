@@ -34,7 +34,12 @@ import {
   PopoverTrigger,
 } from "../../components/ui/popover";
 import { TEMPLATE_PRESETS, type TemplatePreset, designWithoutHeadingLanguage } from "../../data/templates";
-import { FONT_FAMILIES } from "../../lib/fonts";
+import {
+  cssFontStack,
+  fontForLanguage,
+  fontsForLanguage,
+  isKhmerFont,
+} from "../../lib/fonts";
 import { idealTextColor, hexToRgb, rgbToHex } from "../../lib/color";
 import { partitionSectionOrder, partitionSpecialSectionOrder } from "../../lib/sectionOrder";
 import {
@@ -271,7 +276,9 @@ export default function CustomizePage() {
       setUnlockTarget(preset);
       return;
     }
-    updateCustomization(designWithoutHeadingLanguage(preset.customization));
+    updateCustomization(
+      designWithoutHeadingLanguage(preset.customization, customization.headingLanguage),
+    );
   };
 
   const experience = useResumeStore((s) => s.resume.experience);
@@ -576,7 +583,12 @@ export default function CustomizePage() {
           onUnlock={async () => {
             if (!unlockTarget) return;
             await unlockPremiumTemplate(unlockTarget.id);
-            updateCustomization(designWithoutHeadingLanguage(unlockTarget.customization));
+            updateCustomization(
+              designWithoutHeadingLanguage(
+                unlockTarget.customization,
+                customization.headingLanguage,
+              ),
+            );
             setUnlockTarget(null);
           }}
           asNewResume={false}
@@ -789,9 +801,16 @@ export default function CustomizePage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FONT_FAMILIES.map((f) => (
+                  {fontsForLanguage(customization.headingLanguage).map((f) => (
                     <SelectItem key={f} value={f}>
-                      {f}
+                      <span style={{ fontFamily: cssFontStack(f) }}>
+                        {f}
+                        {isKhmerFont(f) && (
+                          <span className="ml-2 text-text-secondary">
+                            អក្សរខ្មែរ
+                          </span>
+                        )}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1483,7 +1502,13 @@ export default function CustomizePage() {
 
             <ResumeLanguageToggle
               value={customization.headingLanguage === "km" ? "km" : "en"}
-              onChange={(lang) => updateCustomization({ headingLanguage: lang })}
+              onChange={(lang) =>
+                updateCustomization({
+                  headingLanguage: lang,
+                  // the font has to move with the language
+                  fontFamily: fontForLanguage(customization.fontFamily, lang),
+                })
+              }
               showHint
             />
 
@@ -1734,7 +1759,12 @@ export default function CustomizePage() {
         onUnlock={async () => {
           if (!unlockTarget) return;
           await unlockPremiumTemplate(unlockTarget.id);
-          updateCustomization(designWithoutHeadingLanguage(unlockTarget.customization));
+          updateCustomization(
+              designWithoutHeadingLanguage(
+                unlockTarget.customization,
+                customization.headingLanguage,
+              ),
+            );
           setUnlockTarget(null);
         }}
         asNewResume={false}

@@ -1,7 +1,8 @@
-﻿# ---------- Frontend (Vite/Node) ----------
+# ---------- Frontend (Vite/Node) ----------
 frontend/node_modules
 frontend/dist
 frontend/dist-ssr
+frontend/.pdf-check
 *.local
 
 # Logs

@@ -21,7 +21,10 @@ import { listKey } from "../../../lib/resumeIds";
 import { resumePhotoSrc } from "../../../lib/personAvatar";
 import { hrefFromUrl, linkDisplayLabel, looksLikeUrl } from "../../../lib/contactLinks";
 import { contrastOn } from "../../../lib/color";
+import { contactIconKey } from "../../../lib/resumeIcons";
+import { ResumeIcon } from "../ResumeIcon";
 import {
+  headingBoxMetrics,
   headingLang,
   resumeDateLocale,
   resumeGpaLabel,
@@ -111,6 +114,9 @@ export type ContactLineItem = {
     | "nationality"
     | "passport"
     | "link";
+  /** which personal field a `link` came from (website, github, ...), so the
+   *  row can show that service's icon instead of a generic globe */
+  field?: string;
   href?: string;
 };
 
@@ -128,6 +134,7 @@ function pushLinkLines(
       id: `${prefix}-${entry.id || i}`,
       text: linkDisplayLabel(entry, prefix),
       kind: "link",
+      field: prefix,
       href: href || undefined,
     });
   });
@@ -174,6 +181,25 @@ export function personalContactLines(
   pushLinkLines(lines, personal.stackoverflow, "stackoverflow");
   pushLinkLines(lines, personal.telegram, "telegram");
   return lines;
+}
+
+/** The icon for a contact row, ready to drop into a layout's contact list. */
+export function ContactIcon({
+  item,
+  className = "mt-0.5 h-3.5 w-3.5 shrink-0",
+  strokeWidth,
+}: {
+  item: ContactLineItem;
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <ResumeIcon
+      icon={contactIconKey(item)}
+      className={className}
+      strokeWidth={strokeWidth}
+    />
+  );
 }
 
 export function ContactLink({
@@ -590,13 +616,15 @@ export function AtsHeading({
     (border === "none" || border === "line");
   const label = resumeHeading(title, customization);
 
+  const box = headingBoxMetrics(size, customization);
   const titleStyle: React.CSSProperties = {
     fontSize: size,
     color: isFilled ? contrastOn(boxColor) : ink,
     backgroundColor: isFilled ? boxColor : undefined,
-    border: isOutline ? `1px solid ${boxColor}` : undefined,
-    padding: isFilled || isOutline ? "3px 8px" : undefined,
-    borderRadius: isFilled ? 4 : undefined,
+    border: isOutline ? `${box.borderWidth}px solid ${boxColor}` : undefined,
+    padding:
+      isFilled || isOutline ? `${box.paddingY}px ${box.paddingX}px` : undefined,
+    borderRadius: isFilled || isOutline ? box.radius : undefined,
     display: isFilled || isOutline ? "inline-block" : undefined,
     ...headingCapStyle(customization),
   };

@@ -1,4 +1,3 @@
-import { Phone, Mail, Globe, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import { LANGUAGE_LEVEL_LABELS, type SpecialSectionKey } from "../../../types/resume";
 import { resumeLanguageLevel } from "../../../lib/resumeHeadings";
@@ -19,6 +18,7 @@ import {
   layoutShellStyle,
   gpaText,
   listKey,
+  ContactIcon,
 } from "./shared";
 
 /** Premium banking - classic header + two columns. Highly ATS-readable. */
@@ -163,15 +163,7 @@ export default function BankingCleanLayout({
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[0.82em]" style={{ color: muted }}>
                 {contacts.map((c, contactIdx) => (
                   <span key={listKey(c.id, contactIdx, "contact")} className="inline-flex items-center gap-1.5">
-                    {c.kind === "phone" ? (
-                      <Phone className="h-3.5 w-3.5" />
-                    ) : c.kind === "email" ? (
-                      <Mail className="h-3.5 w-3.5" />
-                    ) : c.kind === "location" ? (
-                      <MapPin className="h-3.5 w-3.5" />
-                    ) : (
-                      <Globe className="h-3.5 w-3.5" />
-                    )}
+                    <ContactIcon item={c} className="h-3.5 w-3.5" />
                     <ContactLink item={c} />
                   </span>
                 ))}
