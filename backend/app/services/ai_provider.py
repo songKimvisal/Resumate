@@ -1,3 +1,5 @@
+from typing import Literal
+
 import httpx
 from google import genai
 from google.genai import types
@@ -7,6 +9,8 @@ from app.config import settings
 _gemini_client = genai.Client(api_key=settings.gemini_api_key)
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
+ThinkingLevel = Literal["minimal", "low", "medium", "high"]
+
 
 def generate_text(
     prompt: str,
@@ -15,7 +19,11 @@ def generate_text(
     temperature: float = 0.5,
     max_output_tokens: int = 1500,
     thinking_budget: int | None = None,
+    thinking_level: ThinkingLevel | None = None,
 ) -> str:
+    """Pass either thinking_budget (a token count) or thinking_level. Gemini 3
+    models treat the budget as a loose hint and can think well past it; the
+    level is what actually keeps latency down on them."""
     if settings.ai_provider == "ollama":
         return _generate_ollama(prompt, json_mode=json_mode, temperature=temperature)
     return _generate_gemini(
@@ -24,6 +32,7 @@ def generate_text(
         temperature=temperature,
         max_output_tokens=max_output_tokens,
         thinking_budget=thinking_budget,
+        thinking_level=thinking_level,
     )
 
 
@@ -34,6 +43,7 @@ def _generate_gemini(
     temperature: float,
     max_output_tokens: int,
     thinking_budget: int | None,
+    thinking_level: ThinkingLevel | None,
 ) -> str:
     config_kwargs: dict = {
         "temperature": temperature,
@@ -41,7 +51,11 @@ def _generate_gemini(
     }
     if json_mode:
         config_kwargs["response_mime_type"] = "application/json"
-    if thinking_budget is not None:
+    if thinking_level is not None:
+        config_kwargs["thinking_config"] = types.ThinkingConfig(
+            thinking_level=thinking_level.upper()
+        )
+    elif thinking_budget is not None:
         config_kwargs["thinking_config"] = types.ThinkingConfig(
             thinking_budget=thinking_budget
         )

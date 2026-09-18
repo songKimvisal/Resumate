@@ -23,7 +23,7 @@ def smart_rewrite(
             },
         )
 
-    result = rewrite_text(body.field_type, body.text)
+    result = rewrite_text(body.field_type, body.text, body.previous)
     credits = refund_credit(user.id) if result.source == "fallback" else get_balance(user.id)
     return SmartRewriteResponse(
         variations=result.variations,

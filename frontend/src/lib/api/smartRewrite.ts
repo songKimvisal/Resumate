@@ -17,9 +17,11 @@ interface SmartRewriteApiResponse {
 export async function smartRewrite(
   fieldType: RewriteFieldType,
   text: string,
+  previous: string[] = [],
 ): Promise<SmartRewriteApiResponse> {
   return callBackend<SmartRewriteApiResponse>("/api/smart-rewrite", {
     field_type: fieldType,
     text,
+    previous,
   });
 }
