@@ -35,6 +35,8 @@ import mascot from "../../assets/logo/tip_mascot.png";
 
 const TOTAL_STEPS = 5;
 const A4_WIDTH_PX = 210 * (96 / 25.4);
+// Sits just outside the page's right edge; falls back to the corner when there's no room.
+const CLOSE_BUTTON_RIGHT = `max(1rem, calc((100vw - ${A4_WIDTH_PX}px) / 2 - 2.75rem))`;
 const AUTOSAVE_MS = 800;
 
 function clampBuilderStep(n: unknown) {
@@ -525,7 +527,8 @@ export default function BuilderLayout() {
               exit={{ opacity: 0 }}
               onClick={() => setPreviewOpen(false)}
               aria-label={t("builder.closePreview")}
-              className="fixed top-4 right-4 z-60 size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
+              style={{ right: CLOSE_BUTTON_RIGHT }}
+              className="fixed top-4 sm:top-8 z-60 size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
             >
               <X size={18} strokeWidth={2} />
             </motion.button>
@@ -662,30 +665,30 @@ export default function BuilderLayout() {
                   transition={{ duration: 0.18 }}
                   className="flex flex-col items-end gap-3"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setTipOpen(true)}
-                    aria-label={t("builder.tipsTitle")}
-                    className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
-                  >
-                    <Lightbulb size={20} strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openCustomize(true)}
-                    aria-label={t("builder.customize")}
-                    className="size-12 rounded-full bg-bg border border-line text-brand shadow-lg inline-flex items-center justify-center"
-                  >
-                    <LayoutGrid size={20} strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewOpen(true)}
-                    aria-label={t("builder.previewButton")}
-                    className="size-12 rounded-full bg-brand text-white shadow-lg inline-flex items-center justify-center"
-                  >
-                    <Eye size={20} strokeWidth={2} />
-                  </button>
+                  {[
+                    { key: "tips", label: t("builder.tipsLabel"), Icon: Lightbulb, onClick: () => setTipOpen(true) },
+                    { key: "customize", label: t("builder.customize"), Icon: LayoutGrid, onClick: () => openCustomize(true) },
+                    { key: "preview", label: t("builder.previewButton"), Icon: Eye, onClick: () => setPreviewOpen(true), primary: true },
+                  ].map(({ key, label, Icon, onClick, primary }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={onClick}
+                      className="flex items-center gap-3"
+                    >
+                      <span className="whitespace-nowrap rounded-full border border-line bg-bg px-3 py-1.5 text-sm font-medium text-text shadow-md">
+                        {label}
+                      </span>
+                      <span
+                        className={cn(
+                          "size-12 shrink-0 rounded-full shadow-lg inline-flex items-center justify-center",
+                          primary ? "bg-brand text-white" : "bg-bg border border-line text-brand",
+                        )}
+                      >
+                        <Icon size={20} strokeWidth={2} />
+                      </span>
+                    </button>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>

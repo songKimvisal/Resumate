@@ -4,6 +4,8 @@ import ResumePreview from "./ResumePreview";
 import type { Resume } from "../../types/resume";
 
 const A4_WIDTH_PX = 210 * (96 / 25.4);
+// Sits just outside the page's right edge; falls back to the corner when there's no room.
+const CLOSE_BUTTON_RIGHT = `max(1rem, calc((100vw - ${A4_WIDTH_PX}px) / 2 - 2.75rem))`;
 
 export default function ResumePreviewOverlay({
   resume,
@@ -46,7 +48,8 @@ export default function ResumePreviewOverlay({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed top-4 right-4 z-[90] size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
+            style={{ right: CLOSE_BUTTON_RIGHT }}
+            className="fixed top-4 sm:top-8 z-[90] size-9 rounded-full bg-white text-neutral-900 shadow-lg hover:bg-neutral-100 inline-flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </motion.button>

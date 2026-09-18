@@ -96,16 +96,6 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* mobile nav toggle */}
-          <button
-            onClick={() => setMobileMenuOpen((o) => !o)}
-            className="md:hidden size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
-          </button>
-
           {/* language toggle */}
           <button
             onClick={toggleLanguage}
@@ -204,6 +194,16 @@ export default function Navbar() {
               </Button>
             </Link>
           )}
+
+          {/* mobile nav toggle — last, so it sits at the thumb-reachable edge */}
+          <button
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className="md:hidden size-9 rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text transition-colors inline-flex items-center justify-center"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
         </div>
       </nav>
 
