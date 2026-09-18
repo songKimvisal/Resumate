@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from functools import lru_cache
 from typing import Literal
 
 from app.schemas.smart_rewrite import (
@@ -112,8 +111,23 @@ def _strip_html(html: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _avoid_section(previous: list[str]) -> str:
+    if not previous:
+        return ""
+    listed = "\n".join(f"- {p}" for p in previous)
+    return f"""
+The user already saw the versions below for this text and asked for NEW ones.
+Do not repeat them or return near-copies - use different wording, sentence
+structure and angles, while still following every rule above:
+{listed}
+"""
+
+
 def _build_prompt(
-    field_type: RewriteFieldType, plain_text: str, language: RewriteLanguage
+    field_type: RewriteFieldType,
+    plain_text: str,
+    language: RewriteLanguage,
+    previous: list[str] | None = None,
 ) -> str:
     instructions = _FIELD_INSTRUCTIONS[field_type]
     label_examples = ", ".join(f'"{label}"' for label in _DEFAULT_LABELS[language])
@@ -137,7 +151,7 @@ above, but each with a distinct flavor so the user has real options:
 
 Label each version with a short 1-3 word tag matching its style (e.g.
 {label_examples}).
-
+{_avoid_section(previous or [])}
 LANGUAGE: {_LANGUAGE_INSTRUCTIONS[language]}
 
 Respond with ONLY strict JSON, no markdown fences, in this exact shape:
@@ -175,27 +189,28 @@ def _parse_variations(
     return parsed
 
 
-def rewrite_text(field_type: RewriteFieldType, text: str) -> RewriteResult:
-    return _cached_rewrite_text(field_type, text)
-
-
-@lru_cache(maxsize=256)
-def _cached_rewrite_text(
-    field_type: RewriteFieldType, text: str
+def rewrite_text(
+    field_type: RewriteFieldType, text: str, previous: list[str] | None = None
 ) -> RewriteResult:
-    """In-memory cache to avoid re-spending quota on identical requests."""
+    """Not cached on purpose: asking again for the same text should give new
+    options, and every call is paid for with a credit."""
     plain_text = _strip_html(text)
     language = _detect_language(plain_text)
+    seen = [p for p in (_strip_html(p) for p in previous or []) if p]
     try:
         raw_text = generate_text(
-            _build_prompt(field_type, plain_text, language),
+            _build_prompt(field_type, plain_text, language, seen),
             json_mode=True,
             temperature=0.6,
             max_output_tokens=4500 if language == "km" else 2500,
-            thinking_budget=1024,
+            thinking_level="low",
         )
         data = json.loads(raw_text)
-        variations = _parse_variations(data.get("variations", []), language)
+        variations = [
+            v
+            for v in _parse_variations(data.get("variations", []), language)
+            if _strip_html(v.text) not in seen
+        ]
         if not variations:
             raise ValueError(f"AI returned no usable variations in {language!r}")
 
