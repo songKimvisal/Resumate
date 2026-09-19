@@ -55,7 +55,7 @@ export default function DashboardShell() {
       </div>
 
       {/* ---------- mobile top bar ---------- */}
-      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b border-line bg-bg">
+      <div className="sticky-top-fill lg:hidden sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b border-line bg-bg">
         <Link to="/">
           <img src={logo} alt="ResuMate" className="h-8 w-auto" />
         </Link>

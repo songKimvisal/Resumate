@@ -57,7 +57,7 @@ export default function Navbar() {
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
 
   return (
-    <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur border-b border-line">
+    <header className="sticky-top-fill sticky top-0 z-50 bg-bg/80 backdrop-blur border-b border-line">
       <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
         <Link
           to="/"

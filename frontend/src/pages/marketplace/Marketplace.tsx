@@ -207,8 +207,11 @@ export default function Marketplace() {
     setAiAnswers(answers);
     setAiModalOpen(false);
     setRecommendation(recommendTemplates(answers));
-    setSearchParams({ view: "ai" });
+    // setSearchParams drops location.state, which carries the restyle flag
+    setSearchParams({ view: "ai" }, { state: location.state });
   };
+
+  const closeAiResult = () => setSearchParams({}, { state: location.state });
 
   return (
     <div className="min-h-screen bg-bg">
@@ -426,6 +429,7 @@ export default function Marketplace() {
               recommendation={recommendation}
               answers={aiAnswers}
               onChangeAnswers={openAiModal}
+              onClose={closeAiResult}
               onContinue={requestApply}
             />
           )
