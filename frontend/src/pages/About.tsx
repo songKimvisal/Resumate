@@ -14,6 +14,7 @@ import Footer from "../components/layout/Footer";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/UseAuth";
+import { INDUSTRIES, TEMPLATE_PRESETS } from "../data/templates";
 import mascot from "../assets/logo/mascot.png";
 
 /* ---------- shared animation presets ---------- */
@@ -105,7 +106,10 @@ export default function About() {
   const stats = [
     { to: 0, prefix: "$", label: t("about.stats.free") },
     { to: 11, label: t("about.stats.features") },
-    { to: 10, label: t("about.stats.templates") },
+    {
+      to: TEMPLATE_PRESETS.length,
+      label: t("about.stats.templates", { industries: INDUSTRIES.length }),
+    },
     { text: "EN/KH", label: t("about.stats.bilingual") },
   ];
 

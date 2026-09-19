@@ -10,6 +10,7 @@ import { Button } from "../components/ui/button";
 import logo from "../assets/logo/resumate.png";
 import logoMobile from "../assets/logo/logo.png";
 import { markStayOnHome, shouldStayOnHome, clearStayOnHome } from "../lib/session";
+import { TEMPLATE_PRESETS } from "../data/templates";
 
 export default function Signup() {
   const { user, loading, signInWithGoogle, signUpWithPassword } = useAuth();
@@ -111,7 +112,7 @@ export default function Signup() {
               <p className="text-white/85 text-sm">{t("login.statFeatures")}</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">10</p>
+              <p className="text-2xl font-bold">{TEMPLATE_PRESETS.length}</p>
               <p className="text-white/85 text-sm">
                 {t("login.statTemplates")}
               </p>
