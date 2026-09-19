@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import ResumePreview from "../../components/resume/ResumePreview";
 import { Button } from "../../components/ui/button";
 import {
@@ -28,12 +28,14 @@ export default function AiDesignResult({
   answers,
   reasoning,
   onChangeAnswers,
+  onClose,
   onContinue,
 }: {
   recommendation: AiRecommendation;
   answers: AiAnswers;
   reasoning?: string | null;
   onChangeAnswers: () => void;
+  onClose: () => void;
   onContinue: (
     preset: TemplatePreset,
     customization: Partial<Customization>,
@@ -64,7 +66,9 @@ export default function AiDesignResult({
 
   const colorKey = ACCENT_COLOR_KEYS[accentColor];
   const colorName = colorKey ? t(`marketplace.colorNames.${colorKey}`) : "";
-  const industryLabel = t(`marketplace.industries.${activePreset.industry}`);
+  const industryLabel = t(
+    `marketplace.aiPicker.industryOptions.${answers.industry}`,
+  );
   const vibeLabels = answers.vibe.map((v) =>
     t(`marketplace.aiPicker.vibeOptions.${v}`),
   );
@@ -92,15 +96,25 @@ export default function AiDesignResult({
     });
 
   return (
-    <div className="grid lg:grid-cols-[minmax(0,360px)_1fr] gap-8 items-start">
+    <div className="relative grid lg:grid-cols-[minmax(0,360px)_1fr] gap-8 items-start">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={t("marketplace.aiResult.backToTemplates")}
+        title={t("marketplace.aiResult.backToTemplates")}
+        className="absolute right-0 top-0 z-10 size-9 rounded-full border border-brand/20 bg-brand/5 text-brand hover:bg-brand hover:text-white transition-colors inline-flex items-center justify-center"
+      >
+        <X size={18} strokeWidth={2.5} />
+      </button>
+
       {/* ---------- left: spec panel ---------- */}
       <div className="space-y-6">
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-brand">
+          <p className="flex items-center gap-1.5 pr-12 lg:pr-0 text-xs font-bold tracking-widest uppercase text-brand">
             <Sparkles size={13} strokeWidth={2.5} />
             {t("marketplace.aiResult.eyebrow")}
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text mt-2 pr-12 lg:pr-0">
             {t("marketplace.aiResult.title")}{" "}
             <span className="text-brand italic">
               {t("marketplace.aiResult.titleAccent")}
@@ -218,7 +232,7 @@ export default function AiDesignResult({
 
       {/* ---------- right: layout comparison ---------- */}
       <div>
-        <p className="rounded-full border border-brand/20 bg-brand/5 px-4 py-2 text-center text-sm font-medium text-brand">
+        <p className="rounded-full border border-brand/20 bg-brand/5 px-4 py-2 text-center text-sm font-medium text-brand lg:mr-12">
           {t("marketplace.aiResult.switchHint")}
         </p>
 

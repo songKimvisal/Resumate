@@ -91,15 +91,22 @@ const EXPERIENCE_VIBE_HINTS: Record<AiExperienceAnswer, TemplateVibe[]> = {
   mid: ["professional", "boldConfident"],
   senior: ["elegantRefined", "professional"],
 };
-
+const EXPERIENCE_LAYOUT: Record<AiExperienceAnswer, TemplateLayout> = {
+  fresh: "sidebar",
+  junior: "sidebar",
+  mid: "classic",
+  senior: "classic",
+};
 function scoreTemplate(candidate: TemplatePreset, answers: AiAnswers): number {
-  let score = 0;
-  if (candidate.industry === INDUSTRY_MATCH[answers.industry]) score += 4;
-  score += answers.vibe.filter((v) => candidate.vibes.includes(v)).length * 2;
-  score += EXPERIENCE_VIBE_HINTS[answers.experience].filter((v) =>
-    candidate.vibes.includes(v),
-  ).length;
-  return score;
+  const industry =
+    candidate.industry === INDUSTRY_MATCH[answers.industry] ? 1 : 0;
+  const vibes = answers.vibe.filter((v) => candidate.vibes.includes(v)).length;
+  const experienceFit =
+    EXPERIENCE_VIBE_HINTS[answers.experience].filter((v) =>
+      candidate.vibes.includes(v),
+    ).length +
+    (candidate.layout === EXPERIENCE_LAYOUT[answers.experience] ? 1 : 0);
+  return industry * 100 + vibes * 10 + experienceFit;
 }
 
 export interface AiRecommendation {
@@ -113,10 +120,10 @@ export function recommendTemplates(answers: AiAnswers): AiRecommendation {
   );
   const primary = ranked[0];
   const sibling =
-    premiumOnly.find(
+    ranked.find(
       (p) => p.industry === primary.industry && p.layout !== primary.layout,
     ) ??
-    premiumOnly.find((p) => p.layout !== primary.layout) ??
+    ranked.find((p) => p.layout !== primary.layout) ??
     primary;
   return { primary, sibling };
 }

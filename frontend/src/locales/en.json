@@ -874,7 +874,7 @@
     "stats": {
       "free": "To start. Always free",
       "features": "Smart features",
-      "templates": "Templates across 5 industries",
+      "templates": "Templates across {{industries}} industries",
       "bilingual": "Bilingual from day one"
     },
     "mission": {

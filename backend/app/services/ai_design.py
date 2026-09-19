@@ -23,14 +23,25 @@ _EXPERIENCE_VIBE_HINTS: dict[str, list[str]] = {
 }
 
 
+# Sidebar layouts fill out a short resume with skills and languages; a long
+# work history reads better in a single column.
+_EXPERIENCE_LAYOUT: dict[str, str] = {
+    "fresh": "sidebar",
+    "junior": "sidebar",
+    "mid": "classic",
+    "senior": "classic",
+}
+
+
 def _score(candidate: TemplateMeta, answers: AiAnswers) -> int:
-    score = 0
-    if candidate.industry == _INDUSTRY_MATCH.get(answers.industry, answers.industry):
-        score += 4
-    score += len(set(answers.vibe) & set(candidate.vibes)) * 2
+    """Weighted so each tier only breaks ties in the one above it: industry
+    first, then the vibes the user picked, then what suits their experience."""
+    industry = candidate.industry == _INDUSTRY_MATCH.get(answers.industry, answers.industry)
+    vibes = len(set(answers.vibe) & set(candidate.vibes))
     hint_vibes = _EXPERIENCE_VIBE_HINTS.get(answers.experience, [])
-    score += len(set(hint_vibes) & set(candidate.vibes))
-    return score
+    experience_fit = len(set(hint_vibes) & set(candidate.vibes))
+    experience_fit += candidate.layout == _EXPERIENCE_LAYOUT.get(answers.experience)
+    return industry * 100 + vibes * 10 + experience_fit
 
 
 def get_ai_design_recommendation(
