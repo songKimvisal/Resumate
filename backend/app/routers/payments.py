@@ -11,7 +11,7 @@ from app.schemas.payments import (
     PaymentRecord,
     RecordPaymentRequest,
 )
-from app.services.fulfilment import FulfilmentFailed, fulfil_sku
+from app.services.fulfilment import grants_for_sku
 from app.services.khqr import (
     KhqrCheckUnavailable,
     KhqrNotConfigured,
@@ -19,11 +19,11 @@ from app.services.khqr import (
     create_khqr_payment,
 )
 from app.services.payments import (
-    claim_khqr_payment,
     create_khqr_intent,
+    fulfil_khqr_payment,
     list_payments,
+    read_khqr_payment,
     record_payment,
-    release_khqr_payment,
 )
 from app.services.pricing import CURRENCY, UnknownSku, price_cents_for_sku
 
@@ -83,7 +83,11 @@ def create_khqr(
             md5=md5,
         )
     except HTTPException as exc:
-        logger.warning("Could not record KHQR intent %s: %s", md5, exc.detail)
+        logger.error("Could not record KHQR intent %s: %s", md5, exc.detail)
+        raise HTTPException(
+            status_code=503,
+            detail="Could not start this checkout. Please try again shortly.",
+        ) from exc
 
     return CreateKhqrResponse(
         qr_string=qr_string,
@@ -114,37 +118,32 @@ def get_khqr_status(
 
 
 def _fulfil_confirmed_payment(user_id: str, md5: str) -> bool:
-    """Bakong confirmed the money arrived, so grant the pack here - once.
-
-    The claim is what makes it once: the database flips the payment from
-    pending to succeeded for exactly one caller, and only that caller grants.
-    Returns False when this server could not fulfil the checkout at all, which
-    tells the browser to fall back to the older client-driven grant.
-    """
+    """Grant this checkout. True only once the entitlements are in the database."""
     try:
-        claim = claim_khqr_payment(user_id, md5)
+        payment = read_khqr_payment(user_id, md5)
     except HTTPException as exc:
-        logger.warning("Could not claim KHQR payment %s: %s", md5, exc.detail)
+        logger.warning("Could not read KHQR payment %s: %s", md5, exc.detail)
         return False
 
-    if not claim.known:
+    if not payment.known:
+        logger.error(
+            "Paid KHQR %s has no checkout row for user %s - cannot fulfil it",
+            md5,
+            user_id,
+        )
         return False
-    if not claim.claimed:
-        return True  
+    if payment.fulfilled:
+        return True
 
-    sku = claim.sku or ""
+    sku = payment.sku or ""
     try:
-        fulfil_sku(user_id, sku)
+        spec = grants_for_sku(sku)
     except UnknownSku:
         logger.error("Paid KHQR checkout %s has ungrantable SKU %r", md5, sku)
         return False
-    except (FulfilmentFailed, HTTPException) as exc:
-        detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
-        logger.error("Granting %r after KHQR %s failed: %s", sku, md5, detail)
-        try:
-            release_khqr_payment(user_id, md5)
-        except HTTPException:
-            logger.exception("Could not release KHQR claim %s for retry", md5)
-        return False
 
-    return True
+    try:
+        return fulfil_khqr_payment(user_id, md5, spec).fulfilled
+    except HTTPException as exc:
+        logger.error("Granting %r after KHQR %s failed: %s", sku, md5, exc.detail)
+        return False
