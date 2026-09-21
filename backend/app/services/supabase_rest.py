@@ -1,7 +1,27 @@
+from functools import lru_cache
+
 import httpx
 from fastapi import HTTPException, status
 
 from app.config import settings
+
+_TIMEOUT = httpx.Timeout(15.0, connect=10.0)
+_LIMITS = httpx.Limits(
+    max_keepalive_connections=10,
+    max_connections=20,
+    keepalive_expiry=60.0,
+)
+
+
+@lru_cache
+def _client() -> httpx.Client:
+    return httpx.Client(timeout=_TIMEOUT, limits=_LIMITS)
+
+
+def close_client() -> None:
+    client = _client()
+    _client.cache_clear()
+    client.close()
 
 
 def _headers() -> dict[str, str]:
@@ -17,7 +37,7 @@ def _headers() -> dict[str, str]:
 def rest_get(path_with_query: str) -> httpx.Response:
     url = f"{settings.supabase_url}/rest/v1/{path_with_query}"
     try:
-        response = httpx.get(url, headers=_headers(), timeout=15)
+        response = _client().get(url, headers=_headers())
         response.raise_for_status()
         return response
     except httpx.HTTPError as exc:
@@ -30,7 +50,7 @@ def rest_get(path_with_query: str) -> httpx.Response:
 def rest_rpc(fn_name: str, payload: dict) -> object:
     url = f"{settings.supabase_url}/rest/v1/rpc/{fn_name}"
     try:
-        response = httpx.post(url, headers=_headers(), json=payload, timeout=15)
+        response = _client().post(url, headers=_headers(), json=payload)
         response.raise_for_status()
         if not response.content:
             return {}

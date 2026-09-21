@@ -23,23 +23,28 @@ export default function ResumePreviewOverlay({
       {open && resume && (
         <>
           <motion.div
-            className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 py-8 sm:p-8"
+            className="fixed inset-0 z-[80] overflow-y-auto bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           >
-            <motion.div
-              className="relative w-full"
-              style={{ maxWidth: A4_WIDTH_PX }}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ResumePreview resume={resume} pageLabelClassName="text-white/80" />
-            </motion.div>
+            <div className="flex min-h-full items-center justify-center p-4 py-8 sm:p-8">
+              <motion.div
+                className="relative w-full"
+                style={{ maxWidth: A4_WIDTH_PX }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ResumePreview
+                  resume={resume}
+                  pageLabelClassName="text-white/80"
+                />
+              </motion.div>
+            </div>
           </motion.div>
           <motion.button
             type="button"

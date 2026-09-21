@@ -1,55 +1,49 @@
-"""What a paid checkout grants.
+"""What a paid checkout grants."""
 
-One place turns a SKU into entitlements, so the KHQR path (granted by the
-server once Bakong confirms the money) and the mocked Stripe path can never
-drift apart on what a pack contains.
+from typing import NamedTuple
 
-A pack grants template *slots*, not a specific template: the shopper picks
-which one through `/api/templates/unlock`, which already refuses to unlock
-more templates than the slots paid for.
-"""
-
-import logging
-
-from app.services import analyses, credits, pdfs, templates
-from app.services.credits import CREDITS_BY_PACK
+from app.services.analyses import analyses_for_pack
+from app.services.credits import CREDITS_BY_PACK, credits_for_pack
+from app.services.pdfs import pdfs_for_pack
 from app.services.pricing import (
     CUSTOMIZATION_UNLOCK_SKU,
     TEMPLATE_SKU_PREFIX,
     UnknownSku,
 )
-
-logger = logging.getLogger(__name__)
-
-
-class FulfilmentFailed(RuntimeError):
-    """A grant that should have worked did not. Transient - worth retrying,
-    unlike UnknownSku, which means we simply do not sell that SKU."""
+from app.services.templates import PREMIUM_TEMPLATE_IDS, SLOTS_BY_PACK
 
 
-def fulfil_sku(user_id: str, sku: str) -> None:
-    """Grant everything `sku` includes. Raises UnknownSku for anything else."""
+class GrantSpec(NamedTuple):
+    """Everything `sku` is worth. `slots` of -1 means every template."""
+
+    credits: int = 0
+    analyses: int = 0
+    pdfs: int = 0
+    slots: int | None = None
+    all_template_ids: tuple[str, ...] = ()
+    template_id: str | None = None
+    unlock_customization: bool = False
+
+
+def grants_for_sku(sku: str) -> GrantSpec:
+    """What `sku` includes. Raises UnknownSku for anything we do not sell."""
     if sku in CREDITS_BY_PACK:
-        credits.grant_for_pack(user_id, sku)  # type: ignore[arg-type]
-        analyses.grant_for_pack(user_id, sku)  # type: ignore[arg-type]
-        pdfs.grant_for_pack(user_id, sku)  # type: ignore[arg-type]
-        templates.grant_for_pack(user_id, sku)  # type: ignore[arg-type]
-        logger.info("Fulfilled pack %s for user %s", sku, user_id)
-        return
+        slots = SLOTS_BY_PACK[sku]  # type: ignore[index]
+        return GrantSpec(
+            credits=credits_for_pack(sku),  # type: ignore[arg-type]
+            analyses=analyses_for_pack(sku),  # type: ignore[arg-type]
+            pdfs=pdfs_for_pack(sku),  # type: ignore[arg-type]
+            slots=slots,
+            all_template_ids=PREMIUM_TEMPLATE_IDS if slots < 0 else (),
+        )
 
     if sku == CUSTOMIZATION_UNLOCK_SKU:
-        templates.unlock_customization(user_id)
-        logger.info("Fulfilled customization unlock for user %s", user_id)
-        return
+        return GrantSpec(unlock_customization=True)
 
     if sku.startswith(TEMPLATE_SKU_PREFIX):
         template_id = sku[len(TEMPLATE_SKU_PREFIX) :]
-        if template_id not in templates.PREMIUM_TEMPLATE_IDS:
+        if template_id not in PREMIUM_TEMPLATE_IDS:
             raise UnknownSku(f"'{template_id}' is not a premium template")
-        purchased, _ = templates.purchase_premium_template(user_id, template_id)
-        if not purchased:
-            raise FulfilmentFailed(f"Could not grant template '{template_id}'")
-        logger.info("Fulfilled template %s for user %s", template_id, user_id)
-        return
+        return GrantSpec(template_id=template_id)
 
     raise UnknownSku(f"Nothing to grant for SKU '{sku}'")

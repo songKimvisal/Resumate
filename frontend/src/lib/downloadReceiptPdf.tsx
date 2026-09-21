@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, StyleSheet, pdf } from "@react-pdf/renderer";
+import { deliverPdf } from "./pdfDelivery";
 
 export type Receipt = {
   title: string;
@@ -75,16 +76,7 @@ function ReceiptDocument({ receipt }: { receipt: Receipt }) {
   );
 }
 
-/** Renders a receipt to PDF and triggers a browser download. */
 export async function downloadReceiptPdf(receipt: Receipt) {
   const blob = await pdf(<ReceiptDocument receipt={receipt} />).toBlob();
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `receipt-${receipt.transactionId}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  return deliverPdf(blob, `receipt-${receipt.transactionId}.pdf`);
 }

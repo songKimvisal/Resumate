@@ -1085,11 +1085,7 @@
       "download": "Download",
       "readyToDownload": "Ready to download",
       "readyToDownloadDesc": "Your resume is formatted in clean, professional English ready to send to any employer.",
-      "saveToDashboard": "Save to dashboard",
-      "saving": "Saving…",
-      "saved": "Saved",
       "goToDashboard": "Go to dashboard",
-      "saveError": "Couldn't save your resume. Please try again.",
       "pdfNote": "PDF keeps your design exactly as shown fonts, colors, and layout will not shift on any device.",
       "items": {
         "fullName": {
@@ -1787,6 +1783,7 @@
         "verifying": "Verifying with your bank…",
         "notConfirmed": "We couldn't confirm this payment yet. If you've already paid, please wait a moment and try again.",
         "checkUnavailable": "We can't reach Bakong to verify payments right now, so a completed payment won't show up yet. Your money is not lost - try again shortly.",
+        "fulfilmentFailed": "Your payment arrived, but we couldn't unlock your purchase yet. Your money is not lost - press the button again, or contact us and we'll finish it for you.",
         "regenerate": "Get a new code",
         "unavailable": "KHQR payment isn't available right now.",
         "poweredBy": "Powered by Bakong, National Bank of Cambodia"
@@ -1915,5 +1912,14 @@
       "transactionId": "Transaction ID",
       "downloadPdf": "Download PDF"
     }
+  },
+  "pdfSave": {
+    "title": "Your PDF is ready",
+    "hintShare": "Tap Save, then choose “Save to Files” to keep it on your phone.",
+    "hintInApp": "This app’s built-in browser cannot save files. Open ResuMate in Safari or Chrome, then download again.",
+    "hintOpen": "Tap Open, then use your browser’s share button to save the file.",
+    "save": "Save PDF",
+    "open": "Open PDF",
+    "close": "Close"
   }
 }

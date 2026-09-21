@@ -102,7 +102,7 @@ QUOTA_MESSAGE = (
 )
 QUOTA_RETRY_AFTER_SECONDS = 10 * 60
 PAID_CACHE_SECONDS = 60 * 60
-UNPAID_CACHE_SECONDS = 15
+UNPAID_CACHE_SECONDS = 90
 _result_cache: dict[str, tuple[float, bool, int]] = {}
 _quota_blocked_until = 0.0
 
@@ -116,19 +116,23 @@ def _prune_cache(now: float) -> None:
         del _result_cache[md5]
 
 
-def _post_check(md5: str) -> httpx.Response:
-    kwargs: dict[str, object] = {"timeout": 15.0}
+@lru_cache
+def _bakong_client() -> httpx.Client:
+    kwargs: dict[str, object] = {"timeout": httpx.Timeout(15.0, connect=10.0)}
     if settings.bakong_proxy_url:
         kwargs["proxy"] = settings.bakong_proxy_url
-    with httpx.Client(**kwargs) as client:
-        return client.post(
-            f"{BAKONG_API}/check_transaction_by_md5",
-            json={"md5": md5},
-            headers={
-                "Authorization": f"Bearer {settings.bakong_token}",
-                "Content-Type": "application/json",
-            },
-        )
+    return httpx.Client(**kwargs)
+
+
+def _post_check(md5: str) -> httpx.Response:
+    return _bakong_client().post(
+        f"{BAKONG_API}/check_transaction_by_md5",
+        json={"md5": md5},
+        headers={
+            "Authorization": f"Bearer {settings.bakong_token}",
+            "Content-Type": "application/json",
+        },
+    )
 
 
 def check_khqr_payment(

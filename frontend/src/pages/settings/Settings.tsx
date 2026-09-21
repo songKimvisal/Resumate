@@ -56,8 +56,8 @@ export default function Settings() {
 
   const handleSignOut = async () => {
     setSigningOut(true);
+    navigate("/", { replace: true });
     await signOut();
-    navigate("/");
   };
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -72,8 +72,8 @@ export default function Settings() {
       await deleteAllResumes(user.id);
       useResumeStore.getState().resetResume();
       useSubscriptionStore.getState().unsubscribe();
+      navigate("/", { replace: true });
       await signOut();
-      navigate("/");
     } catch {
       setDeleteError(t("settings.deleteAccount.error"));
       setDeleting(false);

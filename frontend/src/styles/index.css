@@ -428,6 +428,7 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-placeholder);
   }
+
   .sticky-top-fill::before {
     content: "";
     position: absolute;
@@ -523,4 +524,13 @@
   height: 0;
   color: var(--text-placeholder);
   pointer-events: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  .rte-content {
+    font-size: 16px;
+  }
 }

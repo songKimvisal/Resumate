@@ -12,7 +12,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 @lru_cache
 def _get_jwks_client() -> "jwt.PyJWKClient":
     jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
-    return jwt.PyJWKClient(jwks_url, cache_keys=True)
+    return jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
 
 
 class CurrentUser:

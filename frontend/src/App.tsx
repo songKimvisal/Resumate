@@ -13,6 +13,7 @@ import Refund from "./pages/Refund";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ScrollToTop from "./components/ScrollToTop";
+import PdfSaveSheet from "./components/PdfSaveSheet";
 // Protected pages
 import DashboardShell from "./components/layout/DashboardShell";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PdfSaveSheet />
       <Routes>
         {/* Public */}
         <Route path="/" element={<Home />} />
