@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 from app.schemas.payments import PaymentRecord, RecordPaymentRequest
+from app.services.fulfilment import GrantSpec
 from app.services.pricing import CURRENCY, price_cents_for_sku
 from app.services.supabase_rest import rest_get, rest_rpc
 
@@ -49,16 +50,11 @@ def list_payments(user_id: str) -> list[PaymentRecord]:
     rows = response.json()
     return [_from_row(row) for row in rows]
 
-class KhqrClaim(NamedTuple):
-    """Outcome of trying to claim a Bakong-confirmed payment.
+class KhqrPayment(NamedTuple):
+    """What the database knows about one KHQR checkout."""
 
-    `claimed` is true for exactly one caller - that caller owes the grants.
-    `known` says the md5 is a checkout of this user's at all, which separates
-    "already fulfilled" from "not yours / never created here".
-    """
-
-    claimed: bool
     known: bool
+    fulfilled: bool
     sku: str | None
 
 
@@ -85,20 +81,43 @@ def create_khqr_intent(
     )
 
 
-def claim_khqr_payment(user_id: str, md5: str) -> KhqrClaim:
-    row = rest_rpc("claim_khqr_payment", {"p_user_id": user_id, "p_md5": md5})
-    if not isinstance(row, dict):
-        return KhqrClaim(claimed=False, known=False, sku=None)
-    payment = row.get("payment")
-    sku = payment.get("pack_id") if isinstance(payment, dict) else None
-    return KhqrClaim(
-        claimed=bool(row.get("claimed")),
-        known=bool(row.get("known")),
-        sku=sku,
+def read_khqr_payment(user_id: str, md5: str) -> KhqrPayment:
+    """Look up a checkout, so the SKU comes from the row and not the request."""
+    response = rest_get(
+        f"payments?external_transaction_id=eq.{md5}&user_id=eq.{user_id}"
+        "&select=pack_id,fulfilled_at&limit=1"
+    )
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        return KhqrPayment(known=False, fulfilled=False, sku=None)
+    row = rows[0]
+    return KhqrPayment(
+        known=True,
+        fulfilled=row.get("fulfilled_at") is not None,
+        sku=row.get("pack_id"),
     )
 
 
-def release_khqr_payment(user_id: str, md5: str) -> None:
-    """Hand a claim back when the grants that followed it failed, so the next
-    poll retries instead of leaving a paid shopper empty-handed."""
-    rest_rpc("release_khqr_payment", {"p_user_id": user_id, "p_md5": md5})
+def fulfil_khqr_payment(user_id: str, md5: str, spec: GrantSpec) -> KhqrPayment:
+    """Claim this checkout and grant everything it includes, atomically."""
+    row = rest_rpc(
+        "fulfil_khqr_payment",
+        {
+            "p_user_id": user_id,
+            "p_md5": md5,
+            "p_credits": spec.credits,
+            "p_analyses": spec.analyses,
+            "p_pdfs": spec.pdfs,
+            "p_slots": spec.slots,
+            "p_all_ids": list(spec.all_template_ids),
+            "p_template_id": spec.template_id,
+            "p_unlock_customization": spec.unlock_customization,
+        },
+    )
+    if not isinstance(row, dict):
+        return KhqrPayment(known=False, fulfilled=False, sku=None)
+    return KhqrPayment(
+        known=bool(row.get("known")),
+        fulfilled=bool(row.get("fulfilled")),
+        sku=row.get("pack_id"),
+    )

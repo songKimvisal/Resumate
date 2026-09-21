@@ -56,15 +56,10 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-// A Bakong developer token allows 100 checks a DAY, and an exhausted
-// allowance comes back looking like a plain "unpaid", so overspending it
-// silently breaks checkout for everyone until midnight. There is therefore no
-// background polling at all. A payment costs one request, spent at the only
-// two moments that can mean money moved: the shopper coming back to this tab
-// from their banking app, and the shopper pressing the confirm button.
-const KHQR_UNPAID_POLL_SECONDS = 60;
-const KHQR_MIN_CHECK_GAP_MS = 15000;
+const KHQR_MIN_CHECK_GAP_MS = 60000;
 const KHQR_MIN_AWAY_MS = 5000;
+const KHQR_FULFIL_RETRIES = 4;
+const KHQR_FULFIL_RETRY_MS = 2000;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -145,6 +140,7 @@ export default function Payment() {
   const [khqrErrorCode, setKhqrErrorCode] = useState<string | null>(null);
   const [khqrNotConfirmed, setKhqrNotConfirmed] = useState(false);
   const [khqrCheckUnavailable, setKhqrCheckUnavailable] = useState(false);
+  const [khqrFulfilmentFailed, setKhqrFulfilmentFailed] = useState(false);
   const khqrFulfilledRef = useRef(false);
   const khqrLoadingRef = useRef<string | null>(null);
   // One check at a time, and never two for the same wake-up.
@@ -361,6 +357,7 @@ export default function Payment() {
     setKhqrErrorCode(null);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
+    setKhqrFulfilmentFailed(false);
     setSecondsLeft(QR_EXPIRY_SECONDS);
     createKhqrPayment({
       packId: planData.id,
@@ -411,48 +408,43 @@ export default function Payment() {
   }, [paymentMethod, planData?.id]);
 
   const checkKhqrPaid = async (md5: string, createdAt: number) => {
-    if (khqrFulfilledRef.current) {
-      return {
-        paid: false,
-        granted: false,
-        nextDelaySeconds: KHQR_UNPAID_POLL_SECONDS,
-      };
+    const first = await getKhqrStatus(md5, createdAt);
+    if (first.status !== "paid") return { paid: false, granted: false };
+    if (first.fulfilled === true) return { paid: true, granted: true };
+
+    for (let attempt = 0; attempt < KHQR_FULFIL_RETRIES; attempt++) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, KHQR_FULFIL_RETRY_MS),
+      );
+      const again = await getKhqrStatus(md5, createdAt);
+      if (again.fulfilled === true) return { paid: true, granted: true };
     }
-    const { status, next_delay_seconds, fulfilled } = await getKhqrStatus(
-      md5,
-      createdAt,
-    );
-    const paid = status === "paid" && !khqrFulfilledRef.current;
-    if (paid) khqrFulfilledRef.current = true;
-    return {
-      paid,
-      granted: fulfilled === true,
-      nextDelaySeconds: next_delay_seconds,
-    };
+    return { paid: true, granted: false };
   };
-  /**
-   * Ask Bakong once. A button press bypasses the throttles, because a shopper
-   * who taps it deserves an answer and `khqrFulfilledRef` already stops a
-   * double grant. Everything else is rate limited, so no sequence of browser
-   * events can turn one payment into several Bakong requests.
-   */
   const runKhqrCheck = async (
     reason: "return" | "manual",
   ): Promise<void> => {
     if (!khqr || khqrFulfilledRef.current) return;
-    if (reason !== "manual") {
-      if (khqrCheckInFlightRef.current) return;
-      if (Date.now() - khqrLastCheckAtRef.current < KHQR_MIN_CHECK_GAP_MS) {
-        return;
-      }
+    if (khqrCheckInFlightRef.current) return;
+    if (
+      reason !== "manual" &&
+      Date.now() - khqrLastCheckAtRef.current < KHQR_MIN_CHECK_GAP_MS
+    ) {
+      return;
     }
     khqrCheckInFlightRef.current = true;
     khqrLastCheckAtRef.current = Date.now();
     try {
       const { paid, granted } = await checkKhqrPaid(khqr.md5, khqr.createdAt);
       setKhqrCheckUnavailable(false);
+      if (paid && granted) {
+        khqrFulfilledRef.current = true;
+        setKhqrFulfilmentFailed(false);
+        void fulfillPurchase(true);
+        return;
+      }
       if (paid) {
-        void fulfillPurchase(granted);
+        setKhqrFulfilmentFailed(true);
         return;
       }
       if (reason === "manual") setKhqrNotConfirmed(true);
@@ -463,12 +455,13 @@ export default function Payment() {
   useEffect(() => {
     if (!khqr || secondsLeft <= 0) return;
 
-    const markAway = () => {
-      if (khqrAwaySinceRef.current === 0) khqrAwaySinceRef.current = Date.now();
-    };
-
-    const checkOnReturn = () => {
-      if (document.visibilityState !== "visible") return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        if (khqrAwaySinceRef.current === 0) {
+          khqrAwaySinceRef.current = Date.now();
+        }
+        return;
+      }
       const awaySince = khqrAwaySinceRef.current;
       khqrAwaySinceRef.current = 0;
       if (awaySince === 0 || Date.now() - awaySince < KHQR_MIN_AWAY_MS) return;
@@ -478,18 +471,9 @@ export default function Payment() {
         setKhqrCheckUnavailable(status === 502 || status === 503);
       });
     };
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") markAway();
-      else checkOnReturn();
-    };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("blur", markAway);
-    window.addEventListener("focus", checkOnReturn);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("blur", markAway);
-      window.removeEventListener("focus", checkOnReturn);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
@@ -501,6 +485,7 @@ export default function Payment() {
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
+    setKhqrFulfilmentFailed(false);
     runKhqrCheck("manual")
       .catch((err) => {
         console.warn("Could not check KHQR status:", err);
@@ -828,6 +813,11 @@ export default function Payment() {
               {khqrCheckUnavailable && (
                 <p className="mt-2 text-center text-xs text-destructive">
                   {t("billing.payment.khqr.checkUnavailable")}
+                </p>
+              )}
+              {khqrFulfilmentFailed && (
+                <p className="mt-2 text-center text-xs text-destructive">
+                  {t("billing.payment.khqr.fulfilmentFailed")}
                 </p>
               )}
               {khqrLoadError || secondsLeft <= 0 ? (

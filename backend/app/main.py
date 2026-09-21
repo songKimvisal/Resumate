@@ -1,7 +1,10 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.services.supabase_rest import close_client
 from app.routers import (
     me,
     ai_design,
@@ -14,7 +17,13 @@ from app.routers import (
     payments
 )
 
-app = FastAPI(title="Resumate API")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    yield
+    close_client()
+
+
+app = FastAPI(title="Resumate API", lifespan=lifespan)
 
 _LOCAL_ORIGINS = [
     "http://localhost:5173",

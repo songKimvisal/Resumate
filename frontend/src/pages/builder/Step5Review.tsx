@@ -15,7 +15,6 @@ import { useAuth } from "../../hooks/UseAuth";
 import { useResumeStore } from "../../store/resumeStore";
 import { computeCompleteness } from "../../lib/resumeCompleteness";
 import { saveResumePdf } from "../../lib/saveResumePdf";
-import { saveResumeToDashboard } from "../../lib/api";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
@@ -59,12 +58,8 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const resume = useResumeStore((s) => s.resume);
-  const markSaved = useResumeStore((s) => s.markSaved);
   const { remaining, canSave } = usePdfSaves();
   const [downloading, setDownloading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -92,24 +87,6 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
       setDownloadError(t("builder.downloadPdfError"));
     } finally {
       setDownloading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const id = await saveResumeToDashboard(resume, user.id);
-      markSaved(id);
-      setSaved(true);
-    } catch {
-      setSaveError(t("builder.review.saveError"));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -278,25 +255,14 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
               size="compact"
               variant="outline"
               className="flex-1 basis-0 min-w-0 justify-center gap-1.5 px-2.5 text-xs whitespace-normal break-words text-center leading-tight hover:bg-primary hover:text-primary-foreground sm:flex-none sm:basis-auto sm:gap-2 sm:px-[14px] sm:text-sm sm:whitespace-nowrap"
-              onClick={saved ? () => navigate("/my-resumes") : handleSave}
-              disabled={saving}
+              onClick={() => navigate("/my-resumes")}
             >
-              {saved ? (
-                <CheckCircle2 size={15} strokeWidth={2} />
-              ) : (
-                <LayoutDashboard size={15} strokeWidth={2} />
-              )}
-              {saving
-                ? t("builder.review.saving")
-                : saved
-                  ? t("builder.review.goToDashboard")
-                  : t("builder.review.saveToDashboard")}
+              <LayoutDashboard size={15} strokeWidth={2} />
+              {t("builder.review.goToDashboard")}
             </Button>
           </div>
-          {(saveError || downloadError) && (
-            <p className="text-sm text-destructive mt-3">
-              {downloadError ?? saveError}
-            </p>
+          {downloadError && (
+            <p className="text-sm text-destructive mt-3">{downloadError}</p>
           )}
         </div>
 
