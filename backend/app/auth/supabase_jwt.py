@@ -15,6 +15,16 @@ def _get_jwks_client() -> "jwt.PyJWKClient":
     return jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
 
 
+def warm_jwks() -> None:
+    """Fetch and cache Supabase's key set now, rather than on a real request.
+
+    get_jwk_set() fills the same jwk_set_cache that get_signing_key_from_jwt()
+    reads, so a token verified afterwards needs no network call. Called from
+    the app's startup warm-up; raising here is fine, the caller logs it.
+    """
+    _get_jwks_client().get_jwk_set()
+
+
 class CurrentUser:
     def __init__(self, id: str, email: str | None):
         self.id = id

@@ -28,6 +28,19 @@ class KhqrCheckUnavailable(RuntimeError):
     """
 
 
+class KhqrQuotaExhausted(KhqrCheckUnavailable):
+    """Bakong's daily request allowance for this token is used up.
+
+    A subclass of KhqrCheckUnavailable because it is one particular way
+    Bakong refuses to answer, so every caller that already handles the
+    general case keeps handling this one. It is named separately because it
+    is the refusal that must also block *minting* a QR: encoding a code
+    costs no quota, but the code would be real and payable, and confirming
+    the money it takes does cost quota. Handing one out while the allowance
+    is gone takes a shopper's money for something we cannot unlock.
+    """
+
+
 BAKONG_API = "https://api-bakong.nbc.gov.kh/v1"
 
 _HTTP_REASONS = {
@@ -48,6 +61,27 @@ _HTTP_REASONS = {
 }
 
 
+QUOTA_ERROR_CODE = 17
+QUOTA_MESSAGE = (
+    "Bakong's daily request limit of 100 for this token is used up. "
+    "It resets tomorrow."
+)
+QUOTA_RETRY_AFTER_SECONDS = 10 * 60
+_quota_blocked_until = 0.0
+
+
+def quota_exhausted() -> bool:
+    """True while Bakong has told us this token is out of requests for today.
+
+    The window is a re-probe interval, not the real reset: the allowance
+    resets tomorrow, but we cannot know when, so we stop asking for
+    QUOTA_RETRY_AFTER_SECONDS and then let one check find out. Like the
+    result cache this lives in the process, so a Render spin-down clears it
+    and the next check re-discovers the block.
+    """
+    return time.time() < _quota_blocked_until
+
+
 @lru_cache
 def _client() -> KHQR:
     if not settings.bakong_token or not settings.bakong_account_id:
@@ -61,7 +95,15 @@ def _client() -> KHQR:
 def create_khqr_payment(
     amount: float, currency: str, bill_number: str
 ) -> tuple[str, str]:
-    """Returns (qr_string, md5) for a real, scannable Bakong KHQR code."""
+    """Returns (qr_string, md5) for a real, scannable Bakong KHQR code.
+
+    Refuses while the daily allowance is gone. The encoding itself would
+    still succeed - that is exactly the problem, see KhqrQuotaExhausted.
+    """
+    if quota_exhausted():
+        logger.warning("Refusing to mint a KHQR for %s: %s", bill_number, QUOTA_MESSAGE)
+        raise KhqrQuotaExhausted(QUOTA_MESSAGE)
+
     khqr = _client()
     qr_string = khqr.create_qr(
         account_id=settings.bakong_account_id,
@@ -95,16 +137,9 @@ def _next_delay_seconds(start_time: float | None) -> int:
         bakong_delay = 300
     return max(bakong_delay, MIN_POLL_DELAY_SECONDS)
 
-QUOTA_ERROR_CODE = 17
-QUOTA_MESSAGE = (
-    "Bakong's daily request limit of 100 for this token is used up. "
-    "It resets tomorrow."
-)
-QUOTA_RETRY_AFTER_SECONDS = 10 * 60
 PAID_CACHE_SECONDS = 60 * 60
 UNPAID_CACHE_SECONDS = 90
 _result_cache: dict[str, tuple[float, bool, int]] = {}
-_quota_blocked_until = 0.0
 
 
 def _prune_cache(now: float) -> None:
@@ -165,7 +200,7 @@ def check_khqr_payment(
     if now < _quota_blocked_until:
         # Spending a refused request to be told again would be pointless.
         logger.warning("Skipping Bakong check for %s: %s", md5, QUOTA_MESSAGE)
-        raise KhqrCheckUnavailable(QUOTA_MESSAGE)
+        raise KhqrQuotaExhausted(QUOTA_MESSAGE)
 
     try:
         response = _post_check(md5)
@@ -209,7 +244,7 @@ def check_khqr_payment(
     if error_code == QUOTA_ERROR_CODE or "daily request limit" in message.lower():
         _quota_blocked_until = now + QUOTA_RETRY_AFTER_SECONDS
         logger.error("Bakong daily request limit reached: %s", message)
-        raise KhqrCheckUnavailable(QUOTA_MESSAGE)
+        raise KhqrQuotaExhausted(QUOTA_MESSAGE)
 
     if error_code == 1 or "could not be found" in message.lower():
         logger.debug("KHQR %s still unpaid: %s", md5, message)

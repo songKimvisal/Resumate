@@ -9,7 +9,10 @@ export default function Footer() {
     {
       title: t("footer.product"),
       links: [
-        { label: t("nav.templates"), href: "/", scrollTo: "templates" },
+        // Same destination as the navbar's Templates link. The home page's
+        // id="templates" is the hero's decorative card fan, not a section
+        // about templates, so scrolling there answered a different question.
+        { label: t("nav.templates"), href: "/marketplace" },
         { label: t("nav.features"), href: "/", scrollTo: "features" },
         { label: t("nav.pricing"), href: "/", scrollTo: "pricing" },
       ],
@@ -72,8 +75,10 @@ export default function Footer() {
           <div className="flex gap-3">
             {/* YouTube */}
             <a
-              href="https://youtube.com"
+              href="https://www.youtube.com/@batdeveloper"
               aria-label="YouTube"
+              target="_blank"
+              rel="noopener noreferrer"
               className="size-9 rounded-lg bg-surface-2 inline-flex items-center justify-center text-text-secondary hover:text-brand transition-colors"
             >
               <svg
@@ -87,8 +92,10 @@ export default function Footer() {
             </a>
             {/* GitHub */}
             <a
-              href="https://github.com"
+              href="https://github.com/songKimvisal"
               aria-label="GitHub"
+              target="_blank"
+              rel="noopener noreferrer"
               className="size-9 rounded-lg bg-surface-2 inline-flex items-center justify-center text-text-secondary hover:text-brand transition-colors"
             >
               <svg
@@ -102,8 +109,10 @@ export default function Footer() {
             </a>
             {/* Instagram */}
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/resumate_kh"
               aria-label="Instagram"
+              target="_blank"
+              rel="noopener noreferrer"
               className="size-9 rounded-lg bg-surface-2 inline-flex items-center justify-center text-text-secondary hover:text-brand transition-colors"
             >
               <svg

@@ -1786,6 +1786,9 @@
         "fulfilmentFailed": "Your payment arrived, but we couldn't unlock your purchase yet. Your money is not lost - press the button again, or contact us and we'll finish it for you.",
         "regenerate": "Get a new code",
         "unavailable": "KHQR payment isn't available right now.",
+        "limitReached": "KHQR checkout is paused we've reached Bakong's daily payment limit for today. Nothing has been charged. The limit resets tomorrow, so please try again then.",
+        "limitReachedPaid": "We've reached Bakong's daily limit, so we can't confirm your payment right now. If you have already paid, your money is not lost the limit resets tomorrow, and your purchase will unlock when you press the button again.",
+        "warmingUp": "Waking the payment server… the first code can take up to a minute.",
         "poweredBy": "Powered by Bakong, National Bank of Cambodia"
       },
       "success": {

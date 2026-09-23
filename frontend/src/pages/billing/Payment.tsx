@@ -60,6 +60,8 @@ const KHQR_MIN_CHECK_GAP_MS = 60000;
 const KHQR_MIN_AWAY_MS = 5000;
 const KHQR_FULFIL_RETRIES = 4;
 const KHQR_FULFIL_RETRY_MS = 2000;
+const KHQR_SLOW_HINT_MS = 4000;
+const KHQR_COLD_START_RETRY_MS = 1500;
 const MOCK_STRIPE_PROCESSING_MS = 500;
 
 const formatCountdown = (seconds: number) => {
@@ -140,6 +142,9 @@ export default function Payment() {
   const [khqrErrorCode, setKhqrErrorCode] = useState<string | null>(null);
   const [khqrNotConfirmed, setKhqrNotConfirmed] = useState(false);
   const [khqrCheckUnavailable, setKhqrCheckUnavailable] = useState(false);
+  const [khqrLimitReached, setKhqrLimitReached] = useState(false);
+  const [khqrSlow, setKhqrSlow] = useState(false);
+  const khqrSlowTimerRef = useRef<number | null>(null);
   const [khqrFulfilmentFailed, setKhqrFulfilmentFailed] = useState(false);
   const khqrFulfilledRef = useRef(false);
   const khqrLoadingRef = useRef<string | null>(null);
@@ -344,7 +349,7 @@ export default function Payment() {
     }
     navigate(next === "builder" ? "/builder" : "/dashboard", { replace: true });
   };
-  const loadKhqr = (force = false) => {
+  const loadKhqr = (force = false, isRetry = false) => {
     if (!planData) return;
     if (!force && khqrLoadingRef.current === planData.id) return;
     khqrLoadingRef.current = planData.id;
@@ -357,39 +362,77 @@ export default function Payment() {
     setKhqrErrorCode(null);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
+    setKhqrLimitReached(false);
     setKhqrFulfilmentFailed(false);
     setSecondsLeft(QR_EXPIRY_SECONDS);
+
+    setKhqrSlow(false);
+    if (khqrSlowTimerRef.current) window.clearTimeout(khqrSlowTimerRef.current);
+    khqrSlowTimerRef.current = window.setTimeout(
+      () => setKhqrSlow(true),
+      KHQR_SLOW_HINT_MS,
+    );
+    const stopWaiting = () => {
+      if (khqrSlowTimerRef.current) {
+        window.clearTimeout(khqrSlowTimerRef.current);
+        khqrSlowTimerRef.current = null;
+      }
+      setKhqrSlow(false);
+    };
+
     createKhqrPayment({
       packId: planData.id,
       packName: planData.name,
     })
-      .then((res) =>
+      .then((res) => {
+        stopWaiting();
         setKhqr({
           qrString: res.qr_string,
           md5: res.md5,
           createdAt: Date.now() / 1000,
-        }),
-      )
+        });
+        // The code is valid from now, not from when we asked for it. A cold
+        // start used to spend a minute of the shopper's five before the QR
+        // they are counting down had even been minted.
+        setSecondsLeft(QR_EXPIRY_SECONDS);
+      })
       .catch((err) => {
         const status = err instanceof BackendError ? err.status : 0;
+
+        // A waking Render instance can drop the connection before answering.
+        // Retry once rather than telling a shopper "no connection" about a
+        // backend that is merely starting up. Minting spends no Bakong
+        // quota, so a retry that duplicates a lost success costs nothing but
+        // an unused intent row.
+        if (status === 0 && !isRetry) {
+          window.setTimeout(
+            () => loadKhqr(true, true),
+            KHQR_COLD_START_RETRY_MS,
+          );
+          return;
+        }
+        stopWaiting();
         const detail =
           err instanceof BackendError ? JSON.stringify(err.body) : String(err);
         const why =
-          status === 503
-            ? "the server has no BAKONG_TOKEN / BAKONG_ACCOUNT_ID configured"
-            : status === 400
-              ? "the server does not sell this SKU"
-              : status === 422
-                ? "the backend is older than this frontend - redeploy it"
-                : status === 401
-                  ? "the session token was rejected"
-                  : status === 0
-                    ? "the backend could not be reached (URL or CORS)"
-                    : `HTTP ${status}`;
+          status === 429
+            ? "Bakong's daily request limit is used up - no QR was minted"
+            : status === 503
+              ? "the server has no BAKONG_TOKEN / BAKONG_ACCOUNT_ID configured"
+              : status === 400
+                ? "the server does not sell this SKU"
+                : status === 422
+                  ? "the backend is older than this frontend - redeploy it"
+                  : status === 401
+                    ? "the session token was rejected"
+                    : status === 0
+                      ? "the backend could not be reached (URL or CORS)"
+                      : `HTTP ${status}`;
         console.warn(
           `KHQR code could not be created for "${planData.id}": ${why}`,
           detail,
         );
+        setKhqrLimitReached(status === 429);
         setKhqrErrorCode(status === 0 ? "no connection" : `HTTP ${status}`);
         setKhqrLoadError(true);
         khqrLoadingRef.current = null;
@@ -402,7 +445,13 @@ export default function Payment() {
     const interval = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (khqrSlowTimerRef.current) {
+        window.clearTimeout(khqrSlowTimerRef.current);
+        khqrSlowTimerRef.current = null;
+      }
+    };
     // planData is a new object every render, don't retrigger on it
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, planData?.id]);
@@ -413,17 +462,13 @@ export default function Payment() {
     if (first.fulfilled === true) return { paid: true, granted: true };
 
     for (let attempt = 0; attempt < KHQR_FULFIL_RETRIES; attempt++) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, KHQR_FULFIL_RETRY_MS),
-      );
+      await new Promise((resolve) => setTimeout(resolve, KHQR_FULFIL_RETRY_MS));
       const again = await getKhqrStatus(md5, createdAt);
       if (again.fulfilled === true) return { paid: true, granted: true };
     }
     return { paid: true, granted: false };
   };
-  const runKhqrCheck = async (
-    reason: "return" | "manual",
-  ): Promise<void> => {
+  const runKhqrCheck = async (reason: "return" | "manual"): Promise<void> => {
     if (!khqr || khqrFulfilledRef.current) return;
     if (khqrCheckInFlightRef.current) return;
     if (
@@ -437,6 +482,7 @@ export default function Payment() {
     try {
       const { paid, granted } = await checkKhqrPaid(khqr.md5, khqr.createdAt);
       setKhqrCheckUnavailable(false);
+      setKhqrLimitReached(false);
       if (paid && granted) {
         khqrFulfilledRef.current = true;
         setKhqrFulfilmentFailed(false);
@@ -468,6 +514,7 @@ export default function Payment() {
       runKhqrCheck("return").catch((err) => {
         console.warn("KHQR status check failed:", err);
         const status = err instanceof BackendError ? err.status : 0;
+        setKhqrLimitReached(status === 429);
         setKhqrCheckUnavailable(status === 502 || status === 503);
       });
     };
@@ -485,12 +532,15 @@ export default function Payment() {
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
+    setKhqrLimitReached(false);
     setKhqrFulfilmentFailed(false);
     runKhqrCheck("manual")
       .catch((err) => {
         console.warn("Could not check KHQR status:", err);
         const status = err instanceof BackendError ? err.status : 0;
-        if (status === 502 || status === 503) setKhqrCheckUnavailable(true);
+        if (status === 429) setKhqrLimitReached(true);
+        else if (status === 502 || status === 503)
+          setKhqrCheckUnavailable(true);
         else setKhqrNotConfirmed(true);
       })
       .finally(() => setVerifyingKhqr(false));
@@ -745,11 +795,13 @@ export default function Payment() {
                 style={{ minHeight: 180 }}
               >
                 {khqrLoadError ? (
-                  <div className="max-w-45 text-center">
+                  <div className="max-w-60 px-4 text-center">
                     <p className="text-xs text-destructive">
-                      {t("billing.payment.khqr.unavailable")}
+                      {khqrLimitReached
+                        ? t("billing.payment.khqr.limitReached")
+                        : t("billing.payment.khqr.unavailable")}
                     </p>
-                    {khqrErrorCode ? (
+                    {khqrErrorCode && !khqrLimitReached ? (
                       <p className="mt-1 font-mono text-[10px] text-text-secondary">
                         {khqrErrorCode}
                       </p>
@@ -758,15 +810,22 @@ export default function Payment() {
                 ) : khqr ? (
                   <QRCodeSVG value={khqr.qrString} size={180} />
                 ) : (
-                  <Loader2
-                    size={24}
-                    className="animate-spin text-text-secondary"
-                  />
+                  <div className="flex max-w-60 flex-col items-center gap-2 px-4 text-center">
+                    <Loader2
+                      size={24}
+                      className="animate-spin text-text-secondary"
+                    />
+                    {khqrSlow ? (
+                      <p className="text-xs text-text-secondary">
+                        {t("billing.payment.khqr.warmingUp")}
+                      </p>
+                    ) : null}
+                  </div>
                 )}
               </div>
             </div>
 
-            {secondsLeft > 0 ? (
+            {!khqr ? null : secondsLeft > 0 ? (
               <p className="flex items-center justify-center gap-1.5 text-sm mt-4">
                 <Timer size={15} className="text-text-secondary" />
                 <span className="text-text-secondary">
@@ -783,9 +842,11 @@ export default function Payment() {
               </p>
             )}
 
-            <p className="text-center text-xs text-text-secondary mt-3 px-5">
-              {t("billing.payment.khqr.instructions")}
-            </p>
+            {khqr ? (
+              <p className="text-center text-xs text-text-secondary mt-3 px-5">
+                {t("billing.payment.khqr.instructions")}
+              </p>
+            ) : null}
 
             <div className="px-5 pb-5">
               {!khqrLoadError && secondsLeft > 0 ? (
@@ -810,6 +871,11 @@ export default function Payment() {
                   {t("billing.payment.khqr.notConfirmed")}
                 </p>
               )}
+              {khqrLimitReached && !khqrLoadError && (
+                <p className="mt-2 text-center text-xs text-destructive">
+                  {t("billing.payment.khqr.limitReachedPaid")}
+                </p>
+              )}
               {khqrCheckUnavailable && (
                 <p className="mt-2 text-center text-xs text-destructive">
                   {t("billing.payment.khqr.checkUnavailable")}
@@ -820,7 +886,7 @@ export default function Payment() {
                   {t("billing.payment.khqr.fulfilmentFailed")}
                 </p>
               )}
-              {khqrLoadError || secondsLeft <= 0 ? (
+              {(khqrLoadError || secondsLeft <= 0) && !khqrLimitReached ? (
                 <Button
                   className="mt-3 h-9 w-full"
                   size="compact"
