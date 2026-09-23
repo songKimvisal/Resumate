@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/Protectedroute";
+import { warmBackend } from "./lib/api/client";
 
 // Public pages
 import Home from "./pages/Home";
@@ -33,6 +35,9 @@ import Marketplace from "./pages/marketplace/Marketplace";
 import Settings from "./pages/settings/Settings";
 
 export default function App() {
+  // Start Render waking now, not when checkout first needs it.
+  useEffect(() => warmBackend(), []);
+
   return (
     <BrowserRouter>
       <ScrollToTop />

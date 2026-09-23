@@ -15,6 +15,7 @@ from app.services.fulfilment import grants_for_sku
 from app.services.khqr import (
     KhqrCheckUnavailable,
     KhqrNotConfigured,
+    KhqrQuotaExhausted,
     check_khqr_payment,
     create_khqr_payment,
 )
@@ -64,6 +65,8 @@ def create_khqr(
             currency=CURRENCY,
             bill_number=body.pack_id,
         )
+    except KhqrQuotaExhausted as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except KhqrNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
@@ -107,6 +110,8 @@ def get_khqr_status(
         paid, next_delay = check_khqr_payment(md5, start_time)
     except KhqrNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except KhqrQuotaExhausted as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except KhqrCheckUnavailable as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

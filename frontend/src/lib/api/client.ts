@@ -1,6 +1,4 @@
 import { supabase } from "../supabase";
-
-/** Prefer the URL in `.env`. In Vite dev, fall back to same-origin `/api` (proxied to the backend). */
 const API_URL =
   import.meta.env.VITE_API_URL ??
   import.meta.env.VITE_BACKEND_URL ??
@@ -38,6 +36,13 @@ async function parseBody(res: Response): Promise<unknown> {
   } catch {
     return text;
   }
+}
+
+let warmed = false;
+export function warmBackend(): void {
+  if (warmed) return;
+  warmed = true;
+  void fetch(`${API_URL}/api/health`, { method: "GET" }).catch(() => {});
 }
 
 export async function requestBackend<TResponse>(
