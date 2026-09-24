@@ -21,8 +21,6 @@ def _from_row(row: dict) -> PaymentRecord:
 
 
 def record_payment(user_id: str, body: RecordPaymentRequest) -> PaymentRecord:
-    """The amount written to history is the server's price for the SKU, not
-    whatever the browser claimed it paid."""
     amount_cents = price_cents_for_sku(body.pack_id)
     row = rest_rpc(
         "record_payment",
@@ -66,8 +64,6 @@ def create_khqr_intent(
     currency: str,
     md5: str,
 ) -> None:
-    """Remember what this QR was minted for, so the server can fulfil it later
-    without the browser telling it what was bought."""
     rest_rpc(
         "create_khqr_intent",
         {

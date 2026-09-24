@@ -15,30 +15,11 @@ class KhqrNotConfigured(RuntimeError):
 
 
 class KhqrCheckUnavailable(RuntimeError):
-    """Bakong refused to say whether this md5 was paid.
-
-    This is deliberately NOT the same as "not paid yet". The bakong-khqr SDK
-    collapses the two: any response whose ``responseCode`` is not 0 becomes
-    ``UNPAID``, and for a non-2xx reply that still carries a ``responseCode``
-    it never raises at all. An expired token, a non-Cambodian egress IP or an
-    exhausted daily quota therefore looked exactly like an unpaid QR, so the
-    browser polled a QR that had already been paid, forever, against a
-    backend answering 200 OK. Checking the HTTP status first is what keeps
-    those apart.
-    """
+    pass
 
 
 class KhqrQuotaExhausted(KhqrCheckUnavailable):
-    """Bakong's daily request allowance for this token is used up.
-
-    A subclass of KhqrCheckUnavailable because it is one particular way
-    Bakong refuses to answer, so every caller that already handles the
-    general case keeps handling this one. It is named separately because it
-    is the refusal that must also block *minting* a QR: encoding a code
-    costs no quota, but the code would be real and payable, and confirming
-    the money it takes does cost quota. Handing one out while the allowance
-    is gone takes a shopper's money for something we cannot unlock.
-    """
+    pass
 
 
 BAKONG_API = "https://api-bakong.nbc.gov.kh/v1"
@@ -71,14 +52,6 @@ _quota_blocked_until = 0.0
 
 
 def quota_exhausted() -> bool:
-    """True while Bakong has told us this token is out of requests for today.
-
-    The window is a re-probe interval, not the real reset: the allowance
-    resets tomorrow, but we cannot know when, so we stop asking for
-    QUOTA_RETRY_AFTER_SECONDS and then let one check find out. Like the
-    result cache this lives in the process, so a Render spin-down clears it
-    and the next check re-discovers the block.
-    """
     return time.time() < _quota_blocked_until
 
 
@@ -95,11 +68,6 @@ def _client() -> KHQR:
 def create_khqr_payment(
     amount: float, currency: str, bill_number: str
 ) -> tuple[str, str]:
-    """Returns (qr_string, md5) for a real, scannable Bakong KHQR code.
-
-    Refuses while the daily allowance is gone. The encoding itself would
-    still succeed - that is exactly the problem, see KhqrQuotaExhausted.
-    """
     if quota_exhausted():
         logger.warning("Refusing to mint a KHQR for %s: %s", bill_number, QUOTA_MESSAGE)
         raise KhqrQuotaExhausted(QUOTA_MESSAGE)
@@ -119,13 +87,6 @@ MIN_POLL_DELAY_SECONDS = 60
 
 
 def _next_delay_seconds(start_time: float | None) -> int:
-    """How long the browser should wait before asking again.
-
-    Bakong's published matrix is 5s for the first 5 minutes, 10s to 15
-    minutes, 15s to an hour and 300s after that. We take the wider of that and
-    MIN_POLL_DELAY_SECONDS so a long-abandoned QR backs off the way Bakong
-    wants without a fresh one burning the daily quota in five minutes.
-    """
     elapsed = time.time() - start_time if start_time else 0.0
     if elapsed < 5 * 60:
         bakong_delay = 5
@@ -138,8 +99,11 @@ def _next_delay_seconds(start_time: float | None) -> int:
     return max(bakong_delay, MIN_POLL_DELAY_SECONDS)
 
 PAID_CACHE_SECONDS = 60 * 60
-UNPAID_CACHE_SECONDS = 90
+UNPAID_CACHE_SECONDS = 10
+FAST_CHECKS_PER_QR = 6
+SLOW_UNPAID_CACHE_SECONDS = 60
 _result_cache: dict[str, tuple[float, bool, int]] = {}
+_checks_spent: dict[str, int] = {}
 
 
 def _prune_cache(now: float) -> None:
@@ -149,6 +113,13 @@ def _prune_cache(now: float) -> None:
         if now - cached_at > PAID_CACHE_SECONDS
     ]:
         del _result_cache[md5]
+        _checks_spent.pop(md5, None)
+
+
+def _unpaid_cache_seconds(md5: str) -> int:
+    if _checks_spent.get(md5, 0) < FAST_CHECKS_PER_QR:
+        return UNPAID_CACHE_SECONDS
+    return SLOW_UNPAID_CACHE_SECONDS
 
 
 @lru_cache
@@ -173,12 +144,6 @@ def _post_check(md5: str) -> httpx.Response:
 def check_khqr_payment(
     md5: str, start_time: float | None = None
 ) -> tuple[bool, int]:
-    """Ask Bakong whether `md5` was paid.
-
-    Returns (paid, next_delay_seconds). Raises KhqrCheckUnavailable when
-    Bakong did not answer the question, so the caller can say so instead of
-    reporting a paid QR as still pending.
-    """
     global _quota_blocked_until
 
     if not settings.bakong_token or not settings.bakong_account_id:
@@ -193,7 +158,7 @@ def check_khqr_payment(
     cached = _result_cache.get(md5)
     if cached is not None:
         cached_at, cached_paid, cached_delay = cached
-        if cached_paid or now - cached_at < UNPAID_CACHE_SECONDS:
+        if cached_paid or now - cached_at < _unpaid_cache_seconds(md5):
             logger.debug("KHQR %s answered from cache: paid=%s", md5, cached_paid)
             return cached_paid, cached_delay
 
@@ -202,6 +167,7 @@ def check_khqr_payment(
         logger.warning("Skipping Bakong check for %s: %s", md5, QUOTA_MESSAGE)
         raise KhqrQuotaExhausted(QUOTA_MESSAGE)
 
+    _checks_spent[md5] = _checks_spent.get(md5, 0) + 1
     try:
         response = _post_check(md5)
     except httpx.HTTPError as exc:

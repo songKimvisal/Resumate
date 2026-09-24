@@ -1,14 +1,3 @@
-"""The price list, owned by the server.
-
-The browser asks to check out a **SKU** ("ai-plus", "template:tech-sidebar").
-It never says what that costs - otherwise a hand-made request could mint a
-$0.01 KHQR code for the $6.99 pack, or write a fake amount into billing
-history.
-
-Keep these numbers in sync with the `home.pricing.*.price` strings in
-`frontend/src/locales/{en,km}.json`, which are what the shopper is shown.
-"""
-
 from app.schemas.credits import PackId
 from app.services.templates import PREMIUM_TEMPLATE_IDS
 
@@ -17,10 +6,6 @@ class UnknownSku(ValueError):
     """Raised when a checkout SKU has no server-side price."""
 
 
-# "design" (the old Design Only pack) is deliberately absent: the "Just
-# templates" lane sells the two flat purchases below instead, so nothing in the
-# UI can check it out. Without a price it cannot be checked out through the API
-# either. Its id still resolves elsewhere so older purchases keep reading back.
 PACK_PRICE_CENTS: dict[PackId, int] = {
     "ai-basic": 299,
     "ai-plus": 399,

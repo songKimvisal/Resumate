@@ -19,8 +19,6 @@ _LATIN_CHAR_RE = re.compile(r"[A-Za-z]")
 
 
 def _detect_language(text: str) -> RewriteLanguage:
-    """Khmer when Khmer characters outnumber Latin letters, so Khmer text that
-    mentions a few English terms ("Excel", "ABA Bank") still counts as Khmer."""
     khmer = len(_KHMER_CHAR_RE.findall(text))
     latin = len(_LATIN_CHAR_RE.findall(text))
     return "km" if khmer > latin else "en"
@@ -162,9 +160,6 @@ Respond with ONLY strict JSON, no markdown fences, in this exact shape:
 def _parse_variations(
     raw_variations: list, language: RewriteLanguage
 ) -> list[RewriteVariation]:
-    """Handles both the requested [{label, text}] shape and a plain list
-    of strings, since local models don't always follow the format. Drops
-    any version that came back in the wrong language."""
     parsed: list[RewriteVariation] = []
     default_labels = _DEFAULT_LABELS[language]
 
@@ -192,8 +187,6 @@ def _parse_variations(
 def rewrite_text(
     field_type: RewriteFieldType, text: str, previous: list[str] | None = None
 ) -> RewriteResult:
-    """Not cached on purpose: asking again for the same text should give new
-    options, and every call is paid for with a credit."""
     plain_text = _strip_html(text)
     language = _detect_language(plain_text)
     seen = [p for p in (_strip_html(p) for p in previous or []) if p]
