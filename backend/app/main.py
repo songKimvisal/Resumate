@@ -24,19 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 def _warm_up() -> None:
-    """Pay the one-off network costs before a shopper does.
-
-    The first authenticated request on a fresh process fetches Supabase's
-    JWKS over the network. On Render's free tier the process is fresh every
-    time the service has spun down, so that fetch lands on whichever request
-    woke it - and when that request is POST /payments/khqr/create, the QR a
-    shopper is waiting on is stuck behind it. Doing it at startup moves the
-    cost onto the keep-awake ping, which nobody is watching.
-
-    Best-effort by design: get_current_user still fetches the key set itself
-    if this failed, so a slow or unreachable Supabase must not stop the app
-    from serving.
-    """
     try:
         warm_jwks()
     except Exception as exc:  # noqa: BLE001 - warming must never be fatal
@@ -45,8 +32,6 @@ def _warm_up() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # A daemon thread, so an unreachable Supabase delays no startup and the
-    # port binds as fast as it did before.
     threading.Thread(target=_warm_up, name="warm-up", daemon=True).start()
     yield
     close_client()

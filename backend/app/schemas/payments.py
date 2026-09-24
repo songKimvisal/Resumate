@@ -45,9 +45,6 @@ class CreateKhqrResponse(BaseModel):
 
 
 class KhqrStatusResponse(BaseModel):
-    """`fulfilled` means the server has already granted this checkout. When it
-    is False on a paid QR, this server could not fulfil it (no intent row) and
-    the browser falls back to the older client-driven grant."""
 
     status: Literal["pending", "paid"]
     next_delay_seconds: int

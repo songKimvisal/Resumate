@@ -56,8 +56,12 @@ import {
 import PaymentSuccessModal, { type AfterPay } from "./PaymentSuccessModal";
 
 const QR_EXPIRY_SECONDS = 5 * 60;
-const KHQR_MIN_CHECK_GAP_MS = 60000;
+const KHQR_MIN_CHECK_GAP_MS = 10000;
 const KHQR_MIN_AWAY_MS = 5000;
+// Most shoppers pay within the first minute, so the checks bunch up there.
+const KHQR_AUTO_CHECK_AFTER_MS = [15000, 30000, 50000, 90000, 180000];
+const KHQR_TAP_COOLDOWN_SECONDS = 10;
+const KHQR_MAX_TAPS = 4;
 const KHQR_FULFIL_RETRIES = 4;
 const KHQR_FULFIL_RETRY_MS = 2000;
 const KHQR_SLOW_HINT_MS = 4000;
@@ -153,6 +157,8 @@ export default function Payment() {
   const khqrLastCheckAtRef = useRef(0);
   // When this tab lost the shopper's attention, or 0 while it still has it.
   const khqrAwaySinceRef = useRef(0);
+  const [khqrTapsUsed, setKhqrTapsUsed] = useState(0);
+  const [khqrCooldownSeconds, setKhqrCooldownSeconds] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
@@ -252,9 +258,6 @@ export default function Payment() {
       }).catch((err) => console.warn("Could not record payment:", err));
     }
 
-    // A pack pays for template *slots*; which template fills one is a
-    // separate, slot-gated call, so claiming the pending pick here is safe
-    // even though the server did the granting.
     const claimTemplates = () =>
       pendingId && packIncludesTemplates(packId)
         ? unlockPremiumTemplate(pendingId)
@@ -357,6 +360,8 @@ export default function Payment() {
     khqrCheckInFlightRef.current = false;
     khqrLastCheckAtRef.current = 0;
     khqrAwaySinceRef.current = 0;
+    setKhqrTapsUsed(0);
+    setKhqrCooldownSeconds(0);
     setKhqr(null);
     setKhqrLoadError(false);
     setKhqrErrorCode(null);
@@ -391,19 +396,11 @@ export default function Payment() {
           md5: res.md5,
           createdAt: Date.now() / 1000,
         });
-        // The code is valid from now, not from when we asked for it. A cold
-        // start used to spend a minute of the shopper's five before the QR
-        // they are counting down had even been minted.
         setSecondsLeft(QR_EXPIRY_SECONDS);
       })
       .catch((err) => {
         const status = err instanceof BackendError ? err.status : 0;
 
-        // A waking Render instance can drop the connection before answering.
-        // Retry once rather than telling a shopper "no connection" about a
-        // backend that is merely starting up. Minting spends no Bakong
-        // quota, so a retry that duplicates a lost success costs nothing but
-        // an unused intent row.
         if (status === 0 && !isRetry) {
           window.setTimeout(
             () => loadKhqr(true, true),
@@ -444,6 +441,7 @@ export default function Payment() {
     loadKhqr();
     const interval = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      setKhqrCooldownSeconds((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => {
       clearInterval(interval);
@@ -468,7 +466,9 @@ export default function Payment() {
     }
     return { paid: true, granted: false };
   };
-  const runKhqrCheck = async (reason: "return" | "manual"): Promise<void> => {
+  const runKhqrCheck = async (
+    reason: "return" | "auto" | "manual",
+  ): Promise<void> => {
     if (!khqr || khqrFulfilledRef.current) return;
     if (khqrCheckInFlightRef.current) return;
     if (
@@ -501,34 +501,59 @@ export default function Payment() {
   useEffect(() => {
     if (!khqr || secondsLeft <= 0) return;
 
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        if (khqrAwaySinceRef.current === 0) {
-          khqrAwaySinceRef.current = Date.now();
-        }
-        return;
-      }
-      const awaySince = khqrAwaySinceRef.current;
-      khqrAwaySinceRef.current = 0;
-      if (awaySince === 0 || Date.now() - awaySince < KHQR_MIN_AWAY_MS) return;
-      runKhqrCheck("return").catch((err) => {
+    const check = (reason: "return" | "auto") => {
+      runKhqrCheck(reason).catch((err) => {
         console.warn("KHQR status check failed:", err);
         const status = err instanceof BackendError ? err.status : 0;
         setKhqrLimitReached(status === 429);
         setKhqrCheckUnavailable(status === 502 || status === 503);
       });
     };
+    const markAway = () => {
+      if (khqrAwaySinceRef.current === 0) {
+        khqrAwaySinceRef.current = Date.now();
+      }
+    };
+    const checkOnReturn = () => {
+      if (document.visibilityState !== "visible") return;
+      const awaySince = khqrAwaySinceRef.current;
+      khqrAwaySinceRef.current = 0;
+      if (awaySince === 0 || Date.now() - awaySince < KHQR_MIN_AWAY_MS) return;
+      check("return");
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") markAway();
+      else checkOnReturn();
+    };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", markAway);
+    window.addEventListener("focus", checkOnReturn);
+
+    const elapsed = Date.now() - khqr.createdAt * 1000;
+    const autoChecks = KHQR_AUTO_CHECK_AFTER_MS.filter((at) => at > elapsed).map(
+      (at) =>
+        window.setTimeout(() => {
+          if (document.visibilityState === "visible") check("auto");
+        }, at - elapsed),
+    );
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", markAway);
+      window.removeEventListener("focus", checkOnReturn);
+      autoChecks.forEach((id) => window.clearTimeout(id));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
 
   if (!planData) return null;
 
+  const khqrTapsLeft = KHQR_MAX_TAPS - khqrTapsUsed;
+
   const handleConfirmKhqr = () => {
     if (verifyingKhqr || secondsLeft <= 0 || !khqr) return;
+    if (khqrCooldownSeconds > 0 || khqrTapsLeft <= 0) return;
+    setKhqrTapsUsed((n) => n + 1);
+    setKhqrCooldownSeconds(KHQR_TAP_COOLDOWN_SECONDS);
     setVerifyingKhqr(true);
     setKhqrNotConfirmed(false);
     setKhqrCheckUnavailable(false);
@@ -851,9 +876,14 @@ export default function Payment() {
             <div className="px-5 pb-5">
               {!khqrLoadError && secondsLeft > 0 ? (
                 <Button
-                  className="mt-3 h-9 w-full"
+                  className="mt-3 h-10 w-full"
                   size="compact"
-                  disabled={verifyingKhqr || !khqr}
+                  disabled={
+                    verifyingKhqr ||
+                    !khqr ||
+                    khqrCooldownSeconds > 0 ||
+                    khqrTapsLeft <= 0
+                  }
                   onClick={handleConfirmKhqr}
                 >
                   {verifyingKhqr ? (
@@ -861,6 +891,12 @@ export default function Payment() {
                       <Loader2 size={15} className="animate-spin" />
                       {t("billing.payment.khqr.verifying")}
                     </>
+                  ) : khqrTapsLeft <= 0 ? (
+                    t("billing.payment.khqr.autoChecking")
+                  ) : khqrCooldownSeconds > 0 ? (
+                    t("billing.payment.khqr.checkAgainIn", {
+                      seconds: khqrCooldownSeconds,
+                    })
                   ) : (
                     t("billing.payment.khqr.confirmCta")
                   )}

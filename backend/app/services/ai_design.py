@@ -1,8 +1,3 @@
-"""
-Smart design picker: scores templates against the user's 3 answers.
-No AI call — this is not part of the credit / Gemini business model.
-"""
-
 from app.schemas.ai_design import AiAnswers, AiDesignResponse, TemplateMeta
 
 _INDUSTRY_MATCH: dict[str, str] = {
@@ -23,8 +18,6 @@ _EXPERIENCE_VIBE_HINTS: dict[str, list[str]] = {
 }
 
 
-# Sidebar layouts fill out a short resume with skills and languages; a long
-# work history reads better in a single column.
 _EXPERIENCE_LAYOUT: dict[str, str] = {
     "fresh": "sidebar",
     "junior": "sidebar",
@@ -34,8 +27,6 @@ _EXPERIENCE_LAYOUT: dict[str, str] = {
 
 
 def _score(candidate: TemplateMeta, answers: AiAnswers) -> int:
-    """Weighted so each tier only breaks ties in the one above it: industry
-    first, then the vibes the user picked, then what suits their experience."""
     industry = candidate.industry == _INDUSTRY_MATCH.get(answers.industry, answers.industry)
     vibes = len(set(answers.vibe) & set(candidate.vibes))
     hint_vibes = _EXPERIENCE_VIBE_HINTS.get(answers.experience, [])

@@ -21,9 +21,6 @@ def generate_text(
     thinking_budget: int | None = None,
     thinking_level: ThinkingLevel | None = None,
 ) -> str:
-    """Pass either thinking_budget (a token count) or thinking_level. Gemini 3
-    models treat the budget as a loose hint and can think well past it; the
-    level is what actually keeps latency down on them."""
     if settings.ai_provider == "ollama":
         return _generate_ollama(prompt, json_mode=json_mode, temperature=temperature)
     return _generate_gemini(
