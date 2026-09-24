@@ -540,6 +540,7 @@
     "requestNewLink": "Request a new link"
   },
   "home": {
+    "backToTop": "Back to top",
     "hero": {
       "title": "Build your resume in",
       "titleAccent": "minutes",
@@ -889,7 +890,7 @@
         },
         {
           "title": "Built for two languages",
-          "desc": "Read every instruction in Khmer or English, while your resume content stays in English exactly what employers expect."
+          "desc": "Use the app in Khmer or English, and write your resume in either one. The smart assistant polishes Khmer text in Khmer and English text in English."
         },
         {
           "title": "Beyond the resume",
@@ -912,7 +913,7 @@
         },
         {
           "title": "Guidance over judgment",
-          "desc": "If you have no work experience, we don't leave you stuck with a blank form. We show you exactly what counts and help you write it in professional English."
+          "desc": "If you have no work experience, we don't leave you stuck with a blank form. We show you exactly what counts and help you write it professionally, in English or Khmer."
         },
         {
           "title": "Your data stays yours",

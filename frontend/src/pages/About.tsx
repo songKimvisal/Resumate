@@ -11,6 +11,7 @@ import {
 import { DollarSign, Globe, Sparkles } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import BackToTop from "../components/home/BackToTop";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/UseAuth";
@@ -103,9 +104,12 @@ export default function About() {
     title: string;
     desc: string;
   }[];
+  const featureCount = (
+    t("home.features.items", { returnObjects: true }) as unknown[]
+  ).length;
   const stats = [
     { to: 0, prefix: "$", label: t("about.stats.free") },
-    { to: 11, label: t("about.stats.features") },
+    { to: featureCount, label: t("about.stats.features") },
     {
       to: TEMPLATE_PRESETS.length,
       label: t("about.stats.templates", { industries: INDUSTRIES.length }),
@@ -403,6 +407,7 @@ export default function About() {
       </section>
 
       <Footer />
+      <BackToTop />
     </div>
   );
 }

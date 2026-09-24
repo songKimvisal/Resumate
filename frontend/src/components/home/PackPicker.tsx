@@ -85,13 +85,8 @@ export function PackCarousel({
   packs: Omit<PurchasePack, "id">[];
   popularBadge: string;
   loading?: boolean;
-  /** Called with the pack's index in `packs` (not a PackId - some callers,
-   * like the flat template tiers, aren't real packs). */
   onSelect: (index: number) => void;
   contained?: boolean;
-  /** How many columns the grid settles into once it stops scrolling
-   * (md/lg breakpoint, see `gridMin` below). Most packs come in 3s; the
-   * flat template tiers come in 2s. */
   columns?: 2 | 3;
   className?: string;
 }) {
@@ -144,23 +139,6 @@ export function PackCarousel({
     const onScroll = () => setActive(indexFromScroll(el));
     const canScroll = () => el.scrollWidth > el.clientWidth + 1;
 
-    const onWheel = (e: WheelEvent) => {
-      if (!canScroll()) return;
-      const delta =
-        Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      if (delta === 0) return;
-      const max = el.scrollWidth - el.clientWidth;
-      const next = el.scrollLeft + delta;
-      if (
-        (next <= 0 && el.scrollLeft <= 0) ||
-        (next >= max && el.scrollLeft >= max - 1)
-      ) {
-        return;
-      }
-      e.preventDefault();
-      el.scrollLeft = Math.max(0, Math.min(max, next));
-    };
-
     let pointerId: number | null = null;
     let startX = 0;
     let startScroll = 0;
@@ -193,14 +171,12 @@ export function PackCarousel({
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("wheel", onWheel, { passive: false });
     el.addEventListener("pointerdown", onPointerDown);
     el.addEventListener("pointermove", onPointerMove);
     el.addEventListener("pointerup", onPointerUp);
     el.addEventListener("pointercancel", onPointerUp);
     return () => {
       el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("wheel", onWheel);
       el.removeEventListener("pointerdown", onPointerDown);
       el.removeEventListener("pointermove", onPointerMove);
       el.removeEventListener("pointerup", onPointerUp);
@@ -245,7 +221,7 @@ export function PackCarousel({
         className={cn(
           "grid items-stretch gap-3 overflow-x-auto",
           "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          "snap-x snap-mandatory cursor-grab touch-pan-x active:cursor-grabbing",
+          "snap-x snap-mandatory cursor-grab active:cursor-grabbing",
           contained
             ? cn(
                 "auto-cols-[minmax(15.5rem,calc(100%-1.5rem))] grid-flow-col lg:cursor-auto lg:grid-flow-row lg:auto-cols-auto lg:gap-3 lg:overflow-visible lg:snap-none",
@@ -304,15 +280,6 @@ export function PackCarousel({
   );
 }
 
-/**
- * "Just templates" tab: the two flat, a-la-carte purchases ($1 customization
- * unlock, $1.99 premium template) shown as swipeable cards, matching the AI
- * and Both tabs' carousel. The free tier isn't repeated here - it's already
- * covered by the "Or start free..." line under the pricing section. Neither
- * card is an abstract checkout you can complete from this tab: customization
- * needs a template already picked, a premium template needs to be chosen -
- * so the CTAs route the viewer into the builder/marketplace instead.
- */
 export function TemplateTierCards({
   onSelect,
 }: {
