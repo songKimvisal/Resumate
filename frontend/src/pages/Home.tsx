@@ -6,6 +6,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Testimonials from "../components/home/Testimonials";
 import Pricing from "../components/home/Pricing";
+import BackToTop from "../components/home/BackToTop";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/UseAuth";
 import {
@@ -307,6 +308,7 @@ export default function Home() {
       </section>
 
       <Footer />
+      <BackToTop />
     </div>
   );
 }
