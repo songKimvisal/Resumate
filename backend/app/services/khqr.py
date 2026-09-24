@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
 import httpx
@@ -130,7 +131,24 @@ def _bakong_client() -> httpx.Client:
     return httpx.Client(**kwargs)
 
 
+BAKONG_DAILY_LIMIT = 100
+_PHNOM_PENH = timezone(timedelta(hours=7))
+_requests_today: tuple[str, int] = ("", 0)
+
+
+def _count_bakong_request(md5: str) -> None:
+    global _requests_today
+    today = datetime.now(_PHNOM_PENH).date().isoformat()
+    day, count = _requests_today
+    count = count + 1 if day == today else 1
+    _requests_today = (today, count)
+    logger.info(
+        "Bakong request %d/%d today (md5=%s)", count, BAKONG_DAILY_LIMIT, md5
+    )
+
+
 def _post_check(md5: str) -> httpx.Response:
+    _count_bakong_request(md5)
     return _bakong_client().post(
         f"{BAKONG_API}/check_transaction_by_md5",
         json={"md5": md5},
