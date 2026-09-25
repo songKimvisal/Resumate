@@ -47,13 +47,6 @@ export function canUseTemplate(
   return hasTemplateAccess(preset.id, unlockedIds, slots, ownedIds);
 }
 
-/**
- * Whether colors/fonts/layout are unlocked for whatever template is
- * currently active. A directly-purchased premium template ($1.99) bundles
- * its own customization, so it never needs the separate flat unlock; a
- * free template needs the standalone $1 "unlock customization" purchase
- * (or an old pack that already granted it account-wide).
- */
 export function hasCustomizationAccess(
   activeTemplateTier: "free" | "premium" | undefined,
   hasActiveTemplateAccess: boolean,
@@ -79,10 +72,5 @@ export function remainingTemplateSlots(
   return Math.max(0, slots - unlockedCount);
 }
 
-/**
- * Flat, one-time prices for the standalone (non-pack) purchase paths.
- * Bare numeric strings (no "$"), matching the `home.pricing.*.price` i18n
- * convention where the "$" is added by the surrounding translation string.
- */
 export const PREMIUM_TEMPLATE_PRICE = "1.99";
 export const CUSTOMIZATION_UNLOCK_PRICE = "1.00";

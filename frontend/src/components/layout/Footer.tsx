@@ -9,9 +9,6 @@ export default function Footer() {
     {
       title: t("footer.product"),
       links: [
-        // Same destination as the navbar's Templates link. The home page's
-        // id="templates" is the hero's decorative card fan, not a section
-        // about templates, so scrolling there answered a different question.
         { label: t("nav.templates"), href: "/marketplace" },
         { label: t("nav.features"), href: "/", scrollTo: "features" },
         { label: t("nav.pricing"), href: "/", scrollTo: "pricing" },

@@ -1893,8 +1893,7 @@
     "subtitle": "One-time packs. Nothing renews.",
     "stats": {
       "totalPaid": "Total paid",
-      "memberSince": "Member since",
-      "renewal": "Renewal"
+      "memberSince": "Member since"
     },
     "filters": {
       "all": "All",

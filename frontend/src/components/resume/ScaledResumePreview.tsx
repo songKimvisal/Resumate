@@ -11,12 +11,6 @@ interface ScaledResumePreviewProps {
   className?: string;
 }
 
-/**
- * Renders the real ResumePreview (same component ResumeCard.tsx uses on
- * MyResumes) scaled down to fit whatever width its container has. Measures
- * the container via ResizeObserver rather than a single hardcoded scale
- * factor, so it stays correct across breakpoints and container sizes.
- */
 export default function ScaledResumePreview({
   resume,
   className,

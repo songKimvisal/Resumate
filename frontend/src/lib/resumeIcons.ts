@@ -166,17 +166,6 @@ export const ICON_SHAPES: Record<IconKey, IconShape[]> = {
   ],
 };
 
-/** Icon for one contact row. Mirrors `buildContactItems` in ResumeDocument,
- *  so the default layout, the premium previews and every PDF agree on which
- *  glyph a field gets - nationality is a flag, an ID is a card, and each link
- *  shows its own service rather than a catch-all globe. */
-/** Icon for one contact row. Mirrors `buildContactItems` in ResumeDocument,
- *  so the default layout, the premium previews and every PDF agree on which
- *  glyph a field gets - nationality is a flag, an ID is a card, and each link
- *  shows its own service rather than a catch-all globe.
- *
- *  Takes the two fields it needs rather than `ContactLineItem`, so the icon
- *  table stays free of any dependency on the layout components. */
 export function contactIconKey(item: {
   kind: string;
   field?: string;

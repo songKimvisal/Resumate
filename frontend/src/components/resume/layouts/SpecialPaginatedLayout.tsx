@@ -515,10 +515,6 @@ function MeasureBlock({
   );
 }
 
-/**
- * Packs resume sections across pages. Content that doesn't fit is pushed
- * to the next page (same template shell, no duplicated identity chrome).
- */
 export function SpecialPaginatedLayout({
   resume,
   pageWidthPx,

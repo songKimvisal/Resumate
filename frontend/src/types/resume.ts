@@ -125,10 +125,6 @@ export type SectionOrderKey =
   | "experience"
   | "references"
   | "language";
-/** Reorderable content blocks inside a "special" (premium designer) layout.
- *  Unlike the default layout's `SectionOrderKey`, education is its own
- *  movable block here since premium layouts place it independently of
- *  work experience (e.g. in a sidebar column). */
 export type SpecialSectionKey =
   | "experience"
   | "education"

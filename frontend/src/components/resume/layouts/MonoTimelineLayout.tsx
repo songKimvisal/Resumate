@@ -18,10 +18,6 @@ import {
   listKey,
 } from "./shared";
 
-/**
- * Single-column ATS-first premium layout.
- * Best parseability: one reading column, standard headings, clear dates.
- */
 export default function MonoTimelineLayout({
   resume,
   pageWidthPx,

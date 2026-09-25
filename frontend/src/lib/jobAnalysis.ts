@@ -406,9 +406,6 @@ export function isReadyToApply(input: {
   );
 }
 
-/** Thrown when the user has no job analyses to spend. The local fallback pack
- * is a degraded result for a *paid* run whose AI call failed - it is not a
- * free tier, so a user with an empty quota gets nothing to fall back to. */
 export class OutOfAnalysesError extends Error {
   constructor() {
     super("No job analyses remaining");

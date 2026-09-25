@@ -23,9 +23,6 @@ import {
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
-/**
- * Classic photo layout: navy identity rail + white content column.
- */
 export default function DesignerBlockLayout({
   resume,
   pageWidthPx,

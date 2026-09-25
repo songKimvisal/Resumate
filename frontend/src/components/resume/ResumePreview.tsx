@@ -1652,10 +1652,6 @@ function SidebarColumn({
   );
 }
 
-/** simplified experience+education renderer for when "Experience" is
- *  dragged into the sidebar - unlike the main column, sidebar content isn't
- *  paginated (see the module comment above SidebarColumn), so entries are
- *  just stacked directly instead of built as measurable/splittable Blocks */
 function SidebarExperienceBody({
   experience,
   noExperience,
@@ -1721,9 +1717,6 @@ function SidebarExperienceBody({
   );
 }
 
-/** self-contained per-entry dot + short line - deliberately NOT a
- *  continuous line across entries, since entries can land on different
- *  pages when the main column paginates */
 function TimelineMarker({ theme }: { theme: Theme }) {
   return (
     <>

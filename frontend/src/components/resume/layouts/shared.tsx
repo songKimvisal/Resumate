@@ -323,9 +323,6 @@ const SIDEBAR_BG_VARIANTS: LayoutVariant[] = [
   "compactTech",
 ];
 
-/** Special layouts whose content splits into a main region and a second
- *  (sidebar/rail) region - the Customize "Change Section Layout" control
- *  offers a two-column drag grid for these instead of a single list. */
 const SPECIAL_TWO_REGION_VARIANTS: LayoutVariant[] = [
   "designerBlock",
   "techSplit",
@@ -887,10 +884,6 @@ export type LayoutProps = {
   resume: Resume;
   pageWidthPx: number;
   pageHeightPx: number;
-  /**
-   * When true the layout grows with content (for multi-page measurement /
-   * windowed pages) instead of clipping to a single pageHeightPx box.
-   */
   expandHeight?: boolean;
   /** 0-based page index when rendering a paginated special layout */
   pageIndex?: number;

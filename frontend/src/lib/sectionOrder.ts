@@ -44,10 +44,6 @@ const ALL_SECTION_KEYS: SectionOrderKey[] = [
   "language",
 ];
 
-/** splits `order` into the sections that render in the main column vs. the
- *  sidebar column, preserving each side's relative order - used in
- *  two-column mode, where `sidebarKeys` records which sections the user has
- *  dragged into the sidebar (anything else defaults to the main column) */
 export function partitionSectionOrder(
   order: SectionOrderKey[],
   sidebarKeys: SectionOrderKey[] | undefined,
@@ -75,11 +71,6 @@ const ALL_SPECIAL_SECTION_KEYS: SpecialSectionKey[] = [
   "references",
 ];
 
-/** Same idea as `partitionSectionOrder`, for premium/"special" layouts -
- *  splits the 5 movable blocks (experience, education, skills, language,
- *  references) into a main list and a sidebar list, each in relative order.
- *  Layouts that render both regions read the split; single-column layouts
- *  can just flatten `main` + `sidebar` back into one sequence. */
 export function partitionSpecialSectionOrder(
   order: SpecialSectionKey[] | undefined,
   sidebarKeys: SpecialSectionKey[] | undefined,

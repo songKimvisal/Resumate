@@ -25,9 +25,6 @@ import type { Customization, SpecialSectionKey } from "../../../types/resume";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
-/**
- * Designer sidebar: navy name band + white body, photo in the right rail.
- */
 export default function TechSplitLayout({
   resume,
   pageWidthPx,

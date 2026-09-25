@@ -25,10 +25,6 @@ import { ResumeIcon } from "../ResumeIcon";
 import { resumeHeading } from "../../../lib/resumeHeadings";
 import { contrastOn } from "../../../lib/color";
 
-/**
- * Isabel Mercado–style layout:
- * monochrome, pill section headers with icons.
- */
 export default function MonoPillLayout({
   resume,
   pageWidthPx,

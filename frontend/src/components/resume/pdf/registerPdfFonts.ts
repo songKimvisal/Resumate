@@ -27,11 +27,6 @@ import nokoraBold from "../../../assets/fonts/Nokora-Bold.ttf?url";
 
 let registered = false;
 
-/** Each face gets its own family name rather than weights on one family.
- *  react-pdf resolves `fontFamily` by exact name, and asking a single family
- *  for a weight it was not given silently falls back to the regular face -
- *  which is how bold text ended up looking regular. `pdfFontVariants` returns
- *  these exact names. */
 const FACES: Record<
   (typeof BUNDLED_FONTS)[number],
   { regular: string; bold: string; italic?: string }

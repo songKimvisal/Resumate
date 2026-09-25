@@ -55,9 +55,6 @@ export default function ProcessInterviewPrep() {
   const practicedQuestionIds = practicedIdsOf(draft);
   const analysis = draft?.analysis;
   const pack = useMemo(() => {
-    // A stored "fallback" analysis is a run that was paid for but whose AI
-    // call failed; rebuilding it locally is fine. No analysis at all means no
-    // run happened, and a job ad on its own does not earn a question set.
     if (draft?.jobText && resume.id && analysis?.source === "fallback") {
       return buildFallbackAnalysis(draft.jobText, resume);
     }

@@ -28,10 +28,6 @@ export default function UnlockTemplateModal({
   preset: TemplatePreset | null;
   onCancel: () => void;
   onUnlock: () => void | Promise<void>;
-  /** Whether paying for this template (pack checkout or direct buy) should
-   * land on a fresh resume or restyle whatever resume is already open.
-   * Default true (browsing the marketplace for a new resume); pass false
-   * when unlocking the template already applied to a resume in progress. */
   asNewResume?: boolean;
 }) {
   const { t } = useTranslation();

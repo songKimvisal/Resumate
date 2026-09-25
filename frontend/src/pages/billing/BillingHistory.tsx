@@ -14,6 +14,7 @@ import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { downloadReceiptPdf } from "../../lib/downloadReceiptPdf";
 import { getPaymentHistory, type PaymentRecord } from "../../lib/api/payments";
+import { useAuth } from "../../hooks/UseAuth";
 
 type Category = "all" | "template" | "ai" | "both";
 
@@ -28,17 +29,26 @@ type Transaction = {
   transactionId: string;
 };
 
-const STATS = {
-  memberSince: "Apr 2026",
-  renewal: "Never",
-};
-
 const FILTERS: Category[] = ["all", "template", "ai", "both"];
 
 function categoryForPack(packId: string): Exclude<Category, "all"> {
-  if (packId === "design") return "template";
+  if (
+    packId === "design" ||
+    packId === "customization-unlock" ||
+    packId.startsWith("template:")
+  ) {
+    return "template";
+  }
   if (packId.startsWith("ai-")) return "ai";
   return "both";
+}
+
+function formatMemberSince(iso: string | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", {
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function formatDateTime(iso: string): { date: string; time: string } {
@@ -65,7 +75,7 @@ function toTransaction(record: PaymentRecord): Transaction {
     date,
     time,
     amount: record.amount_cents / 100,
-    paidVia: record.provider === "khqr" ? "Bakong KHQR" : "Stripe",
+    paidVia: record.provider === "khqr" ? "Bakong KHQR" : "Card",
     transactionId:
       record.external_transaction_id ?? record.id.slice(0, 10).toUpperCase(),
   };
@@ -80,6 +90,7 @@ const CATEGORY_ICON: Record<Exclude<Category, "all">, typeof Sparkles> = {
 export default function BillingHistory() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [filter, setFilter] = useState<Category>("all");
   const [selected, setSelected] = useState<Transaction | null>(null);
@@ -124,7 +135,7 @@ export default function BillingHistory() {
         {t("billingHistory.subtitle")}
       </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-4 max-w-2xl">
+      <div className="mt-8 grid grid-cols-2 gap-4 max-w-2xl">
         <div className="rounded-xl bg-surface-2 p-4">
           <p className="text-sm text-text-secondary">
             {t("billingHistory.stats.totalPaid")}
@@ -136,14 +147,8 @@ export default function BillingHistory() {
             {t("billingHistory.stats.memberSince")}
           </p>
           <p className="mt-1 text-xl font-bold text-text">
-            {STATS.memberSince}
+            {formatMemberSince(user?.created_at)}
           </p>
-        </div>
-        <div className="rounded-xl bg-surface-2 p-4">
-          <p className="text-sm text-text-secondary">
-            {t("billingHistory.stats.renewal")}
-          </p>
-          <p className="mt-1 text-xl font-bold text-text">{STATS.renewal}</p>
         </div>
       </div>
 

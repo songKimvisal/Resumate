@@ -1,8 +1,5 @@
 import type { PersonalInfo } from "../types/resume";
 
-/** Inline style for the photo <img>, shared by the builder thumbnail and
- *  the resume preview so both render identically. "fill"/"fit" map to
- *  object-fit cover/contain; "crop" adds a user pan/zoom on top of cover. */
 export function photoImgStyle(
   personal: Pick<PersonalInfo, "photoFit" | "photoZoom" | "photoPosition">,
 ): React.CSSProperties {

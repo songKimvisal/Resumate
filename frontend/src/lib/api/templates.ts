@@ -95,9 +95,6 @@ export async function unlockCustomization() {
   return entitlements;
 }
 
-/** Flat $1.99 purchase: owns this one premium template outright, with its
- * own customization, independent of pack slots. Call only after the
- * payment has been recorded. */
 export async function purchasePremiumTemplate(templateId: string) {
   const data = await requestBackend<ApiEntitlements>("/api/templates/purchase", {
     method: "POST",

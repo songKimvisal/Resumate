@@ -49,7 +49,7 @@ function ReceiptDocument({ receipt }: { receipt: Receipt }) {
   return (
     <Document>
       <Page size="A6" style={styles.page}>
-        <Text style={styles.brand}>ResuMate</Text>
+        <Text style={styles.brand}>Resumate</Text>
         <Text style={styles.heading}>Receipt</Text>
         <Text style={styles.amount}>- ${receipt.amount.toFixed(2)}</Text>
 

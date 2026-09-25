@@ -34,27 +34,12 @@ export type { ContactLineItem, JobLike };
 /** px (96/inch) -> pt (72/inch), so borders/photos match the preview. */
 export const PX_TO_PT = 72 / 96;
 
-/** A Tailwind spacing step (`gap-3`, `space-y-4`, `mt-1.5`, `px-8` ...) in pt.
- *  Tailwind's scale is 4px per step, so `gap-3` is 12px, not 3px - pass the
- *  number from the class name and this does both conversions. Use `PX_TO_PT`
- *  directly only for values the preview states in real pixels, like
- *  `h-[2px]`, `border-l-2`, or `customization.photoSize`. */
 export function sp(step: number) {
   return step * 4 * PX_TO_PT;
 }
 
-/** Type converts on exactly the same scale as everything else.
- *
- *  The preview draws A4 at 96dpi (794px wide, RESUME_PREVIEW_NATIVE_WIDTH);
- *  the PDF page is 595.28pt. That is a 0.7497 scale - i.e. `PX_TO_PT`. Any
- *  other ratio for font size makes the text a different fraction of the page
- *  than the preview shows, so lines wrap in different places and the two stop
- *  matching no matter how carefully the spacing is tuned. */
 export const FONT_SIZE_RATIO = PX_TO_PT;
 
-/** Resolved, customization-driven values every special PDF layout needs.
- *  Mirrors what `layoutPageStyle` + each layout's local consts give the
- *  preview, so a layout body can be a near line-for-line translation. */
 export type PdfTheme = ReturnType<typeof pdfTheme>;
 
 export function pdfTheme(resume: Resume) {

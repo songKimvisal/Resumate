@@ -159,9 +159,6 @@ function StyledPdfIcon({
   size: number;
   color: string;
   accent: string;
-  /** contrast-safe stand-in for `accent` used as ink (border/glyph) instead
-   *  of fill - see the comment on `accentText` in ResumeDocument's main
-   *  render function */
   accentText: string;
   iconStyle: Customization["iconStyle"];
 }) {
@@ -204,10 +201,6 @@ interface ContactItem {
   icon: IconKey;
   text: string;
   url?: string;
-  /** header-type fields (phone/email/location/...) are governed by the
-   *  "Header icons" toggle; link-type fields (portfolio/website/...) by
-   *  "Link icons" (or linkStyle "icon") - mirrors contactItems() in
-   *  ResumePreview.tsx */
   isHeader: boolean;
 }
 

@@ -83,9 +83,6 @@ type RichTextOptions = {
   bulletStyle?: BulletStyle;
 };
 
-/** Converts Tiptap HTML (paragraphs, lists, bold/italic/underline/links)
- *  into react-pdf block elements: one <Text> per paragraph, one row per
- *  list item. Unknown block tags render as a plain paragraph. */
 export function richTextToPdf(
   html: string,
   {

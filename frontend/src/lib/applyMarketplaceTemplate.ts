@@ -25,11 +25,6 @@ async function persistActiveResume(userId: string) {
   useResumeStore.getState().markSaved(id);
 }
 
-/**
- * Apply a marketplace/payment template.
- * Default: restyle the current resume and keep the filled-in content.
- * `asNewResume`: save the current document, then start a blank one (leftover slot claims).
- */
 export async function applyMarketplaceTemplate(opts: {
   customization: Partial<Customization>;
   templateId: string;

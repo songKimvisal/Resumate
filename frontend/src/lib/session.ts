@@ -16,13 +16,6 @@ export const getPendingPlan = (): PackId | null => {
 
 export const clearPendingPlan = () => sessionStorage.removeItem(PENDING_PLAN_KEY);
 
-/**
- * `asNewResume` records whether checkout should apply this template to a
- * fresh resume (browsing the marketplace for a new one - the common case)
- * or restyle whatever resume is already open (came from "change template"
- * on a resume already in progress). Defaults to true: only pass false when
- * the caller is definitely restyling an existing, currently-open resume.
- */
 export const setPendingTemplateId = (
   templateId: string,
   asNewResume = true,

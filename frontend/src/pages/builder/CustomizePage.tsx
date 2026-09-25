@@ -2075,10 +2075,6 @@ function HeadingPresetPreview({
   );
 }
 
-/** dims+disables a block of premium-only controls and overlays a small
- *  upgrade prompt - used to gate whole sections (colors' accent block,
- *  header, section headings, spacing, photo styling) behind a one-time
- *  pack or an unlocked premium template */
 function PremiumGate({
   locked,
   onUpgrade,
@@ -2126,9 +2122,6 @@ function OptionCard({
   selected: boolean;
   onClick: () => void;
   children?: React.ReactNode;
-  /** shows a premium badge and blocks the click instead of applying it -
-   *  used to keep premium-only layout options visible but unreachable from
-   *  a free template, so free resumes can't be dialed in to look premium */
   premiumLocked?: boolean;
 }) {
   return (

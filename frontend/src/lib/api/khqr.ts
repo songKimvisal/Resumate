@@ -15,9 +15,6 @@ export function createKhqrPayment(params: { packId: string; packName: string }) 
     },
   });
 }
-/** `fulfilled` means the server already granted this checkout. When it is
- * false on a paid QR, this server could not fulfil it and the browser falls
- * back to asking for the grant itself. */
 export function getKhqrStatus(md5: string, startTime: number) {
   return requestBackend<{
     status: "pending" | "paid";
