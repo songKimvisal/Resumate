@@ -2,15 +2,20 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, CreditCard, Lock, QrCode } from "lucide-react";
+import { Check, Loader2, Lock, Plus } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePaymentMethodStore } from "../../store/paymentMethodStore";
 import { usePricingPlans } from "../../hooks/usePricingPlans";
 import { usePacks } from "../../hooks/usePacks";
-import { useCardForm } from "../../hooks/useCardForm";
+import { useSavedCards } from "../../hooks/useSavedCards";
+import {
+  CardBrandLogo,
+  CardBrandLogos,
+  PaymentMethodLogo,
+} from "../../components/billing/CardBrands";
+import { formatCardExpiry } from "../../lib/api/cards";
 import UpgradePlanModal from "./UpgradePlanModal";
 import PageTitle from "../../components/layout/PageTitle";
 
@@ -28,39 +33,39 @@ export default function Billing() {
   const { all: packs } = usePacks();
   const currentPack = packs.find((p) => p.id === lastPackId);
   const CURRENT_PLAN =
-    currentPack ??
-    pricingPlans.find((p) => p.id === plan) ??
-    pricingPlans[0];
+    currentPack ?? pricingPlans.find((p) => p.id === plan) ?? pricingPlans[0];
 
   const paymentMethod = usePaymentMethodStore((s) => s.preferredMethod);
-  const savedCard = usePaymentMethodStore((s) => s.savedCard);
   const setPreferredMethod = usePaymentMethodStore((s) => s.setPreferredMethod);
-  const saveCardToStore = usePaymentMethodStore((s) => s.saveCard);
-  const clearCard = usePaymentMethodStore((s) => s.clearCard);
 
   const [editingMethod, setEditingMethod] = useState(false);
   const [draftMethod, setDraftMethod] = useState<PaymentMethod>(paymentMethod);
-  const [replacingCard, setReplacingCard] = useState(false);
-  const card = useCardForm();
-
-  const needsNewCard = draftMethod === "stripe" && (!savedCard || replacingCard);
-  const canSaveMethod = draftMethod === "khqr" || !needsNewCard || card.isValid;
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removeFailed, setRemoveFailed] = useState(false);
+  const saved = useSavedCards();
+  const savedCard = saved.cards[0];
 
   const openMethodEditor = () => {
     setDraftMethod(paymentMethod);
-    setReplacingCard(false);
-    card.reset();
+    setRemoveFailed(false);
     setEditingMethod(true);
   };
 
   const saveMethod = () => {
-    if (!canSaveMethod) return;
-    if (draftMethod === "stripe" && needsNewCard) {
-      saveCardToStore(card.toSavedCard());
-    } else {
-      setPreferredMethod(draftMethod);
-    }
+    setPreferredMethod(draftMethod);
     setEditingMethod(false);
+  };
+
+  const removeCard = (cardId: string) => {
+    setRemovingId(cardId);
+    setRemoveFailed(false);
+    saved
+      .removeCard(cardId)
+      .catch((err) => {
+        console.warn("Could not remove card:", err);
+        setRemoveFailed(true);
+      })
+      .finally(() => setRemovingId(null));
   };
 
   const openUpgrade = () => setUpgradeModalOpen(true);
@@ -69,17 +74,14 @@ export default function Billing() {
     paymentMethod === "khqr"
       ? t("billing.paymentMethod.khqr.name")
       : savedCard
-        ? `${savedCard.brand} •••• ${savedCard.last4}`
+        ? `${savedCard.brand} ••••\u00a0${savedCard.last4}`
         : t("billing.paymentMethod.stripe.name");
 
   const isFree = CURRENT_PLAN.price === "0";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <PageTitle
-        text={t("billing.title")}
-        accent={t("billing.titleAccent")}
-      />
+      <PageTitle text={t("billing.title")} accent={t("billing.titleAccent")} />
       <p className="mt-2 text-sm text-text-secondary">
         {t("billing.subtitle")}
       </p>
@@ -157,7 +159,6 @@ export default function Billing() {
 
                   <div className="mt-4 space-y-3">
                     {(["khqr", "stripe"] as const).map((method) => {
-                      const Icon = method === "khqr" ? QrCode : CreditCard;
                       const selected = draftMethod === method;
                       return (
                         <button
@@ -171,12 +172,7 @@ export default function Billing() {
                               : "border-line hover:border-brand/50",
                           )}
                         >
-                          <Icon
-                            size={20}
-                            className={cn(
-                              selected ? "text-brand" : "text-text-secondary",
-                            )}
-                          />
+                          <PaymentMethodLogo method={method} />
                           <span className="min-w-0 flex-1">
                             <span className="block font-medium text-text">
                               {t(`billing.paymentMethod.${method}.name`)}
@@ -184,6 +180,9 @@ export default function Billing() {
                             <span className="block text-sm text-text-secondary">
                               {t(`billing.paymentMethod.${method}.desc`)}
                             </span>
+                            {method === "stripe" && (
+                              <CardBrandLogos className="mt-2" />
+                            )}
                           </span>
                           <span
                             className={cn(
@@ -208,134 +207,122 @@ export default function Billing() {
                         transition={{ duration: 0.22, ease: "easeOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-4 rounded-xl border border-line p-4">
-                          {needsNewCard ? (
-                            <div className="space-y-4">
-                              <Input
-                                id="billing-cc-name"
-                                name="ccname"
-                                autoComplete="cc-name"
-                                label={t("billing.paymentMethod.card.nameLabel")}
-                                placeholder={t(
-                                  "billing.paymentMethod.card.namePlaceholder",
-                                )}
-                                value={card.cardName}
-                                onChange={(e) =>
-                                  card.setCardName(e.target.value)
-                                }
-                                onBlur={() => card.touch("name")}
-                                error={card.errors.name}
+                        {!saved.loading &&
+                        !saved.enabled &&
+                        saved.cards.length === 0 ? (
+                          <div className="mt-4 flex gap-2.5 rounded-xl border border-line p-4">
+                            <Lock
+                              size={16}
+                              strokeWidth={2}
+                              className="mt-0.5 shrink-0 text-text-secondary"
+                            />
+                            <p className="text-sm text-text-secondary">
+                              {t("billing.payment.card.redirectNote")}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="mt-4 rounded-xl border border-line p-4">
+                            <p className="text-xs font-semibold uppercase text-text-secondary">
+                              {t("billing.paymentMethod.card.savedTitle")}
+                            </p>
+                            {saved.loading ? (
+                              <Loader2
+                                size={18}
+                                className="mt-3 animate-spin text-text-secondary"
                               />
-                              <Input
-                                id="billing-cc-number"
-                                name="cardnumber"
-                                autoComplete="cc-number"
-                                label={t("billing.paymentMethod.card.numberLabel")}
-                                placeholder="4242 4242 4242 4242"
-                                inputMode="numeric"
-                                value={card.cardNumber}
-                                onChange={(e) =>
-                                  card.setCardNumber(e.target.value)
-                                }
-                                onBlur={() => card.touch("number")}
-                                error={card.errors.number}
-                                trailing={
-                                  card.brand !== "Card" ? card.brand : undefined
-                                }
-                              />
-                              <div className="flex gap-4">
-                                <Input
-                                  id="billing-cc-exp"
-                                  name="cc-exp"
-                                  autoComplete="cc-exp"
-                                  label={t(
-                                    "billing.paymentMethod.card.expiryLabel",
-                                  )}
-                                  placeholder="MM/YY"
-                                  inputMode="numeric"
-                                  value={card.cardExpiry}
-                                  onChange={(e) =>
-                                    card.setCardExpiry(e.target.value)
-                                  }
-                                  onBlur={() => card.touch("expiry")}
-                                  error={card.errors.expiry}
-                                  className="flex-1"
-                                />
-                                <Input
-                                  id="billing-cc-csc"
-                                  name="cvc"
-                                  type="password"
-                                  autoComplete="cc-csc"
-                                  label={t("billing.paymentMethod.card.cvcLabel")}
-                                  placeholder="123"
-                                  inputMode="numeric"
-                                  value={card.cardCvc}
-                                  onChange={(e) =>
-                                    card.setCardCvc(e.target.value)
-                                  }
-                                  onBlur={() => card.touch("cvc")}
-                                  error={card.errors.cvc}
-                                  className="flex-1"
-                                />
-                              </div>
-                              <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                                <Lock size={12} strokeWidth={2} />
-                                {t("billing.paymentMethod.card.secureNote")}
+                            ) : saved.cards.length === 0 ? (
+                              <p className="mt-2 text-sm text-text-secondary">
+                                {t("billing.paymentMethod.card.none")}
                               </p>
-                              {savedCard && (
-                                <button
-                                  type="button"
-                                  onClick={() => setReplacingCard(false)}
-                                  className="text-sm font-medium text-brand hover:underline"
-                                >
-                                  {t("billing.paymentMethod.card.useSaved", {
-                                    brand: savedCard.brand,
-                                    last4: savedCard.last4,
-                                  })}
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              <CreditCard
-                                size={20}
-                                className="shrink-0 text-text-secondary"
+                            ) : (
+                              <ul className="mt-2 divide-y divide-line">
+                                {saved.cards.map((card) => (
+                                  <li
+                                    key={card.id}
+                                    className="flex items-center gap-3 py-3"
+                                  >
+                                    <CardBrandLogo brand={card.brand} />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-text">
+                                        {card.brand} ••••{"\u00a0"}
+                                      {card.last4}
+                                      </p>
+                                      {card.expires_at && (
+                                        <p className="text-sm text-text-secondary">
+                                          {t(
+                                            "billing.paymentMethod.card.expires",
+                                            {
+                                              expiry: formatCardExpiry(
+                                                card.expires_at,
+                                              ),
+                                            },
+                                          )}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      disabled={removingId === card.id}
+                                      onClick={() => removeCard(card.id)}
+                                      className="shrink-0 text-sm font-medium text-text-secondary hover:underline disabled:opacity-50"
+                                    >
+                                      {removingId === card.id ? (
+                                        <Loader2
+                                          size={14}
+                                          className="animate-spin"
+                                        />
+                                      ) : (
+                                        t("billing.paymentMethod.card.remove")
+                                      )}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {removeFailed && (
+                              <p className="mt-2 text-xs text-destructive">
+                                {t("billing.paymentMethod.card.removeFailed")}
+                              </p>
+                            )}
+                            {saved.enabled && (
+                              <Button
+                                size="compact"
+                                variant="outline"
+                                className="mt-3 h-9 w-full"
+                                disabled={saved.linking}
+                                onClick={() => void saved.addCard()}
+                              >
+                                {saved.linking ? (
+                                  <>
+                                    <Loader2
+                                      size={15}
+                                      className="animate-spin"
+                                    />
+                                    {t("billing.paymentMethod.card.adding")}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus size={15} />
+                                    {t("billing.paymentMethod.card.add")}
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                            {saved.linkFailed && (
+                              <p className="mt-2 text-xs text-destructive">
+                                {t("billing.paymentMethod.card.addFailed")}
+                              </p>
+                            )}
+                            <p className="mt-3 flex items-start gap-1.5 text-xs text-text-secondary">
+                              <Lock
+                                size={12}
+                                strokeWidth={2}
+                                className="mt-0.5 shrink-0"
                               />
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-text">
-                                  {savedCard!.brand} •••• {savedCard!.last4}
-                                </p>
-                                <p className="text-sm text-text-secondary">
-                                  {t("billing.paymentMethod.card.expires", {
-                                    expiry: savedCard!.expiry,
-                                  })}
-                                </p>
-                              </div>
-                              <div className="flex shrink-0 flex-col items-end gap-1 text-sm font-medium">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    card.reset();
-                                    setReplacingCard(true);
-                                  }}
-                                  className="text-brand hover:underline"
-                                >
-                                  {t("billing.paymentMethod.card.replace")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    clearCard();
-                                    setDraftMethod("khqr");
-                                  }}
-                                  className="text-text-secondary hover:underline"
-                                >
-                                  {t("billing.paymentMethod.card.remove")}
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                              {t("billing.paymentMethod.card.savedNote")}
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -352,7 +339,6 @@ export default function Billing() {
                     <Button
                       size="compact"
                       className="h-9 rounded-full"
-                      disabled={!canSaveMethod}
                       onClick={saveMethod}
                     >
                       {t("billing.paymentMethod.save")}

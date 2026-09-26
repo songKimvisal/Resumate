@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Provider = Literal["stripe", "khqr"]
+Provider = Literal["stripe", "khqr", "payway"]
 
 
 class RecordPaymentRequest(BaseModel):
@@ -48,4 +48,36 @@ class KhqrStatusResponse(BaseModel):
 
     status: Literal["pending", "paid"]
     next_delay_seconds: int
+    fulfilled: bool = False
+
+
+class CreatePaywayRequest(BaseModel):
+    """Priced by the server, like KHQR."""
+
+    pack_id: str = Field(min_length=1)
+    pack_name: str
+
+
+class CreatePaywayResponse(BaseModel):
+    """The browser posts `fields` to `action_url` as a form."""
+
+    tran_id: str
+    action_url: str
+    fields: dict[str, str]
+
+
+class PaywayStatusResponse(BaseModel):
+    status: Literal["pending", "paid", "declined", "cancelled"]
+    fulfilled: bool = False
+
+
+class PaySavedCardRequest(BaseModel):
+    pack_id: str = Field(min_length=1)
+    pack_name: str
+    card_id: str = Field(min_length=1)
+
+
+class PaySavedCardResponse(BaseModel):
+    tran_id: str
+    status: Literal["pending", "paid", "declined", "cancelled"]
     fulfilled: bool = False

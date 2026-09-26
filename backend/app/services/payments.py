@@ -95,7 +95,7 @@ def read_khqr_payment(user_id: str, md5: str) -> KhqrPayment:
 
 
 def fulfil_khqr_payment(user_id: str, md5: str, spec: GrantSpec) -> KhqrPayment:
-    """Claim this checkout and grant everything it includes, atomically."""
+    """Claim and grant atomically. Works for KHQR md5s and PayWay tran_ids."""
     row = rest_rpc(
         "fulfil_khqr_payment",
         {
@@ -116,4 +116,53 @@ def fulfil_khqr_payment(user_id: str, md5: str, spec: GrantSpec) -> KhqrPayment:
         known=bool(row.get("known")),
         fulfilled=bool(row.get("fulfilled")),
         sku=row.get("pack_id"),
+    )
+
+
+class PaywayPayment(NamedTuple):
+    """What the database knows about one PayWay card checkout."""
+
+    user_id: str
+    sku: str
+    amount_cents: int
+    fulfilled: bool
+
+
+def create_payway_intent(
+    user_id: str,
+    sku: str,
+    pack_name: str,
+    amount_cents: int,
+    currency: str,
+    tran_id: str,
+) -> None:
+    rest_rpc(
+        "create_payway_intent",
+        {
+            "p_user_id": user_id,
+            "p_pack_id": sku,
+            "p_pack_name": pack_name,
+            "p_amount_cents": amount_cents,
+            "p_currency": currency,
+            "p_tran_id": tran_id,
+        },
+    )
+
+
+def read_payway_payment(tran_id: str, user_id: str | None = None) -> PaywayPayment | None:
+    """Omit `user_id` only for PayWay's callback."""
+    owner = f"&user_id=eq.{user_id}" if user_id else ""
+    response = rest_get(
+        f"payments?external_transaction_id=eq.{tran_id}&provider=eq.payway{owner}"
+        "&select=user_id,pack_id,amount_cents,fulfilled_at&limit=1"
+    )
+    rows = response.json()
+    if not isinstance(rows, list) or not rows:
+        return None
+    row = rows[0]
+    return PaywayPayment(
+        user_id=str(row.get("user_id")),
+        sku=row.get("pack_id") or "",
+        amount_cents=int(row.get("amount_cents", 0) or 0),
+        fulfilled=row.get("fulfilled_at") is not None,
     )

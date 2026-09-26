@@ -8,14 +8,12 @@ import {
   CreditCard,
   Loader2,
   Lock,
-  QrCode,
+  Plus,
   Timer,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/Input";
 import { cn } from "../../lib/utils";
 import { usePacks } from "../../hooks/usePacks";
-import { useCardForm } from "../../hooks/useCardForm";
 import { useSubscriptionStore } from "../../store/subscriptionStore";
 import { usePaymentMethodStore } from "../../store/paymentMethodStore";
 import { getAiCredits, grantAiCredits } from "../../lib/api/credits";
@@ -30,12 +28,30 @@ import {
   unlockPremiumTemplate,
 } from "../../lib/api/templates";
 import { recordPayment } from "../../lib/api/payments";
+import { payWithSavedCard } from "../../lib/api/cards";
+import { useSavedCards } from "../../hooks/useSavedCards";
+import {
+  CardBrandLogo,
+  CardBrandLogos,
+  PaymentMethodLogo,
+} from "../../components/billing/CardBrands";
+import { formatCardExpiry } from "../../lib/api/cards";
 import { BackendError } from "../../lib/api/client";
 import { createKhqrPayment, getKhqrStatus } from "../../lib/api/khqr";
 import {
+  createPaywayCheckout,
+  getPaywayStatus,
+  loadPaywayPlugin,
+  PAYWAY_CLOSED_EVENT,
+  openPaywayCheckout,
+} from "../../lib/api/payway";
+import {
+  clearPendingPaywayCheckout,
   consumePendingTemplateAsNewResume,
   consumePendingTemplateId,
+  getPendingPaywayCheckout,
   peekPendingTemplateId,
+  setPendingPaywayCheckout,
 } from "../../lib/session";
 import { applyMarketplaceTemplate } from "../../lib/applyMarketplaceTemplate";
 import {
@@ -66,7 +82,57 @@ const KHQR_FULFIL_RETRIES = 4;
 const KHQR_FULFIL_RETRY_MS = 2000;
 const KHQR_SLOW_HINT_MS = 4000;
 const KHQR_COLD_START_RETRY_MS = 1500;
-const MOCK_STRIPE_PROCESSING_MS = 500;
+const PAYWAY_CHECKS = 5;
+const PAYWAY_CHECK_GAP_MS = 3000;
+
+type CardState =
+  | "idle"
+  | "redirecting"
+  | "verifying"
+  | "pending"
+  | "declined"
+  | "cancelled"
+  | "fulfilmentFailed"
+  | "unavailable";
+
+function CardChoice({
+  selected,
+  onSelect,
+  icon,
+  title,
+  subtitle,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors",
+        selected ? "bg-brand/5" : "hover:bg-brand/5",
+      )}
+    >
+      {icon}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-text">{title}</span>
+        {subtitle && (
+          <span className="block text-xs text-text-secondary">{subtitle}</span>
+        )}
+      </span>
+      <span
+        className={cn(
+          "size-4 shrink-0 rounded-full border-2 transition-colors duration-200",
+          selected ? "border-brand bg-brand" : "border-line",
+        )}
+      />
+    </button>
+  );
+}
 
 const formatCountdown = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -84,7 +150,18 @@ export default function Payment() {
   const setAnalyses = useSubscriptionStore((s) => s.setAnalyses);
 
   type FlatKind = "customization" | "premium-template";
-  const checkout = location.state as
+  // PayWay sends the shopper back here with ?payway=<tran_id>.
+  const [paywayReturn] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    const tranId = params.get("payway");
+    return tranId
+      ? { tranId, cancelled: params.get("cancelled") === "1" }
+      : null;
+  });
+  const [restoredCheckout] = useState(() =>
+    paywayReturn ? getPendingPaywayCheckout(paywayReturn.tranId) : null,
+  );
+  const checkout = (location.state ?? restoredCheckout) as
     | { pack?: PackId; plan?: PlanId; flat?: undefined }
     | { flat: FlatKind; pack?: undefined; plan?: undefined }
     | null;
@@ -126,15 +203,18 @@ export default function Payment() {
   const planData = packPlanData ?? flatPlanData;
 
   useEffect(() => {
-    if (!planData) navigate("/billing", { replace: true });
+    if (planData) return;
+    // Checkout state lost: still let the server settle the payment.
+    if (paywayReturn) void getPaywayStatus(paywayReturn.tranId).catch(() => {});
+    navigate("/billing", { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planData, navigate]);
 
-  const savedCard = usePaymentMethodStore((s) => s.savedCard);
   const preferredMethod = usePaymentMethodStore((s) => s.preferredMethod);
-  const saveCardToStore = usePaymentMethodStore((s) => s.saveCard);
 
-  const [paymentMethod, setPaymentMethod] =
-    useState<PaymentProvider>(preferredMethod);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentProvider>(
+    paywayReturn ? "stripe" : preferredMethod,
+  );
   const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
   const [verifyingKhqr, setVerifyingKhqr] = useState(false);
   const [khqr, setKhqr] = useState<{
@@ -162,18 +242,15 @@ export default function Payment() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [afterPay, setAfterPay] = useState<AfterPay>("dashboard");
 
-  const [useNewCard, setUseNewCard] = useState(!savedCard);
-  const card = useCardForm();
-  const [savedCardCvc, setSavedCardCvc] = useState("");
-  const [processing, setProcessing] = useState(false);
-
-  const usingSavedCard =
-    paymentMethod === "stripe" && !!savedCard && !useNewCard;
-  const savedCardCvcValid =
-    savedCardCvc.length >= 3 && savedCardCvc.length <= 4;
-
-  const isStripeFormValid =
-    (usingSavedCard && savedCardCvcValid) || card.isValid;
+  const [cardState, setCardState] = useState<CardState>(
+    paywayReturn ? "verifying" : "idle",
+  );
+  const [lastTranId, setLastTranId] = useState(paywayReturn?.tranId ?? null);
+  // Saved card id, "new", or null for the default.
+  const [chosenCard, setChosenCard] = useState<string | null>(null);
+  const saved = useSavedCards((card) => setChosenCard(card.id));
+  const selectedCard = chosenCard ?? saved.cards[0]?.id ?? "new";
+  const payingWithSavedCard = selectedCard !== "new";
 
   const fulfillFlatPurchase = async (
     flat: FlatKind,
@@ -530,11 +607,12 @@ export default function Payment() {
     window.addEventListener("focus", checkOnReturn);
 
     const elapsed = Date.now() - khqr.createdAt * 1000;
-    const autoChecks = KHQR_AUTO_CHECK_AFTER_MS.filter((at) => at > elapsed).map(
-      (at) =>
-        window.setTimeout(() => {
-          if (document.visibilityState === "visible") check("auto");
-        }, at - elapsed),
+    const autoChecks = KHQR_AUTO_CHECK_AFTER_MS.filter(
+      (at) => at > elapsed,
+    ).map((at) =>
+      window.setTimeout(() => {
+        if (document.visibilityState === "visible") check("auto");
+      }, at - elapsed),
     );
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -544,6 +622,88 @@ export default function Payment() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [khqr, secondsLeft > 0]);
+
+  const verifyPayway = async (
+    tranId: string,
+    {
+      cancelledAtPayway = false,
+      isActive = () => true,
+    }: { cancelledAtPayway?: boolean; isActive?: () => boolean } = {},
+  ) => {
+    let outcome: CardState = "pending";
+    for (let attempt = 0; attempt < PAYWAY_CHECKS; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, PAYWAY_CHECK_GAP_MS),
+        );
+      }
+      if (!isActive()) return;
+      try {
+        const res = await getPaywayStatus(tranId);
+        if (!isActive()) return;
+        if (res.status === "paid" && res.fulfilled) {
+          clearPendingPaywayCheckout();
+          setCardState("idle");
+          void fulfillPurchase(true);
+          return;
+        }
+        if (res.status === "declined" || res.status === "cancelled") {
+          setCardState(res.status);
+          return;
+        }
+        if (res.status === "pending" && cancelledAtPayway) {
+          setCardState("cancelled");
+          return;
+        }
+        outcome = res.status === "paid" ? "fulfilmentFailed" : "pending";
+      } catch (err) {
+        console.warn("PayWay status check failed:", err);
+        outcome = "unavailable";
+      }
+    }
+    if (isActive()) setCardState(outcome);
+  };
+
+  useEffect(() => {
+    if (!paywayReturn || !planData) return;
+    // Drop ?payway= so a refresh doesn't re-verify.
+    navigate("/billing/payment", { replace: true, state: checkout });
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void verifyPayway(paywayReturn.tranId, {
+        cancelledAtPayway: paywayReturn.cancelled,
+        isActive: () => active,
+      });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Preload: the plugin takes a second or two.
+    if (paymentMethod === "stripe") void loadPaywayPlugin();
+  }, [paymentMethod]);
+
+  useEffect(() => {
+    const onClosed = () =>
+      setCardState((s) => (s === "redirecting" ? "idle" : s));
+    window.addEventListener(PAYWAY_CLOSED_EVENT, onClosed);
+    return () => window.removeEventListener(PAYWAY_CLOSED_EVENT, onClosed);
+  }, []);
+
+  useEffect(() => {
+    // Browser back from PayWay can restore a busy button.
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setCardState((s) => (s === "redirecting" ? "idle" : s));
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   if (!planData) return null;
 
@@ -573,19 +733,61 @@ export default function Payment() {
 
   const regenerateKhqrCode = () => loadKhqr(true);
 
-  const handlePay = () => {
-    if (!isStripeFormValid || processing) return;
-    setProcessing(true);
-    setTimeout(() => {
-      void fulfillPurchase()
-        .then(() => {
-          if (!usingSavedCard) {
-            saveCardToStore(card.toSavedCard());
-          }
-        })
-        .finally(() => setProcessing(false));
-    }, MOCK_STRIPE_PROCESSING_MS);
+  const cardBusy = cardState === "redirecting" || cardState === "verifying";
+
+  const payWithSaved = (cardId: string) => {
+    setCardState("verifying");
+    payWithSavedCard({
+      packId: planData.id,
+      packName: planData.name,
+      cardId,
+    })
+      .then((res) => {
+        setLastTranId(res.tran_id);
+        if (res.status === "paid" && res.fulfilled) {
+          setCardState("idle");
+          void fulfillPurchase(true);
+        } else if (res.status === "declined" || res.status === "cancelled") {
+          setCardState(res.status);
+        } else {
+          void verifyPayway(res.tran_id);
+        }
+      })
+      .catch((err) => {
+        console.warn(`Saved-card payment failed for "${planData.id}":`, err);
+        setCardState("unavailable");
+      });
   };
+
+  const handlePay = () => {
+    if (cardBusy) return;
+    if (payingWithSavedCard) {
+      payWithSaved(selectedCard);
+      return;
+    }
+    setCardState("redirecting");
+    createPaywayCheckout({ packId: planData.id, packName: planData.name })
+      .then(({ tran_id, action_url, fields }) => {
+        setPendingPaywayCheckout(tran_id, checkout);
+        return openPaywayCheckout(action_url, fields);
+      })
+      .catch((err) => {
+        console.warn(
+          `PayWay checkout could not start for "${planData.id}":`,
+          err,
+        );
+        setCardState("unavailable");
+      });
+  };
+
+  const cardMessage =
+    cardState === "declined" ||
+    cardState === "cancelled" ||
+    cardState === "pending" ||
+    cardState === "fulfilmentFailed" ||
+    cardState === "unavailable"
+      ? t(`billing.payment.card.${cardState}`)
+      : null;
 
   const subscriptionHeader = (
     <p className="text-center font-semibold text-text">
@@ -603,7 +805,7 @@ export default function Payment() {
         {t("billing.payment.back")}
       </Button>
 
-      <div className="mt-10 max-w-5xl mx-auto grid md:grid-cols-[1fr_380px] gap-8 items-start">
+      <div className="mt-10 max-w-5xl mx-auto grid lg:grid-cols-[1fr_380px] gap-8 items-start">
         <div className="rounded-2xl border border-line p-5 sm:p-6">
           <p className="font-medium text-text">
             {t("billing.paymentMethod.label")}
@@ -614,7 +816,6 @@ export default function Payment() {
 
           <div className="mt-4 space-y-3">
             {(["khqr", "stripe"] as const).map((method) => {
-              const Icon = method === "khqr" ? QrCode : CreditCard;
               const selected = paymentMethod === method;
               return (
                 <button
@@ -628,12 +829,7 @@ export default function Payment() {
                       : "border-line hover:border-brand/50",
                   )}
                 >
-                  <Icon
-                    size={20}
-                    className={cn(
-                      selected ? "text-brand" : "text-text-secondary",
-                    )}
-                  />
+                  <PaymentMethodLogo method={method} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium text-text">
                       {t(`billing.paymentMethod.${method}.name`)}
@@ -641,6 +837,7 @@ export default function Payment() {
                     <span className="block text-sm text-text-secondary">
                       {t(`billing.paymentMethod.${method}.desc`)}
                     </span>
+                    {method === "stripe" && <CardBrandLogos className="mt-2" />}
                   </span>
                   <span
                     className={cn(
@@ -663,132 +860,80 @@ export default function Payment() {
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 rounded-xl border border-line p-4">
-                  {savedCard && !useNewCard ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <CreditCard
-                          size={20}
-                          className="shrink-0 text-text-secondary"
+                <div className="mt-4 rounded-xl border border-line p-2">
+                  {saved.cards.length > 0 && (
+                    <div className="mb-1 border-b border-line pb-1">
+                      {saved.cards.map((savedCard) => (
+                        <CardChoice
+                          key={savedCard.id}
+                          selected={selectedCard === savedCard.id}
+                          onSelect={() => setChosenCard(savedCard.id)}
+                          icon={<CardBrandLogo brand={savedCard.brand} />}
+                          title={`${savedCard.brand} ••••\u00a0${savedCard.last4}`}
+                          subtitle={
+                            savedCard.expires_at
+                              ? t("billing.paymentMethod.card.expires", {
+                                  expiry: formatCardExpiry(
+                                    savedCard.expires_at,
+                                  ),
+                                })
+                              : undefined
+                          }
                         />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-text">
-                            {savedCard.brand} •••• {savedCard.last4}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            {t("billing.paymentMethod.card.expires", {
-                              expiry: savedCard.expiry,
-                            })}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            card.reset();
-                            setUseNewCard(true);
-                          }}
-                          className="shrink-0 text-sm font-medium text-brand hover:underline"
-                        >
-                          {t("billing.paymentMethod.card.replace")}
-                        </button>
-                      </div>
-                      <Input
-                        id="cc-saved-csc"
-                        name="cvc"
-                        type="password"
-                        autoComplete="cc-csc"
-                        label={t("billing.paymentMethod.card.cvcLabel")}
-                        placeholder="123"
-                        inputMode="numeric"
-                        className="max-w-28"
-                        value={savedCardCvc}
-                        onChange={(e) =>
-                          setSavedCardCvc(
-                            e.target.value.replace(/\D/g, "").slice(0, 4),
-                          )
+                      ))}
+                      <CardChoice
+                        selected={selectedCard === "new"}
+                        onSelect={() => setChosenCard("new")}
+                        icon={
+                          <span className="flex h-6 w-9 shrink-0 items-center justify-center rounded border border-line">
+                            <CreditCard
+                              size={16}
+                              className="text-text-secondary"
+                            />
+                          </span>
                         }
+                        title={t("billing.payment.card.useNew")}
                       />
-                      <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                        <Lock size={12} strokeWidth={2} />
-                        {t("billing.paymentMethod.card.reverifyNote")}
-                      </p>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <Input
-                        id="cc-name"
-                        name="ccname"
-                        autoComplete="cc-name"
-                        label={t("billing.paymentMethod.card.nameLabel")}
-                        placeholder={t(
-                          "billing.paymentMethod.card.namePlaceholder",
-                        )}
-                        value={card.cardName}
-                        onChange={(e) => card.setCardName(e.target.value)}
-                        onBlur={() => card.touch("name")}
-                        error={card.errors.name}
-                      />
-                      <Input
-                        id="cc-number"
-                        name="cardnumber"
-                        autoComplete="cc-number"
-                        label={t("billing.paymentMethod.card.numberLabel")}
-                        placeholder="4242 4242 4242 4242"
-                        inputMode="numeric"
-                        value={card.cardNumber}
-                        onChange={(e) => card.setCardNumber(e.target.value)}
-                        onBlur={() => card.touch("number")}
-                        error={card.errors.number}
-                        trailing={
-                          card.brand !== "Card" ? card.brand : undefined
-                        }
-                      />
-                      <div className="flex gap-4">
-                        <Input
-                          id="cc-exp"
-                          name="cc-exp"
-                          autoComplete="cc-exp"
-                          label={t("billing.paymentMethod.card.expiryLabel")}
-                          placeholder="MM/YY"
-                          inputMode="numeric"
-                          value={card.cardExpiry}
-                          onChange={(e) => card.setCardExpiry(e.target.value)}
-                          onBlur={() => card.touch("expiry")}
-                          error={card.errors.expiry}
-                          className="flex-1"
-                        />
-                        <Input
-                          id="cc-csc"
-                          name="cvc"
-                          type="password"
-                          autoComplete="cc-csc"
-                          label={t("billing.paymentMethod.card.cvcLabel")}
-                          placeholder="123"
-                          inputMode="numeric"
-                          value={card.cardCvc}
-                          onChange={(e) => card.setCardCvc(e.target.value)}
-                          onBlur={() => card.touch("cvc")}
-                          error={card.errors.cvc}
-                          className="flex-1"
-                        />
-                      </div>
-                      <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                        <Lock size={12} strokeWidth={2} />
-                        {t("billing.paymentMethod.card.secureNote")}
-                      </p>
-                      {savedCard && (
-                        <button
-                          type="button"
-                          onClick={() => setUseNewCard(false)}
-                          className="text-sm font-medium text-brand hover:underline"
-                        >
-                          {t("billing.paymentMethod.card.useSaved", {
-                            brand: savedCard.brand,
-                            last4: savedCard.last4,
-                          })}
-                        </button>
+                  )}
+                  <div className="flex gap-2.5 p-3">
+                    <Lock
+                      size={16}
+                      strokeWidth={2}
+                      className="mt-0.5 shrink-0 text-text-secondary"
+                    />
+                    <p className="text-sm text-text-secondary">
+                      {t(
+                        payingWithSavedCard
+                          ? "billing.payment.card.savedCardNote"
+                          : "billing.payment.card.redirectNote",
                       )}
-                    </div>
+                    </p>
+                  </div>
+                  {saved.enabled && (
+                    <button
+                      type="button"
+                      disabled={saved.linking}
+                      onClick={() => void saved.addCard()}
+                      className="mx-3 mb-3 flex items-center gap-1.5 text-sm font-medium text-brand hover:underline disabled:opacity-60"
+                    >
+                      {saved.linking ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          {t("billing.paymentMethod.card.adding")}
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={14} />
+                          {t("billing.payment.card.saveCard")}
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {saved.linkFailed && (
+                    <p className="mx-3 mb-3 text-xs text-destructive">
+                      {t("billing.paymentMethod.card.addFailed")}
+                    </p>
                   )}
                 </div>
               </motion.div>
@@ -968,14 +1113,38 @@ export default function Payment() {
             <Button
               className="mt-5 h-9 w-full"
               size="compact"
-              disabled={!isStripeFormValid || processing}
+              disabled={cardBusy}
               onClick={handlePay}
             >
-              {processing && <Loader2 size={15} className="animate-spin" />}
-              {planData.cta}
+              {cardBusy && <Loader2 size={15} className="animate-spin" />}
+              {cardState === "verifying"
+                ? t("billing.payment.card.verifying")
+                : planData.cta}
             </Button>
+            {cardMessage && (
+              <p className="mt-2 text-center text-xs text-destructive">
+                {cardMessage}
+              </p>
+            )}
+            {lastTranId &&
+            (cardState === "pending" || cardState === "fulfilmentFailed") ? (
+              <Button
+                className="mt-3 h-9 w-full"
+                size="compact"
+                variant="outline"
+                onClick={() => {
+                  setCardState("verifying");
+                  void verifyPayway(lastTranId);
+                }}
+              >
+                {t("billing.payment.card.checkAgain")}
+              </Button>
+            ) : null}
             <p className="text-xs text-text-secondary text-center mt-3">
               {t("billing.payment.orderSummary.finePrint")}
+            </p>
+            <p className="text-xs text-text-secondary text-center mt-1">
+              {t("billing.payment.card.poweredBy")}
             </p>
           </div>
         )}

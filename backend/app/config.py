@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     bakong_merchant_city: str = "Phnom Penh"
     bakong_proxy_url: str = ""
 
+    payway_merchant_id: str = ""
+    payway_api_key: str = ""
+    payway_api_url: str = "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase"
+    # Public URL for PayWay callbacks; its domain must be whitelisted by PayWay.
+    backend_public_url: str = ""
+    # Turn on once ABA enables Credentials on File for the merchant.
+    payway_saved_cards_enabled: bool = False
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

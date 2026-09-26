@@ -60,3 +60,29 @@ def rest_rpc(fn_name: str, payload: dict) -> object:
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Could not update database: {exc}",
         ) from exc
+
+
+def rest_insert(table: str, row: dict) -> list:
+    url = f"{settings.supabase_url}/rest/v1/{table}"
+    try:
+        response = _client().post(url, headers=_headers(), json=row)
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not update database: {exc}",
+        ) from exc
+
+
+def rest_patch(path_with_query: str, values: dict) -> list:
+    url = f"{settings.supabase_url}/rest/v1/{path_with_query}"
+    try:
+        response = _client().patch(url, headers=_headers(), json=values)
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not update database: {exc}",
+        ) from exc
