@@ -67,3 +67,21 @@ export function shouldStayOnHome() {
 export function clearStayOnHome() {
   sessionStorage.removeItem(STAY_HOME_KEY);
 }
+
+const PAYWAY_CHECKOUT_KEY = "resumate:paywayCheckout";
+
+/** Router state is lost while the shopper is on PayWay's page. */
+export const setPendingPaywayCheckout = (tranId: string, checkout: unknown) =>
+  sessionStorage.setItem(PAYWAY_CHECKOUT_KEY, JSON.stringify({ tranId, checkout }));
+
+export const getPendingPaywayCheckout = (tranId: string): unknown => {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(PAYWAY_CHECKOUT_KEY) ?? "null");
+    return saved?.tranId === tranId ? saved.checkout : null;
+  } catch {
+    return null;
+  }
+};
+
+export const clearPendingPaywayCheckout = () =>
+  sessionStorage.removeItem(PAYWAY_CHECKOUT_KEY);

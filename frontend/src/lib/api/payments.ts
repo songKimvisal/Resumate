@@ -1,6 +1,6 @@
 import { requestBackend } from "./client";
 
-export type Provider = "stripe" | "khqr";
+export type Provider = "stripe" | "khqr" | "payway";
 
 /** A real pack purchase, or a flat a-la-carte SKU ("customization-unlock",
  * "template:<template_id>") for the one-time $1/$1.99 purchases. */

@@ -17,7 +17,8 @@ from app.routers import (
     pdfs,
     templates,
     analyses,
-    payments
+    payments,
+    cards,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
@@ -78,6 +79,7 @@ app.include_router(templates.router)
 app.include_router(analyses.router)
 app.include_router(job_analysis.router)
 app.include_router(payments.router)
+app.include_router(cards.router)
 
 @app.get("/api/health")
 def health():

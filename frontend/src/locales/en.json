@@ -1804,36 +1804,44 @@
         "ctaPick": "Choose templates",
         "ctaBrowse": "Browse templates",
         "ctaContinue": "Continue editing"
+      },
+      "card": {
+        "redirectNote": "Your card form opens in a secure ABA PayWay window. Resumate never sees your card number.",
+        "verifying": "Confirming your payment…",
+        "declined": "Your card was declined, so nothing was charged. Try again or use a different card.",
+        "cancelled": "The card payment was cancelled. Nothing was charged.",
+        "pending": "ABA PayWay hasn't confirmed your payment yet. If you completed it, check again in a moment.",
+        "fulfilmentFailed": "Your payment went through, but we couldn't unlock your purchase yet. Your money is not lost - check again, or contact us and we'll finish it for you.",
+        "unavailable": "Card payment isn't available right now. Please try again shortly, or pay with KHQR.",
+        "checkAgain": "Check again",
+        "poweredBy": "Secured by ABA PayWay",
+        "useNew": "Use a new card",
+        "saveCard": "Save a card for next time",
+        "savedCardNote": "Your saved card is charged by ABA PayWay. You won't need to enter your card details again."
       }
     },
     "paymentMethod": {
       "label": "Payment method",
       "nextBilling": "Saved for your next purchase",
-      "chooseSubtitle": "Scan with KHQR, or pay by card via Card instant activation.",
+      "chooseSubtitle": "Scan with KHQR, or pay by card through ABA PayWay.",
       "khqr": {
         "name": "Bakong KHQR",
         "desc": "Any Cambodian bank app"
       },
       "stripe": {
         "name": "Card",
-        "desc": "Visa, Mastercard, or UnionPay"
+        "desc": "Visa, Mastercard, UnionPay, JCB"
       },
       "card": {
-        "nameLabel": "Name on card",
-        "namePlaceholder": "Full name",
-        "numberLabel": "Card number",
-        "expiryLabel": "Expiry",
-        "cvcLabel": "CVC",
-        "secureNote": "Payments are securely processed by Card.",
         "expires": "Expires {{expiry}}",
-        "replace": "Use a different card",
         "remove": "Remove card",
-        "useSaved": "Use {{brand}} •••• {{last4}} instead",
-        "invalidNumber": "That card number doesn't look right.",
-        "invalidExpiry": "Enter a valid, non-expired date.",
-        "invalidName": "Enter the name as it appears on the card.",
-        "invalidCvc": "Enter the 3 or 4 digit security code.",
-        "reverifyNote": "We don't store your CVC, so please re-enter it to confirm this charge."
+        "savedTitle": "Saved cards",
+        "none": "No saved cards yet.",
+        "add": "Add a card",
+        "adding": "Waiting for ABA PayWay…",
+        "addFailed": "We couldn't open ABA PayWay to save your card. Please try again.",
+        "removeFailed": "We couldn't remove this card. Please try again.",
+        "savedNote": "Cards are saved securely by ABA PayWay. Resumate never sees or stores your full card number."
       },
       "save": "Save Method",
       "cancel": "Cancel"

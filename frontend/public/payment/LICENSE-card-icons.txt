@@ -1,0 +1,4 @@
+visa.svg, mastercard.svg, unionpay.svg, jcb.svg
+From https://github.com/aaronfagan/svg-credit-card-payment-icons ("logo" set)
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+Card brand marks are trademarks of their respective owners.
