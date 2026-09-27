@@ -18,6 +18,7 @@ import { saveResumePdf } from "../../lib/saveResumePdf";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
+import PdfDownloadHint from "../../components/PdfDownloadHint";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 import type { ScoreBand } from "../../lib/resumeCompleteness";
 
@@ -58,7 +59,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const resume = useResumeStore((s) => s.resume);
-  const { remaining, canSave } = usePdfSaves();
+  const { remaining, downloadState } = usePdfSaves();
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -67,7 +68,8 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
   const circumference = 2 * Math.PI * 42;
   const BandIcon = BAND_ICON[band];
 
-  const blocked = !canSave;
+  const pdfState = downloadState(resume.id);
+  const blocked = pdfState === "blocked";
 
   const handleDownload = async () => {
     if (!user) {
@@ -244,10 +246,12 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
                 ? t("builder.downloadingPdf")
                 : blocked
                   ? t("builder.downloadPdfBuy")
-                  : t("builder.downloadPdf")}
-              {!downloading && !blocked && remaining > 0 && (
+                  : pdfState === "unlocked"
+                    ? t("pdfAccess.downloadAgain")
+                    : t("builder.downloadPdf")}
+              {!downloading && !blocked && (
                 <span className="tabular-nums rounded-full bg-white/20 px-1.5 py-px text-[10px] font-semibold leading-none">
-                  {remaining}
+                  {pdfState === "unlocked" ? t("pdfAccess.freeBadge") : remaining}
                 </span>
               )}
             </Button>
@@ -261,6 +265,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
               {t("builder.review.goToDashboard")}
             </Button>
           </div>
+          <PdfDownloadHint resumeId={resume.id} className="mt-3" />
           {downloadError && (
             <p className="text-sm text-destructive mt-3">{downloadError}</p>
           )}
@@ -275,6 +280,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
       open={upgradeOpen}
       onClose={() => setUpgradeOpen(false)}
       initialNeed="both"
+      reason="pdf"
       onSelectPack={(packId) => {
         setUpgradeOpen(false);
         navigate("/billing/payment", { state: { pack: packId, returnTo: "/builder" } });

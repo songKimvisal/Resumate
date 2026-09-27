@@ -17,9 +17,14 @@ function applyPdfBalance(total: number, used: number) {
 export async function saveResumePdf(
   resume: Resume,
 ): Promise<SaveResumePdfResult> {
+  const store = useSubscriptionStore.getState();
+  const resumeId = resume.id;
+  let charged: boolean;
   try {
-    const pdfs = await consumePdfSave();
+    const pdfs = await consumePdfSave(resumeId);
     applyPdfBalance(pdfs.total, pdfs.used);
+    charged = pdfs.charged ?? true;
+    if (resumeId) store.setResumeUnlocked(resumeId, true);
   } catch (err) {
     if (err instanceof BackendError && err.status === 402) {
       const pdfs = pdfsFromErrorBody(err.body);
@@ -33,10 +38,14 @@ export async function saveResumePdf(
     await downloadResumePdf(resume);
     return "ok";
   } catch (err) {
-    try {
-      const pdfs = await refundPdfSave();
-      applyPdfBalance(pdfs.total, pdfs.used);
-    } catch {
+    // Only give back what this attempt spent.
+    if (charged) {
+      try {
+        const pdfs = await refundPdfSave(resumeId);
+        applyPdfBalance(pdfs.total, pdfs.used);
+        if (resumeId) store.setResumeUnlocked(resumeId, false);
+      } catch {
+      }
     }
     throw err;
   }

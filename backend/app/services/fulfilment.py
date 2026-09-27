@@ -12,6 +12,8 @@ from app.services.pricing import (
 )
 from app.services.templates import PREMIUM_TEMPLATE_IDS, SLOTS_BY_PACK
 
+TEMPLATE_PURCHASE_PDFS = 1
+
 
 class GrantSpec(NamedTuple):
     """Everything `sku` is worth. `slots` of -1 means every template."""
@@ -44,6 +46,6 @@ def grants_for_sku(sku: str) -> GrantSpec:
         template_id = sku[len(TEMPLATE_SKU_PREFIX) :]
         if template_id not in PREMIUM_TEMPLATE_IDS:
             raise UnknownSku(f"'{template_id}' is not a premium template")
-        return GrantSpec(template_id=template_id)
+        return GrantSpec(template_id=template_id, pdfs=TEMPLATE_PURCHASE_PDFS)
 
     raise UnknownSku(f"Nothing to grant for SKU '{sku}'")

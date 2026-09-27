@@ -1,5 +1,9 @@
+from uuid import UUID
+
+from fastapi import HTTPException
+
 from app.schemas.pdfs import PackId, PdfBalance, ConsumePdfResult
-from app.services.supabase_rest import rest_rpc
+from app.services.supabase_rest import rest_get, rest_rpc
 
 PDFS_BY_PACK: dict[PackId, int] = {
     "design": 0,
@@ -64,9 +68,49 @@ def refund_save(user_id: str) -> PdfBalance:
     return get_balance(user_id)
 
 
-def consume_result(consumed: bool, balance: PdfBalance) -> ConsumePdfResult:
+def unlocked_resume_ids(user_id: str) -> list[str]:
+    try:
+        rows = rest_get(
+            f"pdf_unlocked_resumes?user_id=eq.{user_id}&select=resume_id"
+        ).json()
+    except HTTPException:
+        return []
+    if not isinstance(rows, list):
+        return []
+    return [str(row["resume_id"]) for row in rows if row.get("resume_id")]
+
+
+def consume_for_resume(
+    user_id: str, resume_id: UUID
+) -> tuple[bool, bool, PdfBalance]:
+    """(consumed, charged, balance). An unlocked resume downloads for free."""
+    row = rest_rpc(
+        "unlock_resume_pdf",
+        {"p_user_id": user_id, "p_resume_id": str(resume_id)},
+    )
+    if not isinstance(row, dict) or not row.get("known"):
+        # Not a saved resume of theirs: charge like a one-off download.
+        consumed, balance = consume_save(user_id)
+        return consumed, consumed, balance
+    return bool(row.get("consumed")), bool(row.get("charged")), _from_row(row)
+
+
+def refund_for_resume(user_id: str, resume_id: UUID) -> PdfBalance:
+    row = rest_rpc(
+        "relock_resume_pdf",
+        {"p_user_id": user_id, "p_resume_id": str(resume_id)},
+    )
+    if isinstance(row, dict) and row:
+        return _from_row(row)
+    return get_balance(user_id)
+
+
+def consume_result(
+    consumed: bool, balance: PdfBalance, charged: bool = True
+) -> ConsumePdfResult:
     return ConsumePdfResult(
         consumed=consumed,
+        charged=charged,
         total=balance.total,
         used=balance.used,
         remaining=balance.remaining,

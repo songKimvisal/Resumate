@@ -3,6 +3,9 @@ import type { PackId } from "../types/billing";
 /** Free accounts start with one PDF save. */
 export const FREE_PDF_SAVES = 1;
 
+/** Drafts anyone can keep; PDFs still limit downloads. */
+export const FREE_RESUME_DRAFTS = 3;
+
 /** Extra PDF saves granted when a pack is purchased. AI and design packs keep the free 1. */
 export const PDFS_BY_PACK: Record<PackId, number> = {
   design: 0,
@@ -23,5 +26,5 @@ export function remainingPdfs(total: number, used: number): number {
 }
 
 export function resumeLimitFromPdfs(pdfsTotal: number): number {
-  return Math.max(FREE_PDF_SAVES, pdfsTotal);
+  return Math.max(FREE_RESUME_DRAFTS, pdfsTotal);
 }

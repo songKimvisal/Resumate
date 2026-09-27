@@ -31,6 +31,7 @@ import { prettyProperName } from "../../lib/interviewSet";
 import { saveResumePdf } from "../../lib/saveResumePdf";
 import { cn } from "../../lib/utils";
 import { usePdfSaves } from "../../hooks/usePdfSaves";
+import PdfDownloadHint from "../../components/PdfDownloadHint";
 import UpgradePlanModal from "../billing/UpgradePlanModal";
 
 const GAUGE_RADIUS = 42;
@@ -62,8 +63,9 @@ export default function JobReadiness() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const { remaining, canSave } = usePdfSaves();
-  const blocked = !canSave;
+  const { remaining, downloadState } = usePdfSaves();
+  const pdfState = downloadState(resume.id);
+  const blocked = pdfState === "blocked";
 
   useEffect(() => {
     if (loading || !user || !resume.id) return;
@@ -367,14 +369,17 @@ export default function JobReadiness() {
                 ? t("jobReadiness.downloading")
                 : blocked
                   ? t("builder.downloadPdfBuy")
-                  : t("jobReadiness.downloadPdf")}
+                  : pdfState === "unlocked"
+                    ? t("pdfAccess.downloadAgain")
+                    : t("jobReadiness.downloadPdf")}
             </span>
-            {!downloading && !blocked && remaining > 0 && (
+            {!downloading && !blocked && (
               <span className="tabular-nums rounded-full bg-white/20 px-1.5 py-px text-[10px] font-semibold leading-none">
-                {remaining}
+                {pdfState === "unlocked" ? t("pdfAccess.freeBadge") : remaining}
               </span>
             )}
           </Button>
+          <PdfDownloadHint resumeId={resume.id} className="mt-2" />
           {downloadError && (
             <p className="mt-2 text-xs text-destructive">{downloadError}</p>
           )}
@@ -392,6 +397,7 @@ export default function JobReadiness() {
       open={upgradeOpen}
       onClose={() => setUpgradeOpen(false)}
       initialNeed="both"
+      reason="pdf"
       onSelectPack={(packId) => {
         setUpgradeOpen(false);
         navigate("/billing/payment", { state: { pack: packId } });
