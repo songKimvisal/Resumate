@@ -162,9 +162,17 @@ export default function Payment() {
     paywayReturn ? getPendingPaywayCheckout(paywayReturn.tranId) : null,
   );
   const checkout = (location.state ?? restoredCheckout) as
-    | { pack?: PackId; plan?: PlanId; flat?: undefined }
-    | { flat: FlatKind; pack?: undefined; plan?: undefined }
+    | ((
+        | { pack?: PackId; plan?: PlanId; flat?: undefined }
+        | { flat: FlatKind; pack?: undefined; plan?: undefined }
+      ) & { returnTo?: string })
     | null;
+  // Where to go after paying, e.g. back to the builder.
+  const returnTo =
+    typeof checkout?.returnTo === "string" && checkout.returnTo.startsWith("/") &&
+    !checkout.returnTo.startsWith("//")
+      ? checkout.returnTo
+      : null;
   const { all: packs } = usePacks();
   const packPlanData =
     (isPackId(checkout?.pack)
@@ -416,6 +424,10 @@ export default function Payment() {
   };
 
   const continueAfterPay = (next: AfterPay) => {
+    if (returnTo) {
+      navigate(returnTo, { replace: true });
+      return;
+    }
     if (next === "pick") {
       navigate("/marketplace", {
         replace: true,
@@ -1153,7 +1165,7 @@ export default function Payment() {
       <PaymentSuccessModal
         open={showSuccess}
         planName={planData.name}
-        afterPay={afterPay}
+        afterPay={returnTo ? "builder" : afterPay}
         onContinue={() => continueAfterPay(afterPay)}
       />
     </div>

@@ -62,7 +62,7 @@ export function AiRewriteButton({
         onClose={() => setUpgradeOpen(false)}
         onSelectPack={(packId) => {
           setUpgradeOpen(false);
-          navigate("/billing/payment", { state: { pack: packId } });
+          navigate("/billing/payment", { state: { pack: packId, returnTo: "/builder" } });
         }}
       />
     </>

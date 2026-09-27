@@ -17,6 +17,7 @@ import {
 import ScaledResumePreview from "../components/resume/ScaledResumePreview";
 import { demoResumeForPreset } from "../data/demoResume";
 import { TEMPLATE_PRESETS, type TemplatePreset } from "../data/templates";
+import { scrollToSection } from "../lib/scrollToSection";
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -58,7 +59,7 @@ export default function Home() {
     const id = (location.state as { scrollTo?: string } | null)?.scrollTo;
     if (id) {
       setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        scrollToSection(id);
         window.history.replaceState({}, "");
       }, 100);
     }

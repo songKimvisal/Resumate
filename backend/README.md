@@ -26,6 +26,8 @@ For a plain-language guide to the credits update (what to set up once, why the s
    - `SUPABASE_SERVICE_ROLE_KEY`: Project Settings > API > service_role (secret). Used only on the server to grant and spend credits. Never put this in the frontend.
    - `FRONTEND_ORIGIN`: your Vite dev server URL (default `http://localhost:5173`)
    - `GEMINI_API_KEY`: Gemini API key for smart rewrite / AI design
+   - `PAYWAY_MERCHANT_ID`, `PAYWAY_API_KEY`, `PAYWAY_API_URL`: ABA PayWay card payments (see [docs/ABA_PAYWAY_CARD_PAYMENT.md](../docs/ABA_PAYWAY_CARD_PAYMENT.md))
+   - `BAKONG_TOKEN`, `BAKONG_ACCOUNT_ID`: Bakong KHQR (see [docs/BAKONG_KHQR_PAYMENT.md](../docs/BAKONG_KHQR_PAYMENT.md))
 
 3. Apply the credits migration (`frontend/supabase/migrations/20260826120000_create_ai_credits.sql`) in the Supabase SQL editor, or with the Supabase CLI. Also apply later entitlement migrations (`pdf_saves`, templates, `job_journeys`, and `job_analyses`).
 
@@ -47,6 +49,16 @@ Writing credits live in `ai_credits`. Job-analysis quota lives in `job_analyses`
 - `GET /api/analyses` — job-analysis quota (interview + skill-gap included)
 - `POST /api/analyses/grant` — `{ "pack_id": "ai-plus" }` adds 1 / 3 / 5 analyses by pack
 - `POST /api/job-analysis` — spends 1 analysis quota, not a writing credit; refunds on fallback
+
+## Payments
+
+The server prices every SKU and grants a pack only after the payment provider confirms it.
+
+- `POST /api/payments/khqr/create`, `GET /api/payments/khqr/status/{md5}` — Bakong KHQR
+- `POST /api/payments/payway/create`, `GET /api/payments/payway/status/{tran_id}` — ABA PayWay card checkout
+- `POST /api/payments/payway/callback` — PayWay notification (only triggers a re-check)
+- `/api/payments/cards` — saved cards, off until `PAYWAY_SAVED_CARDS_ENABLED=true`
+- `GET /api/payments` — billing history
 
 ## Testing the authenticated endpoint
 
@@ -79,6 +91,10 @@ app/
     credits.py          GET /api/credits, POST /api/credits/grant
     smart_rewrite.py    POST /api/smart-rewrite (consumes a credit)
     ai_design.py        POST /api/ai-design/recommend
+    payments.py         KHQR and ABA PayWay checkout
+    cards.py            Saved PayWay cards
   services/
     credits.py          Grant / consume / refund via Supabase RPCs
+    khqr.py             Bakong QR and payment check
+    payway.py           ABA PayWay signing, checkout, Check Transaction
 ```
