@@ -35,8 +35,8 @@ export default function MyResumes() {
   const [confirmingBulk, setConfirmingBulk] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const { total: pdfsTotal, canSave } = usePdfSaves();
-  // One resume per PDF save the account can download.
+  const [upgradeForPdf, setUpgradeForPdf] = useState(false);
+  const { total: pdfsTotal, canDownload, isUnlocked } = usePdfSaves();
   const resumeLimit = resumeLimitFromPdfs(pdfsTotal);
   const resumeCount = resumes?.length ?? 0;
   // Only block once the list has actually loaded, so a slow fetch never
@@ -75,6 +75,7 @@ export default function MyResumes() {
 
   const handleNewResume = () => {
     if (atResumeLimit) {
+      setUpgradeForPdf(false);
       setUpgradeOpen(true);
       return;
     }
@@ -88,13 +89,17 @@ export default function MyResumes() {
   };
 
   const handleDownload = async (item: DashboardResume) => {
-    if (!canSave) {
+    if (!canDownload(item.resume.id)) {
+      setUpgradeForPdf(true);
       setUpgradeOpen(true);
       return;
     }
     try {
       const result = await saveResumePdf(item.resume);
-      if (result === "quota") setUpgradeOpen(true);
+      if (result === "quota") {
+        setUpgradeForPdf(true);
+        setUpgradeOpen(true);
+      }
     } catch {
     }
   };
@@ -333,6 +338,7 @@ export default function MyResumes() {
                 key={id || `resume-${item.updatedAt}-${i}`}
                 resume={item.resume}
                 updatedAt={item.updatedAt}
+                pdfUnlocked={isUnlocked(id)}
                 selecting={selecting}
                 selected={selectedIds.includes(id)}
                 onToggleSelect={() => toggleSelect(id)}
@@ -350,6 +356,7 @@ export default function MyResumes() {
       open={upgradeOpen}
       onClose={() => setUpgradeOpen(false)}
       initialNeed="both"
+      reason={upgradeForPdf ? "pdf" : undefined}
       onSelectPack={(packId) => {
         setUpgradeOpen(false);
         navigate("/billing/payment", { state: { pack: packId } });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, MoreHorizontal } from "lucide-react";
+import { Check, CheckCircle2, MoreHorizontal } from "lucide-react";
 import type { Resume } from "../../../types/resume";
 import ResumePreview from "../../resume/ResumePreview";
 import { Button } from "../button";
@@ -9,6 +9,7 @@ import { cn } from "../../../lib/utils";
 interface ResumeCardProps {
   resume: Resume;
   updatedAt: string;
+  pdfUnlocked?: boolean;
   selecting?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -21,6 +22,7 @@ interface ResumeCardProps {
 export default function ResumeCard({
   resume,
   updatedAt,
+  pdfUnlocked = false,
   selecting = false,
   selected = false,
   onToggleSelect,
@@ -201,7 +203,9 @@ export default function ResumeCard({
                     >
                       {downloading
                         ? t("myResumes.menu.downloading")
-                        : t("myResumes.menu.download")}
+                        : pdfUnlocked
+                          ? t("pdfAccess.downloadAgain")
+                          : t("myResumes.menu.download")}
                     </button>
                     <button
                       onClick={() => setConfirming(true)}
@@ -243,9 +247,17 @@ export default function ResumeCard({
         )}
       </div>
 
-      <p className="text-xs text-text-secondary">
-        {dateFormatter.format(new Date(updatedAt))}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <p className="text-xs text-text-secondary">
+          {dateFormatter.format(new Date(updatedAt))}
+        </p>
+        {pdfUnlocked && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success">
+            <CheckCircle2 size={12} strokeWidth={2} />
+            {t("pdfAccess.cardUnlocked")}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

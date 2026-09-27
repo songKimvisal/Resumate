@@ -679,7 +679,7 @@
           "title": "Both"
         }
       },
-      "freeNote": "Or start free with 3 templates and 1 PDF.",
+      "freeNote": "Or start free with 3 templates, 3 resumes and 1 PDF.",
       "freeCta": "Start free",
       "month": "month",
       "mostPopular": "Most popular",
@@ -774,6 +774,7 @@
               "1 skill gap report",
               "Save or download 1 PDF"
             ],
+            "note": "The cheapest way to get a template, a PDF and AI help.",
             "cta": "Get Starter"
           },
           {
@@ -811,7 +812,7 @@
         {
           "name": "Free",
           "price": "0",
-          "tagline": "Start with 3 templates and 1 PDF. No monthly bill.",
+          "tagline": "Start with 3 templates, 3 resumes and 1 PDF. No monthly bill.",
           "includesLabel": "Includes",
           "features": [
             "3 resume templates",
@@ -1563,7 +1564,7 @@
     },
     "unlockModal": {
       "title": "Unlock {{style}}",
-      "description": "One-time. Nothing renews.",
+      "description": "Includes 1 PDF download. One-time, nothing renews.",
       "claimDescription": "Your pack includes a template slot. Use it on this design.",
       "buyTemplateCta": "Buy this template - ${{price}}",
       "orDivider": "or get more with a bundle",
@@ -1762,7 +1763,9 @@
       "title": "Buy more",
       "subtitle": "Pay once with KHQR or Card. Nothing renews.",
       "close": "Close",
-      "currentPlanCta": "Current pack"
+      "currentPlanCta": "Current pack",
+      "pdfTitle": "Download this resume",
+      "pdfSubtitle": "You've used all your PDFs. Every pack below adds more, and each resume you download stays free to download again."
     },
     "payment": {
       "back": "Back",
@@ -1934,5 +1937,13 @@
     "save": "Save PDF",
     "open": "Open PDF",
     "close": "Close"
+  },
+  "pdfAccess": {
+    "unlocked": "Unlocked. Download this resume again anytime, even after edits. It's free.",
+    "willUnlock": "Uses 1 of your {{count}} PDFs. After that, this resume downloads free, even after edits.",
+    "outOfPdfs": "You've used all your PDFs. Resumes you already downloaded stay free to download again.",
+    "downloadAgain": "Download again",
+    "freeBadge": "Free",
+    "cardUnlocked": "PDF unlocked"
   }
 }

@@ -16,11 +16,14 @@ export default function UpgradePlanModal({
   onClose,
   onSelectPack,
   initialNeed = "both",
+  reason,
 }: {
   open: boolean;
   onClose: () => void;
   onSelectPack: (packId: PackId) => void;
   initialNeed?: NeedId;
+  /** "pdf": out of downloads, so only show packs that include PDFs. */
+  reason?: "pdf";
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -30,9 +33,11 @@ export default function UpgradePlanModal({
   useEffect(() => {
     if (open) setNeed(initialNeed);
   }, [open, initialNeed]);
-  const packs = byNeed[need];
+  const forPdf = reason === "pdf";
+  const shownNeed: NeedId = forPdf ? "both" : need;
+  const packs = byNeed[shownNeed];
   const popularBadge = t(
-    need === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
+    shownNeed === "both" ? "home.pricing.bestValue" : "home.pricing.mostPopular",
   );
 
   // template tier needs picking in marketplace; customization goes straight to checkout
@@ -74,25 +79,39 @@ export default function UpgradePlanModal({
               </button>
 
               <h2 className="px-8 text-center text-xl font-bold text-text sm:text-2xl">
-                {t("billing.upgradeModal.title")}
+                {t(
+                  forPdf
+                    ? "billing.upgradeModal.pdfTitle"
+                    : "billing.upgradeModal.title",
+                )}
               </h2>
               <p className="mx-auto mt-1.5 max-w-md text-center text-sm text-text-secondary">
-                {t("billing.upgradeModal.subtitle")}
+                {t(
+                  forPdf
+                    ? "billing.upgradeModal.pdfSubtitle"
+                    : "billing.upgradeModal.subtitle",
+                )}
               </p>
 
-              <div className="mt-5">
-                <NeedTabs
-                  value={need}
-                  onChange={setNeed}
-                  label={t("home.pricing.needLabel")}
-                />
-                <p className="mt-2.5 text-center text-sm text-text-secondary">
-                  {t(`home.pricing.${need}.label`)}
+              {forPdf ? (
+                <p className="mx-auto mt-1 max-w-md text-center text-xs text-text-secondary">
+                  {t("billing.upgradeModal.subtitle")}
                 </p>
-              </div>
+              ) : (
+                <div className="mt-5">
+                  <NeedTabs
+                    value={need}
+                    onChange={setNeed}
+                    label={t("home.pricing.needLabel")}
+                  />
+                  <p className="mt-2.5 text-center text-sm text-text-secondary">
+                    {t(`home.pricing.${need}.label`)}
+                  </p>
+                </div>
+              )}
 
               <AnimatePresence mode="wait">
-                {need === "design" ? (
+                {shownNeed === "design" ? (
                   <motion.div
                     key="design"
                     initial={{ opacity: 0 }}
@@ -105,7 +124,7 @@ export default function UpgradePlanModal({
                   </motion.div>
                 ) : (
                   <motion.div
-                    key={need}
+                    key={shownNeed}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}

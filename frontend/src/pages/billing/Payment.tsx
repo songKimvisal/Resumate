@@ -295,6 +295,9 @@ export default function Payment() {
 
     const templateId = consumePendingTemplateId();
     const asNewResume = consumePendingTemplateAsNewResume();
+    getPdfSaves()
+      .then((pdfs) => setPdfs(pdfs.total, pdfs.used))
+      .catch((err) => console.warn("Could not load PDF saves:", err));
     const preset = templateId
       ? TEMPLATE_PRESETS.find((p) => p.id === templateId)
       : undefined;

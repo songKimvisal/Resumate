@@ -371,6 +371,12 @@ export function PackCard({
         ))}
       </ul>
 
+      {pack.note ? (
+        <p className={cn("text-xs font-medium text-brand", compact ? "mt-3" : "mt-4")}>
+          {pack.note}
+        </p>
+      ) : null}
+
       <Button
         size="compact"
         className={cn("h-9 w-full", compact ? "mt-4" : "mt-5")}

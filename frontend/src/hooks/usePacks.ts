@@ -9,6 +9,7 @@ export interface PurchasePack {
   features: string[];
   cta: string;
   popular?: boolean;
+  note?: string;
 }
 
 const AI_PACK_IDS: PackId[] = ["ai-basic", "ai-plus", "ai-pro"];
@@ -25,6 +26,7 @@ type RawPack = {
   features: string[];
   cta: string;
   popular?: boolean;
+  note?: string;
 };
 
 export function usePacks() {

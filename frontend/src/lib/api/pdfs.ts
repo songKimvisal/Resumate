@@ -21,8 +21,12 @@ export function pdfsFromErrorBody(body: unknown): PdfBalance | null {
   return pdfs;
 }
 
+export interface PdfStatus extends PdfBalance {
+  unlocked_resume_ids?: string[];
+}
+
 export function getPdfSaves() {
-  return requestBackend<PdfBalance>("/api/pdfs");
+  return requestBackend<PdfStatus>("/api/pdfs");
 }
 
 export function grantPdfSaves(packId: PackId) {
@@ -32,14 +36,20 @@ export function grantPdfSaves(packId: PackId) {
   });
 }
 
-export function consumePdfSave() {
-  return requestBackend<PdfBalance & { consumed: boolean }>("/api/pdfs/consume", {
-    method: "POST",
-  });
+/** With a saved resume's id, re-downloading that resume is free. */
+export function consumePdfSave(resumeId?: string | null) {
+  return requestBackend<PdfBalance & { consumed: boolean; charged?: boolean }>(
+    "/api/pdfs/consume",
+    {
+      method: "POST",
+      body: resumeId ? { resume_id: resumeId } : {},
+    },
+  );
 }
 
-export function refundPdfSave() {
+export function refundPdfSave(resumeId?: string | null) {
   return requestBackend<PdfBalance>("/api/pdfs/refund", {
     method: "POST",
+    body: resumeId ? { resume_id: resumeId } : {},
   });
 }

@@ -14,11 +14,14 @@ interface SubscriptionState {
   aiCreditsUsed: number;
   pdfsTotal: number;
   pdfsUsed: number;
+  unlockedResumeIds: string[];
   analysesTotal: number;
   analysesUsed: number;
   subscribeToPlan: (plan: PlanId, packId?: PackId) => void;
   setCredits: (total: number, used: number) => void;
   setPdfs: (total: number, used: number) => void;
+  setUnlockedResumeIds: (ids: string[]) => void;
+  setResumeUnlocked: (id: string, unlocked: boolean) => void;
   setAnalyses: (total: number, used: number) => void;
   unsubscribe: () => void;
 }
@@ -32,6 +35,7 @@ const DEFAULT_STATE: Pick<
   | "aiCreditsUsed"
   | "pdfsTotal"
   | "pdfsUsed"
+  | "unlockedResumeIds"
   | "analysesTotal"
   | "analysesUsed"
 > = {
@@ -42,6 +46,7 @@ const DEFAULT_STATE: Pick<
   aiCreditsUsed: 0,
   pdfsTotal: FREE_PDF_SAVES,
   pdfsUsed: 0,
+  unlockedResumeIds: [],
   analysesTotal: 0,
   analysesUsed: 0,
 };
@@ -92,6 +97,15 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           pdfsTotal: Math.max(0, total),
           pdfsUsed: Math.max(0, used),
         }),
+      setUnlockedResumeIds: (ids) => set({ unlockedResumeIds: ids }),
+      setResumeUnlocked: (id, unlocked) =>
+        set((s) => ({
+          unlockedResumeIds: unlocked
+            ? s.unlockedResumeIds.includes(id)
+              ? s.unlockedResumeIds
+              : [...s.unlockedResumeIds, id]
+            : s.unlockedResumeIds.filter((x) => x !== id),
+        })),
       setAnalyses: (total, used) =>
         set({
           analysesTotal: Math.max(0, total),
