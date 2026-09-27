@@ -6,6 +6,7 @@ import { useTheme } from "../../hooks/UseTheme";
 import { useAuth } from "../../hooks/UseAuth";
 import { Button } from "../ui/button";
 import logo from "../../assets/logo/logo.png";
+import { scrollToSection as scrollToHomeSection } from "../../lib/scrollToSection";
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
@@ -40,7 +41,7 @@ export default function Navbar() {
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
     if (location.pathname === "/") {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      scrollToHomeSection(id);
     } else {
       navigate("/", { state: { scrollTo: id } });
     }

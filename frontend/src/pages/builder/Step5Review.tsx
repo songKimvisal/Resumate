@@ -277,7 +277,7 @@ export default function Step5Review({ onGoToStep }: Step5ReviewProps) {
       initialNeed="both"
       onSelectPack={(packId) => {
         setUpgradeOpen(false);
-        navigate("/billing/payment", { state: { pack: packId } });
+        navigate("/billing/payment", { state: { pack: packId, returnTo: "/builder" } });
       }}
     />
     </>
