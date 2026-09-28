@@ -104,7 +104,7 @@ export default function GraduateFocusLayout({
       <section className="rounded-lg bg-white px-6 py-4 ring-1 ring-slate-200/80">
         <AtsHeading title="References" color={accent} size={customization.headingsSize} customization={customization} />
         <div className="grid grid-cols-2 gap-3 text-[0.85em]">
-          {references.slice(0, 2).map((r, refIdx) => (
+          {references.map((r, refIdx) => (
             <div key={listKey(r.id, refIdx, "ref")}>
               <p className="font-bold">{r.name}</p>
               <p style={{ color: muted }}>{r.company}</p>

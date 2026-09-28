@@ -2,13 +2,52 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   EducationItem,
   ExperienceItem,
+  LayoutVariant,
   NoExperienceItem,
   Resume,
 } from "../../../types/resume";
 import { cn } from "../../../lib/utils";
 import { cssFontStack } from "../../../lib/fonts";
-import { hasText, normalizeJobs, personalContactLines, ContactLink, gpaText } from "./shared";
+import { hasText, normalizeJobs, personalContactLines, gpaText, SkillsList } from "./shared";
 import { resumeSheetLang } from "../../../lib/resumeHeadings";
+import { partitionSpecialSectionOrder } from "../../../lib/sectionOrder";
+
+// Layouts with one column, where every section flows in order.
+const SINGLE_COLUMN_LAYOUTS = new Set<LayoutVariant>([
+  "graduateFocus",
+  "editorialClassic",
+  "monoTimeline",
+]);
+
+const FIT_STEP = 0.07;
+const MAX_FIT_STEPS = 4;
+
+// True when text is cut off at the page edge.
+function textOverflows(page: HTMLElement): boolean {
+  const box = page.getBoundingClientRect();
+  const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.textContent?.trim()) continue;
+    range.selectNodeContents(node);
+    const r = range.getBoundingClientRect();
+    if (r.height > 0 && (r.bottom > box.bottom + 1 || r.right > box.right + 1)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+type PageRules = {
+  singleColumn: boolean;
+};
+
+function pageRules(resume: Resume): PageRules {
+  return {
+    singleColumn: SINGLE_COLUMN_LAYOUTS.has(resume.customization.layoutVariant),
+  };
+}
 import { SpecialLayout } from "./index";
 
 type JobSlice = {
@@ -35,7 +74,13 @@ type PagePlan = {
 
 type ContentUnit = {
   key: string;
-  kind: "summary" | "education" | "job" | "references" | "contact";
+  kind:
+    | "summary"
+    | "education"
+    | "job"
+    | "skills"
+    | "languages"
+    | "references";
   id?: string;
   description?: string;
   showMeta?: boolean;
@@ -161,25 +206,44 @@ function pushSlicedUnits(
   });
 }
 
-function buildUnits(resume: Resume): ContentUnit[] {
+function buildUnits(resume: Resume, rules: PageRules): ContentUnit[] {
   const units: ContentUnit[] = [];
   if (hasText(resume.personal.summary)) {
     pushSlicedUnits(units, "summary", undefined, resume.personal.summary);
   }
-  resume.education.forEach((edu) => {
-    pushSlicedUnits(units, "education", edu.id, edu.description);
-  });
+  const pushEducation = () =>
+    resume.education.forEach((edu) => {
+      pushSlicedUnits(units, "education", edu.id, edu.description);
+    });
+  const pushJobs = () =>
+    normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder, resume.customization).forEach((job) => {
+      pushSlicedUnits(units, "job", job.id, job.description);
+    });
+  const pushReferences = () => {
+    if (resume.includeReferences && resume.references.length > 0) {
+      units.push({ key: "references", kind: "references" });
+    }
+  };
 
-  const jobs = normalizeJobs(resume.experience, resume.noExperience, resume.experienceOrder, resume.customization);
-  jobs.forEach((job) => {
-    pushSlicedUnits(units, "job", job.id, job.description);
-  });
-
-  if (resume.includeReferences && resume.references.length > 0) {
-    units.push({ key: "references", kind: "references" });
-  }
-  if (personalContactLines(resume.personal).length > 0) {
-    units.push({ key: "contact", kind: "contact" });
+  if (rules.singleColumn) {
+    const { main, sidebar } = partitionSpecialSectionOrder(
+      resume.customization.specialSectionOrder,
+      resume.customization.specialSidebarKeys,
+    );
+    for (const key of [...main, ...sidebar]) {
+      if (key === "education") pushEducation();
+      else if (key === "experience") pushJobs();
+      else if (key === "references") pushReferences();
+      else if (key === "skills" && resume.skills.length > 0) {
+        units.push({ key: "skills", kind: "skills" });
+      } else if (key === "language" && resume.languages.length > 0) {
+        units.push({ key: "languages", kind: "languages" });
+      }
+    }
+  } else {
+    pushEducation();
+    pushJobs();
+    pushReferences();
   }
   return units;
 }
@@ -188,11 +252,18 @@ function packUnits(
   units: ContentUnit[],
   heights: Record<string, number>,
   pageHeightPx: number,
+  rules: PageRules,
+  scale = 1,
 ): PagePlan[] {
-  // 0.42 left page 1 half-empty since the sidebar leaves most height usable
-  const firstBudget = pageHeightPx * 0.86;
-  const nextBudget = pageHeightPx * 0.92;
+  // Single column: reserve page padding, header card and section headings.
+  const firstBudget =
+    (rules.singleColumn ? pageHeightPx - 64 - 110 : pageHeightPx * 0.86) *
+    scale;
+  const nextBudget =
+    (rules.singleColumn ? pageHeightPx - 64 - 24 : pageHeightPx * 0.92) *
+    scale;
   const gap = 8;
+  const sectionOverhead = rules.singleColumn ? 62 : 0;
 
   if (units.length === 0) {
     return [
@@ -203,47 +274,49 @@ function packUnits(
         showSkills: true,
         showLanguages: true,
         showReferences: false,
-        showContact: false,
+        showContact: true,
       },
     ];
   }
 
-  const pages: ContentUnit[][] = [[]];
-  let used = 0;
-
   // discount for the probe column wrapping more than the real layout
   const unitHeight = (unit: ContentUnit) =>
-    Math.max(18, Math.ceil((heights[unit.key] ?? 36) * 0.92));
+    Math.max(
+      18,
+      Math.ceil((heights[unit.key] ?? 36) * (rules.singleColumn ? 1 : 0.92)),
+    );
+  const sectionOf = (unit: ContentUnit) =>
+    unit.kind === "job" || unit.kind === "education" ? unit.kind : unit.key;
+  const pageCost = (list: ContentUnit[]) =>
+    list.reduce((sum, u, idx) => {
+      const opensSection =
+        idx === 0 || sectionOf(list[idx - 1]) !== sectionOf(u);
+      return (
+        sum +
+        (idx === 0 ? 0 : gap) +
+        unitHeight(u) +
+        (opensSection ? sectionOverhead : 0)
+      );
+    }, 0);
+  const budget = (pageIndex: number) =>
+    pageIndex === 0 ? firstBudget : nextBudget;
 
+  const pages: ContentUnit[][] = [[]];
   for (const unit of units) {
-    const h = unitHeight(unit);
     const page = pages[pages.length - 1];
-    const isFirst = page.length === 0;
-    const needed = (isFirst ? 0 : gap) + h;
-    const limit = pages.length === 1 ? firstBudget : nextBudget;
-
-    if (!isFirst && used + needed > limit) {
+    if (page.length > 0 && pageCost([...page, unit]) > budget(pages.length - 1)) {
       pages.push([unit]);
-      used = h;
     } else {
       page.push(unit);
-      used += needed;
     }
   }
 
   // Pull content back onto earlier pages while space remains.
   for (let i = 0; i < pages.length - 1; i++) {
-    const limit = i === 0 ? firstBudget : nextBudget;
-    let usedNow = pages[i].reduce(
-      (sum, u, idx) => sum + (idx === 0 ? 0 : gap) + unitHeight(u),
-      0,
-    );
     while (pages[i + 1] && pages[i + 1].length > 0) {
       const nextUnit = pages[i + 1][0];
-      const needed = (pages[i].length === 0 ? 0 : gap) + unitHeight(nextUnit);
-      if (usedNow + needed > limit) break;
+      if (pageCost([...pages[i], nextUnit]) > budget(i)) break;
       pages[i].push(pages[i + 1].shift()!);
-      usedNow += needed;
       if (pages[i + 1].length === 0) pages.splice(i + 1, 1);
     }
   }
@@ -278,10 +351,15 @@ function packUnits(
       summaryHtml: summaryParts.join(""),
       education,
       jobs,
-      showSkills: pageIndex === 0,
-      showLanguages: pageIndex === 0,
+      showSkills: rules.singleColumn
+        ? pageUnits.some((u) => u.kind === "skills")
+        : pageIndex === 0,
+      showLanguages: rules.singleColumn
+        ? pageUnits.some((u) => u.kind === "languages")
+        : pageIndex === 0,
       showReferences: pageUnits.some((u) => u.kind === "references"),
-      showContact: pageUnits.some((u) => u.kind === "contact"),
+      // Contact always sits on page 1.
+      showContact: pageIndex === 0,
     };
   });
 }
@@ -413,8 +491,8 @@ function applyPagePlan(
         };
       })
       .filter((e): e is EducationItem => e != null),
-    skills: isFirst && plan.showSkills ? resume.skills : [],
-    languages: isFirst && plan.showLanguages ? resume.languages : [],
+    skills: plan.showSkills ? resume.skills : [],
+    languages: plan.showLanguages ? resume.languages : [],
     references: plan.showReferences ? resume.references : [],
     includeReferences: plan.showReferences && resume.includeReferences,
   };
@@ -438,17 +516,18 @@ function MeasureBlock({
   const fontSize = customization.fontSize || 14;
   const jobs = normalizeJobs(experience, noExperience, resume.experienceOrder, customization);
 
-  if (unit.kind === "contact") {
-    const lines = personalContactLines(personal);
+  if (unit.kind === "skills") {
     return (
-      <div style={{ fontSize }} className="space-y-2 py-2">
-        <p className="font-bold">CONTACT</p>
-        {lines.map((l, li) => (
-          <p key={l.id || `contact-${li}`}>
-            <ContactLink item={l} />
-          </p>
-        ))}
+      <div style={{ fontSize }}>
+        <SkillsList skills={resume.skills} customization={customization} />
       </div>
+    );
+  }
+  if (unit.kind === "languages") {
+    return (
+      <p style={{ fontSize }} className="text-[0.88em]">
+        {resume.languages.map((l) => l.name).join(" · ")}
+      </p>
     );
   }
   if (unit.kind === "summary") {
@@ -539,9 +618,17 @@ export function SpecialPaginatedLayout({
   accent?: string;
 }) {
   const measureRef = useRef<HTMLDivElement>(null);
-  const units = useMemo(() => buildUnits(resume), [resume]);
+  const rules = useMemo(() => pageRules(resume), [resume]);
+  const units = useMemo(() => buildUnits(resume, rules), [resume, rules]);
   const [heights, setHeights] = useState<Record<string, number>>({});
   const [measured, setMeasured] = useState(false);
+  // Shrink the budget while a page still clips; resets on new heights.
+  const [fit, setFit] = useState<{ key: unknown; step: number }>({
+    key: null,
+    step: 0,
+  });
+  const fitStep = fit.key === heights ? fit.step : 0;
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useLayoutEffect(() => {
     const root = measureRef.current;
@@ -580,8 +667,14 @@ export function SpecialPaginatedLayout({
         } satisfies PagePlan,
       ];
     }
-    return packUnits(units, heights, pageHeightPx);
-  }, [measured, units, heights, pageHeightPx, resume]);
+    return packUnits(
+      units,
+      heights,
+      pageHeightPx,
+      rules,
+      1 - FIT_STEP * fitStep,
+    );
+  }, [measured, units, heights, pageHeightPx, resume, rules, fitStep]);
 
   const pageResumes = useMemo(
     () => plans.map((plan, pageIndex) => applyPagePlan(resume, plan, pageIndex)),
@@ -589,8 +682,18 @@ export function SpecialPaginatedLayout({
   );
 
   const visible = singlePage ? pageResumes.slice(0, 1) : pageResumes;
+
+  useLayoutEffect(() => {
+    if (!measured || fitStep >= MAX_FIT_STEPS) return;
+    const clipped = pageRefs.current
+      .slice(0, visible.length)
+      .some((page) => page != null && textOverflows(page));
+    if (clipped) setFit({ key: heights, step: fitStep + 1 });
+  }, [measured, fitStep, heights, visible.length, pageResumes]);
   const aspect = pageFormat === "letter" ? "8.5/11" : "210/297";
-  const measureWidth = Math.round(pageWidthPx * 0.66);
+  const measureWidth = rules.singleColumn
+    ? Math.round(pageWidthPx - 120)
+    : Math.round(pageWidthPx * 0.66);
   const bulletClass =
     resume.customization.bulletStyle === "disc"
       ? ""
@@ -641,6 +744,9 @@ export function SpecialPaginatedLayout({
             </p>
           )}
           <div
+            ref={(el) => {
+              pageRefs.current[pageIndex] = el;
+            }}
             className="relative w-full rounded-sm border border-line shadow-xl"
             style={{
               maxWidth: pageWidthPx,

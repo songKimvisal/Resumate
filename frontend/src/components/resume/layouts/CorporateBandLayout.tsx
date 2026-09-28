@@ -157,7 +157,7 @@ export default function CorporateBandLayout({
           customization={customization}
         />
         <div className="space-y-2 text-[0.82em]">
-          {references.slice(0, 2).map((r, refIdx) => (
+          {references.map((r, refIdx) => (
             <div key={listKey(r.id, refIdx, "ref")}>
               <p className="font-bold">{r.name}</p>
               <p style={{ color: muted }}>{r.company}</p>

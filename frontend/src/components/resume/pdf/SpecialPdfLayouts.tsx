@@ -2392,7 +2392,7 @@ function GraduateFocusPdf({ t }: { t: PdfTheme }) {
         <View
           style={{ flexDirection: "row", flexWrap: "wrap", gap: sp(3) }}
         >
-          {references.slice(0, 2).map((r) => (
+          {references.map((r) => (
             <View key={r.id} style={{ width: "47%", fontSize: t.em(0.85) }}>
               <Text style={{ fontFamily: t.variants.bold }}>{r.name}</Text>
               <Text style={{ color: t.muted }}>{r.company}</Text>
@@ -2528,7 +2528,7 @@ function CorporateBandPdf({ t }: { t: PdfTheme }) {
       <View>
         {head("References")}
         <View style={{ gap: sp(2) }}>
-          {references.slice(0, 2).map((r) => (
+          {references.map((r) => (
             <View key={r.id} style={{ fontSize: t.em(0.82) }}>
               <Text style={{ fontFamily: t.variants.bold }}>{r.name}</Text>
               <Text style={{ color: t.muted }}>{r.company}</Text>

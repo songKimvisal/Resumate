@@ -29,6 +29,7 @@ backend/.env
 docs/
 test.txt
 test.sql
+resume_song_kimvisal.sql
 # ---------- Editor / OS ----------
 .vscode/*
 !.vscode/extensions.json
